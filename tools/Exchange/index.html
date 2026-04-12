@@ -5,17 +5,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>百分比与小数转换工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            /* 日间模式变量 */
+            --bg-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            --container-bg: #ffffff;
+            --text-color: #333;
+            --text-secondary: #7f8c8d;
+            --text-light: #95a5a6;
+            --header-color: #2c3e50;
+            --label-color: #34495e;
+            --input-bg: #ffffff;
+            --input-border: #ddd;
+            --primary-color: #3498db;
+            --primary-hover: #2980b9;
+            --success-color: #27ae60;
+            --success-dark: #219653;
+            --danger-color: #e74c3c;
+            --danger-dark: #c0392b;
+            --result-bg: #f8f9fa;
+            --result-border: #2ecc71;
+            --example-border: #eee;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --footer-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .dark-mode {
+            /* 暗色模式变量 */
+            --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            --container-bg: #1e293b;
+            --text-color: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-light: #64748b;
+            --header-color: #f1f5f9;
+            --label-color: #cbd5e1;
+            --input-bg: #0f172a;
+            --input-border: #334155;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --success-color: #22c55e;
+            --success-dark: #16a34a;
+            --danger-color: #ef4444;
+            --danger-dark: #dc2626;
+            --result-bg: #0f172a;
+            --result-border: #22c55e;
+            --example-border: #334155;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --footer-color: rgba(255, 255, 255, 0.7);
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
         }
 
         body {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: #333;
+            background: var(--bg-gradient);
+            color: var(--text-color);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -25,26 +75,74 @@
         }
 
         .container {
-            background-color: white;
+            background-color: var(--container-bg);
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px var(--shadow-color);
             width: 100%;
             max-width: 500px;
             padding: 30px;
             margin: 20px 0;
         }
 
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.95rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            background: transparent;
+        }
+
+        .back-link:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .theme-toggle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--input-bg);
+            border: 2px solid var(--input-border);
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(15deg);
+            border-color: var(--primary-color);
+        }
+
+        .theme-toggle i {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+
         h1 {
             text-align: center;
-            color: #2c3e50;
-            margin-bottom: 20px;
+            color: var(--header-color);
+            margin-bottom: 15px;
             font-size: 28px;
         }
 
         .description {
             text-align: center;
             margin-bottom: 25px;
-            color: #7f8c8d;
+            color: var(--text-secondary);
             line-height: 1.5;
         }
 
@@ -56,21 +154,27 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #34495e;
+            color: var(--label-color);
         }
 
         input {
             width: 100%;
             padding: 12px 15px;
-            border: 2px solid #ddd;
+            border: 2px solid var(--input-border);
             border-radius: 8px;
             font-size: 16px;
             transition: border-color 0.3s;
+            background: var(--input-bg);
+            color: var(--text-color);
         }
 
         input:focus {
-            border-color: #3498db;
+            border-color: var(--primary-color);
             outline: none;
+        }
+
+        input::placeholder {
+            color: var(--text-light);
         }
 
         .buttons {
@@ -84,16 +188,20 @@
             padding: 12px;
             border: none;
             border-radius: 8px;
-            background-color: #3498db;
+            background-color: var(--primary-color);
             color: white;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.3s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         button:hover {
-            background-color: #2980b9;
+            background-color: var(--primary-hover);
         }
 
         button:active {
@@ -101,53 +209,62 @@
         }
 
         #clearBtn {
-            background-color: #e74c3c;
+            background-color: var(--danger-color);
         }
 
         #clearBtn:hover {
-            background-color: #c0392b;
+            background-color: var(--danger-dark);
         }
 
         .result {
-            background-color: #f8f9fa;
+            background-color: var(--result-bg);
             padding: 15px;
             border-radius: 8px;
-            border-left: 4px solid #2ecc71;
+            border-left: 4px solid var(--result-border);
             margin-top: 20px;
         }
 
         .result h3 {
-            color: #2c3e50;
+            color: var(--header-color);
             margin-bottom: 10px;
         }
 
         #resultText {
             font-size: 18px;
-            color: #27ae60;
+            color: var(--success-color);
             font-weight: 600;
         }
 
         .examples {
             margin-top: 30px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--example-border);
         }
 
         .examples h3 {
-            color: #2c3e50;
+            color: var(--header-color);
             margin-bottom: 15px;
         }
 
         .example-item {
             margin-bottom: 8px;
-            color: #7f8c8d;
+            color: var(--text-secondary);
         }
 
         footer {
             text-align: center;
             margin-top: 30px;
-            color: white;
+            color: var(--footer-color);
             font-size: 14px;
+        }
+
+        footer a {
+            color: white;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
         }
 
         @media (max-width: 600px) {
@@ -158,12 +275,35 @@
             .buttons {
                 flex-direction: column;
             }
+
+            .header-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .back-link {
+                order: 2;
+            }
+
+            .theme-toggle {
+                order: 1;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="container">
+        <div class="header-row">
+            <a href="/" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                返回主页
+            </a>
+            <div class="theme-toggle" id="themeToggle" title="切换主题">
+                <i class="fas fa-moon"></i>
+            </div>
+        </div>
+
         <h1>百分比与小数转换工具</h1>
         <p class="description">这是一个简单易用的在线工具，帮助您在百分比和小数之间进行快速转换。</p>
 
@@ -173,9 +313,15 @@
         </div>
 
         <div class="buttons">
-            <button id="toDecimal">转换为小数</button>
-            <button id="toPercentage">转换为百分比</button>
-            <button id="clearBtn">清除</button>
+            <button id="toDecimal">
+                <i class="fas fa-arrow-right"></i> 转换为小数
+            </button>
+            <button id="toPercentage">
+                <i class="fas fa-percent"></i> 转换为百分比
+            </button>
+            <button id="clearBtn">
+                <i class="fas fa-trash-alt"></i> 清除
+            </button>
         </div>
 
         <div class="result">
@@ -187,16 +333,71 @@
             <h3>使用示例：</h3>
             <p class="example-item">• 转换为小数：输入 25% → 输出 0.25</p>
             <p class="example-item">• 转换为百分比：输入 0.75 → 输出 75%</p>
-            <p class="example-item">• 也可以直接输入数字而不带百分号：输入 50 → 转换为百分比：5000%</p>
+            <p class="example-item">• 带%符号的小数转换：输入 50% → 输出 0.5（直接转换，不除以100）</p>
         </div>
     </div>
 
     <footer>
-        <p>© 2023 百分比与小数转换工具 | 设计精美，使用简单</p>
+        <p>© <span id="currentYear"></span> 百分比与小数转换工具 | 设计精美，使用简单</p>
     </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // 动态设置版权年份
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            // =============== 主题切换功能 ===============
+            function initTheme() {
+                const savedTheme = localStorage.getItem('theme');
+                const themeToggle = document.getElementById('themeToggle');
+                const body = document.body;
+
+                // 检查系统偏好
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                // 应用主题
+                if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                    body.classList.add('dark-mode');
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                } else {
+                    body.classList.remove('dark-mode');
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                }
+            }
+
+            function toggleTheme() {
+                const body = document.body;
+                const themeToggle = document.getElementById('themeToggle');
+
+                if (body.classList.contains('dark-mode')) {
+                    body.classList.remove('dark-mode');
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    body.classList.add('dark-mode');
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                    localStorage.setItem('theme', 'dark');
+                }
+            }
+
+            // 监听系统主题变化
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) {
+                    if (e.matches) {
+                        document.body.classList.add('dark-mode');
+                        document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+                    } else {
+                        document.body.classList.remove('dark-mode');
+                        document.getElementById('themeToggle').innerHTML = '<i class="fas fa-moon"></i>';
+                    }
+                }
+            });
+
+            // 初始化主题
+            initTheme();
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+            // =============== 转换功能 ===============
             const inputValue = document.getElementById('inputValue');
             const toDecimalBtn = document.getElementById('toDecimal');
             const toPercentageBtn = document.getElementById('toPercentage');
@@ -209,12 +410,15 @@
 
                 if (value === '') {
                     resultText.textContent = '请输入一个值';
-                    resultText.style.color = '#e74c3c';
+                    resultText.style.color = 'var(--danger-color)';
                     return;
                 }
 
-                // 移除百分号并转换为数字
-                if (value.includes('%')) {
+                // 检查是否包含百分号
+                const hasPercent = value.includes('%');
+                
+                // 移除百分号
+                if (hasPercent) {
                     value = value.replace('%', '');
                 }
 
@@ -222,13 +426,16 @@
 
                 if (isNaN(num)) {
                     resultText.textContent = '请输入有效的数字';
-                    resultText.style.color = '#e74c3c';
+                    resultText.style.color = 'var(--danger-color)';
                     return;
                 }
 
+                // 如果输入已带百分号，直接作为小数处理（除以100）
+                // 如果输入不带百分号，也除以100（符合用户的心理预期）
+                // 实际上用户输入不带%时可能是想输入一个带%的值如50表示50%
                 const decimal = num / 100;
                 resultText.textContent = `结果：${decimal}`;
-                resultText.style.color = '#27ae60';
+                resultText.style.color = 'var(--success-color)';
             });
 
             // 转换为百分比
@@ -237,7 +444,7 @@
 
                 if (value === '') {
                     resultText.textContent = '请输入一个值';
-                    resultText.style.color = '#e74c3c';
+                    resultText.style.color = 'var(--danger-color)';
                     return;
                 }
 
@@ -250,23 +457,24 @@
 
                 if (isNaN(num)) {
                     resultText.textContent = '请输入有效的数字';
-                    resultText.style.color = '#e74c3c';
+                    resultText.style.color = 'var(--danger-color)';
                     return;
                 }
 
                 const percentage = num * 100;
                 resultText.textContent = `结果：${percentage}%`;
-                resultText.style.color = '#27ae60';
+                resultText.style.color = 'var(--success-color)';
             });
 
             // 清除输入和结果
             clearBtn.addEventListener('click', function () {
                 inputValue.value = '';
                 resultText.textContent = '请输入值并选择转换类型';
-                resultText.style.color = '#27ae60';
+                resultText.style.color = 'var(--success-color)';
+                inputValue.focus();
             });
 
-            // 按Enter键触发转换
+            // 按Enter键触发转换为小数
             inputValue.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     toDecimalBtn.click();
