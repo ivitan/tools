@@ -1714,24 +1714,11 @@ type: 1000 - 有效（空格不影响）
             updateDigitStats(uniqueMatches.map(m => m.digits));
         }
 
+        // 更新数字统计（保留函数但不使用，避免引用不存在的DOM元素）
         function updateDigitStats(digitsArray) {
-            if (digitsArray.length === 0) {
-                document.getElementById('digitCount').textContent = '0';
-                document.getElementById('maxDigit').textContent = '0';
-                document.getElementById('minDigit').textContent = '0';
-                return;
-            }
-
-            // 计算数字统计
-            const digitCount = digitsArray.reduce((total, digits) =>
-                total + digits.length, 0);
-
-            const maxDigit = Math.max(...digitsArray.map(d => parseInt(d)));
-            const minDigit = Math.min(...digitsArray.map(d => parseInt(d)));
-
-            document.getElementById('digitCount').textContent = digitCount;
-            document.getElementById('maxDigit').textContent = maxDigit;
-            document.getElementById('minDigit').textContent = minDigit;
+            // 统计功能已简化，直接返回
+            // 如果需要统计信息，可以在这里添加自定义实现
+            console.log('提取了 ' + digitsArray.length + ' 个有效数字');
         }
 
         // 查询单个数字
@@ -1829,9 +1816,6 @@ type: 1000 - 有效（空格不影响）
             document.getElementById('textLength').textContent = '0';
             document.getElementById('matchCount').textContent = '0';
             document.getElementById('uniqueCount').textContent = '0';
-            document.getElementById('digitCount').textContent = '0';
-            document.getElementById('maxDigit').textContent = '0';
-            document.getElementById('minDigit').textContent = '0';
             extractionResults = [];
         }
 
