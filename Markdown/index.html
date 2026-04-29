@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown 编辑器</title>
+    <title>Markdown 编辑器 · 实时跟随预览</title>
 
     <!-- Marked.js - Markdown 解析器 -->
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js">
@@ -504,6 +504,8 @@
             transition: background var(--transition-slow);
             word-wrap: break-word;
             overflow-wrap: break-word;
+            scroll-behavior: auto;
+            /* 由 JavaScript 控制滚动，避免平滑滚动干扰 */;
         }
 
         /* === 预览区 Markdown 渲染样式 === */
@@ -840,7 +842,7 @@
         <div class="header-brand">
             <div class="header-logo" aria-hidden="true">M</div>
             <span class="header-title">Markdown 编辑器</span>
-            <span class="header-subtitle">· 实时预览</span>
+            <span class="header-subtitle">· 实时跟随</span>
         </div>
         <div class="header-actions">
             <button class="btn-theme-toggle" id="themeToggle" aria-label="切换暗色模式" title="切换暗色/亮色模式">
@@ -913,7 +915,8 @@
     (function() {
         // === DOM 元素 ===
         const editor = document.getElementById('editor');
-        const preview = document.getElementById('preview').querySelector('.markdown-body');
+        const previewContent = document.getElementById('preview').querySelector('.markdown-body');
+        const previewScroller = document.getElementById('preview'); // 预览区的滚动容器
         const themeToggle = document.getElementById('themeToggle');
         const charCount = document.getElementById('charCount');
         const wordCount = document.getElementById('wordCount');
@@ -933,6 +936,12 @@
         const STORAGE_KEY_CONTENT = 'md-editor-content';
         const STORAGE_KEY_THEME = 'md-editor-dark-mode';
         const STORAGE_KEY_SPLIT = 'md-editor-split-ratio';
+
+        // === 预览同步相关状态 ===
+        let syncScrollEnabled = true;
+        let userScrollingPreview = false;
+        let programmaticScroll = false;
+        let userScrollTimeout;
 
         // === 初始化 Marked.js ===
         marked.use({
@@ -973,6 +982,7 @@
         const defaultContent = `# 👋 欢迎使用 Markdown 编辑器
 
 这是一个 **纯前端** 的 Markdown 编辑器，支持实时预览、暗色模式和响应式布局。
+**新增功能**：预览区会自动跟随编辑区滚动或光标位置，让你随时看到对应的渲染效果。
 
 ---
 
@@ -983,6 +993,7 @@
 - 📱 **响应式设计** — 适配手机、平板和电脑
 - 💾 **自动保存** — 内容自动保存到本地浏览器
 - ⌨️ **工具栏** — 快速插入常用 Markdown 语法
+- 🔗 **预览跟随** — 编辑区滚动/光标移动时预览自动定位
 
 ---
 
@@ -1014,6 +1025,7 @@ print(fibonacci(10))  # 输出: 55
 | 暗色模式 | ✅ 完成 | 高 |
 | 响应式 | ✅ 完成 | 中 |
 | 代码高亮 | ✅ 完成 | 中 |
+| 预览跟随 | ✅ 完成 | 高 |
 
 ### 引用
 
@@ -1025,6 +1037,7 @@ print(fibonacci(10))  # 输出: 55
 - [x] 支持实时预览
 - [x] 支持暗色模式
 - [x] 支持响应式布局
+- [x] 支持预览跟随编辑位置
 - [ ] 支持导出 PDF
 - [ ] 支持自定义主题
 
@@ -1037,7 +1050,7 @@ print(fibonacci(10))  # 输出: 55
 
 ---
 
-> 💡 **提示**：在移动端可以使用底部标签切换编辑/预览视图。桌面端支持拖拽中间分隔条调整面板宽度。
+> 💡 **提示**：在移动端可以使用底部标签切换编辑/预览视图。桌面端支持拖拽中间分隔条调整面板宽度。编辑时，预览区会自动滚动到当前编辑位置附近。
 `;
 
         // === 加载保存的内容 ===
@@ -1066,6 +1079,38 @@ print(fibonacci(10))  # 输出: 55
             }, 600);
         }
 
+        // === 预览同步函数 ===
+        function syncEditorScrollToPreview() {
+            if (!syncScrollEnabled || userScrollingPreview) return;
+            if (!previewScroller) return;
+            const editorScrollRatio = editor.scrollTop / (editor.scrollHeight - editor.clientHeight);
+            if (isNaN(editorScrollRatio)) return;
+            const targetScroll = editorScrollRatio * (previewScroller.scrollHeight - previewScroller.clientHeight);
+            programmaticScroll = true;
+            previewScroller.scrollTop = targetScroll;
+            setTimeout(() => { programmaticScroll = false; }, 0);
+        }
+
+        function syncCursorToPreview() {
+            if (!syncScrollEnabled || userScrollingPreview) return;
+            if (!previewScroller) return;
+            const text = editor.value;
+            const cursor = editor.selectionStart;
+            const before = text.substring(0, cursor);
+            const lineNumber = (before.match(/\n/g) || []).length; // 0-based 行号
+            const totalLines = (text.match(/\n/g) || []).length + 1;
+            const ratio = totalLines > 0 ? lineNumber / totalLines : 0;
+
+            // 等待预览区布局更新后再设置滚动位置
+            requestAnimationFrame(() => {
+                const maxScroll = previewScroller.scrollHeight - previewScroller.clientHeight;
+                const targetScroll = ratio * maxScroll;
+                programmaticScroll = true;
+                previewScroller.scrollTop = targetScroll;
+                setTimeout(() => { programmaticScroll = false; }, 0);
+            });
+        }
+
         // === 更新预览 ===
         let renderTimeout;
         function updatePreview() {
@@ -1074,14 +1119,18 @@ print(fibonacci(10))  # 输出: 55
                 const markdown = editor.value;
                 try {
                     const html = marked.parse(markdown);
-                    preview.innerHTML = html;
+                    previewContent.innerHTML = html;
                 } catch (e) {
-                    preview.innerHTML = '<p style="color:#e06060;">⚠️ Markdown 解析错误，请检查语法</p>';
+                    previewContent.innerHTML = '<p style="color:#e06060;">⚠️ Markdown 解析错误，请检查语法</p>';
                 }
                 // 更新字数统计
                 updateStats();
                 // 保存内容
                 saveContent();
+                // 同步预览到光标位置（仅在桌面端或移动端预览可见时）
+                if (!isMobile() || isMobilePreview) {
+                    syncCursorToPreview();
+                }
             }, 30);
         }
 
@@ -1148,8 +1197,9 @@ print(fibonacci(10))  # 输出: 55
                 panelPreview.classList.add('mobile-visible');
                 tabPreview.classList.add('active');
                 tabEditor.classList.remove('active');
-                // 切换时更新预览
+                // 切换时更新预览并同步滚动
                 updatePreview();
+                syncCursorToPreview();
             } else {
                 panelEditor.classList.remove('mobile-hidden');
                 panelPreview.classList.remove('mobile-visible');
@@ -1174,6 +1224,8 @@ print(fibonacci(10))  # 输出: 55
                 tabEditor.classList.add('active');
                 tabPreview.classList.remove('active');
                 isMobilePreview = false;
+                // 恢复同步滚动
+                syncCursorToPreview();
             } else {
                 // 移动端：应用当前标签状态
                 if (isMobilePreview) {
@@ -1457,6 +1509,42 @@ print(fibonacci(10))  # 输出: 55
             }
         });
 
+        // === 事件监听：编辑器滚动同步 ===
+        editor.addEventListener('scroll', syncEditorScrollToPreview);
+
+        // === 事件监听：光标移动时同步 (点击或键盘移动) ===
+        editor.addEventListener('click', () => {
+            // 重置用户手动滚动标记，重新开启同步
+            userScrollingPreview = false;
+            syncCursorToPreview();
+        });
+
+        editor.addEventListener('keyup', (e) => {
+            // 只在移动光标键或Home/End/PageUp/PageDown时同步
+            if (e.key.startsWith('Arrow') || e.key === 'Home' || e.key === 'End' || e.key.startsWith('Page')) {
+                syncCursorToPreview();
+            }
+        });
+
+        // 当编辑器获得焦点时，重新开启同步（如果用户之前手动滚动了预览区）
+        editor.addEventListener('focus', () => {
+            userScrollingPreview = false;
+            syncCursorToPreview();
+        });
+
+        // === 事件监听：检测用户手动滚动预览区 ===
+        previewScroller.addEventListener('scroll', () => {
+            if (programmaticScroll) return; // 忽略程序触发的滚动
+            // 用户手动滚动了预览区
+            userScrollingPreview = true;
+            clearTimeout(userScrollTimeout);
+            userScrollTimeout = setTimeout(() => {
+                userScrollingPreview = false;
+                // 延时后自动重新同步到当前编辑位置
+                syncCursorToPreview();
+            }, 2000); // 2秒无操作后恢复同步
+        });
+
         // === 事件监听 ===
         editor.addEventListener('input', updatePreview);
         themeToggle.addEventListener('click', toggleTheme);
@@ -1494,6 +1582,8 @@ print(fibonacci(10))  # 输出: 55
             // 将光标移到末尾
             const len = editor.value.length;
             editor.setSelectionRange(len, len);
+            // 初始同步一次预览位置
+            syncCursorToPreview();
         }
 
         init();
@@ -1509,13 +1599,16 @@ print(fibonacci(10))  # 输出: 55
             getTheme: () => (isDarkMode ? 'dark' : 'light'),
             refresh: updatePreview,
             focus: () => editor.focus(),
+            syncPreview: syncCursorToPreview,
         };
 
-        console.log('✅ Markdown 编辑器已就绪');
+        console.log('✅ Markdown 编辑器已就绪（含预览跟随功能）');
         console.log('  - 暗色模式：点击右上角 🌙 按钮切换');
         console.log('  - 移动端：使用标签切换编辑/预览');
         console.log('  - 桌面端：拖拽中间分隔条调整面板');
         console.log('  - 快捷键：Ctrl+B 加粗 | Ctrl+I 斜体 | Ctrl+K 链接');
+        console.log('  - 预览跟随：编辑区滚动或光标移动时预览自动定位');
+        console.log('  - 手动滚动预览区会暂停跟随，2秒后恢复');
         console.log('  - API：window.mdEditor 可控制编辑器');
     })();
 </script>
