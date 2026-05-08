@@ -215,9 +215,9 @@
 
             let isDarkMode = false;
             let isMobilePreview = false;
-            const STORAGE_CONTENT = 'md-editor-v7';
-            const STORAGE_THEME = 'md-theme-v7';
-            const STORAGE_SPLIT = 'md-split-v7';
+            const STORAGE_CONTENT = 'md-editor-v8';
+            const STORAGE_THEME = 'md-theme-v8';
+            const STORAGE_SPLIT = 'md-split-v8';
 
             let renderTimeout, saveTimeout, userScrollTimeout;
             let programmaticScroll = false;
@@ -247,8 +247,9 @@
 ---
 
 ## ✨ 功能特性
+
 - 🎨 实时预览，流畅渲染
-- 🌙 暗色/亮色模式切换
+- 🌙 暗色/亮色模式切换（跟随系统）
 - 📱 完美适配手机、平板与桌面
 - 💾 本地自动保存
 - ⌨️ 常用 Markdown 工具栏与快捷键
@@ -260,6 +261,7 @@
 ## 📝 语法示例
 
 ### 代码块
+
 \`\`\`javascript
 function greet(name) {
     return \`Hello, \${name}!\`;
@@ -277,6 +279,7 @@ print(fibonacci(10))  # 55
 \`\`\`
 
 ### 表格
+
 | 功能 | 状态 | 优先级 |
 |------|------|--------|
 | 实时预览 | ✅ 完成 | 高 |
@@ -286,9 +289,11 @@ print(fibonacci(10))  # 55
 | PDF导出 | ✅ 完成 | 高 |
 
 ### 引用
+
 > "简洁是智慧的灵魂，冗长是肤浅的藻饰。"
 
 ### 任务列表
+
 - [x] 支持实时预览
 - [x] 支持暗色模式
 - [x] 支持双向滚动跟随
@@ -316,7 +321,6 @@ print(fibonacci(10))  # 55
                 editor.focus();
             });
 
-            // 双向跟随核心函数
             function syncEditorScrollToPreview() {
                 if (userScrollingPreview || !previewScroller) return;
                 const maxEdit = editor.scrollHeight - editor.clientHeight;
@@ -363,7 +367,6 @@ print(fibonacci(10))  # 55
                     }
                     updateStats();
                     saveContent();
-                    // 延迟执行同步，确保预览区渲染完成
                     requestAnimationFrame(() => {
                         if (!isMobile() || isMobilePreview) syncCursorToPreview();
                     });
@@ -391,13 +394,18 @@ print(fibonacci(10))  # 55
 
             function loadTheme() {
                 const saved = localStorage.getItem(STORAGE_THEME);
-                if (saved === 'dark') applyTheme(true);
-                else if (saved === 'light') applyTheme(false);
-                else if (window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme(true);
-                else applyTheme(false);
+                if (saved === 'dark') {
+                    applyTheme(true);
+                } else if (saved === 'light') {
+                    applyTheme(false);
+                } else {
+                    // 跟随系统
+                    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    applyTheme(prefersDark);
+                }
             }
 
-            // PDF导出——强制亮色、完整内容、自动下载
+            // PDF导出——完整内容、强制下载、亮色背景
             async function exportPDF() {
                 const element = previewScroller;
                 const opt = {
@@ -413,6 +421,14 @@ print(fibonacci(10))  # 55
                         onclone: function(clonedDoc) {
                             // 移除暗色类
                             clonedDoc.body.classList.remove('dark-mode');
+                            // 核心：让预览容器完全展开，捕获全部内容
+                            const previewWrapper = clonedDoc.querySelector('.preview-wrapper');
+                            if (previewWrapper) {
+                                previewWrapper.style.overflow = 'visible';
+                                previewWrapper.style.height = 'auto';
+                                previewWrapper.style.maxHeight = 'none';
+                                previewWrapper.style.background = '#ffffff';
+                            }
                             // 强制亮色变量和内联样式
                             const style = clonedDoc.createElement('style');
                             style.textContent = `
@@ -434,20 +450,18 @@ print(fibonacci(10))  # 55
                                     --accent: #5b7b5a;
                                     --accent-light: #e8f0e8;
                                     --accent-subtle: #f0f5f0;
-                                    background-color: #ffffff !important;
-                                    color: #2c2c28 !important;
                                 }
-                                body, .panel, .preview-wrapper, .markdown-body {
+                                body {
                                     background: #ffffff !important;
                                     color: #2c2c28 !important;
                                 }
-                                .preview-wrapper {
-                                    overflow: visible !important;
-                                    height: auto !important;
+                                .markdown-body {
+                                    background: #ffffff !important;
+                                    color: #2c2c28 !important;
                                 }
                             `;
                             clonedDoc.head.appendChild(style);
-                            // 替换代码高亮主题
+                            // 替换代码高亮主题为亮色
                             const hljsLink = clonedDoc.getElementById('hljs-theme');
                             if (hljsLink) {
                                 hljsLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
@@ -638,7 +652,6 @@ print(fibonacci(10))  # 55
             updatePreview();
             editor.focus();
             editor.setSelectionRange(editor.value.length, editor.value.length);
-            // 初始同步
             requestAnimationFrame(() => syncCursorToPreview());
         })();
     </script>
