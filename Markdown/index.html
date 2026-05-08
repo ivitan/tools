@@ -5,17 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Markdown 编辑器 · 双向实时跟随</title>
 
-    <!-- Marked.js - Markdown 解析器 -->
-    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js">
-    </script>
-    <!-- Highlight.js - 代码高亮 -->
+    <!-- Marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+    <!-- Highlight.js -->
     <link rel="stylesheet" id="hljs-theme" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js">
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
     <style>
         :root {
-            /* === 亮色模式 === */
             --bg-primary: #f5f5f0;
             --bg-secondary: #ffffff;
             --bg-tertiary: #fafaf8;
@@ -26,41 +23,31 @@
             --bg-input: #fdfdfc;
             --bg-scrollbar-thumb: #c8c8c0;
             --bg-scrollbar-track: transparent;
-
             --text-primary: #2c2c28;
             --text-secondary: #555550;
             --text-tertiary: #888880;
             --text-code: #3a3a35;
             --text-placeholder: #b0b0a8;
-
             --border-primary: #e0e0d8;
             --border-secondary: #e8e8e0;
             --border-focus: #a0a098;
-
             --accent: #5b7b5a;
             --accent-hover: #4a6a49;
             --accent-light: #e8f0e8;
             --accent-subtle: #f0f5f0;
-
             --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
             --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.08);
-
             --radius-sm: 6px;
             --radius-md: 10px;
             --radius-lg: 16px;
-
             --transition-fast: 0.15s ease;
             --transition-normal: 0.25s ease;
             --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-
-            --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', 'Menlo',
-                'Ubuntu Mono', monospace;
-            --font-sans: 'Inter', 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', system-ui,
-                -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+            --font-sans: 'Inter', 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
         }
 
-        /* === 暗色模式 === */
         .dark-mode {
             --bg-primary: #1c1c22;
             --bg-secondary: #24242d;
@@ -72,22 +59,18 @@
             --bg-input: #262630;
             --bg-scrollbar-thumb: #4a4a58;
             --bg-scrollbar-track: transparent;
-
             --text-primary: #e0e0e6;
             --text-secondary: #b5b5c0;
             --text-tertiary: #808090;
             --text-code: #d0d0da;
             --text-placeholder: #606070;
-
             --border-primary: #353545;
             --border-secondary: #3a3a4a;
             --border-focus: #6a6a7a;
-
             --accent: #8ab88a;
             --accent-hover: #9cc89c;
             --accent-light: #2a3a2f;
             --accent-subtle: #252e28;
-
             --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
             --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.35);
             --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
@@ -115,8 +98,6 @@
             flex-direction: column;
             overflow: hidden;
             transition: background var(--transition-slow), color var(--transition-slow);
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
         ::-webkit-scrollbar {
@@ -125,15 +106,10 @@
         }
         ::-webkit-scrollbar-track {
             background: var(--bg-scrollbar-track);
-            border-radius: 3px;
         }
         ::-webkit-scrollbar-thumb {
             background: var(--bg-scrollbar-thumb);
             border-radius: 3px;
-            transition: background var(--transition-fast);
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-tertiary);
         }
 
         .header {
@@ -143,325 +119,138 @@
             padding: 10px 20px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-primary);
-            z-index: 100;
             flex-shrink: 0;
             transition: background var(--transition-slow), border-color var(--transition-slow);
             box-shadow: var(--shadow-sm);
-            min-height: 52px;
         }
 
         .header-brand {
             display: flex;
             align-items: center;
             gap: 10px;
-            user-select: none;
         }
-
         .header-logo {
             width: 34px;
             height: 34px;
             border-radius: var(--radius-sm);
             background: var(--accent);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            color: #fff;
             font-weight: 700;
-            flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(91, 123, 90, 0.3);
-            transition: background var(--transition-normal), box-shadow var(--transition-normal);
-        }
-        .dark-mode .header-logo {
-            box-shadow: 0 2px 8px rgba(138, 184, 138, 0.3);
-        }
-
-        .header-title {
-            font-size: 1.1rem;
-            font-weight: 650;
-            letter-spacing: -0.01em;
-            color: var(--text-primary);
-            transition: color var(--transition-slow);
-            white-space: nowrap;
-        }
-
-        .header-subtitle {
-            font-size: 0.78rem;
-            color: var(--text-tertiary);
-            font-weight: 450;
-            transition: color var(--transition-slow);
-            display: none;
-        }
-        @media (min-width: 480px) {
-            .header-subtitle {
-                display: inline;
-            }
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
         }
 
         .btn-theme-toggle {
-            position: relative;
             width: 44px;
             height: 44px;
             border-radius: 50%;
             border: 2px solid var(--border-secondary);
             background: var(--bg-tertiary);
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             font-size: 20px;
             transition: all var(--transition-normal);
-            outline: none;
-            color: var(--text-primary);
-            box-shadow: var(--shadow-sm);
-            flex-shrink: 0;
-        }
-        .btn-theme-toggle:hover {
-            border-color: var(--accent);
-            background: var(--accent-subtle);
-            box-shadow: var(--shadow-md);
-            transform: rotate(15deg) scale(1.05);
-        }
-        .btn-theme-toggle:active {
-            transform: rotate(15deg) scale(0.94);
-            transition: all 0.1s ease;
         }
         .btn-theme-toggle .icon-sun,
         .btn-theme-toggle .icon-moon {
-            transition: all var(--transition-normal);
             position: absolute;
-            line-height: 1;
         }
-        .dark-mode .btn-theme-toggle .icon-sun {
+        .dark-mode .icon-sun {
             opacity: 1;
-            transform: rotate(0deg) scale(1);
+            transform: scale(1);
         }
-        .dark-mode .btn-theme-toggle .icon-moon {
+        .dark-mode .icon-moon {
             opacity: 0;
-            transform: rotate(-90deg) scale(0.5);
+            transform: scale(0.5);
         }
-        .btn-theme-toggle .icon-sun {
+        .icon-sun {
             opacity: 0;
-            transform: rotate(90deg) scale(0.5);
+            transform: scale(0.5);
         }
-        .btn-theme-toggle .icon-moon {
+        .icon-moon {
             opacity: 1;
-            transform: rotate(0deg) scale(1);
+            transform: scale(1);
         }
 
         .toolbar {
             display: flex;
-            align-items: center;
             gap: 2px;
             padding: 6px 14px;
             background: var(--bg-toolbar);
             border-bottom: 1px solid var(--border-secondary);
             flex-shrink: 0;
-            flex-wrap: wrap;
-            transition: background var(--transition-slow), border-color var(--transition-slow);
-            min-height: 40px;
             overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        .toolbar::-webkit-scrollbar {
-            height: 0;
         }
 
         .toolbar-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
             width: 32px;
             height: 32px;
-            border-radius: var(--radius-sm);
             border: 1.5px solid transparent;
             background: transparent;
             cursor: pointer;
             font-size: 15px;
             color: var(--text-secondary);
+            border-radius: var(--radius-sm);
             transition: all var(--transition-fast);
-            outline: none;
-            flex-shrink: 0;
-            position: relative;
-            white-space: nowrap;
-            font-family: var(--font-sans);
         }
         .toolbar-btn:hover {
             background: var(--bg-hover);
             color: var(--text-primary);
-            border-color: var(--border-secondary);
-        }
-        .toolbar-btn:active {
-            transform: scale(0.92);
-            background: var(--accent-light);
-            color: var(--accent);
-            border-color: var(--accent);
-            transition: all 0.08s ease;
-        }
-        .toolbar-btn[data-tooltip]:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: -28px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--text-primary);
-            color: var(--bg-secondary);
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            white-space: nowrap;
-            z-index: 200;
-            pointer-events: none;
-            letter-spacing: 0.01em;
-            font-weight: 500;
-            box-shadow: var(--shadow-md);
-        }
-        .toolbar-divider {
-            width: 1px;
-            height: 20px;
-            background: var(--border-secondary);
-            margin: 0 4px;
-            flex-shrink: 0;
-            border-radius: 0.5px;
-            transition: background var(--transition-slow);
         }
 
         .mobile-tabs {
             display: none;
-            flex-shrink: 0;
+            gap: 4px;
+            padding: 4px 12px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-primary);
-            padding: 4px 12px;
-            gap: 4px;
-            transition: background var(--transition-slow), border-color var(--transition-slow);
         }
         .mobile-tab-btn {
             flex: 1;
-            padding: 10px 16px;
-            border-radius: var(--radius-md);
+            padding: 10px;
             border: 1.5px solid transparent;
             background: transparent;
             cursor: pointer;
-            font-size: 0.9rem;
             font-weight: 550;
             color: var(--text-tertiary);
-            transition: all var(--transition-fast);
-            outline: none;
-            font-family: var(--font-sans);
-            letter-spacing: 0.01em;
-            text-align: center;
+            border-radius: var(--radius-md);
         }
         .mobile-tab-btn.active {
             background: var(--accent-light);
             color: var(--accent);
             border-color: var(--accent);
-            font-weight: 650;
-            box-shadow: var(--shadow-sm);
-        }
-        .mobile-tab-btn:hover:not(.active) {
-            color: var(--text-primary);
-            background: var(--bg-hover);
-        }
-        .mobile-tab-btn:active {
-            transform: scale(0.96);
-            transition: all 0.08s ease;
         }
 
         .main-container {
             display: flex;
             flex: 1;
             min-height: 0;
-            position: relative;
-            transition: all var(--transition-slow);
         }
-
         .divider-bar {
             width: 6px;
             background: var(--border-primary);
             cursor: col-resize;
             flex-shrink: 0;
-            transition: background var(--transition-slow);
-            position: relative;
-            z-index: 10;
         }
-        .divider-bar:hover,
-        .divider-bar.active {
-            background: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-subtle);
-            border-radius: 2px;
-        }
-        .divider-bar::after {
-            content: '';
-            position: absolute;
-            inset: -6px 0;
-            background: transparent;
-            cursor: col-resize;
-        }
-
         .panel {
             flex: 1;
             display: flex;
             flex-direction: column;
             min-width: 0;
             overflow: hidden;
-            transition: background var(--transition-slow);
             background: var(--bg-input);
         }
         .panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             padding: 8px 16px;
             background: var(--bg-tertiary);
             border-bottom: 1px solid var(--border-secondary);
             font-size: 0.78rem;
-            font-weight: 550;
             color: var(--text-tertiary);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            flex-shrink: 0;
-            transition: all var(--transition-slow);
-            user-select: none;
-        }
-        .panel-header .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-            flex-shrink: 0;
-        }
-        .dot-edit {
-            background: #e8a860;
-        }
-        .dot-preview {
-            background: #6aab6a;
-        }
-        .panel-char-count {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-            font-weight: 450;
-            letter-spacing: 0.02em;
-            transition: color var(--transition-slow);
         }
 
-        .editor-wrapper {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-        }
         .editor-textarea {
             flex: 1;
             width: 100%;
-            height: 100%;
             border: none;
             outline: none;
             resize: none;
@@ -469,180 +258,57 @@
             font-family: var(--font-mono);
             font-size: 0.9rem;
             line-height: 1.7;
-            color: var(--text-primary);
             background: var(--bg-input);
-            transition: all var(--transition-slow);
-            tab-size: 4;
-            -moz-tab-size: 4;
-        }
-        .editor-textarea::placeholder {
-            color: var(--text-placeholder);
-            transition: color var(--transition-slow);
+            color: var(--text-primary);
         }
 
         .preview-wrapper {
             flex: 1;
             overflow-y: auto;
-            overflow-x: hidden;
             padding: 18px 24px;
             background: var(--bg-input);
-            transition: background var(--transition-slow);
             word-wrap: break-word;
-            overflow-wrap: break-word;
-            scroll-behavior: auto;
         }
 
         .markdown-body {
             font-family: var(--font-sans);
             color: var(--text-primary);
             line-height: 1.75;
-            font-size: 0.92rem;
             max-width: 780px;
-            transition: color var(--transition-slow);
-        }
-        .markdown-body h1,
-        .markdown-body h2,
-        .markdown-body h3,
-        .markdown-body h4,
-        .markdown-body h5,
-        .markdown-body h6 {
-            color: var(--text-primary);
-            font-weight: 650;
-            line-height: 1.3;
-            margin-top: 1.6em;
-            margin-bottom: 0.6em;
-            letter-spacing: -0.01em;
-            transition: color var(--transition-slow);
-            scroll-margin-top: 20px;
         }
         .markdown-body h1 {
-            font-size: 1.8rem;
             border-bottom: 2px solid var(--border-primary);
-            padding-bottom: 0.35em;
-            transition: border-color var(--transition-slow);
         }
         .markdown-body h2 {
-            font-size: 1.45rem;
             border-bottom: 1.5px solid var(--border-secondary);
-            padding-bottom: 0.3em;
-            transition: border-color var(--transition-slow);
         }
-        .markdown-body p {
-            margin-bottom: 0.9em;
+        .markdown-body pre {
+            background: var(--bg-code-block);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            overflow-x: auto;
         }
-        .markdown-body a {
-            color: var(--accent);
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: all var(--transition-fast);
-        }
-        .markdown-body a:hover {
-            border-bottom-color: var(--accent);
-            opacity: 0.85;
-        }
-        .markdown-body ul,
-        .markdown-body ol {
-            padding-left: 1.6em;
-            margin-bottom: 0.9em;
+        .markdown-body code {
+            font-family: var(--font-mono);
+            background: var(--bg-code);
+            padding: 2px 6px;
+            border-radius: 3px;
         }
         .markdown-body blockquote {
             border-left: 3.5px solid var(--accent);
             margin: 1em 0;
             padding: 0.6em 1em;
             background: var(--accent-subtle);
-            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-            color: var(--text-secondary);
-            transition: all var(--transition-slow);
-        }
-        .markdown-body code {
-            font-family: var(--font-mono);
-            font-size: 0.85em;
-            background: var(--bg-code);
-            color: var(--text-code);
-            padding: 2px 6px;
-            border-radius: 3px;
-            border: 1px solid var(--border-secondary);
-            transition: all var(--transition-slow);
-            white-space: nowrap;
-        }
-        .markdown-body pre {
-            background: var(--bg-code-block);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--radius-md);
-            padding: 16px 18px;
-            overflow-x: auto;
-            margin: 1em 0;
-            transition: all var(--transition-slow);
-            box-shadow: var(--shadow-sm);
-        }
-        .markdown-body pre code {
-            background: transparent;
-            border: none;
-            padding: 0;
-            font-size: 0.82rem;
-            line-height: 1.6;
-            color: var(--text-code);
-            white-space: pre;
-            display: block;
         }
         .markdown-body table {
             border-collapse: collapse;
             width: 100%;
-            margin: 1em 0;
-            border-radius: var(--radius-sm);
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-            transition: box-shadow var(--transition-slow);
         }
         .markdown-body th,
         .markdown-body td {
             border: 1px solid var(--border-primary);
             padding: 10px 14px;
-            text-align: left;
-            transition: border-color var(--transition-slow);
-        }
-        .markdown-body th {
-            background: var(--bg-tertiary);
-            font-weight: 600;
-            transition: background var(--transition-slow);
-        }
-        .markdown-body tr:nth-child(even) td {
-            background: var(--bg-tertiary);
-            transition: background var(--transition-slow);
-        }
-        .markdown-body img {
-            max-width: 100%;
-            height: auto;
-            border-radius: var(--radius-sm);
-            box-shadow: var(--shadow-md);
-            transition: box-shadow var(--transition-slow);
-        }
-        .markdown-body hr {
-            border: none;
-            border-top: 2px solid var(--border-secondary);
-            margin: 1.8em 0;
-            transition: border-color var(--transition-slow);
-        }
-        .markdown-body strong {
-            font-weight: 650;
-        }
-        .markdown-body em {
-            font-style: italic;
-        }
-        .markdown-body del {
-            opacity: 0.6;
-        }
-        .markdown-body input[type="checkbox"] {
-            margin-right: 6px;
-            accent-color: var(--accent);
-            cursor: pointer;
-            width: 15px;
-            height: 15px;
-            vertical-align: -2px;
-        }
-        .markdown-body .task-list-item {
-            list-style: none;
-            margin-left: -1.4em;
         }
 
         @media (max-width: 768px) {
@@ -664,45 +330,8 @@
             .panel.panel-editor.mobile-hidden {
                 display: none;
             }
-            .panel-header {
-                display: none;
-            }
             .editor-textarea {
                 padding: 14px 16px;
-                font-size: 0.85rem;
-                line-height: 1.65;
-            }
-            .preview-wrapper {
-                padding: 14px 16px;
-            }
-            .markdown-body {
-                font-size: 0.88rem;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .header-title {
-                font-size: 0.9rem;
-            }
-            .header-logo {
-                width: 24px;
-                height: 24px;
-                font-size: 13px;
-            }
-            .toolbar-btn {
-                width: 26px;
-                height: 26px;
-                font-size: 12px;
-            }
-            .editor-textarea {
-                padding: 10px 12px;
-                font-size: 0.8rem;
-            }
-            .preview-wrapper {
-                padding: 10px 12px;
-            }
-            .markdown-body {
-                font-size: 0.82rem;
             }
         }
     </style>
@@ -715,56 +344,44 @@
             <span class="header-title">Markdown 编辑器</span>
             <span class="header-subtitle">· 双向跟随</span>
         </div>
-        <div class="header-actions">
-            <button class="btn-theme-toggle" id="themeToggle" aria-label="切换暗色模式" title="切换暗色/亮色模式">
-                <span class="icon-sun">☀️</span>
-                <span class="icon-moon">🌙</span>
-            </button>
-        </div>
+        <button class="btn-theme-toggle" id="themeToggle">
+            <span class="icon-sun">☀️</span>
+            <span class="icon-moon">🌙</span>
+        </button>
     </header>
 
     <div class="toolbar" id="toolbar">
-        <button class="toolbar-btn" data-tooltip="标题" data-action="heading">H</button>
-        <button class="toolbar-btn" data-tooltip="加粗" data-action="bold"><strong>B</strong></button>
-        <button class="toolbar-btn" data-tooltip="斜体" data-action="italic"><em>I</em></button>
+        <button class="toolbar-btn" data-action="heading">H</button>
+        <button class="toolbar-btn" data-action="bold"><strong>B</strong></button>
+        <button class="toolbar-btn" data-action="italic"><em>I</em></button>
         <span class="toolbar-divider"></span>
-        <button class="toolbar-btn" data-tooltip="链接" data-action="link">🔗</button>
-        <button class="toolbar-btn" data-tooltip="图片" data-action="image">🖼</button>
+        <button class="toolbar-btn" data-action="link">🔗</button>
+        <button class="toolbar-btn" data-action="image">🖼</button>
         <span class="toolbar-divider"></span>
-        <button class="toolbar-btn" data-tooltip="代码块" data-action="codeblock">&lt;/&gt;</button>
-        <button class="toolbar-btn" data-tooltip="行内代码" data-action="inlinecode">`</button>
+        <button class="toolbar-btn" data-action="codeblock">&lt;/&gt;</button>
+        <button class="toolbar-btn" data-action="inlinecode">`</button>
         <span class="toolbar-divider"></span>
-        <button class="toolbar-btn" data-tooltip="引用" data-action="quote">❝</button>
-        <button class="toolbar-btn" data-tooltip="无序列表" data-action="ul">•</button>
-        <button class="toolbar-btn" data-tooltip="有序列表" data-action="ol">1.</button>
+        <button class="toolbar-btn" data-action="quote">❝</button>
+        <button class="toolbar-btn" data-action="ul">•</button>
+        <button class="toolbar-btn" data-action="ol">1.</button>
         <span class="toolbar-divider"></span>
-        <button class="toolbar-btn" data-tooltip="表格" data-action="table">⊞</button>
-        <button class="toolbar-btn" data-tooltip="分割线" data-action="hr">—</button>
+        <button class="toolbar-btn" data-action="table">⊞</button>
+        <button class="toolbar-btn" data-action="hr">—</button>
     </div>
 
     <div class="mobile-tabs" id="mobileTabs">
-        <button class="mobile-tab-btn active" data-tab="editor" id="tabEditor">✏️ 编辑</button>
-        <button class="mobile-tab-btn" data-tab="preview" id="tabPreview">👁 预览</button>
+        <button class="mobile-tab-btn active" id="tabEditor">✏️ 编辑</button>
+        <button class="mobile-tab-btn" id="tabPreview">👁 预览</button>
     </div>
 
     <div class="main-container" id="mainContainer">
         <div class="panel panel-editor" id="panelEditor">
-            <div class="panel-header">
-                <span><span class="dot dot-edit"></span>编辑器</span>
-                <span class="panel-char-count" id="charCount">0 字符</span>
-            </div>
-            <div class="editor-wrapper">
-                <textarea class="editor-textarea" id="editor" placeholder="在此编写 Markdown 内容…" spellcheck="false"></textarea>
-            </div>
+            <div class="panel-header"><span class="dot dot-edit"></span>编辑器 <span id="charCount">0 字符</span></div>
+            <textarea class="editor-textarea" id="editor" placeholder="在此编写 Markdown…" spellcheck="false"></textarea>
         </div>
-
-        <div class="divider-bar" id="dividerBar" title="拖拽调整面板宽度"></div>
-
+        <div class="divider-bar" id="dividerBar"></div>
         <div class="panel panel-preview" id="panelPreview">
-            <div class="panel-header">
-                <span><span class="dot dot-preview"></span>预览</span>
-                <span class="panel-char-count" id="wordCount">0 字</span>
-            </div>
+            <div class="panel-header"><span class="dot dot-preview"></span>预览 <span id="wordCount">0 字</span></div>
             <div class="preview-wrapper" id="preview">
                 <div class="markdown-body"></div>
             </div>
@@ -790,53 +407,51 @@
 
             let isDarkMode = false;
             let isMobilePreview = false;
-            const STORAGE_KEY_CONTENT = 'md-editor-content-v2';
-            const STORAGE_KEY_THEME = 'md-editor-dark-mode-v2';
-            const STORAGE_KEY_SPLIT = 'md-editor-split-ratio-v2';
+            const STORAGE_CONTENT = 'md-editor-content';
+            const STORAGE_THEME = 'md-editor-theme';
+            const STORAGE_SPLIT = 'md-editor-split';
 
-            // 双向同步标志
-            let syncScrollEnabled = true;
-            let userScrollingPreview = false;
-            let programmaticScroll = false;      // 预览区程序滚动
-            let editingProgrammaticScroll = false; // 编辑区程序滚动
+            // *** 修复：声明 renderTimeout ***
+            let renderTimeout;
+            let saveTimeout;
             let userScrollTimeout;
+            let programmaticScroll = false;
+            let editingProgrammaticScroll = false;
+            let userScrollingPreview = false;
 
-            // 配置 Marked
+            // Marked 配置
             marked.use({ breaks: true, gfm: true });
             const renderer = new marked.Renderer();
             renderer.code = function(code, language) {
                 let highlighted;
-                if (language && typeof hljs !== 'undefined' && hljs.getLanguage(language)) {
-                    try { highlighted = hljs.highlight(code, { language }).value; } catch (e) { highlighted = hljs.highlightAuto(code).value; }
-                } else if (typeof hljs !== 'undefined') {
-                    highlighted = hljs.highlightAuto(code).value;
+                if (language && hljs.getLanguage(language)) {
+                    highlighted = hljs.highlight(code, { language }).value;
                 } else {
-                    highlighted = code;
+                    highlighted = hljs.highlightAuto(code).value;
                 }
-                const langClass = language ? ` class="language-${language}"` : '';
-                return `<pre><code${langClass}>${highlighted}</code></pre>`;
+                return `<pre><code class="language-${language || ''}">${highlighted}</code></pre>`;
             };
             renderer.link = function(href, title, text) {
-                const titleAttr = title ? ` title="${title}"` : '';
-                return `<a href="${href}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
+                return `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${title || ''}">${text}</a>`;
             };
             marked.use({ renderer });
 
+            // 范文（保留原有风格）
             const defaultContent = `# 👋 欢迎使用 Markdown 编辑器
 
-这是一个 **纯前端** 的 Markdown 编辑器，支持双向实时滚动跟随、暗色模式和响应式布局。
-**新特性**：滚动任意一侧（编辑区或预览区），另一侧都会自动跟随，实现真正的双向同步。
+这是一个 **纯前端** 的 Markdown 编辑器，支持**双向实时滚动跟随**、暗色模式和响应式布局。
+滚动任意一侧，另一侧都会自动跟随，让写作与预览无缝衔接。
 
 ---
 
-## ✨ 功能亮点
+## ✨ 功能特性
 
 - 🎨 实时预览，流畅渲染
 - 🌙 暗色/亮色模式切换
 - 📱 完美适配手机、平板与桌面
 - 💾 本地自动保存
 - ⌨️ 常用 Markdown 工具栏与快捷键
-- 🔗 **双向滚动同步** — 编辑与预览滚动互相跟随
+- 🔗 **双向滚动同步** — 编辑与预览互相跟随
 
 ---
 
@@ -881,36 +496,36 @@ print(fibonacci(10))  # 55
 - [ ] 导出 PDF
 `;
 
-            function loadSavedContent() {
+            function loadContent() {
                 try {
-                    const saved = localStorage.getItem(STORAGE_KEY_CONTENT);
-                    return (saved && saved.trim() !== '') ? saved : defaultContent;
-                } catch (e) { return defaultContent; }
+                    const saved = localStorage.getItem(STORAGE_CONTENT);
+                    return saved && saved.trim() ? saved : defaultContent;
+                } catch (e) {
+                    return defaultContent;
+                }
             }
 
-            let saveTimeout;
             function saveContent() {
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(() => {
-                    try { localStorage.setItem(STORAGE_KEY_CONTENT, editor.value); } catch (e) {}
+                    localStorage.setItem(STORAGE_CONTENT, editor.value);
                 }, 600);
             }
 
             // 编辑区 -> 预览区（滚动同步）
             function syncEditorScrollToPreview() {
-                if (!syncScrollEnabled || userScrollingPreview || !previewScroller) return;
+                if (userScrollingPreview || !previewScroller) return;
                 const maxEdit = editor.scrollHeight - editor.clientHeight;
                 if (maxEdit <= 0) return;
                 const ratio = editor.scrollTop / maxEdit;
                 const target = ratio * (previewScroller.scrollHeight - previewScroller.clientHeight);
                 programmaticScroll = true;
                 previewScroller.scrollTop = target;
-                setTimeout(() => { if (programmaticScroll) programmaticScroll = false; }, 0);
             }
 
             // 编辑区 -> 预览区（光标同步）
             function syncCursorToPreview() {
-                if (!syncScrollEnabled || userScrollingPreview || !previewScroller) return;
+                if (userScrollingPreview || !previewScroller) return;
                 const text = editor.value;
                 const cursor = editor.selectionStart;
                 const lines = (text.substring(0, cursor).match(/\n/g) || []).length;
@@ -918,32 +533,28 @@ print(fibonacci(10))  # 55
                 const ratio = totalLines > 0 ? lines / totalLines : 0;
                 requestAnimationFrame(() => {
                     const maxScroll = previewScroller.scrollHeight - previewScroller.clientHeight;
-                    const target = ratio * maxScroll;
+                    previewScroller.scrollTop = ratio * maxScroll;
                     programmaticScroll = true;
-                    previewScroller.scrollTop = target;
-                    setTimeout(() => { if (programmaticScroll) programmaticScroll = false; }, 0);
                 });
             }
 
             // 预览区 -> 编辑区（滚动同步）
             function syncPreviewToEditor() {
-                if (!editor || !previewScroller) return;
+                if (!previewScroller || !editor) return;
                 const maxEdit = editor.scrollHeight - editor.clientHeight;
                 const maxPrev = previewScroller.scrollHeight - previewScroller.clientHeight;
                 if (maxPrev <= 0 || maxEdit <= 0) return;
                 const ratio = previewScroller.scrollTop / maxPrev;
-                const target = ratio * maxEdit;
                 editingProgrammaticScroll = true;
-                editor.scrollTop = target;
-                setTimeout(() => { if (editingProgrammaticScroll) editingProgrammaticScroll = false; }, 20);
+                editor.scrollTop = ratio * maxEdit;
             }
 
+            // 更新预览（修复重点）
             function updatePreview() {
                 clearTimeout(renderTimeout);
-                const renderTimeout = setTimeout(() => {
+                renderTimeout = setTimeout(() => {
                     try {
-                        const html = marked.parse(editor.value);
-                        previewContent.innerHTML = html;
+                        previewContent.innerHTML = marked.parse(editor.value);
                     } catch (e) {
                         previewContent.innerHTML = '<p style="color:#e06060;">⚠️ 解析错误</p>';
                     }
@@ -955,35 +566,33 @@ print(fibonacci(10))  # 55
 
             function updateStats() {
                 const text = editor.value;
-                const charLen = text.length;
-                const chinese = (text.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
+                charCount.textContent = `${text.length} 字符`;
+                const chinese = (text.match(/[\u4e00-\u9fff]/g) || []).length;
                 const words = (text.match(/[a-zA-Z]+/g) || []).length;
-                charCount.textContent = `${charLen.toLocaleString()} 字符`;
-                wordCount.textContent = `${(chinese + words).toLocaleString()} 字`;
+                wordCount.textContent = `${chinese + words} 字`;
             }
 
+            // 暗色模式
             function applyTheme(dark) {
                 isDarkMode = dark;
                 document.body.classList.toggle('dark-mode', dark);
-                hljsThemeLink.href = dark ?
-                    'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css' :
-                    'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
-                try { localStorage.setItem(STORAGE_KEY_THEME, dark ? 'dark' : 'light'); } catch (e) {}
+                hljsThemeLink.href = dark
+                    ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
+                    : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+                localStorage.setItem(STORAGE_THEME, dark ? 'dark' : 'light');
                 updatePreview();
             }
-
-            function toggleTheme() { applyTheme(!isDarkMode); }
+            themeToggle.addEventListener('click', () => applyTheme(!isDarkMode));
 
             function loadTheme() {
-                try {
-                    const saved = localStorage.getItem(STORAGE_KEY_THEME);
-                    if (saved === 'dark') return applyTheme(true);
-                    if (saved === 'light') return applyTheme(false);
-                } catch (e) {}
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme(true);
+                const saved = localStorage.getItem(STORAGE_THEME);
+                if (saved === 'dark') applyTheme(true);
+                else if (saved === 'light') applyTheme(false);
+                else if (window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme(true);
                 else applyTheme(false);
             }
 
+            // 移动端标签
             function switchMobileTab(tab) {
                 isMobilePreview = (tab === 'preview');
                 if (tab === 'preview') {
@@ -992,7 +601,6 @@ print(fibonacci(10))  # 55
                     tabPreview.classList.add('active');
                     tabEditor.classList.remove('active');
                     updatePreview();
-                    syncCursorToPreview();
                 } else {
                     panelEditor.classList.remove('mobile-hidden');
                     panelPreview.classList.remove('mobile-visible');
@@ -1001,153 +609,74 @@ print(fibonacci(10))  # 55
                     editor.focus();
                 }
             }
+            tabEditor.addEventListener('click', () => switchMobileTab('editor'));
+            tabPreview.addEventListener('click', () => switchMobileTab('preview'));
 
             function isMobile() { return window.innerWidth <= 768; }
 
-            function handleResize() {
-                if (!isMobile()) {
-                    panelEditor.classList.remove('mobile-hidden');
-                    panelPreview.classList.remove('mobile-visible');
-                    panelPreview.style.display = '';
-                    panelEditor.style.display = '';
-                    tabEditor.classList.add('active');
-                    tabPreview.classList.remove('active');
-                    isMobilePreview = false;
-                    syncCursorToPreview();
-                } else {
-                    if (isMobilePreview) {
-                        panelEditor.classList.add('mobile-hidden');
-                        panelPreview.classList.add('mobile-visible');
-                        tabPreview.classList.add('active');
-                        tabEditor.classList.remove('active');
-                    } else {
-                        panelEditor.classList.remove('mobile-hidden');
-                        panelPreview.classList.remove('mobile-visible');
-                        tabEditor.classList.add('active');
-                        tabPreview.classList.remove('active');
-                    }
-                }
-                updatePreview();
-            }
-
-            function initDividerDrag() {
+            // 分隔拖拽
+            function initDivider() {
                 let dragging = false, startX, startWidth;
                 dividerBar.addEventListener('mousedown', (e) => {
                     if (isMobile()) return;
                     dragging = true;
                     startX = e.clientX;
                     startWidth = panelEditor.getBoundingClientRect().width;
-                    dividerBar.classList.add('active');
                     document.body.style.cursor = 'col-resize';
                     document.body.style.userSelect = 'none';
                     e.preventDefault();
                 });
                 document.addEventListener('mousemove', (e) => {
                     if (!dragging) return;
-                    const containerWidth = mainContainer.getBoundingClientRect().width;
-                    const divWidth = dividerBar.getBoundingClientRect().width;
-                    let newWidth = startWidth + (e.clientX - startX);
-                    const minW = Math.max(180, containerWidth * 0.2);
-                    const maxW = containerWidth - divWidth - Math.max(180, containerWidth * 0.2);
-                    newWidth = Math.max(minW, Math.min(maxW, newWidth));
-                    const pct = (newWidth / containerWidth) * 100;
-                    panelEditor.style.flex = 'none';
-                    panelEditor.style.width = `${pct}%`;
-                    panelPreview.style.flex = 'none';
-                    panelPreview.style.width = `${100 - pct - (divWidth/containerWidth)*100}%`;
-                    try { localStorage.setItem(STORAGE_KEY_SPLIT, pct.toFixed(1)); } catch (e) {}
-                });
-                document.addEventListener('mouseup', () => {
-                    if (dragging) {
-                        dragging = false;
-                        dividerBar.classList.remove('active');
-                        document.body.style.cursor = '';
-                        document.body.style.userSelect = '';
-                    }
-                });
-                // 触摸事件
-                dividerBar.addEventListener('touchstart', (e) => {
-                    if (isMobile()) return;
-                    dragging = true;
-                    startX = e.touches[0].clientX;
-                    startWidth = panelEditor.getBoundingClientRect().width;
-                    dividerBar.classList.add('active');
-                    document.body.style.userSelect = 'none';
-                    e.preventDefault();
-                }, { passive: false });
-                document.addEventListener('touchmove', (e) => {
-                    if (!dragging) return;
                     const cw = mainContainer.getBoundingClientRect().width;
                     const dw = dividerBar.getBoundingClientRect().width;
-                    let nw = startWidth + (e.touches[0].clientX - startX);
-                    nw = Math.max(Math.max(180, cw*0.2), Math.min(cw - dw - Math.max(180, cw*0.2), nw));
-                    const pct = (nw / cw) * 100;
+                    let newWidth = startWidth + (e.clientX - startX);
+                    newWidth = Math.max(180, Math.min(cw - dw - 180, newWidth));
+                    const pct = (newWidth / cw) * 100;
                     panelEditor.style.flex = 'none';
                     panelEditor.style.width = `${pct}%`;
                     panelPreview.style.flex = 'none';
                     panelPreview.style.width = `${100 - pct - (dw/cw)*100}%`;
-                    try { localStorage.setItem(STORAGE_KEY_SPLIT, pct.toFixed(1)); } catch (e) {}
-                }, { passive: false });
-                document.addEventListener('touchend', () => {
+                    localStorage.setItem(STORAGE_SPLIT, pct.toFixed(1));
+                });
+                document.addEventListener('mouseup', () => {
                     if (dragging) {
                         dragging = false;
-                        dividerBar.classList.remove('active');
+                        document.body.style.cursor = '';
                         document.body.style.userSelect = '';
                     }
                 });
             }
 
-            function loadSplitRatio() {
-                if (isMobile()) return;
-                try {
-                    const saved = localStorage.getItem(STORAGE_KEY_SPLIT);
-                    if (saved) {
-                        const pct = parseFloat(saved);
-                        if (pct >= 20 && pct <= 80) {
-                            const cw = mainContainer.getBoundingClientRect().width;
-                            const dw = dividerBar.getBoundingClientRect().width;
-                            panelEditor.style.flex = 'none';
-                            panelEditor.style.width = `${pct}%`;
-                            panelPreview.style.flex = 'none';
-                            panelPreview.style.width = `${100 - pct - (dw/cw)*100}%`;
-                        }
-                    }
-                } catch (e) {}
-            }
-
+            // 工具栏操作
             function insertText(before, after, placeholder) {
-                const ta = editor;
-                const s = ta.selectionStart, e = ta.selectionEnd;
-                const sel = ta.value.substring(s, e) || placeholder || '';
-                ta.value = ta.value.substring(0, s) + before + sel + after + ta.value.substring(e);
-                ta.focus();
-                ta.setSelectionRange(s + before.length, s + before.length + sel.length);
+                const s = editor.selectionStart, e = editor.selectionEnd;
+                const sel = editor.value.substring(s, e) || placeholder || '';
+                editor.value = editor.value.substring(0, s) + before + sel + after + editor.value.substring(e);
+                editor.focus();
+                editor.setSelectionRange(s + before.length, s + before.length + sel.length);
                 updatePreview();
             }
-
             function insertBlock(prefix, placeholder) {
-                const ta = editor;
-                const s = ta.selectionStart;
-                const lineStart = ta.value.lastIndexOf('\n', s - 1) + 1;
-                const ins = (ta.value.substring(lineStart, s).length === 0 ? '' : '\n') + prefix + (placeholder || '');
-                ta.value = ta.value.substring(0, s) + ins + ta.value.substring(s);
-                ta.focus();
-                ta.setSelectionRange(s + ins.length, s + ins.length);
+                const s = editor.selectionStart;
+                const lineStart = editor.value.lastIndexOf('\n', s - 1) + 1;
+                const ins = (editor.value.substring(lineStart, s).length === 0 ? '' : '\n') + prefix + (placeholder || '');
+                editor.value = editor.value.substring(0, s) + ins + editor.value.substring(s);
+                editor.focus();
+                editor.setSelectionRange(s + ins.length, s + ins.length);
                 updatePreview();
             }
-
             function wrapSelection(wrapper) {
-                const ta = editor;
-                const s = ta.selectionStart, e = ta.selectionEnd;
-                const sel = ta.value.substring(s, e);
+                const s = editor.selectionStart, e = editor.selectionEnd;
+                const sel = editor.value.substring(s, e);
                 if (sel) {
-                    ta.value = ta.value.substring(0, s) + wrapper + sel + wrapper + ta.value.substring(e);
-                    ta.setSelectionRange(s + wrapper.length, e + wrapper.length);
+                    editor.value = editor.value.substring(0, s) + wrapper + sel + wrapper + editor.value.substring(e);
+                    editor.setSelectionRange(s + wrapper.length, e + wrapper.length);
                 } else {
-                    ta.value = ta.value.substring(0, s) + wrapper + wrapper + ta.value.substring(s);
-                    ta.setSelectionRange(s + wrapper.length, s + wrapper.length);
+                    editor.value = editor.value.substring(0, s) + wrapper + wrapper + editor.value.substring(s);
+                    editor.setSelectionRange(s + wrapper.length, s + wrapper.length);
                 }
-                ta.focus();
+                editor.focus();
                 updatePreview();
             }
 
@@ -1171,6 +700,7 @@ print(fibonacci(10))  # 55
                 }
             });
 
+            // 键盘快捷键
             editor.addEventListener('keydown', (e) => {
                 if (e.key === 'Tab') {
                     e.preventDefault();
@@ -1180,10 +710,7 @@ print(fibonacci(10))  # 55
                         editor.selectionStart = editor.selectionEnd = s + 4;
                     } else {
                         const lines = editor.value.substring(s, ed).split('\n');
-                        const indented = lines.map(l => '    ' + l).join('\n');
-                        editor.value = editor.value.substring(0, s) + indented + editor.value.substring(ed);
-                        editor.selectionStart = s;
-                        editor.selectionEnd = s + indented.length;
+                        editor.value = editor.value.substring(0, s) + lines.map(l => '    ' + l).join('\n') + editor.value.substring(ed);
                     }
                     updatePreview();
                 }
@@ -1191,10 +718,9 @@ print(fibonacci(10))  # 55
                 if (ctrl && e.key === 'b') { e.preventDefault(); wrapSelection('**'); }
                 if (ctrl && e.key === 'i') { e.preventDefault(); wrapSelection('*'); }
                 if (ctrl && e.key === 'k') { e.preventDefault(); insertText('[', '](url)', '链接文字'); }
-                if (ctrl && e.key === '`') { e.preventDefault(); wrapSelection('`'); }
             });
 
-            // 编辑器滚动事件（处理用户滚动及程序滚动标志）
+            // 滚动事件
             editor.addEventListener('scroll', () => {
                 if (editingProgrammaticScroll) {
                     editingProgrammaticScroll = false;
@@ -1202,79 +728,44 @@ print(fibonacci(10))  # 55
                 }
                 syncEditorScrollToPreview();
             });
-
-            // 光标移动同步
             editor.addEventListener('click', () => {
                 userScrollingPreview = false;
                 syncCursorToPreview();
             });
             editor.addEventListener('keyup', (e) => {
-                if (e.key.startsWith('Arrow') || e.key === 'Home' || e.key === 'End' || e.key.startsWith('Page')) {
-                    syncCursorToPreview();
-                }
-            });
-            editor.addEventListener('focus', () => {
-                userScrollingPreview = false;
-                syncCursorToPreview();
+                if (e.key.startsWith('Arrow') || e.key === 'Home' || e.key === 'End') syncCursorToPreview();
             });
 
-            // 预览区滚动事件（区分程序/用户滚动）
             previewScroller.addEventListener('scroll', () => {
                 if (programmaticScroll) {
                     programmaticScroll = false;
                     return;
                 }
-                // 用户手动滚动预览区
                 userScrollingPreview = true;
                 clearTimeout(userScrollTimeout);
                 syncPreviewToEditor();
                 userScrollTimeout = setTimeout(() => {
                     userScrollingPreview = false;
-                    syncCursorToPreview(); // 恢复编辑->预览同步
+                    syncCursorToPreview();
                 }, 2000);
             });
 
             editor.addEventListener('input', updatePreview);
-            themeToggle.addEventListener('click', toggleTheme);
-            tabEditor.addEventListener('click', () => switchMobileTab('editor'));
-            tabPreview.addEventListener('click', () => switchMobileTab('preview'));
             window.addEventListener('resize', () => {
-                handleResize();
-                loadSplitRatio();
+                if (!isMobile()) {
+                    panelEditor.classList.remove('mobile-hidden');
+                    panelPreview.classList.remove('mobile-visible');
+                }
+                updatePreview();
             });
 
-            if (window.matchMedia) {
-                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                    if (!localStorage.getItem(STORAGE_KEY_THEME)) applyTheme(e.matches);
-                });
-            }
-
-            function init() {
-                loadTheme();
-                editor.value = loadSavedContent();
-                updatePreview();
-                handleResize();
-                loadSplitRatio();
-                initDividerDrag();
-                editor.focus();
-                const len = editor.value.length;
-                editor.setSelectionRange(len, len);
-                syncCursorToPreview();
-            }
-
-            init();
-
-            window.mdEditor = {
-                getContent: () => editor.value,
-                setContent: (c) => { editor.value = c; updatePreview(); },
-                toggleTheme,
-                getTheme: () => isDarkMode ? 'dark' : 'light',
-                refresh: updatePreview,
-                focus: () => editor.focus(),
-                syncPreview: syncCursorToPreview,
-            };
-
-            console.log('✅ Markdown 编辑器（双向滚动跟随）已就绪');
+            // 初始化
+            loadTheme();
+            editor.value = loadContent();
+            updatePreview();
+            initDivider();
+            editor.focus();
+            editor.setSelectionRange(editor.value.length, editor.value.length);
         })();
     </script>
 </body>
