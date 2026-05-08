@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown 编辑器</title>
+    <title>Markdown 编辑器 · 双向跟随 + PDF导出</title>
 
     <!-- Marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
     <!-- Highlight.js -->
     <link rel="stylesheet" id="hljs-theme" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         :root {
@@ -86,9 +88,7 @@
 
         html {
             height: 100%;
-            -webkit-text-size-adjust: 100%;
         }
-
         body {
             font-family: var(--font-sans);
             background: var(--bg-primary);
@@ -97,7 +97,24 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            transition: background var(--transition-slow), color var(--transition-slow);
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+
+        /* 更全面的过渡保证暗色模式平滑切换 */
+        .header,
+        .toolbar,
+        .mobile-tabs,
+        .panel,
+        .panel-header,
+        .editor-textarea,
+        .preview-wrapper,
+        .markdown-body,
+        .markdown-body *,
+        .divider-bar,
+        .btn-theme-toggle,
+        .btn-export-pdf,
+        .toolbar-btn {
+            transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
         ::-webkit-scrollbar {
@@ -110,6 +127,7 @@
         ::-webkit-scrollbar-thumb {
             background: var(--bg-scrollbar-thumb);
             border-radius: 3px;
+            transition: background 0.25s ease;
         }
 
         .header {
@@ -120,10 +138,8 @@
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-primary);
             flex-shrink: 0;
-            transition: background var(--transition-slow), border-color var(--transition-slow);
             box-shadow: var(--shadow-sm);
         }
-
         .header-brand {
             display: flex;
             align-items: center;
@@ -139,37 +155,69 @@
             align-items: center;
             justify-content: center;
             font-weight: 700;
+            font-size: 18px;
         }
-
-        .btn-theme-toggle {
-            width: 44px;
+        .header-title {
+            font-weight: 650;
+            letter-spacing: -0.01em;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn-theme-toggle,
+        .btn-export-pdf {
             height: 44px;
-            border-radius: 50%;
+            border-radius: 22px;
             border: 2px solid var(--border-secondary);
             background: var(--bg-tertiary);
             cursor: pointer;
+            font-size: 16px;
+            transition: all 0.25s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            padding: 0 16px;
+            gap: 6px;
+            white-space: nowrap;
+            font-weight: 550;
+            font-family: var(--font-sans);
+        }
+        .btn-theme-toggle {
+            width: 44px;
+            padding: 0;
             font-size: 20px;
-            transition: all var(--transition-normal);
+            border-radius: 50%;
+        }
+        .btn-theme-toggle:hover,
+        .btn-export-pdf:hover {
+            background: var(--accent-light);
+            border-color: var(--accent);
+            transform: scale(1.02);
         }
         .btn-theme-toggle .icon-sun,
         .btn-theme-toggle .icon-moon {
             position: absolute;
+            transition: opacity 0.25s ease, transform 0.25s ease;
         }
         .dark-mode .icon-sun {
             opacity: 1;
-            transform: scale(1);
+            transform: rotate(0deg) scale(1);
         }
         .dark-mode .icon-moon {
             opacity: 0;
-            transform: scale(0.5);
+            transform: rotate(-90deg) scale(0.5);
         }
         .icon-sun {
             opacity: 0;
-            transform: scale(0.5);
+            transform: rotate(90deg) scale(0.5);
         }
         .icon-moon {
             opacity: 1;
-            transform: scale(1);
+            transform: rotate(0deg) scale(1);
         }
 
         .toolbar {
@@ -181,7 +229,6 @@
             flex-shrink: 0;
             overflow-x: auto;
         }
-
         .toolbar-btn {
             width: 32px;
             height: 32px;
@@ -191,11 +238,21 @@
             font-size: 15px;
             color: var(--text-secondary);
             border-radius: var(--radius-sm);
-            transition: all var(--transition-fast);
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .toolbar-btn:hover {
             background: var(--bg-hover);
             color: var(--text-primary);
+            border-color: var(--border-secondary);
+        }
+        .toolbar-divider {
+            width: 1px;
+            height: 20px;
+            background: var(--border-secondary);
+            margin: 0 4px;
         }
 
         .mobile-tabs {
@@ -214,6 +271,8 @@
             font-weight: 550;
             color: var(--text-tertiary);
             border-radius: var(--radius-md);
+            text-align: center;
+            transition: all 0.15s ease;
         }
         .mobile-tab-btn.active {
             background: var(--accent-light);
@@ -246,7 +305,18 @@
             border-bottom: 1px solid var(--border-secondary);
             font-size: 0.78rem;
             color: var(--text-tertiary);
+            display: flex;
+            justify-content: space-between;
         }
+        .panel-header .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .dot-edit { background: #e8a860; }
+        .dot-preview { background: #6aab6a; }
 
         .editor-textarea {
             flex: 1;
@@ -260,28 +330,27 @@
             line-height: 1.7;
             background: var(--bg-input);
             color: var(--text-primary);
+            transition: background 0.25s ease, color 0.25s ease;
         }
-
+        .editor-textarea::placeholder {
+            color: var(--text-placeholder);
+        }
         .preview-wrapper {
             flex: 1;
             overflow-y: auto;
             padding: 18px 24px;
             background: var(--bg-input);
             word-wrap: break-word;
+            transition: background 0.25s ease;
         }
-
         .markdown-body {
             font-family: var(--font-sans);
             color: var(--text-primary);
             line-height: 1.75;
             max-width: 780px;
         }
-        .markdown-body h1 {
-            border-bottom: 2px solid var(--border-primary);
-        }
-        .markdown-body h2 {
-            border-bottom: 1.5px solid var(--border-secondary);
-        }
+        .markdown-body h1 { border-bottom: 2px solid var(--border-primary); }
+        .markdown-body h2 { border-bottom: 1.5px solid var(--border-secondary); }
         .markdown-body pre {
             background: var(--bg-code-block);
             border: 1px solid var(--border-primary);
@@ -310,29 +379,18 @@
             border: 1px solid var(--border-primary);
             padding: 10px 14px;
         }
+        .markdown-body a { color: var(--accent); }
 
         @media (max-width: 768px) {
-            .mobile-tabs {
-                display: flex;
-            }
-            .main-container {
-                flex-direction: column;
-            }
-            .divider-bar {
-                display: none;
-            }
-            .panel.panel-preview {
-                display: none;
-            }
-            .panel.panel-preview.mobile-visible {
-                display: flex;
-            }
-            .panel.panel-editor.mobile-hidden {
-                display: none;
-            }
-            .editor-textarea {
-                padding: 14px 16px;
-            }
+            .mobile-tabs { display: flex; }
+            .main-container { flex-direction: column; }
+            .divider-bar { display: none; }
+            .panel.panel-preview { display: none; }
+            .panel.panel-preview.mobile-visible { display: flex; }
+            .panel.panel-editor.mobile-hidden { display: none; }
+            .editor-textarea { padding: 14px 16px; }
+            .btn-export-pdf { padding: 0 12px; font-size: 15px; height: 38px; }
+            .btn-theme-toggle { width: 38px; height: 38px; font-size: 18px; }
         }
     </style>
 </head>
@@ -342,11 +400,15 @@
         <div class="header-brand">
             <div class="header-logo">M</div>
             <span class="header-title">Markdown 编辑器</span>
+            <span class="header-subtitle">· 双向跟随</span>
         </div>
-        <button class="btn-theme-toggle" id="themeToggle">
-            <span class="icon-sun">☀️</span>
-            <span class="icon-moon">🌙</span>
-        </button>
+        <div class="header-actions">
+            <button class="btn-export-pdf" id="exportPdfBtn" title="导出为 PDF">📄 导出 PDF</button>
+            <button class="btn-theme-toggle" id="themeToggle" title="切换暗色模式">
+                <span class="icon-sun">☀️</span>
+                <span class="icon-moon">🌙</span>
+            </button>
+        </div>
     </header>
 
     <div class="toolbar" id="toolbar">
@@ -375,12 +437,12 @@
 
     <div class="main-container" id="mainContainer">
         <div class="panel panel-editor" id="panelEditor">
-            <div class="panel-header"><span class="dot dot-edit"></span>编辑器 <span id="charCount">0 字符</span></div>
+            <div class="panel-header"><span><span class="dot dot-edit"></span>编辑器</span><span id="charCount">0 字符</span></div>
             <textarea class="editor-textarea" id="editor" placeholder="在此编写 Markdown…" spellcheck="false"></textarea>
         </div>
         <div class="divider-bar" id="dividerBar"></div>
         <div class="panel panel-preview" id="panelPreview">
-            <div class="panel-header"><span class="dot dot-preview"></span>预览 <span id="wordCount">0 字</span></div>
+            <div class="panel-header"><span><span class="dot dot-preview"></span>预览</span><span id="wordCount">0 字</span></div>
             <div class="preview-wrapper" id="preview">
                 <div class="markdown-body"></div>
             </div>
@@ -393,6 +455,7 @@
             const previewContent = document.getElementById('preview').querySelector('.markdown-body');
             const previewScroller = document.getElementById('preview');
             const themeToggle = document.getElementById('themeToggle');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
             const charCount = document.getElementById('charCount');
             const wordCount = document.getElementById('wordCount');
             const dividerBar = document.getElementById('dividerBar');
@@ -406,14 +469,11 @@
 
             let isDarkMode = false;
             let isMobilePreview = false;
-            const STORAGE_CONTENT = 'md-editor-content';
-            const STORAGE_THEME = 'md-editor-theme';
-            const STORAGE_SPLIT = 'md-editor-split';
+            const STORAGE_CONTENT = 'md-editor-content-v3';
+            const STORAGE_THEME = 'md-editor-theme-v3';
+            const STORAGE_SPLIT = 'md-editor-split-v3';
 
-            // *** 修复：声明 renderTimeout ***
-            let renderTimeout;
-            let saveTimeout;
-            let userScrollTimeout;
+            let renderTimeout, saveTimeout, userScrollTimeout;
             let programmaticScroll = false;
             let editingProgrammaticScroll = false;
             let userScrollingPreview = false;
@@ -430,27 +490,26 @@
                 }
                 return `<pre><code class="language-${language || ''}">${highlighted}</code></pre>`;
             };
-            renderer.link = function(href, title, text) {
-                return `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${title || ''}">${text}</a>`;
-            };
+            renderer.link = (href, title, text) =>
+                `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${title || ''}">${text}</a>`;
             marked.use({ renderer });
 
-            // 范文（保留原有风格）
             const defaultContent = `# 👋 欢迎使用 Markdown 编辑器
 
-这是一个 **纯前端** 的 Markdown 编辑器，支持**双向实时滚动跟随**、暗色模式和响应式布局。
-滚动任意一侧，另一侧都会自动跟随，让写作与预览无缝衔接。
+这是一个 **纯前端** 的 Markdown 编辑器，支持**双向实时滚动跟随**、暗色模式和**一键导出 PDF**。
+滚动任意一侧，另一侧都会自动跟随；点击右上角按钮即可将当前预览导出为美观的 PDF 文档。
 
 ---
 
 ## ✨ 功能特性
 
 - 🎨 实时预览，流畅渲染
-- 🌙 暗色/亮色模式切换
+- 🌙 暗色/亮色模式切换 (平滑过渡)
 - 📱 完美适配手机、平板与桌面
 - 💾 本地自动保存
 - ⌨️ 常用 Markdown 工具栏与快捷键
 - 🔗 **双向滚动同步** — 编辑与预览互相跟随
+- 📄 **导出 PDF** — 将预览内容保存为 PDF (颜色自适应)
 
 ---
 
@@ -482,6 +541,7 @@ print(fibonacci(10))  # 55
 | 暗色模式 | ✅ 完成 | 高 |
 | 响应式 | ✅ 完成 | 中 |
 | 双向跟随 | ✅ 完成 | 高 |
+| PDF导出 | ✅ 完成 | 高 |
 
 ### 引用
 
@@ -492,37 +552,32 @@ print(fibonacci(10))  # 55
 - [x] 支持实时预览
 - [x] 支持暗色模式
 - [x] 支持双向滚动跟随
-- [ ] 导出 PDF
+- [x] 支持导出 PDF
+- [ ] 支持自定义主题
 `;
 
             function loadContent() {
                 try {
                     const saved = localStorage.getItem(STORAGE_CONTENT);
                     return saved && saved.trim() ? saved : defaultContent;
-                } catch (e) {
-                    return defaultContent;
-                }
+                } catch (e) { return defaultContent; }
             }
 
             function saveContent() {
                 clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(() => {
-                    localStorage.setItem(STORAGE_CONTENT, editor.value);
-                }, 600);
+                saveTimeout = setTimeout(() => localStorage.setItem(STORAGE_CONTENT, editor.value), 600);
             }
 
-            // 编辑区 -> 预览区（滚动同步）
+            // 编辑区 -> 预览区（滚动）
             function syncEditorScrollToPreview() {
                 if (userScrollingPreview || !previewScroller) return;
                 const maxEdit = editor.scrollHeight - editor.clientHeight;
                 if (maxEdit <= 0) return;
                 const ratio = editor.scrollTop / maxEdit;
-                const target = ratio * (previewScroller.scrollHeight - previewScroller.clientHeight);
                 programmaticScroll = true;
-                previewScroller.scrollTop = target;
+                previewScroller.scrollTop = ratio * (previewScroller.scrollHeight - previewScroller.clientHeight);
             }
 
-            // 编辑区 -> 预览区（光标同步）
             function syncCursorToPreview() {
                 if (userScrollingPreview || !previewScroller) return;
                 const text = editor.value;
@@ -531,13 +586,12 @@ print(fibonacci(10))  # 55
                 const totalLines = (text.match(/\n/g) || []).length + 1;
                 const ratio = totalLines > 0 ? lines / totalLines : 0;
                 requestAnimationFrame(() => {
-                    const maxScroll = previewScroller.scrollHeight - previewScroller.clientHeight;
-                    previewScroller.scrollTop = ratio * maxScroll;
                     programmaticScroll = true;
+                    previewScroller.scrollTop = ratio * (previewScroller.scrollHeight - previewScroller.clientHeight);
                 });
             }
 
-            // 预览区 -> 编辑区（滚动同步）
+            // 预览区 -> 编辑区
             function syncPreviewToEditor() {
                 if (!previewScroller || !editor) return;
                 const maxEdit = editor.scrollHeight - editor.clientHeight;
@@ -548,7 +602,6 @@ print(fibonacci(10))  # 55
                 editor.scrollTop = ratio * maxEdit;
             }
 
-            // 更新预览（修复重点）
             function updatePreview() {
                 clearTimeout(renderTimeout);
                 renderTimeout = setTimeout(() => {
@@ -571,25 +624,74 @@ print(fibonacci(10))  # 55
                 wordCount.textContent = `${chinese + words} 字`;
             }
 
-            // 暗色模式
-            function applyTheme(dark) {
-                isDarkMode = dark;
+            // 暗色模式 (增强过渡)
+            function applyTheme(dark, instant = false) {
+                if (instant) {
+                    document.body.classList.toggle('dark-mode', dark);
+                    isDarkMode = dark;
+                    updateHighlightTheme();
+                    return;
+                }
+                // 平滑过渡
+                document.body.style.transition = 'none';
+                document.body.offsetHeight; // 强制回流
+                document.body.style.transition = '';
                 document.body.classList.toggle('dark-mode', dark);
-                hljsThemeLink.href = dark
-                    ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
-                    : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+                isDarkMode = dark;
+                updateHighlightTheme();
                 localStorage.setItem(STORAGE_THEME, dark ? 'dark' : 'light');
                 updatePreview();
             }
+
+            function updateHighlightTheme() {
+                hljsThemeLink.href = isDarkMode
+                    ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
+                    : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+            }
+
             themeToggle.addEventListener('click', () => applyTheme(!isDarkMode));
 
             function loadTheme() {
                 const saved = localStorage.getItem(STORAGE_THEME);
-                if (saved === 'dark') applyTheme(true);
-                else if (saved === 'light') applyTheme(false);
-                else if (window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme(true);
-                else applyTheme(false);
+                if (saved === 'dark') applyTheme(true, true);
+                else if (saved === 'light') applyTheme(false, true);
+                else if (window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme(true, true);
+                else applyTheme(false, true);
             }
+
+            // 导出 PDF (修复闪烁：通过 onclone 移除暗色类)
+            async function exportPDF() {
+                const opt = {
+                    margin: 10,
+                    filename: 'markdown.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        windowWidth: previewScroller.scrollWidth,
+                        windowHeight: previewScroller.scrollHeight,
+                        onclone: function(clonedDoc) {
+                            // 在克隆文档中移除暗色类，保留亮色样式
+                            clonedDoc.body.classList.remove('dark-mode');
+                            // 确保代码高亮使用亮色主题（如果克隆文档包含样式表，这里可添加额外操作）
+                            const link = clonedDoc.getElementById('hljs-theme');
+                            if (link) {
+                                link.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+                            }
+                        }
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: 'avoid-all' }
+                };
+                try {
+                    await html2pdf().set(opt).from(previewScroller).save();
+                } catch (err) {
+                    console.error('PDF 导出失败', err);
+                    alert('导出失败，请稍后重试');
+                }
+            }
+            exportPdfBtn.addEventListener('click', exportPDF);
 
             // 移动端标签
             function switchMobileTab(tab) {
@@ -608,10 +710,17 @@ print(fibonacci(10))  # 55
                     editor.focus();
                 }
             }
-            tabEditor.addEventListener('click', () => switchMobileTab('editor'));
-            tabPreview.addEventListener('click', () => switchMobileTab('preview'));
+            tabEditor.onclick = () => switchMobileTab('editor');
+            tabPreview.onclick = () => switchMobileTab('preview');
 
             function isMobile() { return window.innerWidth <= 768; }
+            window.addEventListener('resize', () => {
+                if (!isMobile()) {
+                    panelEditor.classList.remove('mobile-hidden');
+                    panelPreview.classList.remove('mobile-visible');
+                }
+                updatePreview();
+            });
 
             // 分隔拖拽
             function initDivider() {
@@ -647,6 +756,24 @@ print(fibonacci(10))  # 55
                 });
             }
 
+            // 加载分隔比例
+            (function loadSplitRatio() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_SPLIT);
+                    if (saved && !isMobile()) {
+                        const pct = parseFloat(saved);
+                        if (pct >= 20 && pct <= 80) {
+                            const cw = mainContainer.getBoundingClientRect().width;
+                            const dw = dividerBar.getBoundingClientRect().width;
+                            panelEditor.style.flex = 'none';
+                            panelEditor.style.width = `${pct}%`;
+                            panelPreview.style.flex = 'none';
+                            panelPreview.style.width = `${100 - pct - (dw/cw)*100}%`;
+                        }
+                    }
+                } catch (e) {}
+            })();
+
             // 工具栏操作
             function insertText(before, after, placeholder) {
                 const s = editor.selectionStart, e = editor.selectionEnd;
@@ -678,7 +805,6 @@ print(fibonacci(10))  # 55
                 editor.focus();
                 updatePreview();
             }
-
             toolbar.addEventListener('click', (e) => {
                 const btn = e.target.closest('.toolbar-btn');
                 if (!btn) return;
@@ -719,12 +845,9 @@ print(fibonacci(10))  # 55
                 if (ctrl && e.key === 'k') { e.preventDefault(); insertText('[', '](url)', '链接文字'); }
             });
 
-            // 滚动事件
+            // 滚动事件同步
             editor.addEventListener('scroll', () => {
-                if (editingProgrammaticScroll) {
-                    editingProgrammaticScroll = false;
-                    return;
-                }
+                if (editingProgrammaticScroll) { editingProgrammaticScroll = false; return; }
                 syncEditorScrollToPreview();
             });
             editor.addEventListener('click', () => {
@@ -734,12 +857,8 @@ print(fibonacci(10))  # 55
             editor.addEventListener('keyup', (e) => {
                 if (e.key.startsWith('Arrow') || e.key === 'Home' || e.key === 'End') syncCursorToPreview();
             });
-
             previewScroller.addEventListener('scroll', () => {
-                if (programmaticScroll) {
-                    programmaticScroll = false;
-                    return;
-                }
+                if (programmaticScroll) { programmaticScroll = false; return; }
                 userScrollingPreview = true;
                 clearTimeout(userScrollTimeout);
                 syncPreviewToEditor();
@@ -750,13 +869,6 @@ print(fibonacci(10))  # 55
             });
 
             editor.addEventListener('input', updatePreview);
-            window.addEventListener('resize', () => {
-                if (!isMobile()) {
-                    panelEditor.classList.remove('mobile-hidden');
-                    panelPreview.classList.remove('mobile-visible');
-                }
-                updatePreview();
-            });
 
             // 初始化
             loadTheme();
