@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown 编辑器 · PDF导出</title>
+    <title>Markdown 编辑器 · 双向跟随 + PDF导出</title>
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
     <link rel="stylesheet" id="hljs-theme" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -147,6 +147,7 @@
             <span class="header-subtitle">· 双向跟随</span>
         </div>
         <div class="header-actions">
+            <button class="btn" id="resetBtn" title="重置为示例范文">📋 重置范文</button>
             <button class="btn" id="exportPdfBtn">📄 导出 PDF</button>
             <button class="btn btn-icon" id="themeToggle" title="切换暗色模式">
                 <span class="icon-sun">☀️</span>
@@ -200,6 +201,7 @@
             const previewScroller = document.getElementById('preview');
             const themeToggle = document.getElementById('themeToggle');
             const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const resetBtn = document.getElementById('resetBtn');
             const charCount = document.getElementById('charCount');
             const wordCount = document.getElementById('wordCount');
             const dividerBar = document.getElementById('dividerBar');
@@ -213,9 +215,9 @@
 
             let isDarkMode = false;
             let isMobilePreview = false;
-            const STORAGE_CONTENT = 'md-editor-v5';
-            const STORAGE_THEME = 'md-theme-v5';
-            const STORAGE_SPLIT = 'md-split-v5';
+            const STORAGE_CONTENT = 'md-editor-v6';
+            const STORAGE_THEME = 'md-theme-v6';
+            const STORAGE_SPLIT = 'md-split-v6';
 
             let renderTimeout, saveTimeout, userScrollTimeout;
             let programmaticScroll = false;
@@ -237,7 +239,7 @@
                 `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${title || ''}">${text}</a>`;
             marked.use({ renderer });
 
-            // 恢复的经典范文
+            // 经典范文
             const defaultContent = `# 👋 欢迎使用 Markdown 编辑器
 
 这是一个 **纯前端** 的 Markdown 编辑器，支持**双向实时滚动跟随**、暗色模式和**一键导出 PDF**。
@@ -303,14 +305,27 @@ print(fibonacci(10))  # 55
             function loadContent() {
                 try {
                     const saved = localStorage.getItem(STORAGE_CONTENT);
-                    return (saved && saved.trim()) ? saved : defaultContent;
+                    // 如果本地存储为空或仅包含空白字符，则返回范文
+                    if (!saved || !saved.trim()) return defaultContent;
+                    return saved;
                 } catch (e) { return defaultContent; }
             }
 
             function saveContent() {
                 clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(() => localStorage.setItem(STORAGE_CONTENT, editor.value), 600);
+                saveTimeout = setTimeout(() => {
+                    try {
+                        localStorage.setItem(STORAGE_CONTENT, editor.value);
+                    } catch (e) {}
+                }, 600);
             }
+
+            // 重置为范文
+            resetBtn.addEventListener('click', () => {
+                editor.value = defaultContent;
+                updatePreview();
+                editor.focus();
+            });
 
             function syncEditorScrollToPreview() {
                 if (userScrollingPreview || !previewScroller) return;
@@ -375,7 +390,6 @@ print(fibonacci(10))  # 55
                 localStorage.setItem(STORAGE_THEME, dark ? 'dark' : 'light');
                 updatePreview();
             }
-
             themeToggle.addEventListener('click', () => applyTheme(!isDarkMode));
 
             function loadTheme() {
@@ -386,28 +400,9 @@ print(fibonacci(10))  # 55
                 else applyTheme(false);
             }
 
-            // 导出 PDF - 直接使用预览区渲染好的内容（亮色背景）
-            async function exportPDF() {
-                const previewHTML = previewContent.innerHTML;
-                const exportContainer = document.createElement('div');
-                exportContainer.style.position = 'fixed';
-                exportContainer.style.left = '-9999px';
-                exportContainer.style.top = '0';
-                exportContainer.style.width = '800px';
-                exportContainer.style.padding = '24px';
-                exportContainer.style.background = '#ffffff';
-                exportContainer.style.color = '#2c2c28';
-                exportContainer.style.fontFamily = getComputedStyle(document.body).fontFamily;
-                exportContainer.style.lineHeight = '1.75';
-                exportContainer.classList.add('markdown-body');
-                exportContainer.innerHTML = previewHTML;
-                // 强制亮色代码高亮
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
-                exportContainer.prepend(link);
-                document.body.appendChild(exportContainer);
-                await new Promise(resolve => setTimeout(resolve, 300));
+            // 导出 PDF - 使用 onclone 彻底清除暗色影响
+            function exportPDF() {
+                const element = previewScroller;
                 const opt = {
                     margin: 10,
                     filename: 'markdown.pdf',
@@ -416,23 +411,64 @@ print(fibonacci(10))  # 55
                         scale: 2,
                         useCORS: true,
                         logging: false,
-                        windowWidth: exportContainer.scrollWidth,
-                        windowHeight: exportContainer.scrollHeight
+                        windowWidth: element.scrollWidth,
+                        windowHeight: element.scrollHeight,
+                        onclone: function(clonedDoc) {
+                            // 移除暗色类名
+                            clonedDoc.body.classList.remove('dark-mode');
+                            // 强制将所有CSS变量重置为亮色值
+                            const style = clonedDoc.createElement('style');
+                            style.textContent = `
+                                :root {
+                                    --bg-primary: #f5f5f0;
+                                    --bg-secondary: #ffffff;
+                                    --bg-tertiary: #fafaf8;
+                                    --bg-hover: #f0f0eb;
+                                    --bg-code: #f4f4f0;
+                                    --bg-code-block: #f8f8f5;
+                                    --bg-toolbar: #ffffff;
+                                    --bg-input: #fdfdfc;
+                                    --text-primary: #2c2c28;
+                                    --text-secondary: #555550;
+                                    --text-tertiary: #888880;
+                                    --text-code: #3a3a35;
+                                    --border-primary: #e0e0d8;
+                                    --border-secondary: #e8e8e0;
+                                    --accent: #5b7b5a;
+                                    --accent-light: #e8f0e8;
+                                    --accent-subtle: #f0f5f0;
+                                    background-color: #ffffff !important;
+                                    color: #2c2c28 !important;
+                                }
+                                body {
+                                    background: #ffffff !important;
+                                    color: #2c2c28 !important;
+                                }
+                                .markdown-body, .preview-wrapper, .panel, .header, .toolbar {
+                                    background: #ffffff !important;
+                                    color: #2c2c28 !important;
+                                }
+                                .editor-textarea {
+                                    background: #fdfdfc !important;
+                                    color: #2c2c28 !important;
+                                }
+                            `;
+                            clonedDoc.head.appendChild(style);
+                            // 替换代码高亮主题为亮色
+                            const hljsLink = clonedDoc.getElementById('hljs-theme');
+                            if (hljsLink) {
+                                hljsLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+                            }
+                        }
                     },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak: { mode: 'avoid-all' }
                 };
-                try {
-                    await html2pdf().set(opt).from(exportContainer).save();
-                } catch (err) {
-                    console.error('导出失败', err);
-                    alert('导出失败，请稍后重试');
-                } finally {
-                    document.body.removeChild(exportContainer);
-                }
+                html2pdf().set(opt).from(element).save();
             }
             exportPdfBtn.addEventListener('click', exportPDF);
 
+            // 移动端标签切换
             function switchMobileTab(tab) {
                 isMobilePreview = (tab === 'preview');
                 if (tab === 'preview') {
@@ -461,6 +497,7 @@ print(fibonacci(10))  # 55
                 updatePreview();
             });
 
+            // 分隔拖拽
             function initDivider() {
                 let dragging = false, startX, startWidth;
                 dividerBar.addEventListener('mousedown', (e) => {
@@ -495,6 +532,7 @@ print(fibonacci(10))  # 55
             }
             initDivider();
 
+            // 工具栏功能
             function insertText(before, after, placeholder) {
                 const s = editor.selectionStart, e = editor.selectionEnd;
                 const sel = editor.value.substring(s, e) || placeholder || '';
@@ -545,6 +583,7 @@ print(fibonacci(10))  # 55
                 }
             });
 
+            // 键盘快捷键
             editor.addEventListener('keydown', (e) => {
                 if (e.key === 'Tab') {
                     e.preventDefault();
@@ -564,6 +603,7 @@ print(fibonacci(10))  # 55
                 if (ctrl && e.key === 'k') { e.preventDefault(); insertText('[', '](url)', '链接文字'); }
             });
 
+            // 滚动同步
             editor.addEventListener('scroll', () => {
                 if (editingProgrammaticScroll) { editingProgrammaticScroll = false; return; }
                 syncEditorScrollToPreview();
@@ -588,6 +628,7 @@ print(fibonacci(10))  # 55
 
             editor.addEventListener('input', updatePreview);
 
+            // 初始化
             loadTheme();
             editor.value = loadContent();
             updatePreview();
