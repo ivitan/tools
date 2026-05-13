@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USB启动盘制作工具 - WebUSB Imager</title>
+    <style>
+        :root {
+            --bg: #f5f6f8;
+            --card-bg: #ffffff;
+            --card-border: #e8ecf1;
+            --text-primary: #1a1d23;
+            --text-secondary: #5f6672;
+            --text-muted: #939aa5;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-light: #eff4ff;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+            --danger-light: #fef2f2;
+            --success: #16a34a;
+            --success-light: #f0fdf6;
+            --warning: #d97706;
+            --warning-light: #fffbeb;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04);
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0d1117;
+            --card-bg: #161b22;
+            --card-border: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #b0b8c4;
+            --text-muted: #6e7681;
+            --accent: #58a6ff;
+            --accent-hover: #79b8ff;
+            --accent-light: #0d2847;
+            --danger: #f85149;
+            --danger-hover: #da3633;
+            --danger-light: #1f1315;
+            --success: #3fb950;
+            --success-light: #0d1d12;
+            --warning: #d2991d;
+            --warning-light: #1b1509;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: background var(--transition), color var(--transition);
+            background-image: radial-gradient(ellipse at 50% 0%, var(--accent-light) 0%, transparent 70%);
+            background-size: 100% 400px;
+            background-repeat: no-repeat;
+            background-position: top center;
+        }
+
+        [data-theme="dark"] body {
+            background-image: radial-gradient(ellipse at 50% 0%, rgba(88, 166, 255, 0.06) 0%, transparent 70%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 640px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 8px 0;
+        }
+        .header .logo-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            border-radius: var(--radius-lg);
+            background: var(--accent);
+            color: #fff;
+            font-size: 26px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+            transition: all var(--transition);
+        }
+        [data-theme="dark"] .header .logo-icon {
+            box-shadow: 0 4px 20px rgba(88, 166, 255, 0.25);
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            transition: color var(--transition);
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            transition: color var(--transition);
+        }
+
+        /* Theme toggle */
+        .theme-toggle-wrapper {
+            display: flex;
+            justify-content: flex-end;
+            position: relative;
+        }
+        .theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 50px;
+            border: 1.5px solid var(--card-border);
+            background: var(--card-bg);
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            transition: all var(--transition);
+            box-shadow: var(--shadow-sm);
+            font-family: var(--font-sans);
+            white-space: nowrap;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .theme-toggle:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: var(--shadow);
+        }
+        .theme-toggle:active {
+            transform: scale(0.96);
+        }
+        .theme-toggle .icon-sun,
+        .theme-toggle .icon-moon {
+            font-size: 1rem;
+            transition: transform var(--transition);
+        }
+        [data-theme="dark"] .theme-toggle .icon-moon {
+            display: inline;
+        }
+        [data-theme="dark"] .theme-toggle .icon-sun {
+            display: none;
+        }
+        [data-theme="light"] .theme-toggle .icon-moon {
+            display: none;
+        }
+        [data-theme="light"] .theme-toggle .icon-sun {
+            display: inline;
+        }
+
+        /* Card */
+        .card {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), #8b5cf6, var(--accent));
+            opacity: 0;
+            transition: opacity var(--transition);
+            border-radius: 3px 3px 0 0;
+        }
+        .card.highlight::before {
+            opacity: 0.7;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+            transition: color var(--transition);
+            letter-spacing: -0.01em;
+        }
+        .card-title .step-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent-light);
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            transition: all var(--transition);
+        }
+        .card-title .step-badge.done {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all var(--transition);
+            font-family: var(--font-sans);
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            text-decoration: none;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        }
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+        }
+        .btn-primary:disabled {
+            background: #a0b8e0;
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+        [data-theme="dark"] .btn-primary:disabled {
+            background: #2a3a55;
+            opacity: 0.5;
+        }
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+        }
+        .btn-danger:hover {
+            background: var(--danger-hover);
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3);
+        }
+        .btn-danger:disabled {
+            background: #d4a0a0;
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+        [data-theme="dark"] .btn-danger:disabled {
+            background: #4a2a2a;
+            opacity: 0.5;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid var(--card-border);
+            color: var(--text-primary);
+        }
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+        .btn-sm {
+            padding: 7px 14px;
+            font-size: 0.8rem;
+            border-radius: 40px;
+        }
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 50%;
+            font-size: 1.1rem;
+        }
+
+        /* Device info */
+        .device-info {
+            background: var(--bg);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            display: none;
+            transition: all var(--transition);
+            border: 1px solid transparent;
+        }
+        .device-info.show {
+            display: block;
+            border-color: var(--card-border);
+        }
+        .device-info .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--card-border);
+            gap: 12px;
+            transition: border-color var(--transition);
+        }
+        .device-info .info-row:last-child {
+            border-bottom: none;
+        }
+        .device-info .info-label {
+            color: var(--text-muted);
+            flex-shrink: 0;
+            transition: color var(--transition);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .device-info .info-value {
+            color: var(--text-primary);
+            font-weight: 500;
+            text-align: right;
+            word-break: break-all;
+            transition: color var(--transition);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+        .device-info .info-value.capacity {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        /* Drop zone */
+        .drop-zone {
+            border: 2px dashed var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 32px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            background: var(--bg);
+            position: relative;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            box-shadow: inset 0 0 0 4px rgba(37, 99, 235, 0.04);
+        }
+        .drop-zone .drop-icon {
+            font-size: 2.5rem;
+            opacity: 0.7;
+            transition: all var(--transition);
+        }
+        .drop-zone.drag-over .drop-icon {
+            transform: translateY(-4px);
+            opacity: 1;
+        }
+        .drop-zone .drop-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            transition: color var(--transition);
+            font-weight: 500;
+        }
+        .drop-zone .drop-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            transition: color var(--transition);
+        }
+        .drop-zone.has-file {
+            border-style: solid;
+            border-color: var(--success);
+            background: var(--success-light);
+        }
+        .file-info-display {
+            display: none;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            transition: color var(--transition);
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .file-info-display.show {
+            display: flex;
+        }
+        .file-info-display .file-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .file-info-display .file-size {
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        /* Progress */
+        .progress-section {
+            display: none;
+            margin-top: 16px;
+            transition: all var(--transition);
+        }
+        .progress-section.show {
+            display: block;
+        }
+        .progress-bar-outer {
+            width: 100%;
+            height: 10px;
+            background: var(--bg);
+            border-radius: 50px;
+            overflow: hidden;
+            transition: background var(--transition);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .progress-bar-inner {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #6366f1);
+            border-radius: 50px;
+            width: 0%;
+            transition: width 0.3s ease-out;
+            position: relative;
+        }
+        .progress-bar-inner.indeterminate {
+            animation: indeterminate 1.8s ease-in-out infinite;
+            width: 40%;
+            background: linear-gradient(90deg, var(--accent), #6366f1, var(--accent));
+            background-size: 200% 100%;
+        }
+        @keyframes indeterminate {
+            0% {
+                transform: translateX(-100%);
+                background-position: 0% 50%;
+            }
+            100% {
+                transform: translateX(350%);
+                background-position: 200% 50%;
+            }
+        }
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            transition: color var(--transition);
+        }
+        .progress-text .speed {
+            font-family: var(--font-mono);
+        }
+
+        /* Status badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .status-badge.connected {
+            background: var(--success-light);
+            color: var(--success);
+        }
+        .status-badge.disconnected {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-dot.green {
+            background: var(--success);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        .status-dot.red {
+            background: var(--danger);
+        }
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+            }
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
+            }
+        }
+
+        /* Alert */
+        .alert {
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-top: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            transition: all var(--transition);
+        }
+        .alert-warning {
+            background: var(--warning-light);
+            color: var(--warning);
+            border: 1px solid rgba(217, 119, 6, 0.2);
+        }
+        .alert-info {
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px solid rgba(37, 99, 235, 0.15);
+        }
+        .alert-danger {
+            background: var(--danger-light);
+            color: var(--danger);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+        .alert-success {
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid rgba(22, 163, 74, 0.2);
+        }
+        .alert-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 4px 0;
+            transition: color var(--transition);
+            line-height: 1.6;
+        }
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Confetti overlay */
+        .success-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .success-overlay.show {
+            display: block;
+            animation: fadeInOverlay 0.5s ease-out;
+        }
+        @keyframes fadeInOverlay {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .card {
+                padding: 18px 14px;
+                border-radius: var(--radius-lg);
+            }
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            .btn {
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
+            .drop-zone {
+                padding: 24px 16px;
+                min-height: 100px;
+            }
+            .device-info .info-row {
+                flex-direction: column;
+                gap: 2px;
+            }
+            .device-info .info-value {
+                text-align: left;
+            }
+        }
+
+        /* Hidden file input */
+        .hidden-input {
+            display: none;
+        }
+
+        /* Tooltip */
+        .tooltip-trigger {
+            cursor: help;
+            border-bottom: 1px dotted var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-icon">💿</div>
+            <h1>USB 启动盘制作工具</h1>
+            <p class="subtitle">WebUSB Imager — 纯前端镜像写入</p>
+        </div>
+
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-wrapper">
+            <button class="theme-toggle" id="themeToggle" aria-label="切换暗色模式">
+                <span class="icon-sun">☀️</span>
+                <span class="icon-moon">🌙</span>
+                <span id="themeLabel">暗色模式</span>
+            </button>
+        </div>
+
+        <!-- Step 1: Connect USB -->
+        <div class="card" id="cardStep1">
+            <div class="card-title">
+                <span class="step-badge" id="badgeStep1">1</span>
+                连接 USB 设备
+                <span class="status-badge disconnected" id="deviceStatusBadge" style="margin-left:auto;">
+                    <span class="status-dot red"></span> 未连接
+                </span>
+            </div>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;transition:color var(--transition);">
+                请插入U盘或USB存储设备，然后点击下方按钮连接。需使用 <strong>Chrome/Edge</strong> 浏览器。
+            </p>
+            <button class="btn btn-primary" id="btnConnectUSB">
+                🔌 选择并连接USB设备
+            </button>
+            <button class="btn btn-outline btn-sm" id="btnRefreshDevices" style="margin-left:8px;display:none;">
+                🔄 刷新已授权设备
+            </button>
+            <div class="device-info" id="deviceInfo">
+                <div class="info-row"><span class="info-label">产品名称</span><span class="info-value" id="devProductName">—</span></div>
+                <div class="info-row"><span class="info-label">制造商</span><span class="info-value" id="devManufacturer">—</span></div>
+                <div class="info-row"><span class="info-label">序列号</span><span class="info-value" id="devSerial">—</span></div>
+                <div class="info-row"><span class="info-label">USB VID:PID</span><span class="info-value" id="devVidPid">—</span></div>
+                <div class="info-row"><span class="info-label">扇区大小</span><span class="info-value" id="devBlockSize">—</span></div>
+                <div class="info-row"><span class="info-label">总容量</span><span class="info-value capacity" id="devCapacity">—</span></div>
+            </div>
+        </div>
+
+        <!-- Step 2: Select Image -->
+        <div class="card" id="cardStep2">
+            <div class="card-title">
+                <span class="step-badge" id="badgeStep2">2</span>
+                选择镜像文件
+            </div>
+            <div class="drop-zone" id="dropZone">
+                <span class="drop-icon">📁</span>
+                <span class="drop-text">拖放 IMG 镜像文件到此处</span>
+                <span class="drop-hint">或点击选择文件 · 支持 .img / .iso / .bin / .raw</span>
+            </div>
+            <input type="file" id="fileInput" class="hidden-input" accept=".img,.iso,.bin,.raw,.gz,.xz,.zip,image/*,application/octet-stream,*/*">
+            <div class="file-info-display" id="fileInfoDisplay">
+                <span>📄</span>
+                <span class="file-name" id="fileName">—</span>
+                <span class="file-size" id="fileSize">—</span>
+                <button class="btn btn-outline btn-sm" id="btnClearFile">✕ 清除</button>
+            </div>
+            <div class="alert alert-info" id="alertSizeCheck" style="display:none;margin-top:10px;">
+                <span class="alert-icon">ℹ️</span>
+                <span id="alertSizeCheckText"></span>
+            </div>
+        </div>
+
+        <!-- Step 3: Write -->
+        <div class="card" id="cardStep3">
+            <div class="card-title">
+                <span class="step-badge" id="badgeStep3">3</span>
+                写入镜像
+            </div>
+            <div class="alert alert-warning" style="margin-bottom:12px;">
+                <span class="alert-icon">⚠️</span>
+                <span><strong>警告：</strong>写入操作将<strong>完全覆盖</strong>目标USB设备上的所有数据！请确保已备份重要文件，并确认选择了正确的设备。</span>
+            </div>
+            <button class="btn btn-danger" id="btnStartWrite" disabled>
+                🚀 开始写入镜像到USB设备
+            </button>
+            <button class="btn btn-outline btn-sm" id="btnCancelWrite" style="display:none;margin-left:8px;">
+                ⏹ 取消写入
+            </button>
+            <div class="progress-section" id="progressSection">
+                <div class="progress-bar-outer">
+                    <div class="progress-bar-inner" id="progressBar"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progressPercent">0%</span>
+                    <span class="speed" id="progressSpeed">—</span>
+                </div>
+                <div class="progress-text" style="margin-top:2px;">
+                    <span id="progressDetail">准备中...</span>
+                    <span id="progressEta"></span>
+                </div>
+            </div>
+            <div id="writeStatusArea" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>🔒 纯前端工具 · 数据仅在本地处理 · 使用 <a href="https://developer.chrome.com/docs/capabilities/usb" target="_blank" rel="noopener">WebUSB API</a></p>
+            <p style="font-size:0.7rem;color:var(--text-muted);">
+                需要 Chrome 89+ 或 Edge 89+ · Linux用户可能需要配置 <code>udev</code> 规则 · Windows用户请确保设备未被挂载占用
+            </p>
+        </div>
+    </div>
+
+    <!-- Success overlay -->
+    <div class="success-overlay" id="successOverlay"></div>
+
+    <script>
+        (function() {
+            // ==================== 常量 ====================
+            const SCSI_WRITE_10 = 0x2A;
+            const SCSI_READ_CAPACITY_10 = 0x25;
+            const CBW_SIGNATURE = 0x43425355; // 'USBC' little-endian
+            const CSW_SIGNATURE = 0x53425355; // 'USBS' little-endian
+            const CBW_FLAG_DATA_OUT = 0x00;
+            const CBW_FLAG_DATA_IN = 0x80;
+            const DEFAULT_SECTOR_SIZE = 512;
+            const CHUNK_SECTORS = 256; // 每次写入256个扇区 (128KB for 512B sectors)
+            const MAX_BULK_TRANSFER = 512 * 1024; // 单次bulk传输最大512KB
+
+            // ==================== DOM元素 ====================
+            const $ = (sel) => document.querySelector(sel);
+            const $$ = (sel) => document.querySelectorAll(sel);
+
+            const btnConnectUSB = $('#btnConnectUSB');
+            const btnRefreshDevices = $('#btnRefreshDevices');
+            const deviceStatusBadge = $('#deviceStatusBadge');
+            const deviceInfo = $('#deviceInfo');
+            const dropZone = $('#dropZone');
+            const fileInput = $('#fileInput');
+            const fileInfoDisplay = $('#fileInfoDisplay');
+            const fileNameEl = $('#fileName');
+            const fileSizeEl = $('#fileSize');
+            const btnClearFile = $('#btnClearFile');
+            const btnStartWrite = $('#btnStartWrite');
+            const btnCancelWrite = $('#btnCancelWrite');
+            const progressSection = $('#progressSection');
+            const progressBar = $('#progressBar');
+            const progressPercent = $('#progressPercent');
+            const progressSpeed = $('#progressSpeed');
+            const progressDetail = $('#progressDetail');
+            const progressEta = $('#progressEta');
+            const writeStatusArea = $('#writeStatusArea');
+            const alertSizeCheck = $('#alertSizeCheck');
+            const alertSizeCheckText = $('#alertSizeCheckText');
+            const themeToggle = $('#themeToggle');
+            const themeLabel = $('#themeLabel');
+            const badgeStep1 = $('#badgeStep1');
+            const badgeStep2 = $('#badgeStep2');
+            const badgeStep3 = $('#badgeStep3');
+            const cardStep1 = $('#cardStep1');
+            const cardStep2 = $('#cardStep2');
+            const cardStep3 = $('#cardStep3');
+            const successOverlay = $('#successOverlay');
+
+            // ==================== 状态 ====================
+            let usbDevice = null;
+            let usbInterface = null;
+            let bulkOutEndpoint = null;
+            let bulkInEndpoint = null;
+            let sectorSize = DEFAULT_SECTOR_SIZE;
+            let deviceCapacityBytes = 0;
+            let deviceMaxLBA = 0;
+            let selectedFile = null;
+            let isWriting = false;
+            let abortController = null;
+            let writeStartTime = 0;
+            let bytesWritten = 0;
+            let totalBytesToWrite = 0;
+
+            // ==================== 暗色模式 ====================
+            function getSystemTheme() {
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' :
+                'light';
+            }
+
+            function getStoredTheme() {
+                try {
+                    return localStorage.getItem('usb-imager-theme');
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function setStoredTheme(theme) {
+                try {
+                    localStorage.setItem('usb-imager-theme', theme);
+                } catch (e) { /* ignore */ }
+            }
+
+            function applyTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                if (theme === 'dark') {
+                    themeLabel.textContent = '亮色模式';
+                } else {
+                    themeLabel.textContent = '暗色模式';
+                }
+                setStoredTheme(theme);
+            }
+
+            function toggleTheme() {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+            }
+
+            // 初始化主题
+            const storedTheme = getStoredTheme();
+            const initialTheme = storedTheme || getSystemTheme();
+            applyTheme(initialTheme);
+
+            // 监听系统主题变化（仅在用户未手动设置时）
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!getStoredTheme()) {
+                    applyTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+
+            themeToggle.addEventListener('click', toggleTheme);
+
+            // ==================== USB 工具函数 ====================
+            function findMassStorageInterface(device) {
+                // 查找大容量存储接口 (class=0x08, subclass=0x06, protocol=0x50)
+                for (const config of device.configurations) {
+                    for (const iface of config.interfaces) {
+                        for (const alt of iface.alternates) {
+                            if (alt.interfaceClass === 0x08 &&
+                                alt.interfaceSubclass === 0x06 &&
+                                alt.interfaceProtocol === 0x50) {
+                                return {
+                                    interfaceNumber: iface.interfaceNumber,
+                                    alternate: alt,
+                                    endpoints: alt.endpoints
+                                };
+                            }
+                        }
+                    }
+                }
+                // 回退：查找任何接口类为0x08的
+                for (const config of device.configurations) {
+                    for (const iface of config.interfaces) {
+                        for (const alt of iface.alternates) {
+                            if (alt.interfaceClass === 0x08) {
+                                return {
+                                    interfaceNumber: iface.interfaceNumber,
+                                    alternate: alt,
+                                    endpoints: alt.endpoints
+                                };
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function findEndpoints(endpoints) {
+                let bulkOut = null;
+                let bulkIn = null;
+                for (const ep of endpoints) {
+                    if (ep.type === 'bulk') {
+                        if (ep.direction === 'out' && !bulkOut) {
+                            bulkOut = ep;
+                        } else if (ep.direction === 'in' && !bulkIn) {
+                            bulkIn = ep;
+                        }
+                    }
+                }
+                return { bulkOut, bulkIn };
+            }
+
+            function buildCBW(tag, dataTransferLength, flags, lun, cbwcb) {
+                const buffer = new ArrayBuffer(31);
+                const view = new DataView(buffer);
+                view.setUint32(0, CBW_SIGNATURE, true); // dCBWSignature
+                view.setUint32(4, tag, true); // dCBWTag
+                view.setUint32(8, dataTransferLength, true); // dCBWDataTransferLength
+                view.setUint8(12, flags); // bmCBWFlags
+                view.setUint8(13, lun); // bCBWLUN
+                view.setUint8(14, cbwcb.length); // bCBWCBLength
+                // 复制CBWCB（最多16字节）
+                const cbBytes = new Uint8Array(buffer, 15, 16);
+                const srcBytes = new Uint8Array(cbwcb);
+                cbBytes.fill(0);
+                cbBytes.set(srcBytes.slice(0, 16));
+                return buffer;
+            }
+
+            function buildSCSIWrite10(lba, numBlocks) {
+                const cmd = new ArrayBuffer(10);
+                const view = new DataView(cmd);
+                view.setUint8(0, SCSI_WRITE_10);
+                view.setUint8(1, 0); // flags
+                view.setUint32(2, lba, false); // LBA (big-endian)
+                view.setUint8(6, 0); // group
+                view.setUint16(7, numBlocks, false); // transfer length (big-endian)
+                view.setUint8(9, 0); // control
+                return cmd;
+            }
+
+            function buildSCSIReadCapacity10() {
+                const cmd = new ArrayBuffer(10);
+                const view = new DataView(cmd);
+                view.setUint8(0, SCSI_READ_CAPACITY_10);
+                // 其余字节为0
+                return cmd;
+            }
+
+            function parseCSW(buffer) {
+                const view = new DataView(buffer);
+                const signature = view.getUint32(0, true);
+                const tag = view.getUint32(4, true);
+                const residue = view.getUint32(8, true);
+                const status = view.getUint8(12);
+                return { signature, tag, residue, status, isValid: signature === CSW_SIGNATURE };
+            }
+
+            function parseReadCapacityResponse(buffer) {
+                const view = new DataView(buffer);
+                const maxLBA = view.getUint32(0, false); // big-endian
+                const blockSize = view.getUint32(4, false); // big-endian
+                return { maxLBA, blockSize };
+            }
+
+            // ==================== USB 操作 ====================
+            async function connectUSBDevice() {
+                try {
+                    // 首先尝试获取已授权的设备
+                    let devices = [];
+                    try {
+                        devices = await navigator.usb.getDevices();
+                    } catch (e) { /* ignore */ }
+
+                    let device = null;
+                    if (devices.length > 0) {
+                        // 如果有已授权设备，尝试使用第一个
+                        device = devices[0];
+                    } else {
+                        // 请求新设备
+                        device = await navigator.usb.requestDevice({
+                            filters: [
+                                { classCode: 0x08 }, // 大容量存储类
+                            ]
+                        });
+                    }
+
+                    if (!device) {
+                        showStatus('未选择设备', 'disconnected');
+                        return;
+                    }
+
+                    await setupDevice(device);
+                } catch (err) {
+                    console.error('连接USB设备失败:', err);
+                    if (err.name === 'NotFoundError') {
+                        showStatus('未找到设备 — 请插入U盘后重试', 'disconnected');
+                    } else if (err.name === 'SecurityError') {
+                        showStatus('权限不足 — 需要HTTPS或localhost环境', 'disconnected');
+                    } else {
+                        showStatus('连接失败: ' + err.message, 'disconnected');
+                    }
+                    resetDeviceState();
+                }
+            }
+
+            async function setupDevice(device) {
+                usbDevice = device;
+                await device.open();
+
+                // 查找大容量存储接口
+                const msInterface = findMassStorageInterface(device);
+                if (!msInterface) {
+                    throw new Error('未找到USB大容量存储接口。请确认设备是U盘或USB存储设备。');
+                }
+                usbInterface = msInterface;
+
+                // Claim interface
+                try {
+                    await device.claimInterface(msInterface.interfaceNumber);
+                } catch (err) {
+                    if (err.message && err.message.includes('in use')) {
+                        throw new Error(
+                            '设备接口被占用。请在系统中卸载/弹出该USB设备后重试。\\n\\nWindows: 在磁盘管理中使磁盘"脱机"\\nLinux: sudo umount 设备路径\\nmacOS: 在磁盘工具中卸载');
+                    }
+                    throw err;
+                }
+
+                // 查找端点
+                const { bulkOut, bulkIn } = findEndpoints(msInterface.endpoints);
+                if (!bulkOut || !bulkIn) {
+                    throw new Error('未找到批量传输端点。该设备可能不支持所需协议。');
+                }
+                bulkOutEndpoint = bulkOut;
+                bulkInEndpoint = bulkIn;
+
+                // 读取设备容量
+                await readDeviceCapacity();
+
+                // 读取设备描述符信息
+                await readDeviceDescriptors();
+
+                // 更新UI
+                updateDeviceUI();
+                showStatus('已连接', 'connected');
+                badgeStep1.classList.add('done');
+                cardStep1.classList.add('highlight');
+                btnConnectUSB.textContent = '🔌 更换USB设备';
+                btnRefreshDevices.style.display = 'inline-flex';
+                updateWriteButton();
+            }
+
+            async function readDeviceCapacity() {
+                const readCapCmd = buildSCSIReadCapacity10();
+                const tag = Date.now() & 0xFFFFFFFF;
+                const cbw = buildCBW(tag, 8, CBW_FLAG_DATA_IN, 0, readCapCmd);
+
+                await usbDevice.transferOut(bulkOutEndpoint.endpointNumber, cbw);
+                const result = await usbDevice.transferIn(bulkInEndpoint.endpointNumber, 8);
+
+                if (result.data && result.data.byteLength >= 8) {
+                    const cap = parseReadCapacityResponse(result.data.buffer);
+                    sectorSize = cap.blockSize;
+                    deviceMaxLBA = cap.maxLBA;
+                    deviceCapacityBytes = (deviceMaxLBA + 1) * sectorSize;
+                }
+
+                // 接收CSW
+                try {
+                    const cswResult = await usbDevice.transferIn(bulkInEndpoint.endpointNumber, 13);
+                    if (cswResult.data && cswResult.data.byteLength >= 13) {
+                        const csw = parseCSW(cswResult.data.buffer);
+                        if (!csw.isValid || csw.status !== 0) {
+                            console.warn('READ CAPACITY CSW异常:', csw);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('读取CSW时出错:', e);
+                }
+            }
+
+            async function readDeviceDescriptors() {
+                // 尝试读取字符串描述符
+                try {
+                    if (usbDevice.productName) {
+                        $('#devProductName').textContent = usbDevice.productName;
+                    }
+                    if (usbDevice.manufacturerName) {
+                        $('#devManufacturer').textContent = usbDevice.manufacturerName;
+                    }
+                    if (usbDevice.serialNumber) {
+                        $('#devSerial').textContent = usbDevice.serialNumber;
+                    }
+                } catch (e) { /* ignore */ }
+                $('#devVidPid').textContent =
+                    `0x${usbDevice.vendorId.toString(16).toUpperCase().padStart(4, '0')}:0x${usbDevice.deviceId.toString(16).toUpperCase().padStart(4, '0')}`;
+                $('#devBlockSize').textContent = `${sectorSize} 字节`;
+                $('#devCapacity').textContent = formatBytes(deviceCapacityBytes);
+            }
+
+            function updateDeviceUI() {
+                deviceInfo.classList.add('show');
+                if (!usbDevice.productName) $('#devProductName').textContent = '未知设备';
+                if (!usbDevice.manufacturerName) $('#devManufacturer').textContent = '未知';
+                if (!usbDevice.serialNumber) $('#devSerial').textContent = '无';
+            }
+
+            function resetDeviceState() {
+                usbDevice = null;
+                usbInterface = null;
+                bulkOutEndpoint = null;
+                bulkInEndpoint = null;
+                sectorSize = DEFAULT_SECTOR_SIZE;
+                deviceCapacityBytes = 0;
+                deviceMaxLBA = 0;
+                deviceInfo.classList.remove('show');
+                badgeStep1.classList.remove('done');
+                cardStep1.classList.remove('highlight');
+                btnConnectUSB.textContent = '🔌 选择并连接USB设备';
+                btnRefreshDevices.style.display = 'none';
+                updateWriteButton();
+            }
+
+            async function disconnectUSB() {
+                if (usbDevice) {
+                    try {
+                        if (usbInterface) {
+                            await usbDevice.releaseInterface(usbInterface.interfaceNumber);
+                        }
+                        await usbDevice.close();
+                    } catch (e) {
+                        console.warn('断开设备时出错:', e);
+                    }
+                }
+                resetDeviceState();
+                showStatus('未连接', 'disconnected');
+            }
+
+            function showStatus(message, type) {
+                const badge = deviceStatusBadge;
+                if (type === 'connected') {
+                    badge.className = 'status-badge connected';
+                    badge.innerHTML = '<span class="status-dot green"></span> 已连接';
+                } else {
+                    badge.className = 'status-badge disconnected';
+                    badge.innerHTML = '<span class="status-dot red"></span> ' + message;
+                }
+            }
+
+            // ==================== 文件处理 ====================
+            function handleFile(file) {
+                if (!file) return;
+                // 检查文件扩展名
+                const name = file.name.toLowerCase();
+                const validExts = ['.img', '.iso', '.bin', '.raw', '.dmg', '.vhd', '.vhdx', '.vmdk'];
+                const isValid = validExts.some(ext => name.endsWith(ext)) || file.type === 'application/octet-stream';
+
+                // 接受所有文件类型，但给出提示
+                selectedFile = file;
+                fileNameEl.textContent = file.name;
+                fileSizeEl.textContent = formatBytes(file.size);
+                fileInfoDisplay.classList.add('show');
+                dropZone.classList.add('has-file');
+                dropZone.querySelector('.drop-text').textContent = '点击更换镜像文件';
+                dropZone.querySelector('.drop-hint').textContent = file.name;
+                badgeStep2.classList.add('done');
+                cardStep2.classList.add('highlight');
+
+                // 检查大小
+                if (deviceCapacityBytes > 0 && file.size > deviceCapacityBytes) {
+                    alertSizeCheck.style.display = 'flex';
+                    alertSizeCheck.className = 'alert alert-danger';
+                    alertSizeCheckText.textContent =
+                        `镜像文件 (${formatBytes(file.size)}) 大于设备容量 (${formatBytes(deviceCapacityBytes)})，无法写入！请更换更小的镜像或使用更大容量的设备。`;
+                    btnStartWrite.disabled = true;
+                } else if (deviceCapacityBytes > 0 && file.size > deviceCapacityBytes * 0.98) {
+                    alertSizeCheck.style.display = 'flex';
+                    alertSizeCheck.className = 'alert alert-warning';
+                    alertSizeCheckText.textContent =
+                        `镜像文件大小接近设备容量上限，写入后设备将几乎没有剩余空间。请确认是否继续。`;
+                    updateWriteButton();
+                } else if (deviceCapacityBytes > 0 && file.size <= deviceCapacityBytes) {
+                    alertSizeCheck.style.display = 'flex';
+                    alertSizeCheck.className = 'alert alert-info';
+                    alertSizeCheckText.textContent =
+                        `镜像文件 ${formatBytes(file.size)} → 目标设备 ${formatBytes(deviceCapacityBytes)}，空间充足，可以写入。`;
+                    updateWriteButton();
+                } else {
+                    alertSizeCheck.style.display = 'none';
+                    updateWriteButton();
+                }
+            }
+
+            function clearFile() {
+                selectedFile = null;
+                fileInfoDisplay.classList.remove('show');
+                dropZone.classList.remove('has-file');
+                dropZone.querySelector('.drop-text').textContent = '拖放 IMG 镜像文件到此处';
+                dropZone.querySelector('.drop-hint').textContent = '或点击选择文件 · 支持 .img / .iso / .bin / .raw';
+                fileInput.value = '';
+                badgeStep2.classList.remove('done');
+                cardStep2.classList.remove('highlight');
+                alertSizeCheck.style.display = 'none';
+                updateWriteButton();
+            }
+
+            function updateWriteButton() {
+                btnStartWrite.disabled = !(usbDevice && selectedFile && !isWriting);
+                if (usbDevice && selectedFile && deviceCapacityBytes > 0 && selectedFile.size >
+                    deviceCapacityBytes) {
+                    btnStartWrite.disabled = true;
+                }
+            }
+
+            // ==================== 写入引擎 ====================
+            async function startWrite() {
+                if (!usbDevice || !selectedFile || isWriting) return;
+                if (!bulkOutEndpoint || !bulkInEndpoint) {
+                    showWriteError('USB设备未正确配置，请重新连接。');
+                    return;
+                }
+
+                // 二次确认
+                const confirmed = confirm(
+                    `⚠️ 最终确认\n\n即将把镜像文件写入USB设备：\n• 设备：${usbDevice.productName || '未知设备'} (${formatBytes(deviceCapacityBytes)})\n• 镜像：${selectedFile.name} (${formatBytes(selectedFile.size)})\n\n此操作将永久覆盖设备上的所有数据！\n\n确定要继续吗？`
+                );
+                if (!confirmed) return;
+
+                isWriting = true;
+                abortController = new AbortController();
+                const signal = abortController.signal;
+                bytesWritten = 0;
+                totalBytesToWrite = selectedFile.size;
+                writeStartTime = performance.now();
+
+                // 更新UI
+                btnStartWrite.disabled = true;
+                btnStartWrite.style.display = 'none';
+                btnCancelWrite.style.display = 'inline-flex';
+                progressSection.classList.add('show');
+                progressBar.classList.remove('indeterminate');
+                progressBar.style.width = '0%';
+                progressPercent.textContent = '0%';
+                progressSpeed.textContent = '—';
+                progressDetail.textContent = '正在准备写入...';
+                progressEta.textContent = '';
+                writeStatusArea.innerHTML = '';
+                cardStep3.classList.add('highlight');
+                badgeStep3.classList.add('done');
+
+                try {
+                    await performWrite(signal);
+                    // 成功
+                    progressBar.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    progressDetail.textContent = '✅ 写入完成！镜像已成功写入USB设备。';
+                    progressSpeed.textContent = '';
+                    progressEta.textContent = '';
+                    progressBar.classList.remove('indeterminate');
+                    writeStatusArea.innerHTML =
+                        '<div class="alert alert-success"><span class="alert-icon">🎉</span><span>镜像写入成功！USB启动盘已制作完成。您可以安全弹出设备了。</span></div>';
+                    showSuccessOverlay();
+                    badgeStep3.classList.add('done');
+                } catch (err) {
+                    if (err.name === 'AbortError' || err.message === '用户取消') {
+                        progressDetail.textContent = '⏹ 写入已取消';
+                        progressBar.classList.remove('indeterminate');
+                        writeStatusArea.innerHTML =
+                            '<div class="alert alert-warning"><span class="alert-icon">⚠️</span><span>写入操作已被取消。设备上的数据可能不完整，建议重新格式化后再使用。</span></div>';
+                    } else {
+                        progressBar.classList.remove('indeterminate');
+                        progressBar.style.width = '0%';
+                        showWriteError('写入失败: ' + err.message);
+                        console.error('写入错误:', err);
+                    }
+                } finally {
+                    isWriting = false;
+                    abortController = null;
+                    btnStartWrite.style.display = 'inline-flex';
+                    btnCancelWrite.style.display = 'none';
+                    btnStartWrite.disabled = false;
+                    updateWriteButton();
+                }
+            }
+
+            async function performWrite(signal) {
+                const file = selectedFile;
+                const totalBytes = file.size;
+                const chunkBytes = CHUNK_SECTORS * sectorSize;
+                let lba = 0;
+                let fileOffset = 0;
+                let tagCounter = Date.now() & 0xFFFF;
+
+                // 计算总扇区数（向上取整）
+                const totalSectors = Math.ceil(totalBytes / sectorSize);
+
+                while (fileOffset < totalBytes) {
+                    // 检查取消信号
+                    if (signal.aborted) {
+                        throw new Error('用户取消');
+                    }
+
+                    const remaining = totalBytes - fileOffset;
+                    const currentChunkBytes = Math.min(chunkBytes, remaining);
+                    const currentChunkSectors = Math.ceil(currentChunkBytes / sectorSize);
+
+                    // 读取文件块
+                    const blobSlice = file.slice(fileOffset, fileOffset + currentChunkBytes);
+                    const arrayBuffer = await readBlobAsArrayBuffer(blobSlice);
+
+                    // 确保数据按扇区大小对齐
+                    let dataToWrite = arrayBuffer;
+                    if (dataToWrite.byteLength < currentChunkSectors * sectorSize) {
+                        // 填充到完整扇区
+                        const padded = new ArrayBuffer(currentChunkSectors * sectorSize);
+                        const paddedView = new Uint8Array(padded);
+                        paddedView.set(new Uint8Array(dataToWrite));
+                        // 剩余部分已为0（默认填充）
+                        dataToWrite = padded;
+                    }
+
+                    // 构建SCSI WRITE_10命令
+                    const scsiCmd = buildSCSIWrite10(lba, currentChunkSectors);
+                    const tag = (tagCounter++) & 0xFFFFFFFF;
+                    const cbw = buildCBW(tag, dataToWrite.byteLength, CBW_FLAG_DATA_OUT, 0, scsiCmd);
+
+                    // 发送CBW
+                    await usbDevice.transferOut(bulkOutEndpoint.endpointNumber, cbw);
+
+                    // 发送数据（可能需要分块发送以适应端点最大包大小）
+                    const maxPacketSize = bulkOutEndpoint.packetSize || 512;
+                    const dataView = new Uint8Array(dataToWrite);
+                    let dataOffset = 0;
+                    while (dataOffset < dataView.length) {
+                        if (signal.aborted) throw new Error('用户取消');
+                        const packetSize = Math.min(maxPacketSize * 64, dataView.length - dataOffset); // 一次发送最多64个包
+                        const packet = dataView.slice(dataOffset, dataOffset + packetSize);
+                        await usbDevice.transferOut(bulkOutEndpoint.endpointNumber, packet);
+                        dataOffset += packetSize;
+                    }
+
+                    // 接收CSW
+                    const cswResult = await usbDevice.transferIn(bulkInEndpoint.endpointNumber, 13);
+                    if (!cswResult.data || cswResult.data.byteLength < 13) {
+                        throw new Error(`CSW响应异常 (LBA ${lba})`);
+                    }
+                    const csw = parseCSW(cswResult.data.buffer);
+                    if (!csw.isValid) {
+                        throw new Error(`CSW签名无效 (LBA ${lba})`);
+                    }
+                    if (csw.status !== 0) {
+                        throw new Error(`SCSI写入失败，状态码: ${csw.status} (LBA ${lba}, 扇区数: ${currentChunkSectors})`);
+                    }
+
+                    // 更新进度
+                    fileOffset += currentChunkBytes;
+                    bytesWritten = fileOffset;
+                    lba += currentChunkSectors;
+                    updateProgress(fileOffset, totalBytes);
+                }
+
+                // 如果文件大小不是扇区大小的整数倍，已经通过填充处理
+                // 写入完成
+            }
+
+            function updateProgress(written, total) {
+                const percent = total > 0 ? Math.min(100, Math.round((written / total) * 100)) : 0;
+                progressBar.style.width = percent + '%';
+                progressPercent.textContent = percent + '%';
+                progressDetail.textContent =
+                    `已写入 ${formatBytes(written)} / ${formatBytes(total)}`;
+
+                // 计算速度
+                const elapsed = (performance.now() - writeStartTime) / 1000;
+                if (elapsed > 0.5 && written > 0) {
+                    const speedBps = written / elapsed;
+                    progressSpeed.textContent = formatSpeed(speedBps);
+
+                    // 预估剩余时间
+                    const remaining = total - written;
+                    if (speedBps > 0 && remaining > 0) {
+                        const etaSeconds = remaining / speedBps;
+                        progressEta.textContent = '预计剩余: ' + formatDuration(etaSeconds);
+                    } else {
+                        progressEta.textContent = '';
+                    }
+                }
+            }
+
+            async function readBlobAsArrayBuffer(blob) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(reader.error);
+                    reader.readAsArrayBuffer(blob);
+                });
+            }
+
+            function cancelWrite() {
+                if (abortController && isWriting) {
+                    abortController.abort();
+                }
+            }
+
+            function showWriteError(message) {
+                writeStatusArea.innerHTML =
+                    `<div class="alert alert-danger"><span class="alert-icon">❌</span><span>${escapeHtml(message)}</span></div>`;
+            }
+
+            // ==================== 辅助函数 ====================
+            function formatBytes(bytes) {
+                if (bytes === 0) return '0 B';
+                const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const k = 1024;
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                const size = bytes / Math.pow(k, i);
+                return size.toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+            }
+
+            function formatSpeed(bytesPerSecond) {
+                if (bytesPerSecond < 1024) return formatBytes(bytesPerSecond) + '/s';
+                const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+                const k = 1024;
+                const i = Math.floor(Math.log(bytesPerSecond) / Math.log(k));
+                const speed = bytesPerSecond / Math.pow(k, i);
+                return speed.toFixed(1) + ' ' + units[Math.min(i, units.length - 1)];
+            }
+
+            function formatDuration(seconds) {
+                if (seconds < 1) return '不到1秒';
+                if (seconds < 60) return Math.round(seconds) + ' 秒';
+                if (seconds < 3600) {
+                    const m = Math.floor(seconds / 60);
+                    const s = Math.round(seconds % 60);
+                    return `${m}分${s}秒`;
+                }
+                const h = Math.floor(seconds / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                return `${h}小时${m}分`;
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            function showSuccessOverlay() {
+                successOverlay.classList.add('show');
+                // 创建简单的粒子效果
+                const colors = ['#2563eb', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+                for (let i = 0; i < 60; i++) {
+                    const particle = document.createElement('div');
+                    particle.style.cssText = `
+                        position: fixed;
+                        width: ${Math.random() * 10 + 4}px;
+                        height: ${Math.random() * 10 + 4}px;
+                        background: ${colors[Math.floor(Math.random() * colors.length)]};
+                        border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+                        left: ${Math.random() * 100}%;
+                        top: -20px;
+                        pointer-events: none;
+                        z-index: 101;
+                        animation: confettiFall ${Math.random() * 2 + 2}s ease-out forwards;
+                        animation-delay: ${Math.random() * 0.8}s;
+                        opacity: 0.9;
+                    `;
+                    successOverlay.appendChild(particle);
+                }
+                // 清理
+                setTimeout(() => {
+                    successOverlay.classList.remove('show');
+                    successOverlay.innerHTML = '';
+                }, 3500);
+            }
+
+            // 动态添加confetti动画
+            const confettiStyle = document.createElement('style');
+            confettiStyle.textContent = `
+                @keyframes confettiFall {
+                    0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+                    100% { transform: translateY(105vh) rotate(${360 + Math.random() * 720}deg) scale(0.2); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(confettiStyle);
+
+            // ==================== 事件绑定 ====================
+            btnConnectUSB.addEventListener('click', connectUSBDevice);
+
+            btnRefreshDevices.addEventListener('click', async () => {
+                try {
+                    const devices = await navigator.usb.getDevices();
+                    if (devices.length > 0 && !usbDevice) {
+                        await setupDevice(devices[0]);
+                    } else if (devices.length > 0 && usbDevice) {
+                        // 尝试重新连接
+                        await disconnectUSB();
+                        await setupDevice(devices[0]);
+                    } else {
+                        showStatus('未找到已授权设备，请点击"选择并连接"', 'disconnected');
+                    }
+                } catch (err) {
+                    console.error('刷新设备失败:', err);
+                    showStatus('刷新失败', 'disconnected');
+                }
+            });
+
+            dropZone.addEventListener('click', () => {
+                if (!isWriting) fileInput.click();
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (!isWriting) dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                if (isWriting) return;
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    handleFile(fileInput.files[0]);
+                }
+            });
+
+            btnClearFile.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clearFile();
+            });
+
+            btnStartWrite.addEventListener('click', startWrite);
+            btnCancelWrite.addEventListener('click', cancelWrite);
+
+            // 页面关闭前断开设备
+            window.addEventListener('beforeunload', async () => {
+                if (usbDevice && isWriting) {
+                    // 如果正在写入，尝试取消
+                    if (abortController) abortController.abort();
+                }
+                if (usbDevice) {
+                    try {
+                        if (usbInterface && usbDevice.opened) {
+                            await usbDevice.releaseInterface(usbInterface.interfaceNumber);
+                        }
+                        await usbDevice.close();
+                    } catch (e) { /* ignore */ }
+                }
+            });
+
+            // 设备断开监听
+            navigator.usb.addEventListener('disconnect', (e) => {
+                if (e.device === usbDevice) {
+                    if (isWriting && abortController) {
+                        abortController.abort();
+                    }
+                    resetDeviceState();
+                    showStatus('设备已断开', 'disconnected');
+                    writeStatusArea.innerHTML =
+                        '<div class="alert alert-danger"><span class="alert-icon">🔌</span><span>USB设备已断开连接！请重新连接设备。</span></div>';
+                }
+            });
+
+            // 键盘快捷键
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && isWriting) {
+                    cancelWrite();
+                }
+            });
+
+            // ==================== 初始检查 ====================
+            function checkWebUSBSupport() {
+                if (!('usb' in navigator)) {
+                    writeStatusArea.innerHTML =
+                        '<div class="alert alert-danger"><span class="alert-icon">🚫</span><span>您的浏览器不支持 WebUSB API。请使用 <strong>Chrome 89+</strong> 或 <strong>Edge 89+</strong> 浏览器，并通过 <strong>HTTPS</strong> 或 <strong>localhost</strong> 访问此页面。</span></div>';
+                    btnConnectUSB.disabled = true;
+                    btnStartWrite.disabled = true;
+                    return false;
+                }
+                return true;
+            }
+
+            // 尝试自动连接已授权设备
+            async function autoConnect() {
+                if (!checkWebUSBSupport()) return;
+                try {
+                    const devices = await navigator.usb.getDevices();
+                    if (devices.length > 0) {
+                        console.log('发现已授权设备，尝试自动连接...');
+                        try {
+                            await setupDevice(devices[0]);
+                        } catch (e) {
+                            console.log('自动连接失败，请手动连接:', e.message);
+                        }
+                    }
+                } catch (e) {
+                    console.log('获取已授权设备失败:', e);
+                }
+            }
+
+            // 初始化
+            checkWebUSBSupport();
+            autoConnect();
+            updateWriteButton();
+
+            console.log('🚀 USB启动盘制作工具已就绪');
+            console.log('   WebUSB API 支持:', 'usb' in navigator ? '✅' : '❌');
+            console.log('   协议: HTTPS或localhost required');
+            console.log('   浏览器: Chrome 89+ / Edge 89+');
+            console.log('   💡 提示: 如果设备被系统占用，请先卸载/弹出设备');
+        })();
+    </script>
+</body>
+</html>
