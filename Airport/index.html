@@ -597,11 +597,16 @@
         tbody.innerHTML = tbodyHTML;
     }
 
-    // 清空与重置
+    // 【修改点】：清空重置后，仍然让包含 cabin 的复选框默认勾选
     document.getElementById('btnClear').addEventListener('click', () => {
         finalCleanedTimes = {};
         document.getElementById('pasteArea').value = '';
-        document.querySelectorAll('.table-checkbox:checked').forEach(cb => cb.checked = false);
+        
+        // 恢复包含 cabin 的复选框默认勾选状态
+        document.querySelectorAll('.table-checkbox').forEach(cb => {
+            cb.checked = cb.value.toLowerCase().includes('cabin');
+        });
+        
         renderEmptyTable();
         
         document.getElementById('pastePlaceholder').classList.remove('hidden');
@@ -615,7 +620,7 @@
 
     // 强力复制
     document.getElementById('btnCopy').addEventListener('click', () => {
-        if (Object.keys(finalCleanedTimes).length === 0) return alert('没有可复制的数据，请先执行提取。');
+        if (Object.keys(finalCleanedTimes).length === 0) return alert('Mirror space is empty. Please extract data first.');
         
         const { order } = CONFIG[currentMode];
         let text = order.map(code => finalCleanedTimes[code] || '').join('\t');
