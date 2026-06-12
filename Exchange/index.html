@@ -1,431 +1,692 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>全能数值与进制转换工作台</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <style>
-        :root {
-            --bg-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            --container-bg: #ffffff;
-            --text-color: #333;
-            --text-secondary: #7f8c8d;
-            --text-light: #95a5a6;
-            --header-color: #2c3e50;
-            --label-color: #34495e;
-            --input-bg: #fdfdfd;
-            --input-border: #ddd;
-            
-            /* 按钮颜色体系 */
-            --primary-color: #3498db;     /* 蓝 */
-            --success-color: #27ae60;     /* 绿 */
-            --warning-color: #f39c12;     /* 橙 */
-            --purple-color: #9b59b6;      /* 紫 */
-            --info-color: #00bcd4;        /* 青 */
-            --teal-color: #1abc9c;        /* 蓝绿 - 进制用 */
-            --indigo-color: #3f51b5;      /* 靛青 - 进制用 */
-            --slate-color: #607d8b;       /* 蓝灰 - 进制用 */
-            --danger-color: #e74c3c;      /* 红 - 清除用 */
-            
-            --result-bg: #f8f9fa;
-            --result-border: #2ecc71;
-            --border-color: #eee;
-            --shadow-color: rgba(0, 0, 0, 0.2);
-            --footer-color: rgba(255, 255, 255, 0.8);
-        }
+      :root {
+        --bg-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        --container-bg: #ffffff;
+        --text-color: #333;
+        --text-secondary: #7f8c8d;
+        --text-light: #95a5a6;
+        --header-color: #2c3e50;
+        --label-color: #34495e;
+        --input-bg: #fdfdfd;
+        --input-border: #ddd;
 
-        .dark-mode {
-            --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            --container-bg: #1e293b;
-            --text-color: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --text-light: #64748b;
-            --header-color: #f1f5f9;
-            --label-color: #cbd5e1;
-            --input-bg: #0f172a;
-            --input-border: #334155;
-            
-            --primary-color: #3b82f6;
-            --success-color: #22c55e;
-            --warning-color: #f59e0b;
-            --purple-color: #a855f7;
-            --info-color: #06b6d4;
-            --teal-color: #14b8a6;
-            --indigo-color: #6366f1;
-            --slate-color: #64748b;
-            --danger-color: #ef4444;
+        /* 按钮颜色体系 */
+        --primary-color: #3498db; /* 蓝 */
+        --success-color: #27ae60; /* 绿 */
+        --warning-color: #f39c12; /* 橙 */
+        --purple-color: #9b59b6; /* 紫 */
+        --info-color: #00bcd4; /* 青 */
+        --teal-color: #1abc9c; /* 蓝绿 - 进制用 */
+        --indigo-color: #3f51b5; /* 靛青 - 进制用 */
+        --slate-color: #607d8b; /* 蓝灰 - 进制用 */
+        --danger-color: #e74c3c; /* 红 - 清除用 */
 
-            --result-bg: #0f172a;
-            --result-border: #22c55e;
-            --border-color: #334155;
-            --shadow-color: rgba(0, 0, 0, 0.4);
-            --footer-color: rgba(255, 255, 255, 0.7);
-        }
+        --result-bg: #f8f9fa;
+        --result-border: #2ecc71;
+        --border-color: #eee;
+        --shadow-color: rgba(0, 0, 0, 0.2);
+        --footer-color: rgba(255, 255, 255, 0.8);
+      }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
-        }
+      .dark-mode {
+        --bg-gradient: linear-gradient(
+          135deg,
+          #1a1a2e 0%,
+          #16213e 50%,
+          #0f3460 100%
+        );
+        --container-bg: #1e293b;
+        --text-color: #e2e8f0;
+        --text-secondary: #94a3b8;
+        --text-light: #64748b;
+        --header-color: #f1f5f9;
+        --label-color: #cbd5e1;
+        --input-bg: #0f172a;
+        --input-border: #334155;
 
-        body {
-            background: var(--bg-gradient);
-            color: var(--text-color);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+        --primary-color: #3b82f6;
+        --success-color: #22c55e;
+        --warning-color: #f59e0b;
+        --purple-color: #a855f7;
+        --info-color: #06b6d4;
+        --teal-color: #14b8a6;
+        --indigo-color: #6366f1;
+        --slate-color: #64748b;
+        --danger-color: #ef4444;
 
-        .container {
-            background-color: var(--container-bg);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px var(--shadow-color);
-            width: 100%;
-            max-width: 650px;
-            padding: 30px;
-            margin: 20px 0;
-        }
+        --result-bg: #0f172a;
+        --result-border: #22c55e;
+        --border-color: #334155;
+        --shadow-color: rgba(0, 0, 0, 0.4);
+        --footer-color: rgba(255, 255, 255, 0.7);
+      }
 
-        .header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        transition:
+          background-color 0.3s,
+          color 0.3s,
+          border-color 0.3s,
+          box-shadow 0.3s;
+      }
 
-        .theme-toggle {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; background: var(--input-bg);
-            border: 2px solid var(--input-border);
-        }
+      body {
+        background: var(--bg-gradient);
+        color: var(--text-color);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
 
-        h1 { text-align: center; color: var(--header-color); margin-bottom: 5px; font-size: 26px; }
-        .description { text-align: center; margin-bottom: 25px; color: var(--text-secondary); font-size: 14px; }
+      .container {
+        background-color: var(--container-bg);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px var(--shadow-color);
+        width: 100%;
+        max-width: 650px;
+        padding: 30px;
+        margin: 20px 0;
+      }
 
-        .input-group { margin-bottom: 25px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--label-color); }
-        input {
-            width: 100%; padding: 14px 15px; border: 2px solid var(--input-border);
-            border-radius: 8px; font-size: 16px; background: var(--input-bg); color: var(--text-color);
-            letter-spacing: 1px;
-        }
-        input:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); }
+      .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
 
-        .btn-group-label {
-            font-size: 13px; font-weight: bold; color: var(--text-light);
-            margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;
-            border-bottom: 1px solid var(--border-color); padding-bottom: 5px;
-        }
+      .theme-toggle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        background: var(--input-bg);
+        border: 2px solid var(--input-border);
+      }
 
-        /* 按钮网格布局 */
+      h1 {
+        text-align: center;
+        color: var(--header-color);
+        margin-bottom: 5px;
+        font-size: 26px;
+      }
+      .description {
+        text-align: center;
+        margin-bottom: 25px;
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+
+      .input-group {
+        margin-bottom: 25px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--label-color);
+      }
+      input {
+        width: 100%;
+        padding: 14px 15px;
+        border: 2px solid var(--input-border);
+        border-radius: 8px;
+        font-size: 16px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        letter-spacing: 1px;
+      }
+      input:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+      }
+
+      .btn-group-label {
+        font-size: 13px;
+        font-weight: bold;
+        color: var(--text-light);
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 5px;
+      }
+
+      /* 按钮网格布局 */
+      .buttons-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      button {
+        padding: 10px 8px;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      button:hover {
+        filter: brightness(1.1);
+      }
+      button:active {
+        transform: scale(0.98);
+      }
+
+      /* 颜色绑定 */
+      #toDecimal {
+        background-color: var(--primary-color);
+      }
+      #toPercentage {
+        background-color: var(--success-color);
+      }
+      #toFraction {
+        background-color: var(--warning-color);
+      }
+      #toPermille {
+        background-color: var(--purple-color);
+      }
+      #toScientific {
+        background-color: var(--info-color);
+      }
+
+      #toBinary {
+        background-color: var(--teal-color);
+      }
+      #toOctal {
+        background-color: var(--indigo-color);
+      }
+      #toHex {
+        background-color: var(--slate-color);
+      }
+
+      #clearBtn {
+        background-color: var(--danger-color);
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        font-size: 15px;
+      }
+
+      .result-wrapper {
+        background-color: var(--result-bg);
+        padding: 18px;
+        border-radius: 8px;
+        border-left: 5px solid var(--result-border);
+        margin-top: 25px;
+        position: relative;
+      }
+      .result-wrapper h3 {
+        color: var(--header-color);
+        margin-bottom: 8px;
+        font-size: 15px;
+      }
+      #resultText {
+        font-size: 22px;
+        color: var(--success-color);
+        font-weight: bold;
+        word-break: break-all;
+        padding-right: 40px;
+        font-family: monospace;
+      }
+
+      .copy-btn {
+        position: absolute;
+        right: 15px;
+        bottom: 15px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 20px;
+        cursor: pointer;
+        padding: 5px;
+      }
+      .copy-btn:hover {
+        color: var(--primary-color);
+        transform: scale(1.1);
+      }
+
+      .history-panel {
+        margin-top: 25px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 15px;
+      }
+      .history-panel h3 {
+        color: var(--header-color);
+        font-size: 15px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+      }
+      #clearHistory {
+        background: none;
+        border: none;
+        color: var(--danger-color);
+        font-size: 12px;
+        cursor: pointer;
+        padding: 0;
+        font-weight: bold;
+      }
+      .history-list {
+        list-style: none;
+        max-height: 140px;
+        overflow-y: auto;
+      }
+      .history-list li {
+        font-size: 13px;
+        color: var(--text-secondary);
+        padding: 8px 0;
+        border-bottom: 1px dashed var(--border-color);
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 1000;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+
+      @media (max-width: 500px) {
         .buttons-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 10px; margin-bottom: 20px;
+          grid-template-columns: repeat(2, 1fr);
         }
-
-        button {
-            padding: 10px 8px; border: none; border-radius: 8px;
-            color: white; font-size: 14px; font-weight: 600; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-        }
-        button:hover { filter: brightness(1.1); }
-        button:active { transform: scale(0.98); }
-
-        /* 颜色绑定 */
-        #toDecimal { background-color: var(--primary-color); }
-        #toPercentage { background-color: var(--success-color); }
-        #toFraction { background-color: var(--warning-color); }
-        #toPermille { background-color: var(--purple-color); }
-        #toScientific { background-color: var(--info-color); }
-        
-        #toBinary { background-color: var(--teal-color); }
-        #toOctal { background-color: var(--indigo-color); }
-        #toHex { background-color: var(--slate-color); }
-        
-        #clearBtn { 
-            background-color: var(--danger-color); 
-            width: 100%; padding: 12px; margin-top: 10px; font-size: 15px;
-        }
-
-        .result-wrapper {
-            background-color: var(--result-bg); padding: 18px;
-            border-radius: 8px; border-left: 5px solid var(--result-border);
-            margin-top: 25px; position: relative;
-        }
-        .result-wrapper h3 { color: var(--header-color); margin-bottom: 8px; font-size: 15px; }
-        #resultText { 
-            font-size: 22px; color: var(--success-color); font-weight: bold; 
-            word-break: break-all; padding-right: 40px; font-family: monospace;
-        }
-        
-        .copy-btn {
-            position: absolute; right: 15px; bottom: 15px;
-            background: none; border: none; color: var(--text-secondary);
-            font-size: 20px; cursor: pointer; padding: 5px;
-        }
-        .copy-btn:hover { color: var(--primary-color); transform: scale(1.1); }
-
-        .history-panel { margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 15px; }
-        .history-panel h3 { color: var(--header-color); font-size: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        #clearHistory { background: none; border: none; color: var(--danger-color); font-size: 12px; cursor: pointer; padding: 0; font-weight: bold;}
-        .history-list { list-style: none; max-height: 140px; overflow-y: auto; }
-        .history-list li {
-            font-size: 13px; color: var(--text-secondary); padding: 8px 0;
-            border-bottom: 1px dashed var(--border-color); display: flex; justify-content: space-between;
-        }
-
-        .toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8); color: white; padding: 10px 20px;
-            border-radius: 20px; font-size: 14px; pointer-events: none;
-            opacity: 0; transition: opacity 0.3s; z-index: 1000;
-        }
-        .toast.show { opacity: 1; }
-
-        @media (max-width: 500px) {
-            .buttons-grid { grid-template-columns: repeat(2, 1fr); }
-        }
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="container">
-        <div class="header-row">
-            <div style="width: 40px;"></div> 
-            <div class="theme-toggle" id="themeToggle" title="切换主题">
-                <i class="fas fa-moon"></i>
-            </div>
+      <div class="header-row">
+        <div style="width: 40px"></div>
+        <div class="theme-toggle" id="themeToggle" title="切换主题">
+          <i class="fas fa-moon"></i>
         </div>
+      </div>
 
-        <h1>超级数值与进制工作台</h1>
-        <p class="description">融合格式转换与程序员专用的进制计算（支持识别 0x, 0b 前缀）</p>
+      <h1>超级数值与进制工作台</h1>
+      <p class="description">
+        融合格式转换与程序员专用的进制计算（支持识别 0x, 0b 前缀）
+      </p>
 
-        <div class="input-group">
-            <label for="inputValue">输入源数据：</label>
-            <input type="text" id="inputValue" placeholder="例如: 25%, 3/4, 0x1A, 0b1010...">
-        </div>
+      <div class="input-group">
+        <label for="inputValue">输入源数据：</label>
+        <input
+          type="text"
+          id="inputValue"
+          placeholder="例如: 25%, 3/4, 0x1A, 0b1010..."
+        />
+      </div>
 
-        <!-- 第一组：常规数值格式转换 -->
-        <div class="btn-group-label">▶ 常用数值格式转换</div>
-        <div class="buttons-grid">
-            <button id="toDecimal"><i class="fas fa-arrow-right"></i> 转小数</button>
-            <button id="toPercentage"><i class="fas fa-percent"></i> 转百分比</button>
-            <button id="toFraction"><i class="fas fa-divide"></i> 转分数</button>
-            <button id="toPermille"><i class="fas fa-circle-notch"></i> 转千分率</button>
-            <button id="toScientific"><i class="fas fa-atom"></i> 科学计数</button>
-        </div>
+      <!-- 第一组：常规数值格式转换 -->
+      <div class="btn-group-label">▶ 常用数值格式转换</div>
+      <div class="buttons-grid">
+        <button id="toDecimal">
+          <i class="fas fa-arrow-right"></i> 转小数
+        </button>
+        <button id="toPercentage">
+          <i class="fas fa-percent"></i> 转百分比
+        </button>
+        <button id="toFraction"><i class="fas fa-divide"></i> 转分数</button>
+        <button id="toPermille">
+          <i class="fas fa-circle-notch"></i> 转千分率
+        </button>
+        <button id="toScientific"><i class="fas fa-atom"></i> 科学计数</button>
+      </div>
 
-        <!-- 第二组：程序员进制转换 -->
-        <div class="btn-group-label">▶ 进制转换计算 (Base Conversion)</div>
-        <div class="buttons-grid">
-            <button id="toBinary"><i class="fas fa-code"></i> 转二进制</button>
-            <button id="toOctal"><i class="fas fa-hashtag"></i> 转八进制</button>
-            <button id="toHex"><i class="fas fa-font"></i> 转十六进制</button>
-        </div>
+      <!-- 第二组：程序员进制转换 -->
+      <div class="btn-group-label">▶ 进制转换计算 (Base Conversion)</div>
+      <div class="buttons-grid">
+        <button id="toBinary"><i class="fas fa-code"></i> 转二进制</button>
+        <button id="toOctal"><i class="fas fa-hashtag"></i> 转八进制</button>
+        <button id="toHex"><i class="fas fa-font"></i> 转十六进制</button>
+      </div>
 
-        <button id="clearBtn"><i class="fas fa-trash-alt"></i> 清空全部输入与结果</button>
+      <button id="clearBtn">
+        <i class="fas fa-trash-alt"></i> 清空全部输入与结果
+      </button>
 
-        <div class="result-wrapper">
-            <h3>转换结果：</h3>
-            <p id="resultText">等待输入...</p>
-            <button class="copy-btn" id="copyBtn" title="复制结果">
-                <i class="far fa-copy"></i>
-            </button>
-        </div>
+      <div class="result-wrapper">
+        <h3>转换结果：</h3>
+        <p id="resultText">等待输入...</p>
+        <button class="copy-btn" id="copyBtn" title="复制结果">
+          <i class="far fa-copy"></i>
+        </button>
+      </div>
 
-        <div class="history-panel">
-            <h3><span><i class="fas fa-history"></i> 转换历史</span> <button id="clearHistory">清空记录</button></h3>
-            <ul class="history-list" id="historyList">
-                <li style="border:none; color: var(--text-light);">暂无记录</li>
-            </ul>
-        </div>
+      <div class="history-panel">
+        <h3>
+          <span><i class="fas fa-history"></i> 转换历史</span>
+          <button id="clearHistory">清空记录</button>
+        </h3>
+        <ul class="history-list" id="historyList">
+          <li style="border: none; color: var(--text-light)">暂无记录</li>
+        </ul>
+      </div>
     </div>
 
     <div class="toast" id="toast">✅ 已成功复制到剪贴板</div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // ================= 主题逻辑 =================
-            const themeToggle = document.getElementById('themeToggle');
-            const body = document.body;
-            
-            function toggleTheme() {
-                if (body.classList.contains('dark-mode')) {
-                    body.classList.remove('dark-mode');
-                    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-                    localStorage.setItem('theme', 'light');
-                } else {
-                    body.classList.add('dark-mode');
-                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-                    localStorage.setItem('theme', 'dark');
-                }
-            }
-            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                body.classList.add('dark-mode'); themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-            }
-            themeToggle.addEventListener('click', toggleTheme);
+      document.addEventListener("DOMContentLoaded", function () {
+        // ================= 主题逻辑 =================
+        const themeToggle = document.getElementById("themeToggle");
+        const body = document.body;
 
-            // ================= 核心工具逻辑 =================
-            const inputValue = document.getElementById('inputValue');
-            const resultText = document.getElementById('resultText');
-            const historyList = document.getElementById('historyList');
-            let historyData = [];
+        function toggleTheme() {
+          if (body.classList.contains("dark-mode")) {
+            body.classList.remove("dark-mode");
+            themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            localStorage.setItem("theme", "light");
+          } else {
+            body.classList.add("dark-mode");
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            localStorage.setItem("theme", "dark");
+          }
+        }
+        if (
+          localStorage.getItem("theme") === "dark" ||
+          (!localStorage.getItem("theme") &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches)
+        ) {
+          body.classList.add("dark-mode");
+          themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+        themeToggle.addEventListener("click", toggleTheme);
 
-            function showToast() {
-                const toast = document.getElementById('toast');
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 2000);
-            }
+        // ================= 核心工具逻辑 =================
+        const inputValue = document.getElementById("inputValue");
+        const resultText = document.getElementById("resultText");
+        const historyList = document.getElementById("historyList");
+        let historyData = [];
 
-            document.getElementById('copyBtn').addEventListener('click', () => {
-                const text = resultText.textContent;
-                if(text && text !== "等待输入..." && !text.includes("错误")) {
-                    navigator.clipboard.writeText(text).then(showToast);
-                }
-            });
+        function showToast() {
+          const toast = document.getElementById("toast");
+          toast.classList.add("show");
+          setTimeout(() => toast.classList.remove("show"), 2000);
+        }
 
-            function addHistory(input, result, type) {
-                historyData.unshift({ input, result, type });
-                if (historyData.length > 5) historyData.pop();
-                renderHistory();
-            }
-
-            function renderHistory() {
-                if (historyData.length === 0) {
-                    historyList.innerHTML = '<li style="border:none; color: var(--text-light);">暂无记录</li>';
-                    return;
-                }
-                historyList.innerHTML = historyData.map(item => 
-                    `<li><span>${item.input} ➔ <b>${item.result}</b></span> <span>[${item.type}]</span></li>`
-                ).join('');
-            }
-
-            document.getElementById('clearHistory').addEventListener('click', () => {
-                historyData = []; renderHistory();
-            });
-
-            function showError(msg) {
-                resultText.textContent = `错误: ${msg}`;
-                resultText.style.color = 'var(--danger-color)';
-            }
-
-            function processResult(val, originalInput, calcFn, typeName) {
-                if (val === null) return;
-                const result = calcFn(val);
-                resultText.textContent = result;
-                resultText.style.color = 'var(--success-color)';
-                addHistory(originalInput, result, typeName);
-            }
-
-            // 万能解析器 (新增 0x, 0b, 0o 进制解析)
-            function parseInput() {
-                let val = inputValue.value.trim().replace(/\s+/g, '');
-                if (!val) { showError('请输入有效数据'); return null; }
-
-                // 1. 识别内置进制前缀 (0x十六进制, 0b二进制, 0o八进制)
-                let lowerVal = val.toLowerCase();
-                if (lowerVal.startsWith('0x') || lowerVal.startsWith('0b') || lowerVal.startsWith('0o')) {
-                    const num = Number(val);
-                    if (isNaN(num)) { showError('进制数据格式不合法'); return null; }
-                    return num; // 统一转化为十进制基准
-                }
-
-                // 2. 分数处理
-                if (val.includes('/')) {
-                    const parts = val.split('/');
-                    const num = parseFloat(parts[0]), den = parseFloat(parts[1]);
-                    if (isNaN(num) || isNaN(den) || den === 0) { showError('分数格式错误或分母为零'); return null; }
-                    return num / den;
-                }
-
-                // 3. 百分比与千分率
-                if (val.includes('%')) return parseFloat(val.replace('%', '')) / 100;
-                if (val.includes('‰')) return parseFloat(val.replace('‰', '')) / 1000;
-
-                // 4. 普通数字
-                const num = parseFloat(val);
-                if (isNaN(num)) { showError('包含无法识别的字符'); return null; }
-                return num;
-            }
-
-            // 分数转换算法
-            function floatToFraction(decimal) {
-                if (decimal === 0) return "0";
-                const sign = decimal < 0 ? "-" : "";
-                decimal = Math.abs(decimal);
-                if (Number.isInteger(decimal)) return sign + decimal;
-                
-                const tolerance = 1.0E-6;
-                let h1 = 1, h2 = 0, k1 = 0, k2 = 1, b = decimal;
-                do {
-                    let a = Math.floor(b);
-                    let aux = h1; h1 = a * h1 + h2; h2 = aux;
-                    aux = k1; k1 = a * k1 + k2; k2 = aux;
-                    b = 1 / (b - a);
-                } while (Math.abs(decimal - h1 / k1) > decimal * tolerance);
-                return k1 === 1 ? sign + h1 : sign + h1 + "/" + k1;
-            }
-
-            // ================= 按钮事件绑定 =================
-            
-            // 【常规转换】
-            document.getElementById('toDecimal').addEventListener('click', () => 
-                processResult(parseInput(), inputValue.value, v => parseFloat(Number(v.toPrecision(12)).toFixed(10)), '十进制小数'));
-
-            document.getElementById('toPercentage').addEventListener('click', () => 
-                processResult(parseInput(), inputValue.value, v => parseFloat(Number((v * 100).toPrecision(12)).toFixed(8)) + "%", '百分比'));
-
-            document.getElementById('toFraction').addEventListener('click', () => 
-                processResult(parseInput(), inputValue.value, floatToFraction, '分数'));
-
-            document.getElementById('toPermille').addEventListener('click', () => 
-                processResult(parseInput(), inputValue.value, v => parseFloat(Number((v * 1000).toPrecision(12)).toFixed(8)) + "‰", '千分率'));
-
-            document.getElementById('toScientific').addEventListener('click', () => 
-                processResult(parseInput(), inputValue.value, v => v.toExponential(4), '科学计数'));
-
-            // 【进制转换】
-            // 注：JS toString(radix) 完美支持整数与浮点数转换为特定进制字符串
-            document.getElementById('toBinary').addEventListener('click', () => 
-                processResult(parseInput(), inputValue.value, v => "0b" + v.toString(2), '二进制'));
-
-            document.getElementById('toOctal').addEventListener('click', () => 
-                processResult(parseInput(), inputValue.value, v => "0o" + v.toString(8), '八进制'));
-
-            document.getElementById('toHex').addEventListener('click', () => 
-                processResult(parseInput(), inputValue.value, v => "0x" + v.toString(16).toUpperCase(), '十六进制'));
-
-            // 【清空输入】
-            document.getElementById('clearBtn').addEventListener('click', () => {
-                inputValue.value = ''; 
-                resultText.textContent = '等待输入...';
-                resultText.style.color = 'var(--success-color)';
-                inputValue.focus();
-            });
-
-            // 快捷键支持
-            inputValue.addEventListener('keypress', e => { 
-                if (e.key === 'Enter') {
-                    // 如果输入包含进制标识符，默认转十进制；否则默认转小数
-                    const v = inputValue.value.toLowerCase();
-                    if(v.startsWith('0x') || v.startsWith('0b') || v.startsWith('0o')) {
-                        document.getElementById('toDecimal').click();
-                    } else {
-                        document.getElementById('toDecimal').click();
-                    }
-                } 
-            });
+        document.getElementById("copyBtn").addEventListener("click", () => {
+          const text = resultText.textContent;
+          if (text && text !== "等待输入..." && !text.includes("错误")) {
+            navigator.clipboard.writeText(text).then(showToast);
+          }
         });
+
+        function addHistory(input, result, type) {
+          historyData.unshift({ input, result, type });
+          if (historyData.length > 5) historyData.pop();
+          renderHistory();
+        }
+
+        function renderHistory() {
+          if (historyData.length === 0) {
+            historyList.innerHTML =
+              '<li style="border:none; color: var(--text-light);">暂无记录</li>';
+            return;
+          }
+          historyList.innerHTML = historyData
+            .map(
+              (item) =>
+                `<li><span>${item.input} ➔ <b>${item.result}</b></span> <span>[${item.type}]</span></li>`,
+            )
+            .join("");
+        }
+
+        document
+          .getElementById("clearHistory")
+          .addEventListener("click", () => {
+            historyData = [];
+            renderHistory();
+          });
+
+        function showError(msg) {
+          resultText.textContent = `错误: ${msg}`;
+          resultText.style.color = "var(--danger-color)";
+        }
+
+        function processResult(val, originalInput, calcFn, typeName) {
+          if (val === null) return;
+          const result = calcFn(val);
+          resultText.textContent = result;
+          resultText.style.color = "var(--success-color)";
+          addHistory(originalInput, result, typeName);
+        }
+
+        // 万能解析器 (新增 0x, 0b, 0o 进制解析)
+        function parseInput() {
+          let val = inputValue.value.trim().replace(/\s+/g, "");
+          if (!val) {
+            showError("请输入有效数据");
+            return null;
+          }
+
+          // 1. 识别内置进制前缀 (0x十六进制, 0b二进制, 0o八进制)
+          let lowerVal = val.toLowerCase();
+          if (
+            lowerVal.startsWith("0x") ||
+            lowerVal.startsWith("0b") ||
+            lowerVal.startsWith("0o")
+          ) {
+            const num = Number(val);
+            if (isNaN(num)) {
+              showError("进制数据格式不合法");
+              return null;
+            }
+            return num; // 统一转化为十进制基准
+          }
+
+          // 2. 分数处理
+          if (val.includes("/")) {
+            const parts = val.split("/");
+            const num = parseFloat(parts[0]),
+              den = parseFloat(parts[1]);
+            if (isNaN(num) || isNaN(den) || den === 0) {
+              showError("分数格式错误或分母为零");
+              return null;
+            }
+            return num / den;
+          }
+
+          // 3. 百分比与千分率
+          if (val.includes("%")) return parseFloat(val.replace("%", "")) / 100;
+          if (val.includes("‰")) return parseFloat(val.replace("‰", "")) / 1000;
+
+          // 4. 普通数字
+          const num = parseFloat(val);
+          if (isNaN(num)) {
+            showError("包含无法识别的字符");
+            return null;
+          }
+          return num;
+        }
+
+        // 分数转换算法
+        function floatToFraction(decimal) {
+          if (decimal === 0) return "0";
+          const sign = decimal < 0 ? "-" : "";
+          decimal = Math.abs(decimal);
+          if (Number.isInteger(decimal)) return sign + decimal;
+
+          const tolerance = 1.0e-6;
+          let h1 = 1,
+            h2 = 0,
+            k1 = 0,
+            k2 = 1,
+            b = decimal;
+          do {
+            let a = Math.floor(b);
+            let aux = h1;
+            h1 = a * h1 + h2;
+            h2 = aux;
+            aux = k1;
+            k1 = a * k1 + k2;
+            k2 = aux;
+            b = 1 / (b - a);
+          } while (Math.abs(decimal - h1 / k1) > decimal * tolerance);
+          return k1 === 1 ? sign + h1 : sign + h1 + "/" + k1;
+        }
+
+        // ================= 按钮事件绑定 =================
+
+        // 【常规转换】
+        document
+          .getElementById("toDecimal")
+          .addEventListener("click", () =>
+            processResult(
+              parseInput(),
+              inputValue.value,
+              (v) => parseFloat(Number(v.toPrecision(12)).toFixed(10)),
+              "十进制小数",
+            ),
+          );
+
+        document
+          .getElementById("toPercentage")
+          .addEventListener("click", () =>
+            processResult(
+              parseInput(),
+              inputValue.value,
+              (v) =>
+                parseFloat(Number((v * 100).toPrecision(12)).toFixed(8)) + "%",
+              "百分比",
+            ),
+          );
+
+        document
+          .getElementById("toFraction")
+          .addEventListener("click", () =>
+            processResult(
+              parseInput(),
+              inputValue.value,
+              floatToFraction,
+              "分数",
+            ),
+          );
+
+        document
+          .getElementById("toPermille")
+          .addEventListener("click", () =>
+            processResult(
+              parseInput(),
+              inputValue.value,
+              (v) =>
+                parseFloat(Number((v * 1000).toPrecision(12)).toFixed(8)) + "‰",
+              "千分率",
+            ),
+          );
+
+        document
+          .getElementById("toScientific")
+          .addEventListener("click", () =>
+            processResult(
+              parseInput(),
+              inputValue.value,
+              (v) => v.toExponential(4),
+              "科学计数",
+            ),
+          );
+
+        // 【进制转换】
+        // 注：JS toString(radix) 完美支持整数与浮点数转换为特定进制字符串
+        document
+          .getElementById("toBinary")
+          .addEventListener("click", () =>
+            processResult(
+              parseInput(),
+              inputValue.value,
+              (v) => "0b" + v.toString(2),
+              "二进制",
+            ),
+          );
+
+        document
+          .getElementById("toOctal")
+          .addEventListener("click", () =>
+            processResult(
+              parseInput(),
+              inputValue.value,
+              (v) => "0o" + v.toString(8),
+              "八进制",
+            ),
+          );
+
+        document
+          .getElementById("toHex")
+          .addEventListener("click", () =>
+            processResult(
+              parseInput(),
+              inputValue.value,
+              (v) => "0x" + v.toString(16).toUpperCase(),
+              "十六进制",
+            ),
+          );
+
+        // 【清空输入】
+        document.getElementById("clearBtn").addEventListener("click", () => {
+          inputValue.value = "";
+          resultText.textContent = "等待输入...";
+          resultText.style.color = "var(--success-color)";
+          inputValue.focus();
+        });
+
+        // 快捷键支持
+        inputValue.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            // 如果输入包含进制标识符，默认转十进制；否则默认转小数
+            const v = inputValue.value.toLowerCase();
+            if (
+              v.startsWith("0x") ||
+              v.startsWith("0b") ||
+              v.startsWith("0o")
+            ) {
+              document.getElementById("toDecimal").click();
+            } else {
+              document.getElementById("toDecimal").click();
+            }
+          }
+        });
+      });
     </script>
-</body>
+  </body>
 </html>
