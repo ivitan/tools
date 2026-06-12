@@ -14,6 +14,8 @@
         .node-table th, .node-table td, .raw-table th, .raw-table td, .paste-table th, .paste-table td { white-space: nowrap; }
         #pasteGridWrapper:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
         .drag-active { border-color: #3b82f6 !important; background-color: #eff6ff !important; }
+        /* 隐藏默认的折叠三角箭头，使用我们自定义的更美观的按钮 */
+        summary::-webkit-details-marker { display: none; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans min-h-screen flex flex-col md:p-4 p-2">
@@ -522,12 +524,34 @@
             const timesSet = temporaryMap[code];
             const sortedTimes = timesSet ? Array.from(timesSet).sort((a, b) => a.localeCompare(b)) : [];
             let finalSelectedTime = '';
+            let displayHtml = '-'; 
 
             if (sortedTimes.length > 0) {
                 hitCount++;
-                const targetTimestamp = types[code] === 'start' ? sortedTimes[0] : sortedTimes[sortedTimes.length - 1];
-                finalSelectedTime = targetTimestamp.includes(' ') ? targetTimestamp.split(' ')[1] : targetTimestamp;
+                const allTimes = sortedTimes.map(ts => ts.includes(' ') ? ts.split(' ')[1] : ts);
+                // 后台存储保持全部换行拼接，确保复制/导出无损
+                finalSelectedTime = allTimes.join('\n');
                 finalCleanedTimes[code] = finalSelectedTime; 
+                
+                // --- 【新增UI逻辑】：判断折叠 ---
+                if (allTimes.length === 1) {
+                    displayHtml = allTimes[0];
+                } else if (allTimes.length === 2) {
+                    displayHtml = allTimes.join('<br>');
+                } else {
+                    displayHtml = `
+                        <details class="cursor-pointer group">
+                            <summary class="outline-none list-none text-center" style="list-style: none;">
+                                <div>${allTimes[0]}</div>
+                                <div class="text-[10px] text-blue-500 bg-blue-50 rounded px-1.5 py-0.5 mt-1 inline-block group-open:hidden hover:bg-blue-100 transition-colors">▼ 展开余下 ${allTimes.length - 1} 条</div>
+                                <div class="text-[10px] text-blue-500 bg-blue-50 rounded px-1.5 py-0.5 mt-1 hidden group-open:inline-block hover:bg-blue-100 transition-colors">▲ 收起</div>
+                            </summary>
+                            <div class="mt-1 pt-1 border-t border-gray-100 text-gray-500 leading-relaxed">
+                                ${allTimes.slice(1).join('<br>')}
+                            </div>
+                        </details>
+                    `;
+                }
             } else {
                 finalCleanedTimes[code] = '';
             }
@@ -537,7 +561,7 @@
                     <div class="font-bold text-gray-800">${dict[code]}</div>
                     <div class="text-gray-500 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
                 </th>`;
-            tbodyHTML += `<td class="border-r border-gray-200 px-3 py-2 text-gray-800 bg-white align-middle font-mono font-medium">${finalSelectedTime || '-'}</td>`;
+            tbodyHTML += `<td class="border-r border-gray-200 px-3 py-2 text-gray-800 bg-white align-middle font-mono font-medium">${displayHtml}</td>`;
         });
         theadHTML += '</tr>';
         tbodyHTML += '</tr>';
@@ -597,12 +621,11 @@
         tbody.innerHTML = tbodyHTML;
     }
 
-    // 【修改点】：清空重置后，仍然让包含 cabin 的复选框默认勾选
+    // 清空重置
     document.getElementById('btnClear').addEventListener('click', () => {
         finalCleanedTimes = {};
         document.getElementById('pasteArea').value = '';
         
-        // 恢复包含 cabin 的复选框默认勾选状态
         document.querySelectorAll('.table-checkbox').forEach(cb => {
             cb.checked = cb.value.toLowerCase().includes('cabin');
         });
@@ -620,10 +643,17 @@
 
     // 强力复制
     document.getElementById('btnCopy').addEventListener('click', () => {
-        if (Object.keys(finalCleanedTimes).length === 0) return alert('Mirror space is empty. Please extract data first.');
+        if (Object.keys(finalCleanedTimes).length === 0) return alert('没有可复制的数据，请先执行提取。');
         
         const { order } = CONFIG[currentMode];
-        let text = order.map(code => finalCleanedTimes[code] || '').join('\t');
+        let text = order.map(code => {
+            let val = finalCleanedTimes[code] || '';
+            // 包含换行符时加上双引号，确保在Excel中依然在一个单元格内
+            if (val.includes('\n')) {
+                return `"${val}"`;
+            }
+            return val;
+        }).join('\t');
         
         const textArea = document.createElement("textarea");
         textArea.value = text;
@@ -650,16 +680,14 @@
         document.body.removeChild(textArea);
     });
 
-    // CSV导出包含 nodeCode 和中文名称表头行
+    // CSV导出
     document.getElementById('btnExport').addEventListener('click', () => {
         if (Object.keys(finalCleanedTimes).length === 0) return alert('没有可导出的数据，请先执行提取。');
         
         const { order, dict, label } = CONFIG[currentMode];
         let csv = '\uFEFF'; 
         
-        // 双行表头：中文名称+nodeCode
         csv += order.map(code => `"${dict[code]}\n${code}"`).join(',') + '\n';
-        // 第二行提取出的数据时间
         csv += order.map(code => `"${finalCleanedTimes[code] || ''}"`).join(',');
         
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
