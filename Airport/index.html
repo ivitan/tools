@@ -5,109 +5,120 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>节点信息提取</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <style>
         .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .node-table th, .node-table td, .raw-table th, .raw-table td, .paste-table th, .paste-table td { white-space: nowrap; }
         #pasteGridWrapper:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
         .drag-active { border-color: #3b82f6 !important; background-color: #eff6ff !important; }
-        /* 隐藏默认的折叠三角箭头，使用我们自定义的更美观的按钮 */
+        .dark .drag-active { background-color: #1e3a8a !important; }
         summary::-webkit-details-marker { display: none; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans min-h-screen flex flex-col md:p-4 p-2">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans min-h-screen flex flex-col md:p-4 p-2 transition-colors duration-300">
 
-<div class="w-full max-w-7xl mx-auto bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden flex flex-col">
-    <div class="bg-blue-600 px-5 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center shrink-0 gap-1 sm:gap-0">
+<div class="w-full max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-colors duration-300">
+    <div class="bg-blue-600 dark:bg-blue-800 px-5 py-3 flex flex-row justify-between items-center shrink-0 transition-colors duration-300">
         <h1 class="text-base sm:text-lg font-bold text-white tracking-wide">节点信息提取</h1>
+        <button id="themeToggle" class="text-white hover:text-blue-200 focus:outline-none p-1 rounded-full transition-colors">
+            <svg id="themeIconLight" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <svg id="themeIconDark" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
     </div>
 
     <div class="p-3 sm:p-5 flex flex-col gap-4">
         
-        <div class="border border-gray-200 rounded-lg bg-gray-50 p-3 sm:p-4 shadow-sm flex flex-col">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 sm:p-4 shadow-sm flex flex-col transition-colors duration-300">
             <div class="flex items-center mb-3">
-                <span class="bg-blue-100 text-blue-700 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-2">A</span>
-                <span class="text-sm font-bold text-gray-700">导入数据库 (可选)</span>
-                <span id="fileInfo" class="ml-auto text-xs text-blue-600 font-bold hidden"></span>
+                <span class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-2">A</span>
+                <span class="text-sm font-bold text-gray-700 dark:text-gray-200">导入数据库 (可选)</span>
+                <span id="fileInfo" class="ml-auto text-xs text-blue-600 dark:text-blue-400 font-bold hidden"></span>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div class="flex flex-col">
-                    <div id="dropZone" class="relative border-2 border-dashed border-gray-300 rounded px-2 py-3 text-center hover:bg-white transition-colors cursor-pointer bg-gray-50 mb-2 shrink-0">
-                        <span class="text-xs text-gray-600 font-medium">点击或拖拽 .db 文件至此</span>
+                    <div id="dropZone" class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded px-2 py-3 text-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 mb-2 shrink-0">
+                        <span class="text-xs text-gray-600 dark:text-gray-400 font-medium">点击或拖拽 .db 文件至此</span>
                         <input type="file" id="dbFiles" multiple accept=".db,.sqlite" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                     </div>
-                    <div id="tableSelectionSection" class="hidden border border-gray-200 bg-white rounded p-2 overflow-y-auto max-h-24 custom-scrollbar shrink-0">
-                        <p class="text-xs font-bold text-gray-500 mb-1">勾选要提取的表:</p>
+                    <div id="tableSelectionSection" class="hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded p-2 overflow-y-auto max-h-24 custom-scrollbar shrink-0">
+                        <p class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">勾选要提取的表:</p>
                         <div id="tableList" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5"></div>
                     </div>
                 </div>
                 <div class="flex flex-col justify-end">
-                    <p class="text-xs font-bold text-gray-500 mb-2">数据库提取条件 (仅过滤数据库):</p>
+                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">数据库提取条件 (仅过滤数据库):</p>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input type="text" id="startTime" placeholder="开始时间" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none">
-                        <input type="text" id="endTime" placeholder="结束时间" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none">
-                        <input type="text" id="aproCode" placeholder="aproCode" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none">
+                        <input type="text" id="startTime" placeholder="开始时间" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+                        <input type="text" id="endTime" placeholder="结束时间" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+                        <input type="text" id="aproCode" placeholder="aproCode" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm flex flex-col md:flex-row md:items-center gap-3 transition-colors duration-300">
             <div class="grid grid-cols-2 md:flex gap-2 w-full md:w-auto">
-                <button id="btnParseNear" class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                <button id="btnParseNear" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
                     <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>近机位提取
                 </button>
-                <button id="btnParseRemote" class="bg-sky-500 hover:bg-sky-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                <button id="btnParseRemote" class="bg-sky-500 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
                     <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>远机位提取
                 </button>
-                <button id="btnCopy" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                <button id="btnCopy" class="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
                     <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>复制单行时间
                 </button>
-                <button id="btnExport" class="bg-purple-500 hover:bg-purple-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                <button id="btnExport" class="bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
                     <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>导出CSV
                 </button>
-                <button id="btnClear" class="col-span-2 md:col-span-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                <button id="btnClear" class="col-span-2 md:col-span-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
                     清空重置
                 </button>
             </div>
-            <div class="md:ml-auto md:border-l md:pl-4 border-gray-200 pt-2 md:pt-0 border-t md:border-t-0 text-xs text-gray-500 font-medium text-center md:text-right" id="queryStatus">
+            <div class="md:ml-auto md:border-l md:border-gray-200 dark:md:border-gray-700 md:pl-4 pt-2 md:pt-0 border-t md:border-t-0 border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 font-medium text-center md:text-right" id="queryStatus">
                 请配置数据并选择提取模式...
             </div>
         </div>
 
         <div class="flex flex-col gap-4">
             
-            <div class="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden flex flex-col">
-                <div id="pasteToggleBtn" class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 transition-colors">
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
+                <div id="pasteToggleBtn" class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     <div class="flex items-center">
-                        <span class="bg-blue-100 text-blue-700 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-2">B</span>
-                        <span class="text-xs font-bold text-gray-600">数据粘贴与表格展示区 (当前数据: <span id="filteredTextCount" class="text-blue-600 font-bold">0</span> 行)</span>
+                        <span class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-2">B</span>
+                        <span class="text-xs font-bold text-gray-600 dark:text-gray-300">数据粘贴与表格展示区 (当前数据: <span id="filteredTextCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span> 行)</span>
                     </div>
-                    <span id="pasteToggleIcon" class="text-gray-400 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
+                    <span id="pasteToggleIcon" class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
                 </div>
-                <div id="pasteContainer" class="hidden flex-col p-3 bg-gray-50/50">
-                    <p class="text-[11px] text-gray-500 mb-2 pl-1">点击下方网格区域按 <kbd class="bg-gray-200 px-1 rounded">Ctrl+V</kbd> 粘贴测试数据；或查看数据库提取后的回显结果。</p>
+                <div id="pasteContainer" class="hidden flex-col p-3 bg-gray-50/50 dark:bg-gray-800/50">
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2 pl-1">点击下方网格区域按 <kbd class="bg-gray-200 dark:bg-gray-700 px-1 rounded">Ctrl+V</kbd> 粘贴测试数据；或查看数据库提取后的回显结果。</p>
                     <textarea id="pasteArea" class="hidden"></textarea>
                     
-                    <div id="pasteGridWrapper" tabindex="0" class="flex-1 w-full min-h-[140px] max-h-[30vh] bg-white border border-gray-300 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
-                        <div id="pastePlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 text-xs text-center p-4 pointer-events-none select-none">
-                            <svg class="w-6 h-6 mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    <div id="pasteGridWrapper" tabindex="0" class="flex-1 w-full min-h-[140px] max-h-[30vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
+                        <div id="pastePlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 text-xs text-center p-4 pointer-events-none select-none">
+                            <svg class="w-6 h-6 mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                             点击此处激活<br>按 Ctrl+V 粘贴数据
                         </div>
                         <table id="pasteVisualTable" class="paste-table min-w-full text-[12px] border-collapse hidden">
-                            <thead id="pasteVisualThead" class="bg-gray-50 sticky top-0 shadow-sm z-10"></thead>
-                            <tbody id="pasteVisualTbody" class="divide-y divide-gray-100"></tbody>
+                            <thead id="pasteVisualThead" class="bg-gray-50 dark:bg-gray-700 sticky top-0 shadow-sm z-10"></thead>
+                            <tbody id="pasteVisualTbody" class="divide-y divide-gray-100 dark:divide-gray-700"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <div class="border border-blue-200 rounded-lg bg-white shadow-sm overflow-hidden flex flex-col">
-                <div class="bg-blue-50 px-4 py-2 border-b border-blue-100 flex justify-between items-center">
-                    <span class="text-xs font-bold text-blue-800">✅ 最终单行节点提取结果 (左右滑动查看)</span>
+            <div class="border border-blue-200 dark:border-blue-800/50 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
+                <div class="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 border-b border-blue-100 dark:border-blue-800/50 flex justify-between items-center">
+                    <span class="text-xs font-bold text-blue-800 dark:text-blue-300">✅ 最终单行节点提取结果 (左右滑动查看)</span>
                 </div>
                 <div class="overflow-x-auto custom-scrollbar p-2">
                     <table class="node-table min-w-full border-collapse text-center text-xs sm:text-[13px]">
@@ -117,18 +128,18 @@
                 </div>
             </div>
 
-            <div class="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden flex flex-col">
-                <div id="rawToggleBtn" class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 transition-colors">
-                    <span class="text-xs font-bold text-gray-600 flex items-center">
-                        <svg class="w-3.5 h-3.5 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-                        查看数据库原始全量明细 (<span id="rawCount" class="text-blue-600">0</span> 条)
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
+                <div id="rawToggleBtn" class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <span class="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center">
+                        <svg class="w-3.5 h-3.5 mr-1 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                        查看数据库原始全量明细 (<span id="rawCount" class="text-blue-600 dark:text-blue-400">0</span> 条)
                     </span>
-                    <span id="rawToggleIcon" class="text-gray-400 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
+                    <span id="rawToggleIcon" class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
                 </div>
                 <div id="rawContainer" class="hidden overflow-auto custom-scrollbar max-h-48 sm:max-h-64">
-                    <table class="raw-table min-w-full divide-y divide-gray-200 text-[11px] sm:text-xs border-collapse" id="rawTable">
-                        <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm" id="rawTableHeader"></thead>
-                        <tbody class="bg-white divide-y divide-gray-100" id="rawTableBody"></tbody>
+                    <table class="raw-table min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-[11px] sm:text-xs border-collapse" id="rawTable">
+                        <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10 shadow-sm" id="rawTableHeader"></thead>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700" id="rawTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -138,6 +149,39 @@
 </div>
 
 <script>
+    // ==========================================
+    // 暗色模式切换逻辑
+    // ==========================================
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const themeIconLight = document.getElementById('themeIconLight');
+    const themeIconDark = document.getElementById('themeIconDark');
+    const htmlElement = document.documentElement;
+
+    // 初始化检查
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        htmlElement.classList.add('dark');
+        themeIconLight.classList.remove('hidden');
+        themeIconDark.classList.add('hidden');
+    } else {
+        htmlElement.classList.remove('dark');
+        themeIconLight.classList.add('hidden');
+        themeIconDark.classList.remove('hidden');
+    }
+
+    // 切换事件
+    themeToggleBtn.addEventListener('click', () => {
+        htmlElement.classList.toggle('dark');
+        if (htmlElement.classList.contains('dark')) {
+            localStorage.theme = 'dark';
+            themeIconLight.classList.remove('hidden');
+            themeIconDark.classList.add('hidden');
+        } else {
+            localStorage.theme = 'light';
+            themeIconLight.classList.add('hidden');
+            themeIconDark.classList.remove('hidden');
+        }
+    });
+
     // ==========================================
     // 字典配置区
     // ==========================================
@@ -205,7 +249,7 @@
             const config = { locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}` };
             SQL = await initSqlJs(config);
             renderEmptyTable('near'); 
-            document.getElementById('queryStatus').innerHTML = `<span class="text-green-600 font-bold">系统引擎已就绪。</span>`;
+            document.getElementById('queryStatus').innerHTML = `<span class="text-green-600 dark:text-green-400 font-bold">系统引擎已就绪。</span>`;
         } catch(e) {
             document.getElementById('queryStatus').innerHTML = `<span class="text-red-500 font-bold">引擎加载失败，请检查网络环境。</span>`;
         }
@@ -259,7 +303,7 @@
             div.className = "flex items-center space-x-1";
             div.innerHTML = `
                 <input type="checkbox" value="${tableName}" class="table-checkbox w-3.5 h-3.5 text-blue-600 rounded" ${isChecked}>
-                <label class="text-xs text-gray-700 cursor-pointer truncate" title="${tableName}" onclick="this.previousElementSibling.click()">
+                <label class="text-xs text-gray-700 dark:text-gray-300 cursor-pointer truncate" title="${tableName}" onclick="this.previousElementSibling.click()">
                     ${tableName}
                 </label>
             `;
@@ -276,11 +320,11 @@
         let tbodyHTML = '<tr>';
         order.forEach(code => {
             theadHTML += `
-                <th class="border-r border-b border-gray-200 px-3 py-2 font-normal bg-gray-50 min-w-[100px] sm:min-w-[120px]">
-                    <div class="font-bold text-gray-800">${dict[code]}</div>
-                    <div class="text-gray-400 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
+                <th class="border-r border-b border-gray-200 dark:border-gray-600 px-3 py-2 font-normal bg-gray-50 dark:bg-gray-700 min-w-[100px] sm:min-w-[120px]">
+                    <div class="font-bold text-gray-800 dark:text-gray-200">${dict[code]}</div>
+                    <div class="text-gray-400 dark:text-gray-400 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
                 </th>`;
-            tbodyHTML += `<td class="border-r border-gray-200 px-3 py-2 text-gray-300">-</td>`;
+            tbodyHTML += `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-300 dark:text-gray-600">-</td>`;
         });
         theadHTML += '</tr>';
         tbodyHTML += '</tr>';
@@ -318,7 +362,7 @@
         pasteArea.value = pasteArea.value ? pasteArea.value + '\n' + text : text;
         
         renderPasteTableGrid();
-        document.getElementById('queryStatus').innerHTML = `<span class="text-green-600">数据已粘贴至网格，请点击提取按钮。</span>`;
+        document.getElementById('queryStatus').innerHTML = `<span class="text-green-600 dark:text-green-400">数据已粘贴至网格，请点击提取按钮。</span>`;
     });
 
     function renderPasteTableGrid() {
@@ -360,7 +404,7 @@
 
         let theadTR = '<tr>';
         headers.forEach(h => {
-            theadTR += `<th class="border-b border-r border-gray-200 px-3 py-1.5 font-semibold text-gray-600 text-left bg-gray-50 shadow-sm sticky top-0">${h}</th>`;
+            theadTR += `<th class="border-b border-r border-gray-200 dark:border-gray-600 px-3 py-1.5 font-semibold text-gray-600 dark:text-gray-300 text-left bg-gray-50 dark:bg-gray-700 shadow-sm sticky top-0">${h}</th>`;
         });
         theadTR += '</tr>';
         thead.innerHTML = theadTR;
@@ -370,10 +414,10 @@
         for (let i = startRowIdx; i < lines.length; i++) {
             validRows++;
             const cols = lines[i].split('\t');
-            tbodyHTML += '<tr class="hover:bg-blue-50/50 transition-colors">';
+            tbodyHTML += '<tr class="hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors">';
             headers.forEach((_, idx) => {
                 const cellVal = cols[idx] !== undefined ? cols[idx].trim() : '';
-                tbodyHTML += `<td class="border-b border-r border-gray-100 px-3 py-1.5 text-gray-600 whitespace-nowrap">${cellVal}</td>`;
+                tbodyHTML += `<td class="border-b border-r border-gray-100 dark:border-gray-700 px-3 py-1.5 text-gray-600 dark:text-gray-300 whitespace-nowrap">${cellVal}</td>`;
             });
             tbodyHTML += '</tr>';
         }
@@ -405,7 +449,7 @@
         let dbFilteredRawDataForTextarea = []; 
         let dbFilteredColumns = new Set();
 
-        document.getElementById('queryStatus').innerHTML = `<span class="text-blue-500">正在解析并合并数据流...</span>`;
+        document.getElementById('queryStatus').innerHTML = `<span class="text-blue-500 dark:text-blue-400">正在解析并合并数据流...</span>`;
 
         if (selectedTables.length > 0) {
             databases.forEach(({ name, db }) => {
@@ -529,11 +573,9 @@
             if (sortedTimes.length > 0) {
                 hitCount++;
                 const allTimes = sortedTimes.map(ts => ts.includes(' ') ? ts.split(' ')[1] : ts);
-                // 后台存储保持全部换行拼接，确保复制/导出无损
                 finalSelectedTime = allTimes.join('\n');
                 finalCleanedTimes[code] = finalSelectedTime; 
                 
-                // --- 【新增UI逻辑】：判断折叠 ---
                 if (allTimes.length === 1) {
                     displayHtml = allTimes[0];
                 } else if (allTimes.length === 2) {
@@ -543,10 +585,10 @@
                         <details class="cursor-pointer group">
                             <summary class="outline-none list-none text-center" style="list-style: none;">
                                 <div>${allTimes[0]}</div>
-                                <div class="text-[10px] text-blue-500 bg-blue-50 rounded px-1.5 py-0.5 mt-1 inline-block group-open:hidden hover:bg-blue-100 transition-colors">▼ 展开余下 ${allTimes.length - 1} 条</div>
-                                <div class="text-[10px] text-blue-500 bg-blue-50 rounded px-1.5 py-0.5 mt-1 hidden group-open:inline-block hover:bg-blue-100 transition-colors">▲ 收起</div>
+                                <div class="text-[10px] text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 rounded px-1.5 py-0.5 mt-1 inline-block group-open:hidden hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">▼ 展开余下 ${allTimes.length - 1} 条</div>
+                                <div class="text-[10px] text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 rounded px-1.5 py-0.5 mt-1 hidden group-open:inline-block hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">▲ 收起</div>
                             </summary>
-                            <div class="mt-1 pt-1 border-t border-gray-100 text-gray-500 leading-relaxed">
+                            <div class="mt-1 pt-1 border-t border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 leading-relaxed">
                                 ${allTimes.slice(1).join('<br>')}
                             </div>
                         </details>
@@ -557,11 +599,11 @@
             }
 
             theadHTML += `
-                <th class="border-r border-b border-gray-200 px-3 py-2 font-normal bg-gray-50 min-w-[100px] sm:min-w-[120px]">
-                    <div class="font-bold text-gray-800">${dict[code]}</div>
-                    <div class="text-gray-500 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
+                <th class="border-r border-b border-gray-200 dark:border-gray-600 px-3 py-2 font-normal bg-gray-50 dark:bg-gray-700 min-w-[100px] sm:min-w-[120px]">
+                    <div class="font-bold text-gray-800 dark:text-gray-200">${dict[code]}</div>
+                    <div class="text-gray-500 dark:text-gray-400 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
                 </th>`;
-            tbodyHTML += `<td class="border-r border-gray-200 px-3 py-2 text-gray-800 bg-white align-middle font-mono font-medium">${displayHtml}</td>`;
+            tbodyHTML += `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 align-middle font-mono font-medium">${displayHtml}</td>`;
         });
         theadHTML += '</tr>';
         tbodyHTML += '</tr>';
@@ -577,7 +619,7 @@
             document.getElementById('rawCount').innerText = '0';
         }
         
-        document.getElementById('queryStatus').innerHTML = `<span class="text-${mode==='near'?'blue':'sky'}-600 font-bold">[${label}]</span> 解析完毕！提取到 ${hitCount} 个节点。`;
+        document.getElementById('queryStatus').innerHTML = `<span class="text-${mode==='near'?'blue':'sky'}-600 dark:text-${mode==='near'?'blue':'sky'}-400 font-bold">[${label}]</span> 解析完毕！提取到 ${hitCount} 个节点。`;
     }
 
     function renderRawTable(data, columns) {
@@ -595,24 +637,24 @@
         let theadHTML = '<tr>';
         finalColumns.forEach(col => {
             let title = col === '_source_db' ? '来源库' : col === '_source_table' ? '表名' : col;
-            theadHTML += `<th class="px-3 py-2 text-left font-semibold text-gray-600 bg-gray-100 whitespace-nowrap border-b border-gray-200">${title}</th>`;
+            theadHTML += `<th class="px-3 py-2 text-left font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 whitespace-nowrap border-b border-gray-200 dark:border-gray-600">${title}</th>`;
         });
         theadHTML += '</tr>';
         thead.innerHTML = theadHTML;
 
         let tbodyHTML = '';
         data.forEach(row => {
-            tbodyHTML += '<tr class="hover:bg-blue-50 transition-colors">';
+            tbodyHTML += '<tr class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">';
             finalColumns.forEach(col => {
                 let cellData = row[col];
                 if (cellData == null) {
-                    tbodyHTML += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-300">-</td>`;
+                    tbodyHTML += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-300 dark:text-gray-600">-</td>`;
                 } else {
                     const textStr = String(cellData);
                     if (textStr.length > 40) {
-                        tbodyHTML += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700" title="${textStr}">${textStr.substring(0, 40)}...</td>`;
+                        tbodyHTML += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700 dark:text-gray-300" title="${textStr}">${textStr.substring(0, 40)}...</td>`;
                     } else {
-                        tbodyHTML += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700">${textStr}</td>`;
+                        tbodyHTML += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700 dark:text-gray-300">${textStr}</td>`;
                     }
                 }
             });
@@ -648,7 +690,6 @@
         const { order } = CONFIG[currentMode];
         let text = order.map(code => {
             let val = finalCleanedTimes[code] || '';
-            // 包含换行符时加上双引号，确保在Excel中依然在一个单元格内
             if (val.includes('\n')) {
                 return `"${val}"`;
             }
@@ -669,7 +710,7 @@
         try {
             const successful = document.execCommand('copy');
             if(successful) {
-                document.getElementById('queryStatus').innerHTML = `✅ <span class="text-green-600 font-bold">时间行已成功复制，快去粘贴吧！</span>`;
+                document.getElementById('queryStatus').innerHTML = `✅ <span class="text-green-600 dark:text-green-400 font-bold">时间行已成功复制，快去粘贴吧！</span>`;
             } else {
                 alert('写入失败，请手动框选结果复制。');
             }
@@ -680,7 +721,7 @@
         document.body.removeChild(textArea);
     });
 
-    // CSV导出
+    // CSV导出 (带中文+code双表头)
     document.getElementById('btnExport').addEventListener('click', () => {
         if (Object.keys(finalCleanedTimes).length === 0) return alert('没有可导出的数据，请先执行提取。');
         
@@ -695,7 +736,7 @@
         link.href = URL.createObjectURL(blob);
         link.download = `航班保障提取(${label})_${new Date().getTime()}.csv`;
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        document.getElementById('queryStatus').innerHTML = `✅ <span class="text-purple-600 font-bold">CSV数据已成功导出！</span>`;
+        document.getElementById('queryStatus').innerHTML = `✅ <span class="text-purple-600 dark:text-purple-400 font-bold">CSV数据已成功导出！</span>`;
     });
 </script>
 </body>
