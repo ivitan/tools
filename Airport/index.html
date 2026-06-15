@@ -157,7 +157,6 @@
     const themeIconDark = document.getElementById('themeIconDark');
     const htmlElement = document.documentElement;
 
-    // 初始化检查
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         htmlElement.classList.add('dark');
         themeIconLight.classList.remove('hidden');
@@ -168,7 +167,6 @@
         themeIconDark.classList.remove('hidden');
     }
 
-    // 切换事件
     themeToggleBtn.addEventListener('click', () => {
         htmlElement.classList.toggle('dark');
         if (htmlElement.classList.contains('dark')) {
@@ -200,14 +198,6 @@
         '121', '13', '112', '12', 'baggage_start', 'baggage_end', '32', '33',
         'airplane_out_start', 'airplane_out_end', '79'
     ];
-    const TYPES_NEAR = {
-        '03': 'start', 'followme_end': 'end', 'airplane_in_start': 'start', 'airplane_in_end': 'end', '04': 'start',
-        'bridge_close_start': 'start', 'bridge_close_end': 'end', 'bridge_far_start': 'start', 'bridge_far_end': 'end',
-        'garbage_start': 'start', 'garbage_end': 'end', '14': 'start', '15': 'end', '16': 'start', '17': 'end',
-        '06': 'start', '29': 'end', '09': 'start', '28': 'end', '121': 'start', '13': 'end', '112': 'start',
-        '12': 'end', 'baggage_start': 'start', 'baggage_end': 'end', '32': 'end', '33': 'start',
-        'airplane_out_start': 'start', 'airplane_out_end': 'end', '79': 'end'
-    };
 
     const DICT_REMOTE = {
         '03': '引导车进入', 'followme_end': '引导车离开', 'airplane_in_start': '飞机入位开始', 'airplane_in_end': '飞机入位结束', '04': '上轮档',
@@ -224,18 +214,10 @@
         '121', '13', '112', '12', 'baggage_start', 'baggage_end', '32', '33',
         'airplane_out_start', 'airplane_out_end', '79'
     ];
-    const TYPES_REMOTE = {
-        '03': 'start', 'followme_end': 'end', 'airplane_in_start': 'start', 'airplane_in_end': 'end', '04': 'start',
-        '052': 'start', '27': 'start', '051': 'start', '272': 'end',
-        'garbage_start': 'start', 'garbage_end': 'end', '14': 'start', '15': 'end', '16': 'start', '17': 'end',
-        '06': 'start', '29': 'end', '09': 'start', '28': 'end', '121': 'start', '13': 'end', '112': 'start',
-        '12': 'end', 'baggage_start': 'start', 'baggage_end': 'end', '32': 'end', '33': 'start',
-        'airplane_out_start': 'start', 'airplane_out_end': 'end', '79': 'end'
-    };
 
     const CONFIG = {
-        near: { dict: DICT_NEAR, order: ORDER_NEAR, types: TYPES_NEAR, label: '近机位' },
-        remote: { dict: DICT_REMOTE, order: ORDER_REMOTE, types: TYPES_REMOTE, label: '远机位' }
+        near: { dict: DICT_NEAR, order: ORDER_NEAR, label: '近机位' },
+        remote: { dict: DICT_REMOTE, order: ORDER_REMOTE, label: '远机位' }
     };
 
     let currentMode = 'near'; 
@@ -434,7 +416,7 @@
         if (!SQL) return alert("引擎尚未就绪，请稍候。");
 
         currentMode = mode; 
-        const { dict, order, types, label } = CONFIG[currentMode];
+        const { dict, order, label } = CONFIG[currentMode];
 
         const selectedTables = Array.from(document.querySelectorAll('.table-checkbox:checked')).map(cb => cb.value);
         const startTime = document.getElementById('startTime').value.trim();
@@ -574,12 +556,19 @@
                 hitCount++;
                 const allTimes = sortedTimes.map(ts => ts.includes(' ') ? ts.split(' ')[1] : ts);
                 
-                // 【核心修改逻辑】：仅行李拖车入位/离开取首末，其余保留全部
+                // 【核心修改逻辑】：行李车与配餐 精准过滤
                 let timesToDisplay = allTimes;
                 if (code === 'baggage_start') {
-                    timesToDisplay = [allTimes[0]]; // 只留首次
+                    timesToDisplay = [allTimes[0]]; // 行李拖车入位：仅保留首次
                 } else if (code === 'baggage_end') {
-                    timesToDisplay = [allTimes[allTimes.length - 1]]; // 只留末次
+                    timesToDisplay = [allTimes[allTimes.length - 1]]; // 行李拖车离开：仅保留末次
+                } else if (code === '14' || code === '15') {
+                    // 配餐开始和结束：如果有多个数据，只保留第一个和最后一个
+                    if (allTimes.length > 1) {
+                        timesToDisplay = [allTimes[0], allTimes[allTimes.length - 1]];
+                    } else {
+                        timesToDisplay = [allTimes[0]];
+                    }
                 }
 
                 finalSelectedTime = timesToDisplay.join('\n');
