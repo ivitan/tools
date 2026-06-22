@@ -281,7 +281,8 @@
     const tableListDiv = document.getElementById('tableList');
     tableListDiv.innerHTML = ''; 
     tableMap.forEach((files, tableName) => {
-      const isChecked = tableName.toLowerCase().includes('cabin') ? 'checked' : '';
+      // 【修改点】：直接设为 checked，默认勾选解析出的所有表
+      const isChecked = 'checked';
       const div = document.createElement('div');
       div.className = "flex items-center space-x-1";
       div.innerHTML = `
@@ -562,7 +563,6 @@
         const allTimes = sortedTimes.map((ts) => ts.includes(' ') ? ts.split(' ')[1] : ts);
         
         let timesToDisplay = allTimes;
-        // 行李车过滤规则：入位取首，离开取末
         if (code === 'baggage_start') {
           timesToDisplay = [allTimes[0]]; 
         } else if (code === 'baggage_end') {
@@ -618,6 +618,7 @@
     document.getElementById('queryStatus').innerHTML = `<span class="text-${mode === 'near' ? 'blue' : 'sky'}-600 dark:text-${mode === 'near' ? 'blue' : 'sky'}-400 font-bold">[${label}]</span> 解析完毕！提取到 ${hitCount} 个节点。`;
   }
 
+  // 渲染原始全量明细表
   function renderRawTable(data, columns) {
     document.getElementById('rawCount').innerText = data.length;
     const thead = document.getElementById('rawTableHeader');
@@ -664,8 +665,9 @@
     finalCleanedTimes = {};
     document.getElementById('pasteArea').value = '';
     
+    // 【修改点】：重置按钮点击后，使所有复选框默认全部恢复勾选状态
     document.querySelectorAll('.table-checkbox').forEach((cb) => {
-      cb.checked = cb.value.toLowerCase().includes('cabin');
+      cb.checked = true;
     });
     
     renderEmptyTable();
