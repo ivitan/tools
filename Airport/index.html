@@ -76,7 +76,7 @@
           <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>远机位提取
         </button>
         <button id="btnCopy" class="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-          <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>复制单行时间
+          <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>复制单行时间
         </button>
         <button id="btnExport" class="bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
           <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>导出CSV
@@ -281,7 +281,6 @@
     const tableListDiv = document.getElementById('tableList');
     tableListDiv.innerHTML = ''; 
     tableMap.forEach((files, tableName) => {
-      // 【修改点】：直接设为 checked，默认勾选解析出的所有表
       const isChecked = 'checked';
       const div = document.createElement('div');
       div.className = "flex items-center space-x-1";
@@ -306,9 +305,9 @@
       theadHTML += `
         <th class="border-r border-b border-gray-200 dark:border-gray-600 px-3 py-2 font-normal bg-gray-50 dark:bg-gray-700 min-w-[100px] sm:min-w-[120px]">
           <div class="font-bold text-gray-800 dark:text-gray-200">${dict[code]}</div>
-          <div class="text-gray-400 dark:text-gray-400 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
+          <div class="text-gray-500 dark:text-gray-400 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
         </th>`;
-      tbodyHTML += `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-300 dark:text-gray-600">-</td>`;
+      tbodyHTML += `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 align-middle font-mono font-medium">-</td>`;
     });
     theadHTML += '</tr>';
     tbodyHTML += '</tr>';
@@ -501,12 +500,44 @@
       let globalCodeIdx = headers.indexOf('nodeCode');
       let globalTimeIdx = headers.indexOf('report_time');
 
+      // 全局智能列定位推断引擎（解决所有短数字编码在无表头表格中的错配问题）
+      let inferredCodeIdx = -1;
+      let inferredTimeIdx = -1;
+
+      if (globalCodeIdx === -1 || globalTimeIdx === -1) {
+        for (let i = 0; i < lines.length; i++) {
+          let sampleLine = lines[i].trim();
+          if (!sampleLine) {
+            continue;
+          }
+          let sampleCols = sampleLine.split('\t');
+          if (sampleCols.length > 1) {
+            let tIdx = sampleCols.findIndex((c) => c.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/) || c.match(/\d{2}:\d{2}:\d{2}/));
+            if (tIdx !== -1) {
+              if (tIdx + 1 < sampleCols.length && dict[sampleCols[tIdx + 1].trim()]) {
+                inferredTimeIdx = tIdx;
+                inferredCodeIdx = tIdx + 1;
+                break;
+              }
+              if (tIdx - 1 >= 0 && dict[sampleCols[tIdx - 1].trim()]) {
+                inferredTimeIdx = tIdx;
+                inferredCodeIdx = tIdx - 1;
+                break;
+              }
+            }
+          }
+        }
+      }
+
       lines.forEach((line, index) => {
-        if (!line.trim()) return;
+        if (!line.trim()) {
+          return;
+        }
         
         let matchedCode = null;
         let matchedTime = null;
 
+        // 1. 显式表头严格匹配
         if (globalCodeIdx !== -1 && globalTimeIdx !== -1 && index > 0) {
           const cols = line.split('\t');
           if (cols.length > Math.max(globalCodeIdx, globalTimeIdx)) {
@@ -515,23 +546,48 @@
             if (dict[code] && rTime) {
               matchedCode = code;
               let tMatch = rTime.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/) || rTime.match(/\d{2}:\d{2}:\d{2}/);
-              if (tMatch) matchedTime = tMatch[0];
+              if (tMatch) {
+                matchedTime = tMatch[0];
+              }
+            }
+          }
+        } 
+        // 2. 智能推断结构化严格列匹配
+        else if (inferredCodeIdx !== -1 && inferredTimeIdx !== -1) {
+          const cols = line.split('\t');
+          if (cols.length > Math.max(inferredCodeIdx, inferredTimeIdx)) {
+            let code = cols[inferredCodeIdx].trim();
+            let rTime = cols[inferredTimeIdx].trim();
+            if (dict[code] && rTime) {
+              matchedCode = code;
+              let tMatch = rTime.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/) || rTime.match(/\d{2}:\d{2}:\d{2}/);
+              if (tMatch) {
+                matchedTime = tMatch[0];
+              }
+            }
+          }
+        } 
+        // 3. 纯文本日志安全异步兜底匹配
+        else if (globalCodeIdx === -1) {
+          let tMatch = line.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/) || line.match(/\d{2}:\d{2}:\d{2}/);
+          if (tMatch) {
+            matchedTime = tMatch[0];
+            const tokens = line.split(/[\t, |，]/);
+            for (let token of tokens) {
+              let cleanToken = token.trim();
+              // 剥离时间字符串，进行强纯度词义映射，从而让所有节点彻底避免被干扰列误杀
+              if (cleanToken && !matchedTime.includes(cleanToken) && dict[cleanToken]) {
+                matchedCode = cleanToken;
+                break;
+              }
             }
           }
         }
 
-        if (!matchedCode || !matchedTime) {
-          const tokens = line.split(/[\t, |，]/);
-          for (let token of tokens) {
-            let cleanToken = token.trim();
-            if (dict[cleanToken]) { matchedCode = cleanToken; break; }
-          }
-          let tMatch = line.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/) || line.match(/\d{2}:\d{2}:\d{2}/);
-          if (tMatch) matchedTime = tMatch[0];
-        }
-
         if (matchedCode && matchedTime) {
-          if (!temporaryMap[matchedCode]) temporaryMap[matchedCode] = new Set();
+          if (!temporaryMap[matchedCode]) {
+            temporaryMap[matchedCode] = new Set();
+          }
           temporaryMap[matchedCode].add(matchedTime); 
           hasDataParsed = true;
         }
@@ -618,7 +674,6 @@
     document.getElementById('queryStatus').innerHTML = `<span class="text-${mode === 'near' ? 'blue' : 'sky'}-600 dark:text-${mode === 'near' ? 'blue' : 'sky'}-400 font-bold">[${label}]</span> 解析完毕！提取到 ${hitCount} 个节点。`;
   }
 
-  // 渲染原始全量明细表
   function renderRawTable(data, columns) {
     document.getElementById('rawCount').innerText = data.length;
     const thead = document.getElementById('rawTableHeader');
@@ -665,7 +720,6 @@
     finalCleanedTimes = {};
     document.getElementById('pasteArea').value = '';
     
-    // 【修改点】：重置按钮点击后，使所有复选框默认全部恢复勾选状态
     document.querySelectorAll('.table-checkbox').forEach((cb) => {
       cb.checked = true;
     });
