@@ -1,694 +1,1389 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN" data-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>USB启动盘制作工具 - 增强兼容版</title>
     <style>
-        :root {
-            --bg: #f5f6f8;
-            --card-bg: #ffffff;
-            --card-border: #e8ecf1;
-            --text-primary: #1a1d23;
-            --text-secondary: #5f6672;
-            --text-muted: #939aa5;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
-            --accent-light: #eff4ff;
-            --danger: #dc2626;
-            --danger-hover: #b91c1c;
-            --danger-light: #fef2f2;
-            --success: #16a34a;
-            --success-light: #f0fdf6;
-            --warning: #d97706;
-            --warning-light: #fffbeb;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-            --shadow: 0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.04);
-            --radius-sm: 8px;
-            --radius: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 20px;
-            --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
-            --font-mono: 'SF Mono','Cascadia Code','JetBrains Mono','Fira Code','Consolas','Monaco',monospace;
-            --font-sans: -apple-system,BlinkMacSystemFont,'Segoe UI','Inter','PingFang SC','Microsoft YaHei',sans-serif;
+      :root {
+        --bg: #f5f6f8;
+        --card-bg: #ffffff;
+        --card-border: #e8ecf1;
+        --text-primary: #1a1d23;
+        --text-secondary: #5f6672;
+        --text-muted: #939aa5;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --accent-light: #eff4ff;
+        --danger: #dc2626;
+        --danger-hover: #b91c1c;
+        --danger-light: #fef2f2;
+        --success: #16a34a;
+        --success-light: #f0fdf6;
+        --warning: #d97706;
+        --warning-light: #fffbeb;
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-md:
+          0 4px 12px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
+        --radius-sm: 8px;
+        --radius: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 20px;
+        --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        --font-mono:
+          "SF Mono", "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas",
+          "Monaco", monospace;
+        --font-sans:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+      }
+      [data-theme="dark"] {
+        --bg: #0d1117;
+        --card-bg: #161b22;
+        --card-border: #30363d;
+        --text-primary: #e6edf3;
+        --text-secondary: #b0b8c4;
+        --text-muted: #6e7681;
+        --accent: #58a6ff;
+        --accent-hover: #79b8ff;
+        --accent-light: #0d2847;
+        --danger: #f85149;
+        --danger-hover: #da3633;
+        --danger-light: #1f1315;
+        --success: #3fb950;
+        --success-light: #0d1d12;
+        --warning: #d2991d;
+        --warning-light: #1b1509;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        font-size: 16px;
+        -webkit-font-smoothing: antialiased;
+      }
+      body {
+        font-family: var(--font-sans);
+        background: var(--bg);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        transition:
+          background var(--transition),
+          color var(--transition);
+        background-image: radial-gradient(
+          ellipse at 50% 0%,
+          var(--accent-light) 0%,
+          transparent 70%
+        );
+        background-size: 100% 400px;
+        background-repeat: no-repeat;
+        background-position: top center;
+      }
+      .container {
+        width: 100%;
+        max-width: 680px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .header {
+        text-align: center;
+        padding: 8px 0;
+      }
+      .header .logo-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        border-radius: var(--radius-lg);
+        background: var(--accent);
+        color: #fff;
+        font-size: 26px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+      }
+      .header h1 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .header .subtitle {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-top: 2px;
+      }
+      .theme-toggle-wrapper {
+        display: flex;
+        justify-content: flex-end;
+      }
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 50px;
+        border: 1.5px solid var(--card-border);
+        background: var(--card-bg);
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        transition: all var(--transition);
+        box-shadow: var(--shadow-sm);
+        font-family: var(--font-sans);
+        user-select: none;
+      }
+      .theme-toggle:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      [data-theme="dark"] .theme-toggle .icon-moon {
+        display: inline;
+      }
+      [data-theme="dark"] .theme-toggle .icon-sun {
+        display: none;
+      }
+      [data-theme="light"] .theme-toggle .icon-moon {
+        display: none;
+      }
+      [data-theme="light"] .theme-toggle .icon-sun {
+        display: inline;
+      }
+      .card {
+        background: var(--card-bg);
+        border: 1.5px solid var(--card-border);
+        border-radius: var(--radius-xl);
+        padding: 24px;
+        box-shadow: var(--shadow-md);
+        transition: all var(--transition);
+        position: relative;
+        overflow: hidden;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(
+          90deg,
+          var(--accent),
+          #8b5cf6,
+          var(--accent)
+        );
+        opacity: 0;
+        transition: opacity var(--transition);
+        border-radius: 3px 3px 0 0;
+      }
+      .card.highlight::before {
+        opacity: 0.7;
+      }
+      .card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--accent-light);
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+      }
+      .step-badge.done {
+        background: var(--success-light);
+        color: var(--success);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 20px;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all var(--transition);
+        font-family: var(--font-sans);
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        user-select: none;
+      }
+      .btn:active {
+        transform: scale(0.96);
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+      }
+      .btn-primary:hover {
+        background: var(--accent-hover);
+      }
+      .btn-primary:disabled {
+        background: #a0b8e0;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+      [data-theme="dark"] .btn-primary:disabled {
+        background: #2a3a55;
+        opacity: 0.5;
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+      .btn-danger:hover {
+        background: var(--danger-hover);
+      }
+      .btn-danger:disabled {
+        background: #d4a0a0;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+      [data-theme="dark"] .btn-danger:disabled {
+        background: #4a2a2a;
+        opacity: 0.5;
+      }
+      .btn-outline {
+        background: transparent;
+        border: 1.5px solid var(--card-border);
+        color: var(--text-primary);
+      }
+      .btn-outline:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-light);
+      }
+      .btn-sm {
+        padding: 7px 14px;
+        font-size: 0.8rem;
+        border-radius: 40px;
+      }
+      .device-info {
+        background: var(--bg);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-top: 12px;
+        font-size: 0.85rem;
+        display: none;
+        border: 1px solid transparent;
+        transition: all var(--transition);
+      }
+      .device-info.show {
+        display: block;
+        border-color: var(--card-border);
+      }
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--card-border);
+        gap: 12px;
+      }
+      .info-row:last-child {
+        border-bottom: none;
+      }
+      .info-label {
+        color: var(--text-muted);
+        flex-shrink: 0;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+      }
+      .info-value {
+        color: var(--text-primary);
+        font-weight: 500;
+        text-align: right;
+        word-break: break-all;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+      }
+      .info-value.capacity {
+        font-weight: 700;
+        color: var(--accent);
+        font-size: 0.9rem;
+      }
+      .drop-zone {
+        border: 2px dashed var(--card-border);
+        border-radius: var(--radius-lg);
+        padding: 32px 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: all var(--transition);
+        background: var(--bg);
+        user-select: none;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .drop-zone:hover,
+      .drop-zone.drag-over {
+        border-color: var(--accent);
+        background: var(--accent-light);
+      }
+      .drop-zone .drop-icon {
+        font-size: 2.5rem;
+        opacity: 0.7;
+      }
+      .drop-zone .drop-text {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+      .drop-zone .drop-hint {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+      .drop-zone.has-file {
+        border-style: solid;
+        border-color: var(--success);
+        background: var(--success-light);
+      }
+      .file-info-display {
+        display: none;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .file-info-display.show {
+        display: flex;
+      }
+      .file-name {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+      .file-size {
+        background: var(--accent-light);
+        color: var(--accent);
+        padding: 3px 10px;
+        border-radius: 50px;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+      .file-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 50px;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+      .file-type-badge.img {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .file-type-badge.iso {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .file-type-badge.bin {
+        background: #f3e8ff;
+        color: #6b21a8;
+      }
+      .file-type-badge.raw {
+        background: #fce7f3;
+        color: #9d174d;
+      }
+      [data-theme="dark"] .file-type-badge.img {
+        background: #1e3a5f;
+        color: #93c5fd;
+      }
+      [data-theme="dark"] .file-type-badge.iso {
+        background: #422006;
+        color: #fcd34d;
+      }
+      [data-theme="dark"] .file-type-badge.bin {
+        background: #2d1b4e;
+        color: #c4b5fd;
+      }
+      [data-theme="dark"] .file-type-badge.raw {
+        background: #4a1942;
+        color: #f9a8d4;
+      }
+      .progress-section {
+        display: none;
+        margin-top: 16px;
+      }
+      .progress-section.show {
+        display: block;
+      }
+      .progress-bar-outer {
+        width: 100%;
+        height: 10px;
+        background: var(--bg);
+        border-radius: 50px;
+        overflow: hidden;
+      }
+      .progress-bar-inner {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), #6366f1);
+        border-radius: 50px;
+        width: 0%;
+        transition: width 0.3s ease-out;
+      }
+      .progress-text {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+      .status-badge.connected {
+        background: var(--success-light);
+        color: var(--success);
+      }
+      .status-badge.disconnected {
+        background: var(--danger-light);
+        color: var(--danger);
+      }
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .status-dot.green {
+        background: var(--success);
+        animation: pulse-dot 2s ease-in-out infinite;
+      }
+      .status-dot.red {
+        background: var(--danger);
+      }
+      @keyframes pulse-dot {
+        0%,
+        100% {
+          opacity: 1;
+          box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
         }
-        [data-theme="dark"] {
-            --bg: #0d1117;
-            --card-bg: #161b22;
-            --card-border: #30363d;
-            --text-primary: #e6edf3;
-            --text-secondary: #b0b8c4;
-            --text-muted: #6e7681;
-            --accent: #58a6ff;
-            --accent-hover: #79b8ff;
-            --accent-light: #0d2847;
-            --danger: #f85149;
-            --danger-hover: #da3633;
-            --danger-light: #1f1315;
-            --success: #3fb950;
-            --success-light: #0d1d12;
-            --warning: #d2991d;
-            --warning-light: #1b1509;
+        50% {
+          opacity: 0.6;
+          box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
         }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        html { font-size:16px; -webkit-font-smoothing:antialiased; }
-        body {
-            font-family:var(--font-sans); background:var(--bg); color:var(--text-primary);
-            min-height:100vh; display:flex; align-items:center; justify-content:center;
-            padding:20px; transition:background var(--transition),color var(--transition);
-            background-image:radial-gradient(ellipse at 50% 0%,var(--accent-light) 0%,transparent 70%);
-            background-size:100% 400px; background-repeat:no-repeat; background-position:top center;
-        }
-        .container { width:100%; max-width:680px; display:flex; flex-direction:column; gap:20px; }
-        .header { text-align:center; padding:8px 0; }
-        .header .logo-icon {
-            display:inline-flex; align-items:center; justify-content:center;
-            width:52px; height:52px; border-radius:var(--radius-lg);
-            background:var(--accent); color:#fff; font-size:26px;
-            margin-bottom:10px; box-shadow:0 4px 16px rgba(37,99,235,0.3);
-        }
-        .header h1 { font-size:1.6rem; font-weight:700; letter-spacing:-0.02em; }
-        .header .subtitle { font-size:0.9rem; color:var(--text-secondary); margin-top:2px; }
-        .theme-toggle-wrapper { display:flex; justify-content:flex-end; }
-        .theme-toggle {
-            display:inline-flex; align-items:center; gap:8px;
-            padding:8px 14px; border-radius:50px;
-            border:1.5px solid var(--card-border); background:var(--card-bg);
-            cursor:pointer; font-size:0.85rem; color:var(--text-secondary);
-            transition:all var(--transition); box-shadow:var(--shadow-sm);
-            font-family:var(--font-sans); user-select:none;
-        }
-        .theme-toggle:hover { border-color:var(--accent); color:var(--accent); }
-        [data-theme="dark"] .theme-toggle .icon-moon { display:inline; }
-        [data-theme="dark"] .theme-toggle .icon-sun { display:none; }
-        [data-theme="light"] .theme-toggle .icon-moon { display:none; }
-        [data-theme="light"] .theme-toggle .icon-sun { display:inline; }
+      }
+      .alert {
+        padding: 14px 18px;
+        border-radius: var(--radius);
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin-top: 12px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .alert-warning {
+        background: var(--warning-light);
+        color: var(--warning);
+        border: 1px solid rgba(217, 119, 6, 0.2);
+      }
+      .alert-info {
+        background: var(--accent-light);
+        color: var(--accent);
+        border: 1px solid rgba(37, 99, 235, 0.15);
+      }
+      .alert-danger {
+        background: var(--danger-light);
+        color: var(--danger);
+        border: 1px solid rgba(220, 38, 38, 0.2);
+      }
+      .alert-success {
+        background: var(--success-light);
+        color: var(--success);
+        border: 1px solid rgba(22, 163, 74, 0.2);
+      }
+      .alert-icon {
+        font-size: 1.2rem;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .footer {
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        padding: 4px 0;
+        line-height: 1.6;
+      }
+      .hidden-input {
+        display: none;
+      }
+      .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .log-panel {
+        margin-top: 12px;
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: all var(--transition);
+      }
+      .log-header {
+        padding: 10px 16px;
+        background: var(--bg);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .log-content {
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 12px 16px;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        background: var(--card-bg);
+        display: none;
+      }
+      .log-content.show {
+        display: block;
+      }
+      .log-entry {
+        padding: 2px 0;
+        border-bottom: 1px solid var(--card-border);
+      }
+      .log-entry.error {
+        color: var(--danger);
+      }
+      .log-entry.success {
+        color: var(--success);
+      }
+      .log-entry.warn {
+        color: var(--warning);
+      }
+      .log-entry.info {
+        color: var(--text-secondary);
+      }
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+      .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+      }
+      @media (max-width: 480px) {
         .card {
-            background:var(--card-bg); border:1.5px solid var(--card-border);
-            border-radius:var(--radius-xl); padding:24px;
-            box-shadow:var(--shadow-md); transition:all var(--transition);
-            position:relative; overflow:hidden;
+          padding: 18px 14px;
         }
-        .card::before {
-            content:''; position:absolute; top:0; left:0; right:0;
-            height:3px; background:linear-gradient(90deg,var(--accent),#8b5cf6,var(--accent));
-            opacity:0; transition:opacity var(--transition); border-radius:3px 3px 0 0;
+        .header h1 {
+          font-size: 1.3rem;
         }
-        .card.highlight::before { opacity:0.7; }
-        .card-title {
-            font-size:1rem; font-weight:600; margin-bottom:16px;
-            display:flex; align-items:center; gap:10px;
-            color:var(--text-primary); letter-spacing:-0.01em;
-        }
-        .step-badge {
-            display:inline-flex; align-items:center; justify-content:center;
-            width:28px; height:28px; border-radius:50%;
-            background:var(--accent-light); color:var(--accent);
-            font-weight:700; font-size:0.85rem; flex-shrink:0;
-        }
-        .step-badge.done { background:var(--success-light); color:var(--success); }
         .btn {
-            display:inline-flex; align-items:center; justify-content:center;
-            gap:8px; padding:11px 20px; border-radius:50px;
-            font-size:0.9rem; font-weight:600; cursor:pointer; border:none;
-            transition:all var(--transition); font-family:var(--font-sans);
-            letter-spacing:-0.01em; white-space:nowrap; user-select:none;
+          padding: 10px 16px;
+          font-size: 0.85rem;
         }
-        .btn:active { transform:scale(0.96); }
-        .btn-primary { background:var(--accent); color:#fff; box-shadow:0 2px 8px rgba(37,99,235,0.25); }
-        .btn-primary:hover { background:var(--accent-hover); }
-        .btn-primary:disabled { background:#a0b8e0; cursor:not-allowed; opacity:0.6; }
-        [data-theme="dark"] .btn-primary:disabled { background:#2a3a55; opacity:0.5; }
-        .btn-danger { background:var(--danger); color:#fff; }
-        .btn-danger:hover { background:var(--danger-hover); }
-        .btn-danger:disabled { background:#d4a0a0; cursor:not-allowed; opacity:0.6; }
-        [data-theme="dark"] .btn-danger:disabled { background:#4a2a2a; opacity:0.5; }
-        .btn-outline { background:transparent; border:1.5px solid var(--card-border); color:var(--text-primary); }
-        .btn-outline:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
-        .btn-sm { padding:7px 14px; font-size:0.8rem; border-radius:40px; }
-        .device-info {
-            background:var(--bg); border-radius:var(--radius); padding:16px;
-            margin-top:12px; font-size:0.85rem; display:none;
-            border:1px solid transparent; transition:all var(--transition);
-        }
-        .device-info.show { display:block; border-color:var(--card-border); }
-        .info-row {
-            display:flex; justify-content:space-between; padding:6px 0;
-            border-bottom:1px solid var(--card-border); gap:12px;
-        }
-        .info-row:last-child { border-bottom:none; }
-        .info-label { color:var(--text-muted); flex-shrink:0; font-size:0.8rem; text-transform:uppercase; }
-        .info-value {
-            color:var(--text-primary); font-weight:500; text-align:right;
-            word-break:break-all; font-family:var(--font-mono); font-size:0.8rem;
-        }
-        .info-value.capacity { font-weight:700; color:var(--accent); font-size:0.9rem; }
         .drop-zone {
-            border:2px dashed var(--card-border); border-radius:var(--radius-lg);
-            padding:32px 24px; text-align:center; cursor:pointer;
-            transition:all var(--transition); background:var(--bg);
-            user-select:none; min-height:120px;
-            display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+          padding: 24px 16px;
+          min-height: 100px;
         }
-        .drop-zone:hover,.drop-zone.drag-over {
-            border-color:var(--accent); background:var(--accent-light);
+        .info-row {
+          flex-direction: column;
+          gap: 2px;
         }
-        .drop-zone .drop-icon { font-size:2.5rem; opacity:0.7; }
-        .drop-zone .drop-text { font-size:0.9rem; color:var(--text-secondary); font-weight:500; }
-        .drop-zone .drop-hint { font-size:0.75rem; color:var(--text-muted); }
-        .drop-zone.has-file { border-style:solid; border-color:var(--success); background:var(--success-light); }
-        .file-info-display {
-            display:none; margin-top:10px; font-size:0.85rem;
-            color:var(--text-secondary); align-items:center; gap:8px;
-            flex-wrap:wrap; justify-content:center;
+        .info-value {
+          text-align: left;
         }
-        .file-info-display.show { display:flex; }
-        .file-name { font-weight:600; color:var(--text-primary); }
-        .file-size {
-            background:var(--accent-light); color:var(--accent);
-            padding:3px 10px; border-radius:50px; font-size:0.78rem; font-weight:600;
-        }
-        .file-type-badge {
-            display:inline-flex; align-items:center; gap:4px;
-            padding:3px 10px; border-radius:50px; font-size:0.78rem; font-weight:600;
-        }
-        .file-type-badge.img { background:#dbeafe; color:#1e40af; }
-        .file-type-badge.iso { background:#fef3c7; color:#92400e; }
-        .file-type-badge.bin { background:#f3e8ff; color:#6b21a8; }
-        .file-type-badge.raw { background:#fce7f3; color:#9d174d; }
-        [data-theme="dark"] .file-type-badge.img { background:#1e3a5f; color:#93c5fd; }
-        [data-theme="dark"] .file-type-badge.iso { background:#422006; color:#fcd34d; }
-        [data-theme="dark"] .file-type-badge.bin { background:#2d1b4e; color:#c4b5fd; }
-        [data-theme="dark"] .file-type-badge.raw { background:#4a1942; color:#f9a8d4; }
-        .progress-section { display:none; margin-top:16px; }
-        .progress-section.show { display:block; }
-        .progress-bar-outer {
-            width:100%; height:10px; background:var(--bg);
-            border-radius:50px; overflow:hidden;
-        }
-        .progress-bar-inner {
-            height:100%; background:linear-gradient(90deg,var(--accent),#6366f1);
-            border-radius:50px; width:0%; transition:width 0.3s ease-out;
-        }
-        .progress-text {
-            display:flex; justify-content:space-between; margin-top:8px;
-            font-size:0.8rem; color:var(--text-secondary);
-        }
-        .status-badge {
-            display:inline-flex; align-items:center; gap:6px;
-            padding:5px 12px; border-radius:50px; font-size:0.78rem; font-weight:600;
-        }
-        .status-badge.connected { background:var(--success-light); color:var(--success); }
-        .status-badge.disconnected { background:var(--danger-light); color:var(--danger); }
-        .status-dot { width:7px; height:7px; border-radius:50%; display:inline-block; }
-        .status-dot.green { background:var(--success); animation:pulse-dot 2s ease-in-out infinite; }
-        .status-dot.red { background:var(--danger); }
-        @keyframes pulse-dot {
-            0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(22,163,74,0.4); }
-            50% { opacity:0.6; box-shadow:0 0 0 8px rgba(22,163,74,0); }
-        }
-        .alert {
-            padding:14px 18px; border-radius:var(--radius); font-size:0.85rem;
-            line-height:1.5; margin-top:12px; display:flex; align-items:flex-start;
-            gap:10px;
-        }
-        .alert-warning { background:var(--warning-light); color:var(--warning); border:1px solid rgba(217,119,6,0.2); }
-        .alert-info { background:var(--accent-light); color:var(--accent); border:1px solid rgba(37,99,235,0.15); }
-        .alert-danger { background:var(--danger-light); color:var(--danger); border:1px solid rgba(220,38,38,0.2); }
-        .alert-success { background:var(--success-light); color:var(--success); border:1px solid rgba(22,163,74,0.2); }
-        .alert-icon { font-size:1.2rem; flex-shrink:0; margin-top:1px; }
-        .footer { text-align:center; font-size:0.75rem; color:var(--text-muted); padding:4px 0; line-height:1.6; }
-        .hidden-input { display:none; }
-        .btn-group { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-        .log-panel {
-            margin-top:12px; border:1px solid var(--card-border); border-radius:var(--radius);
-            overflow:hidden; transition:all var(--transition);
-        }
-        .log-header {
-            padding:10px 16px; background:var(--bg); cursor:pointer;
-            display:flex; justify-content:space-between; align-items:center;
-            font-size:0.85rem; font-weight:600;
-        }
-        .log-content {
-            max-height:200px; overflow-y:auto; padding:12px 16px;
-            font-family:var(--font-mono); font-size:0.75rem;
-            background:var(--card-bg); display:none;
-        }
-        .log-content.show { display:block; }
-        .log-entry { padding:2px 0; border-bottom:1px solid var(--card-border); }
-        .log-entry.error { color:var(--danger); }
-        .log-entry.success { color:var(--success); }
-        .log-entry.warn { color:var(--warning); }
-        .log-entry.info { color:var(--text-secondary); }
-        .checkbox-group {
-            display:flex; align-items:center; gap:8px; margin-top:8px;
-            font-size:0.85rem; color:var(--text-secondary);
-        }
-        .checkbox-group input[type="checkbox"] { width:18px; height:18px; accent-color: var(--accent); }
-        @media (max-width:480px) {
-            .card { padding:18px 14px; }
-            .header h1 { font-size:1.3rem; }
-            .btn { padding:10px 16px; font-size:0.85rem; }
-            .drop-zone { padding:24px 16px; min-height:100px; }
-            .info-row { flex-direction:column; gap:2px; }
-            .info-value { text-align:left; }
-        }
+      }
     </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
         <div class="logo-icon">💿</div>
         <h1>USB 启动盘制作工具</h1>
         <p class="subtitle">增强兼容版 · 支持非标准U盘</p>
-    </div>
-    <div class="theme-toggle-wrapper">
-        <button class="theme-toggle" id="themeToggle"><span class="icon-sun">☀️</span><span class="icon-moon">🌙</span> <span id="themeLabel">暗色模式</span></button>
-    </div>
+      </div>
+      <div class="theme-toggle-wrapper">
+        <button class="theme-toggle" id="themeToggle">
+          <span class="icon-sun">☀️</span><span class="icon-moon">🌙</span>
+          <span id="themeLabel">暗色模式</span>
+        </button>
+      </div>
 
-    <!-- 步骤1 -->
-    <div class="card" id="cardStep1">
-        <div class="card-title"><span class="step-badge" id="badgeStep1">1</span> 连接 USB 设备 <span class="status-badge disconnected" id="deviceStatusBadge" style="margin-left:auto;"><span class="status-dot red"></span> 未连接</span></div>
+      <!-- 步骤1 -->
+      <div class="card" id="cardStep1">
+        <div class="card-title">
+          <span class="step-badge" id="badgeStep1">1</span> 连接 USB 设备
+          <span
+            class="status-badge disconnected"
+            id="deviceStatusBadge"
+            style="margin-left: auto"
+            ><span class="status-dot red"></span> 未连接</span
+          >
+        </div>
         <div class="btn-group">
-            <button class="btn btn-primary" id="btnConnectUSB">🔌 选择U盘</button>
-            <button class="btn btn-outline btn-sm" id="btnRefreshDevices" style="display:none;">🔄 刷新已授权</button>
+          <button class="btn btn-primary" id="btnConnectUSB">🔌 选择U盘</button>
+          <button
+            class="btn btn-outline btn-sm"
+            id="btnRefreshDevices"
+            style="display: none"
+          >
+            🔄 刷新已授权
+          </button>
         </div>
         <div class="checkbox-group">
-            <input type="checkbox" id="chkWideMode">
-            <label for="chkWideMode">🔓 搜索所有大容量存储设备（兼容非标准U盘）</label>
+          <input type="checkbox" id="chkWideMode" />
+          <label for="chkWideMode"
+            >🔓 搜索所有大容量存储设备（兼容非标准U盘）</label
+          >
         </div>
         <div class="device-info" id="deviceInfo">
-            <div class="info-row"><span class="info-label">产品</span><span class="info-value" id="devProductName">—</span></div>
-            <div class="info-row"><span class="info-label">制造商</span><span class="info-value" id="devManufacturer">—</span></div>
-            <div class="info-row"><span class="info-label">VID:PID</span><span class="info-value" id="devVidPid">—</span></div>
-            <div class="info-row"><span class="info-label">扇区</span><span class="info-value" id="devBlockSize">—</span></div>
-            <div class="info-row"><span class="info-label">容量</span><span class="info-value capacity" id="devCapacity">—</span></div>
+          <div class="info-row">
+            <span class="info-label">产品</span
+            ><span class="info-value" id="devProductName">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">制造商</span
+            ><span class="info-value" id="devManufacturer">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">VID:PID</span
+            ><span class="info-value" id="devVidPid">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">扇区</span
+            ><span class="info-value" id="devBlockSize">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">容量</span
+            ><span class="info-value capacity" id="devCapacity">—</span>
+          </div>
         </div>
         <div class="log-panel">
-            <div class="log-header" id="logHeader"><span>📋 调试日志</span><span id="logToggle">展开</span></div>
-            <div class="log-content" id="logContent"></div>
+          <div class="log-header" id="logHeader">
+            <span>📋 调试日志</span><span id="logToggle">展开</span>
+          </div>
+          <div class="log-content" id="logContent"></div>
         </div>
-    </div>
+      </div>
 
-    <!-- 步骤2 -->
-    <div class="card" id="cardStep2">
-        <div class="card-title"><span class="step-badge" id="badgeStep2">2</span> 选择镜像文件</div>
+      <!-- 步骤2 -->
+      <div class="card" id="cardStep2">
+        <div class="card-title">
+          <span class="step-badge" id="badgeStep2">2</span> 选择镜像文件
+        </div>
         <div class="drop-zone" id="dropZone">
-            <span class="drop-icon">📁</span>
-            <span class="drop-text">拖放镜像文件到此处</span>
-            <span class="drop-hint">支持 .img / .iso / .bin / .raw 等</span>
+          <span class="drop-icon">📁</span>
+          <span class="drop-text">拖放镜像文件到此处</span>
+          <span class="drop-hint">支持 .img / .iso / .bin / .raw 等</span>
         </div>
-        <input type="file" id="fileInput" class="hidden-input" accept=".img,.iso,.bin,.raw,.dmg,.vhd,.vhdx,.vmdk,image/*,application/octet-stream,*/*">
+        <input
+          type="file"
+          id="fileInput"
+          class="hidden-input"
+          accept=".img,.iso,.bin,.raw,.dmg,.vhd,.vhdx,.vmdk,image/*,application/octet-stream,*/*"
+        />
         <div class="file-info-display" id="fileInfoDisplay">
-            <span>📄</span> <span class="file-name" id="fileName">—</span>
-            <span class="file-size" id="fileSize">—</span>
-            <span class="file-type-badge" id="fileTypeBadge"></span>
-            <button class="btn btn-outline btn-sm" id="btnClearFile">✕ 清除</button>
+          <span>📄</span> <span class="file-name" id="fileName">—</span>
+          <span class="file-size" id="fileSize">—</span>
+          <span class="file-type-badge" id="fileTypeBadge"></span>
+          <button class="btn btn-outline btn-sm" id="btnClearFile">
+            ✕ 清除
+          </button>
         </div>
-        <div class="alert alert-info" id="alertSizeCheck" style="display:none;"><span class="alert-icon">ℹ️</span><span id="alertSizeCheckText"></span></div>
-    </div>
+        <div class="alert alert-info" id="alertSizeCheck" style="display: none">
+          <span class="alert-icon">ℹ️</span
+          ><span id="alertSizeCheckText"></span>
+        </div>
+      </div>
 
-    <!-- 步骤3 -->
-    <div class="card" id="cardStep3">
-        <div class="card-title"><span class="step-badge" id="badgeStep3">3</span> 写入镜像</div>
-        <div class="alert alert-warning"><span class="alert-icon">⚠️</span><span><strong>警告：</strong>写入将完全覆盖U盘所有数据！</span></div>
+      <!-- 步骤3 -->
+      <div class="card" id="cardStep3">
+        <div class="card-title">
+          <span class="step-badge" id="badgeStep3">3</span> 写入镜像
+        </div>
+        <div class="alert alert-warning">
+          <span class="alert-icon">⚠️</span
+          ><span><strong>警告：</strong>写入将完全覆盖U盘所有数据！</span>
+        </div>
         <div class="btn-group">
-            <button class="btn btn-danger" id="btnStartWrite" disabled>🚀 开始写入</button>
-            <button class="btn btn-outline btn-sm" id="btnCancelWrite" style="display:none;">⏹ 取消</button>
+          <button class="btn btn-danger" id="btnStartWrite" disabled>
+            🚀 开始写入
+          </button>
+          <button
+            class="btn btn-outline btn-sm"
+            id="btnCancelWrite"
+            style="display: none"
+          >
+            ⏹ 取消
+          </button>
         </div>
         <div class="progress-section" id="progressSection">
-            <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
-            <div class="progress-text"><span id="progressPercent">0%</span><span class="speed" id="progressSpeed">—</span></div>
-            <div class="progress-text"><span id="progressDetail">准备中...</span><span id="progressEta"></span></div>
+          <div class="progress-bar-outer">
+            <div class="progress-bar-inner" id="progressBar"></div>
+          </div>
+          <div class="progress-text">
+            <span id="progressPercent">0%</span
+            ><span class="speed" id="progressSpeed">—</span>
+          </div>
+          <div class="progress-text">
+            <span id="progressDetail">准备中...</span
+            ><span id="progressEta"></span>
+          </div>
         </div>
         <div id="writeStatusArea"></div>
+      </div>
+      <div class="footer">
+        🔒 纯前端工具 · 数据仅在本地处理 · 需要 Chrome/Edge + HTTPS/localhost
+      </div>
     </div>
-    <div class="footer">🔒 纯前端工具 · 数据仅在本地处理 · 需要 Chrome/Edge + HTTPS/localhost</div>
-</div>
 
-<script>
-(function() {
-    const SCSI_WRITE_10 = 0x2A, SCSI_READ_CAPACITY_10 = 0x25;
-    const CBW_SIGNATURE = 0x43425355, CSW_SIGNATURE = 0x53425355;
-    const CBW_FLAG_DATA_OUT = 0x00, CBW_FLAG_DATA_IN = 0x80;
-    const DEFAULT_SECTOR_SIZE = 512, CHUNK_SECTORS = 256;
+    <script>
+      (function () {
+        const SCSI_WRITE_10 = 0x2a,
+          SCSI_READ_CAPACITY_10 = 0x25;
+        const CBW_SIGNATURE = 0x43425355,
+          CSW_SIGNATURE = 0x53425355;
+        const CBW_FLAG_DATA_OUT = 0x00,
+          CBW_FLAG_DATA_IN = 0x80;
+        const DEFAULT_SECTOR_SIZE = 512,
+          CHUNK_SECTORS = 256;
 
-    const $ = s => document.querySelector(s);
-    const btnConnectUSB = $('#btnConnectUSB');
-    const btnRefreshDevices = $('#btnRefreshDevices');
-    const deviceStatusBadge = $('#deviceStatusBadge');
-    const deviceInfo = $('#deviceInfo');
-    const dropZone = $('#dropZone');
-    const fileInput = $('#fileInput');
-    const fileInfoDisplay = $('#fileInfoDisplay');
-    const fileNameEl = $('#fileName');
-    const fileSizeEl = $('#fileSize');
-    const fileTypeBadge = $('#fileTypeBadge');
-    const btnClearFile = $('#btnClearFile');
-    const btnStartWrite = $('#btnStartWrite');
-    const btnCancelWrite = $('#btnCancelWrite');
-    const progressSection = $('#progressSection');
-    const progressBar = $('#progressBar');
-    const progressPercent = $('#progressPercent');
-    const progressSpeed = $('#progressSpeed');
-    const progressDetail = $('#progressDetail');
-    const progressEta = $('#progressEta');
-    const writeStatusArea = $('#writeStatusArea');
-    const alertSizeCheck = $('#alertSizeCheck');
-    const alertSizeCheckText = $('#alertSizeCheckText');
-    const themeToggle = $('#themeToggle');
-    const themeLabel = $('#themeLabel');
-    const badgeStep1 = $('#badgeStep1'), badgeStep2 = $('#badgeStep2'), badgeStep3 = $('#badgeStep3');
-    const cardStep1 = $('#cardStep1'), cardStep2 = $('#cardStep2'), cardStep3 = $('#cardStep3');
-    const logContent = $('#logContent');
-    const logToggle = $('#logToggle');
-    const logHeader = $('#logHeader');
-    const chkWideMode = $('#chkWideMode');
+        const $ = (s) => document.querySelector(s);
+        const btnConnectUSB = $("#btnConnectUSB");
+        const btnRefreshDevices = $("#btnRefreshDevices");
+        const deviceStatusBadge = $("#deviceStatusBadge");
+        const deviceInfo = $("#deviceInfo");
+        const dropZone = $("#dropZone");
+        const fileInput = $("#fileInput");
+        const fileInfoDisplay = $("#fileInfoDisplay");
+        const fileNameEl = $("#fileName");
+        const fileSizeEl = $("#fileSize");
+        const fileTypeBadge = $("#fileTypeBadge");
+        const btnClearFile = $("#btnClearFile");
+        const btnStartWrite = $("#btnStartWrite");
+        const btnCancelWrite = $("#btnCancelWrite");
+        const progressSection = $("#progressSection");
+        const progressBar = $("#progressBar");
+        const progressPercent = $("#progressPercent");
+        const progressSpeed = $("#progressSpeed");
+        const progressDetail = $("#progressDetail");
+        const progressEta = $("#progressEta");
+        const writeStatusArea = $("#writeStatusArea");
+        const alertSizeCheck = $("#alertSizeCheck");
+        const alertSizeCheckText = $("#alertSizeCheckText");
+        const themeToggle = $("#themeToggle");
+        const themeLabel = $("#themeLabel");
+        const badgeStep1 = $("#badgeStep1"),
+          badgeStep2 = $("#badgeStep2"),
+          badgeStep3 = $("#badgeStep3");
+        const cardStep1 = $("#cardStep1"),
+          cardStep2 = $("#cardStep2"),
+          cardStep3 = $("#cardStep3");
+        const logContent = $("#logContent");
+        const logToggle = $("#logToggle");
+        const logHeader = $("#logHeader");
+        const chkWideMode = $("#chkWideMode");
 
-    let usbDevice = null, usbInterface = null, bulkOutEp = null, bulkInEp = null;
-    let sectorSize = DEFAULT_SECTOR_SIZE, deviceCapacityBytes = 0, deviceMaxLBA = 0;
-    let selectedFile = null, fileFormat = null;
-    let isWriting = false, abortController = null;
-    let writeStartTime = 0, bytesWritten = 0, totalBytesToWrite = 0;
+        let usbDevice = null,
+          usbInterface = null,
+          bulkOutEp = null,
+          bulkInEp = null;
+        let sectorSize = DEFAULT_SECTOR_SIZE,
+          deviceCapacityBytes = 0,
+          deviceMaxLBA = 0;
+        let selectedFile = null,
+          fileFormat = null;
+        let isWriting = false,
+          abortController = null;
+        let writeStartTime = 0,
+          bytesWritten = 0,
+          totalBytesToWrite = 0;
 
-    function addLog(msg, type='info') {
-        const time = new Date().toLocaleTimeString();
-        logContent.innerHTML += `<div class="log-entry ${type}">[${time}] ${msg}</div>`;
-        logContent.scrollTop = logContent.scrollHeight;
-    }
-    logHeader.addEventListener('click', ()=>{
-        const isOpen = logContent.classList.toggle('show');
-        logToggle.textContent = isOpen ? '收起' : '展开';
-    });
+        function addLog(msg, type = "info") {
+          const time = new Date().toLocaleTimeString();
+          logContent.innerHTML += `<div class="log-entry ${type}">[${time}] ${msg}</div>`;
+          logContent.scrollTop = logContent.scrollHeight;
+        }
+        logHeader.addEventListener("click", () => {
+          const isOpen = logContent.classList.toggle("show");
+          logToggle.textContent = isOpen ? "收起" : "展开";
+        });
 
-    function applyTheme(t) {
-        document.documentElement.setAttribute('data-theme', t);
-        themeLabel.textContent = t==='dark'?'亮色模式':'暗色模式';
-        try{localStorage.setItem('usb-imager-theme',t);}catch(e){}
-    }
-    const saved = (()=>{try{return localStorage.getItem('usb-imager-theme');}catch(e){return null;}})();
-    applyTheme(saved || (window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));
-    themeToggle.addEventListener('click', ()=>{
-        applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
-    });
+        function applyTheme(t) {
+          document.documentElement.setAttribute("data-theme", t);
+          themeLabel.textContent = t === "dark" ? "亮色模式" : "暗色模式";
+          try {
+            localStorage.setItem("usb-imager-theme", t);
+          } catch (e) {}
+        }
+        const saved = (() => {
+          try {
+            return localStorage.getItem("usb-imager-theme");
+          } catch (e) {
+            return null;
+          }
+        })();
+        applyTheme(
+          saved ||
+            (window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"),
+        );
+        themeToggle.addEventListener("click", () => {
+          applyTheme(
+            document.documentElement.getAttribute("data-theme") === "dark"
+              ? "light"
+              : "dark",
+          );
+        });
 
-    // 查找大容量存储接口（兼容各种子类）
-    function findMassInterface(device) {
-        for (const config of device.configurations) {
+        // 查找大容量存储接口（兼容各种子类）
+        function findMassInterface(device) {
+          for (const config of device.configurations) {
             for (const iface of config.interfaces) {
-                for (const alt of iface.alternates) {
-                    if (alt.interfaceClass === 0x08) {
-                        return { interfaceNumber:iface.interfaceNumber, alternate:alt, endpoints:alt.endpoints };
-                    }
+              for (const alt of iface.alternates) {
+                if (alt.interfaceClass === 0x08) {
+                  return {
+                    interfaceNumber: iface.interfaceNumber,
+                    alternate: alt,
+                    endpoints: alt.endpoints,
+                  };
                 }
+              }
             }
+          }
+          return null;
         }
-        return null;
-    }
-    function findEndpoints(eps) {
-        let out=null, inp=null;
-        for (const ep of eps) {
-            if (ep.type==='bulk') { if (ep.direction==='out'&&!out) out=ep; else if (ep.direction==='in'&&!inp) inp=ep; }
+        function findEndpoints(eps) {
+          let out = null,
+            inp = null;
+          for (const ep of eps) {
+            if (ep.type === "bulk") {
+              if (ep.direction === "out" && !out) out = ep;
+              else if (ep.direction === "in" && !inp) inp = ep;
+            }
+          }
+          return { bulkOut: out, bulkIn: inp };
         }
-        return {bulkOut:out, bulkIn:inp};
-    }
-    function buildCBW(tag, len, flags, lun, cb) {
-        const buf = new ArrayBuffer(31), v = new DataView(buf);
-        v.setUint32(0,CBW_SIGNATURE,true); v.setUint32(4,tag,true); v.setUint32(8,len,true);
-        v.setUint8(12,flags); v.setUint8(13,lun); v.setUint8(14,cb.length);
-        new Uint8Array(buf,15,16).set(new Uint8Array(cb).slice(0,16));
-        return buf;
-    }
-    function buildWrite10(lba, n) {
-        const cmd = new ArrayBuffer(10), v = new DataView(cmd);
-        v.setUint8(0,SCSI_WRITE_10); v.setUint32(2,lba,false); v.setUint16(7,n,false);
-        return cmd;
-    }
-    function buildReadCap() { const cmd=new ArrayBuffer(10); new DataView(cmd).setUint8(0,SCSI_READ_CAPACITY_10); return cmd; }
-    function parseCSW(buf) {
-        const v = new DataView(buf);
-        return { sig:v.getUint32(0,true), tag:v.getUint32(4,true), residue:v.getUint32(8,true), status:v.getUint8(12), valid:v.getUint32(0,true)===CSW_SIGNATURE };
-    }
-    function parseReadCap(buf) { const v=new DataView(buf); return {maxLBA:v.getUint32(0,false), blockSize:v.getUint32(4,false)}; }
+        function buildCBW(tag, len, flags, lun, cb) {
+          const buf = new ArrayBuffer(31),
+            v = new DataView(buf);
+          v.setUint32(0, CBW_SIGNATURE, true);
+          v.setUint32(4, tag, true);
+          v.setUint32(8, len, true);
+          v.setUint8(12, flags);
+          v.setUint8(13, lun);
+          v.setUint8(14, cb.length);
+          new Uint8Array(buf, 15, 16).set(new Uint8Array(cb).slice(0, 16));
+          return buf;
+        }
+        function buildWrite10(lba, n) {
+          const cmd = new ArrayBuffer(10),
+            v = new DataView(cmd);
+          v.setUint8(0, SCSI_WRITE_10);
+          v.setUint32(2, lba, false);
+          v.setUint16(7, n, false);
+          return cmd;
+        }
+        function buildReadCap() {
+          const cmd = new ArrayBuffer(10);
+          new DataView(cmd).setUint8(0, SCSI_READ_CAPACITY_10);
+          return cmd;
+        }
+        function parseCSW(buf) {
+          const v = new DataView(buf);
+          return {
+            sig: v.getUint32(0, true),
+            tag: v.getUint32(4, true),
+            residue: v.getUint32(8, true),
+            status: v.getUint8(12),
+            valid: v.getUint32(0, true) === CSW_SIGNATURE,
+          };
+        }
+        function parseReadCap(buf) {
+          const v = new DataView(buf);
+          return {
+            maxLBA: v.getUint32(0, false),
+            blockSize: v.getUint32(4, false),
+          };
+        }
 
-    async function connectUSB() {
-        try {
+        async function connectUSB() {
+          try {
             const useWide = chkWideMode.checked;
-            const filters = useWide 
-                ? [{ classCode: 0x08 }]  // 宽松：只要求大容量存储类
-                : [{ classCode: 0x08, subclassCode: 0x06, protocolCode: 0x50 }]; // 严格：标准BOT
-            
-            addLog(`正在请求USB设备 (${useWide ? '宽松模式 - class=0x08' : '标准模式 - 仅BOT'})...`, 'info');
+            const filters = useWide
+              ? [{ classCode: 0x08 }] // 宽松：只要求大容量存储类
+              : [{ classCode: 0x08, subclassCode: 0x06, protocolCode: 0x50 }]; // 严格：标准BOT
+
+            addLog(
+              `正在请求USB设备 (${useWide ? "宽松模式 - class=0x08" : "标准模式 - 仅BOT"})...`,
+              "info",
+            );
             const device = await navigator.usb.requestDevice({ filters });
-            if (!device) { showStatus('未选择设备','disconnected'); return; }
-            await setupDevice(device);
-        } catch(err) {
-            addLog(`连接失败: ${err.message}`, 'error');
-            if (err.name==='NotFoundError') addLog('没有找到兼容设备。请尝试勾选"搜索所有大容量存储设备"，并确保U盘已从系统中卸载。', 'warn');
-            showStatus('连接失败','disconnected');
-            resetDeviceState();
-        }
-    }
-    async function setupDevice(device) {
-        usbDevice = device;
-        await device.open();
-        const ms = findMassInterface(device);
-        if (!ms) throw new Error('该设备不是大容量存储设备');
-        usbInterface = ms;
-        await device.claimInterface(ms.interfaceNumber);
-        const {bulkOut, bulkIn} = findEndpoints(ms.endpoints);
-        if (!bulkOut||!bulkIn) throw new Error('未找到批量端点');
-        bulkOutEp = bulkOut; bulkInEp = bulkIn;
-        await readCapacity();
-        updateDeviceInfoUI();
-        showStatus('已连接','connected');
-        badgeStep1.classList.add('done'); cardStep1.classList.add('highlight');
-        btnConnectUSB.textContent = '🔌 更换U盘';
-        btnRefreshDevices.style.display = 'inline-flex';
-        addLog(`已连接: ${device.productName||'未知'} (${formatBytes(deviceCapacityBytes)})`, 'success');
-        if (selectedFile) checkSize();
-        updateWriteButton();
-    }
-    async function readCapacity() {
-        const cmd = buildReadCap(); const tag = Date.now()&0xFFFFFFFF;
-        const cbw = buildCBW(tag,8,CBW_FLAG_DATA_IN,0,cmd);
-        await usbDevice.transferOut(bulkOutEp.endpointNumber, cbw);
-        const res = await usbDevice.transferIn(bulkInEp.endpointNumber, 8);
-        if (res.data?.byteLength>=8) {
-            const cap = parseReadCap(res.data.buffer);
-            sectorSize = cap.blockSize; deviceMaxLBA = cap.maxLBA;
-            deviceCapacityBytes = (deviceMaxLBA+1)*sectorSize;
-        }
-        try { await usbDevice.transferIn(bulkInEp.endpointNumber,13); } catch(e){}
-    }
-    function updateDeviceInfoUI() {
-        deviceInfo.classList.add('show');
-        $('#devProductName').textContent = usbDevice.productName||'未知';
-        $('#devManufacturer').textContent = usbDevice.manufacturerName||'未知';
-        $('#devVidPid').textContent = `0x${usbDevice.vendorId.toString(16).toUpperCase()}:0x${usbDevice.deviceId.toString(16).toUpperCase()}`;
-        $('#devBlockSize').textContent = `${sectorSize} 字节`;
-        $('#devCapacity').textContent = formatBytes(deviceCapacityBytes);
-    }
-    function resetDeviceState() {
-        usbDevice=null; usbInterface=null; bulkOutEp=null; bulkInEp=null;
-        sectorSize=DEFAULT_SECTOR_SIZE; deviceCapacityBytes=0; deviceMaxLBA=0;
-        deviceInfo.classList.remove('show'); badgeStep1.classList.remove('done'); cardStep1.classList.remove('highlight');
-        btnConnectUSB.textContent='🔌 选择U盘'; btnRefreshDevices.style.display='none';
-        updateWriteButton();
-    }
-    function showStatus(msg, type) {
-        if (type==='connected') { deviceStatusBadge.className='status-badge connected'; deviceStatusBadge.innerHTML='<span class="status-dot green"></span> 已连接'; }
-        else { deviceStatusBadge.className='status-badge disconnected'; deviceStatusBadge.innerHTML=`<span class="status-dot red"></span> ${msg}`; }
-    }
-
-    function handleFile(file) {
-        if (!file) return;
-        selectedFile = file;
-        const ext = file.name.split('.').pop().toLowerCase();
-        fileFormat = ['img','iso','bin','raw','dmg','vhd','vhdx','vmdk'].includes(ext) ? ext : 'raw';
-        fileNameEl.textContent = file.name;
-        fileSizeEl.textContent = formatBytes(file.size);
-        fileTypeBadge.className = `file-type-badge ${fileFormat}`;
-        fileTypeBadge.textContent = {img:'💾 IMG',iso:'💿 ISO',bin:'📀 BIN',raw:'🗄️ RAW',dmg:'🍎 DMG',vhd:'💻 VHD',vhdx:'💻 VHDX',vmdk:'💻 VMDK'}[fileFormat]||'📄 镜像';
-        fileTypeBadge.style.display='inline-flex';
-        fileInfoDisplay.classList.add('show');
-        dropZone.classList.add('has-file');
-        dropZone.querySelector('.drop-text').textContent='点击更换镜像文件';
-        badgeStep2.classList.add('done'); cardStep2.classList.add('highlight');
-        checkSize();
-    }
-    function checkSize() {
-        if (!selectedFile || !deviceCapacityBytes) { alertSizeCheck.style.display='none'; updateWriteButton(); return; }
-        if (selectedFile.size > deviceCapacityBytes) {
-            alertSizeCheck.style.display='flex'; alertSizeCheck.className='alert alert-danger';
-            alertSizeCheckText.textContent=`❌ 镜像过大 (${formatBytes(selectedFile.size)} > ${formatBytes(deviceCapacityBytes)})`;
-            btnStartWrite.disabled = true;
-        } else {
-            alertSizeCheck.style.display='flex'; alertSizeCheck.className='alert alert-info';
-            alertSizeCheckText.textContent=`✅ ${formatBytes(selectedFile.size)} → ${formatBytes(deviceCapacityBytes)}`;
-            updateWriteButton();
-        }
-    }
-    function clearFile() {
-        selectedFile=null; fileFormat=null;
-        fileInfoDisplay.classList.remove('show'); dropZone.classList.remove('has-file');
-        dropZone.querySelector('.drop-text').textContent='拖放镜像文件到此处';
-        fileInput.value=''; fileTypeBadge.style.display='none';
-        badgeStep2.classList.remove('done'); cardStep2.classList.remove('highlight');
-        alertSizeCheck.style.display='none'; updateWriteButton();
-    }
-    function updateWriteButton() { btnStartWrite.disabled = !(usbDevice&&selectedFile&&!isWriting) || (selectedFile&&deviceCapacityBytes&&selectedFile.size>deviceCapacityBytes); }
-
-    async function startWrite() {
-        if (!usbDevice||!selectedFile||isWriting) return;
-        if (!confirm(`⚠️ 确定将 ${selectedFile.name} 写入 ${usbDevice.productName||'设备'}？此操作不可逆！`)) return;
-        isWriting=true; abortController=new AbortController(); const signal=abortController.signal;
-        bytesWritten=0; totalBytesToWrite=selectedFile.size; writeStartTime=performance.now();
-        btnStartWrite.style.display='none'; btnCancelWrite.style.display='inline-flex';
-        progressSection.classList.add('show'); progressBar.style.width='0%';
-        progressPercent.textContent='0%'; progressSpeed.textContent='—';
-        progressDetail.textContent='写入中...'; progressEta.textContent='';
-        writeStatusArea.innerHTML=''; cardStep3.classList.add('highlight'); badgeStep3.classList.add('done');
-        btnConnectUSB.disabled=true; btnClearFile.disabled=true; dropZone.style.pointerEvents='none';
-        try {
-            await performWrite(signal);
-            progressBar.style.width='100%'; progressPercent.textContent='100%';
-            progressDetail.textContent='✅ 写入完成！'; progressSpeed.textContent=''; progressEta.textContent='';
-            writeStatusArea.innerHTML='<div class="alert alert-success"><span class="alert-icon">🎉</span> 写入成功！可以弹出U盘。</div>';
-        } catch(e) {
-            if (e.name==='AbortError'||e.message==='用户取消') {
-                progressDetail.textContent='⏹ 已取消';
-                writeStatusArea.innerHTML='<div class="alert alert-warning"><span class="alert-icon">⚠️</span> 写入已取消，数据不完整。</div>';
-            } else {
-                progressBar.style.width='0%'; showError(e.message);
+            if (!device) {
+              showStatus("未选择设备", "disconnected");
+              return;
             }
-        } finally {
-            isWriting=false; abortController=null;
-            btnStartWrite.style.display='inline-flex'; btnCancelWrite.style.display='none';
-            btnStartWrite.disabled=false; btnConnectUSB.disabled=false; btnClearFile.disabled=false;
-            dropZone.style.pointerEvents='auto'; updateWriteButton();
+            await setupDevice(device);
+          } catch (err) {
+            addLog(`连接失败: ${err.message}`, "error");
+            if (err.name === "NotFoundError")
+              addLog(
+                '没有找到兼容设备。请尝试勾选"搜索所有大容量存储设备"，并确保U盘已从系统中卸载。',
+                "warn",
+              );
+            showStatus("连接失败", "disconnected");
+            resetDeviceState();
+          }
         }
-    }
-    async function performWrite(signal) {
-        const file=selectedFile, total=file.size, chunk=CHUNK_SECTORS*sectorSize;
-        let lba=0, offset=0, tagC=Date.now()&0xFFFF;
-        while (offset < total) {
-            if (signal.aborted) throw new Error('用户取消');
-            const remain = total-offset, curBytes = Math.min(chunk, remain);
-            const curSectors = Math.ceil(curBytes/sectorSize);
-            const blob = file.slice(offset, offset+curBytes);
+        async function setupDevice(device) {
+          usbDevice = device;
+          await device.open();
+          const ms = findMassInterface(device);
+          if (!ms) throw new Error("该设备不是大容量存储设备");
+          usbInterface = ms;
+          await device.claimInterface(ms.interfaceNumber);
+          const { bulkOut, bulkIn } = findEndpoints(ms.endpoints);
+          if (!bulkOut || !bulkIn) throw new Error("未找到批量端点");
+          bulkOutEp = bulkOut;
+          bulkInEp = bulkIn;
+          await readCapacity();
+          updateDeviceInfoUI();
+          showStatus("已连接", "connected");
+          badgeStep1.classList.add("done");
+          cardStep1.classList.add("highlight");
+          btnConnectUSB.textContent = "🔌 更换U盘";
+          btnRefreshDevices.style.display = "inline-flex";
+          addLog(
+            `已连接: ${device.productName || "未知"} (${formatBytes(deviceCapacityBytes)})`,
+            "success",
+          );
+          if (selectedFile) checkSize();
+          updateWriteButton();
+        }
+        async function readCapacity() {
+          const cmd = buildReadCap();
+          const tag = Date.now() & 0xffffffff;
+          const cbw = buildCBW(tag, 8, CBW_FLAG_DATA_IN, 0, cmd);
+          await usbDevice.transferOut(bulkOutEp.endpointNumber, cbw);
+          const res = await usbDevice.transferIn(bulkInEp.endpointNumber, 8);
+          if (res.data?.byteLength >= 8) {
+            const cap = parseReadCap(res.data.buffer);
+            sectorSize = cap.blockSize;
+            deviceMaxLBA = cap.maxLBA;
+            deviceCapacityBytes = (deviceMaxLBA + 1) * sectorSize;
+          }
+          try {
+            await usbDevice.transferIn(bulkInEp.endpointNumber, 13);
+          } catch (e) {}
+        }
+        function updateDeviceInfoUI() {
+          deviceInfo.classList.add("show");
+          $("#devProductName").textContent = usbDevice.productName || "未知";
+          $("#devManufacturer").textContent =
+            usbDevice.manufacturerName || "未知";
+          $("#devVidPid").textContent =
+            `0x${usbDevice.vendorId.toString(16).toUpperCase()}:0x${usbDevice.deviceId.toString(16).toUpperCase()}`;
+          $("#devBlockSize").textContent = `${sectorSize} 字节`;
+          $("#devCapacity").textContent = formatBytes(deviceCapacityBytes);
+        }
+        function resetDeviceState() {
+          usbDevice = null;
+          usbInterface = null;
+          bulkOutEp = null;
+          bulkInEp = null;
+          sectorSize = DEFAULT_SECTOR_SIZE;
+          deviceCapacityBytes = 0;
+          deviceMaxLBA = 0;
+          deviceInfo.classList.remove("show");
+          badgeStep1.classList.remove("done");
+          cardStep1.classList.remove("highlight");
+          btnConnectUSB.textContent = "🔌 选择U盘";
+          btnRefreshDevices.style.display = "none";
+          updateWriteButton();
+        }
+        function showStatus(msg, type) {
+          if (type === "connected") {
+            deviceStatusBadge.className = "status-badge connected";
+            deviceStatusBadge.innerHTML =
+              '<span class="status-dot green"></span> 已连接';
+          } else {
+            deviceStatusBadge.className = "status-badge disconnected";
+            deviceStatusBadge.innerHTML = `<span class="status-dot red"></span> ${msg}`;
+          }
+        }
+
+        function handleFile(file) {
+          if (!file) return;
+          selectedFile = file;
+          const ext = file.name.split(".").pop().toLowerCase();
+          fileFormat = [
+            "img",
+            "iso",
+            "bin",
+            "raw",
+            "dmg",
+            "vhd",
+            "vhdx",
+            "vmdk",
+          ].includes(ext)
+            ? ext
+            : "raw";
+          fileNameEl.textContent = file.name;
+          fileSizeEl.textContent = formatBytes(file.size);
+          fileTypeBadge.className = `file-type-badge ${fileFormat}`;
+          fileTypeBadge.textContent =
+            {
+              img: "💾 IMG",
+              iso: "💿 ISO",
+              bin: "📀 BIN",
+              raw: "🗄️ RAW",
+              dmg: "🍎 DMG",
+              vhd: "💻 VHD",
+              vhdx: "💻 VHDX",
+              vmdk: "💻 VMDK",
+            }[fileFormat] || "📄 镜像";
+          fileTypeBadge.style.display = "inline-flex";
+          fileInfoDisplay.classList.add("show");
+          dropZone.classList.add("has-file");
+          dropZone.querySelector(".drop-text").textContent = "点击更换镜像文件";
+          badgeStep2.classList.add("done");
+          cardStep2.classList.add("highlight");
+          checkSize();
+        }
+        function checkSize() {
+          if (!selectedFile || !deviceCapacityBytes) {
+            alertSizeCheck.style.display = "none";
+            updateWriteButton();
+            return;
+          }
+          if (selectedFile.size > deviceCapacityBytes) {
+            alertSizeCheck.style.display = "flex";
+            alertSizeCheck.className = "alert alert-danger";
+            alertSizeCheckText.textContent = `❌ 镜像过大 (${formatBytes(selectedFile.size)} > ${formatBytes(deviceCapacityBytes)})`;
+            btnStartWrite.disabled = true;
+          } else {
+            alertSizeCheck.style.display = "flex";
+            alertSizeCheck.className = "alert alert-info";
+            alertSizeCheckText.textContent = `✅ ${formatBytes(selectedFile.size)} → ${formatBytes(deviceCapacityBytes)}`;
+            updateWriteButton();
+          }
+        }
+        function clearFile() {
+          selectedFile = null;
+          fileFormat = null;
+          fileInfoDisplay.classList.remove("show");
+          dropZone.classList.remove("has-file");
+          dropZone.querySelector(".drop-text").textContent =
+            "拖放镜像文件到此处";
+          fileInput.value = "";
+          fileTypeBadge.style.display = "none";
+          badgeStep2.classList.remove("done");
+          cardStep2.classList.remove("highlight");
+          alertSizeCheck.style.display = "none";
+          updateWriteButton();
+        }
+        function updateWriteButton() {
+          btnStartWrite.disabled =
+            !(usbDevice && selectedFile && !isWriting) ||
+            (selectedFile &&
+              deviceCapacityBytes &&
+              selectedFile.size > deviceCapacityBytes);
+        }
+
+        async function startWrite() {
+          if (!usbDevice || !selectedFile || isWriting) return;
+          if (
+            !confirm(
+              `⚠️ 确定将 ${selectedFile.name} 写入 ${usbDevice.productName || "设备"}？此操作不可逆！`,
+            )
+          )
+            return;
+          isWriting = true;
+          abortController = new AbortController();
+          const signal = abortController.signal;
+          bytesWritten = 0;
+          totalBytesToWrite = selectedFile.size;
+          writeStartTime = performance.now();
+          btnStartWrite.style.display = "none";
+          btnCancelWrite.style.display = "inline-flex";
+          progressSection.classList.add("show");
+          progressBar.style.width = "0%";
+          progressPercent.textContent = "0%";
+          progressSpeed.textContent = "—";
+          progressDetail.textContent = "写入中...";
+          progressEta.textContent = "";
+          writeStatusArea.innerHTML = "";
+          cardStep3.classList.add("highlight");
+          badgeStep3.classList.add("done");
+          btnConnectUSB.disabled = true;
+          btnClearFile.disabled = true;
+          dropZone.style.pointerEvents = "none";
+          try {
+            await performWrite(signal);
+            progressBar.style.width = "100%";
+            progressPercent.textContent = "100%";
+            progressDetail.textContent = "✅ 写入完成！";
+            progressSpeed.textContent = "";
+            progressEta.textContent = "";
+            writeStatusArea.innerHTML =
+              '<div class="alert alert-success"><span class="alert-icon">🎉</span> 写入成功！可以弹出U盘。</div>';
+          } catch (e) {
+            if (e.name === "AbortError" || e.message === "用户取消") {
+              progressDetail.textContent = "⏹ 已取消";
+              writeStatusArea.innerHTML =
+                '<div class="alert alert-warning"><span class="alert-icon">⚠️</span> 写入已取消，数据不完整。</div>';
+            } else {
+              progressBar.style.width = "0%";
+              showError(e.message);
+            }
+          } finally {
+            isWriting = false;
+            abortController = null;
+            btnStartWrite.style.display = "inline-flex";
+            btnCancelWrite.style.display = "none";
+            btnStartWrite.disabled = false;
+            btnConnectUSB.disabled = false;
+            btnClearFile.disabled = false;
+            dropZone.style.pointerEvents = "auto";
+            updateWriteButton();
+          }
+        }
+        async function performWrite(signal) {
+          const file = selectedFile,
+            total = file.size,
+            chunk = CHUNK_SECTORS * sectorSize;
+          let lba = 0,
+            offset = 0,
+            tagC = Date.now() & 0xffff;
+          while (offset < total) {
+            if (signal.aborted) throw new Error("用户取消");
+            const remain = total - offset,
+              curBytes = Math.min(chunk, remain);
+            const curSectors = Math.ceil(curBytes / sectorSize);
+            const blob = file.slice(offset, offset + curBytes);
             const buf = await new Response(blob).arrayBuffer();
             let aligned = buf;
-            if (buf.byteLength < curSectors*sectorSize) {
-                const pad = new ArrayBuffer(curSectors*sectorSize);
-                new Uint8Array(pad).set(new Uint8Array(buf));
-                aligned = pad;
+            if (buf.byteLength < curSectors * sectorSize) {
+              const pad = new ArrayBuffer(curSectors * sectorSize);
+              new Uint8Array(pad).set(new Uint8Array(buf));
+              aligned = pad;
             }
             const cmd = buildWrite10(lba, curSectors);
-            const cbw = buildCBW((tagC++)&0xFFFFFFFF, aligned.byteLength, CBW_FLAG_DATA_OUT, 0, cmd);
+            const cbw = buildCBW(
+              tagC++ & 0xffffffff,
+              aligned.byteLength,
+              CBW_FLAG_DATA_OUT,
+              0,
+              cmd,
+            );
             await usbDevice.transferOut(bulkOutEp.endpointNumber, cbw);
-            let pos=0; const data=new Uint8Array(aligned);
+            let pos = 0;
+            const data = new Uint8Array(aligned);
             while (pos < data.length) {
-                if (signal.aborted) throw new Error('用户取消');
-                const len = Math.min(bulkOutEp.packetSize*64, data.length-pos);
-                await usbDevice.transferOut(bulkOutEp.endpointNumber, data.slice(pos, pos+len));
-                pos += len;
+              if (signal.aborted) throw new Error("用户取消");
+              const len = Math.min(
+                bulkOutEp.packetSize * 64,
+                data.length - pos,
+              );
+              await usbDevice.transferOut(
+                bulkOutEp.endpointNumber,
+                data.slice(pos, pos + len),
+              );
+              pos += len;
             }
-            const cswRes = await usbDevice.transferIn(bulkInEp.endpointNumber,13);
-            if (!cswRes.data||cswRes.data.byteLength<13) throw new Error(`CSW响应异常 LBA ${lba}`);
+            const cswRes = await usbDevice.transferIn(
+              bulkInEp.endpointNumber,
+              13,
+            );
+            if (!cswRes.data || cswRes.data.byteLength < 13)
+              throw new Error(`CSW响应异常 LBA ${lba}`);
             const csw = parseCSW(cswRes.data.buffer);
             if (!csw.valid) throw new Error(`CSW签名无效 LBA ${lba}`);
-            if (csw.status!==0) throw new Error(`SCSI错误 状态${csw.status} LBA ${lba}`);
-            offset += curBytes; bytesWritten = offset; lba += curSectors;
+            if (csw.status !== 0)
+              throw new Error(`SCSI错误 状态${csw.status} LBA ${lba}`);
+            offset += curBytes;
+            bytesWritten = offset;
+            lba += curSectors;
             updateProgress(offset, total);
+          }
         }
-    }
-    function updateProgress(written, total) {
-        const pct = Math.round((written/total)*100);
-        progressBar.style.width = pct+'%'; progressPercent.textContent = pct+'%';
-        progressDetail.textContent = `${formatBytes(written)} / ${formatBytes(total)}`;
-        const elapsed = (performance.now()-writeStartTime)/1000;
-        if (elapsed>0.5) {
-            const speed = written/elapsed;
-            progressSpeed.textContent = formatBytes(speed)+'/s';
-            const remaining = total-written;
-            if (speed>0) progressEta.textContent = `剩余 ${formatDuration(remaining/speed)}`;
+        function updateProgress(written, total) {
+          const pct = Math.round((written / total) * 100);
+          progressBar.style.width = pct + "%";
+          progressPercent.textContent = pct + "%";
+          progressDetail.textContent = `${formatBytes(written)} / ${formatBytes(total)}`;
+          const elapsed = (performance.now() - writeStartTime) / 1000;
+          if (elapsed > 0.5) {
+            const speed = written / elapsed;
+            progressSpeed.textContent = formatBytes(speed) + "/s";
+            const remaining = total - written;
+            if (speed > 0)
+              progressEta.textContent = `剩余 ${formatDuration(remaining / speed)}`;
+          }
         }
-    }
-    function cancelWrite() { if (abortController) abortController.abort(); }
-    function showError(msg) { writeStatusArea.innerHTML = `<div class="alert alert-danger"><span class="alert-icon">❌</span> ${msg}</div>`; }
+        function cancelWrite() {
+          if (abortController) abortController.abort();
+        }
+        function showError(msg) {
+          writeStatusArea.innerHTML = `<div class="alert alert-danger"><span class="alert-icon">❌</span> ${msg}</div>`;
+        }
 
-    function formatBytes(b) {
-        if (!b) return '0 B'; const u=['B','KB','MB','GB','TB']; const i=Math.floor(Math.log(b)/Math.log(1024));
-        return (b/Math.pow(1024,i)).toFixed(i>0?1:0)+' '+u[i];
-    }
-    function formatDuration(s) {
-        if (s<1) return '不到1秒'; if (s<60) return Math.round(s)+'秒';
-        const m=Math.floor(s/60), sec=Math.round(s%60); return `${m}分${sec}秒`;
-    }
+        function formatBytes(b) {
+          if (!b) return "0 B";
+          const u = ["B", "KB", "MB", "GB", "TB"];
+          const i = Math.floor(Math.log(b) / Math.log(1024));
+          return (b / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + " " + u[i];
+        }
+        function formatDuration(s) {
+          if (s < 1) return "不到1秒";
+          if (s < 60) return Math.round(s) + "秒";
+          const m = Math.floor(s / 60),
+            sec = Math.round(s % 60);
+          return `${m}分${sec}秒`;
+        }
 
-    btnConnectUSB.addEventListener('click', connectUSB);
-    btnRefreshDevices.addEventListener('click', async ()=>{
-        try {
+        btnConnectUSB.addEventListener("click", connectUSB);
+        btnRefreshDevices.addEventListener("click", async () => {
+          try {
             const devs = await navigator.usb.getDevices();
-            const massDevs = devs.filter(d => {
-                for (const cfg of d.configurations)
-                    for (const iface of cfg.interfaces)
-                        for (const alt of iface.alternates)
-                            if (alt.interfaceClass === 0x08) return true;
-                return false;
+            const massDevs = devs.filter((d) => {
+              for (const cfg of d.configurations)
+                for (const iface of cfg.interfaces)
+                  for (const alt of iface.alternates)
+                    if (alt.interfaceClass === 0x08) return true;
+              return false;
             });
             if (massDevs.length === 0) {
-                showStatus('无已授权U盘','disconnected');
-                addLog('没有已授权的大容量存储设备。请插入U盘并点击"选择U盘"。', 'warn');
-                return;
+              showStatus("无已授权U盘", "disconnected");
+              addLog(
+                '没有已授权的大容量存储设备。请插入U盘并点击"选择U盘"。',
+                "warn",
+              );
+              return;
             }
-            addLog(`找到 ${massDevs.length} 个已授权U盘，尝试连接...`, 'info');
+            addLog(`找到 ${massDevs.length} 个已授权U盘，尝试连接...`, "info");
             for (const d of massDevs) {
-                try { await d.open(); await d.close(); await setupDevice(d); return; }
-                catch(e) { addLog(`设备 ${d.productName} 不在线或无法连接。`, 'warn'); }
+              try {
+                await d.open();
+                await d.close();
+                await setupDevice(d);
+                return;
+              } catch (e) {
+                addLog(`设备 ${d.productName} 不在线或无法连接。`, "warn");
+              }
             }
-            showStatus('所有已授权U盘均不在线','disconnected');
-            addLog('所有已授权U盘都未连接。请插入U盘后重试，或点击"选择U盘"重新授权。', 'error');
-        } catch(e) {
-            showStatus('刷新失败','disconnected');
-            addLog(`刷新失败: ${e.message}`, 'error');
-        }
-    });
-
-    dropZone.addEventListener('click', ()=>{ if (!isWriting) fileInput.click(); });
-    dropZone.addEventListener('dragover', e=>{ e.preventDefault(); if(!isWriting) dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', ()=> dropZone.classList.remove('drag-over'));
-    dropZone.addEventListener('drop', e=>{
-        e.preventDefault(); dropZone.classList.remove('drag-over');
-        if (!isWriting && e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-    });
-    fileInput.addEventListener('change', ()=>{ if (fileInput.files.length) handleFile(fileInput.files[0]); });
-    btnClearFile.addEventListener('click', e=>{ e.stopPropagation(); clearFile(); });
-    btnStartWrite.addEventListener('click', startWrite);
-    btnCancelWrite.addEventListener('click', cancelWrite);
-    document.addEventListener('keydown', e=>{ if (e.key==='Escape'&&isWriting) cancelWrite(); });
-    window.addEventListener('beforeunload', async ()=>{
-        if (isWriting&&abortController) abortController.abort();
-        if (usbDevice) { try{ if(usbInterface&&usbDevice.opened) await usbDevice.releaseInterface(usbInterface.interfaceNumber); }catch(e){} try{await usbDevice.close();}catch(e){} }
-    });
-    if (navigator.usb) {
-        navigator.usb.addEventListener('disconnect', e=>{
-            if (e.device===usbDevice) {
-                if (isWriting) cancelWrite();
-                resetDeviceState(); showStatus('设备已断开','disconnected');
-                writeStatusArea.innerHTML='<div class="alert alert-danger"><span class="alert-icon">🔌</span> USB设备已断开！</div>';
-            }
+            showStatus("所有已授权U盘均不在线", "disconnected");
+            addLog(
+              '所有已授权U盘都未连接。请插入U盘后重试，或点击"选择U盘"重新授权。',
+              "error",
+            );
+          } catch (e) {
+            showStatus("刷新失败", "disconnected");
+            addLog(`刷新失败: ${e.message}`, "error");
+          }
         });
-    }
-    if (!navigator.usb) {
-        writeStatusArea.innerHTML='<div class="alert alert-danger"><span class="alert-icon">🚫</span> 浏览器不支持 WebUSB，请使用 Chrome/Edge 并确保 HTTPS/localhost。</div>';
-        btnConnectUSB.disabled=true; btnStartWrite.disabled=true;
-    } else {
-        addLog('WebUSB 就绪。请先卸载U盘（Windows删除盘符 / macOS卸载），然后点击"选择U盘"。', 'info');
-    }
-})();
-</script>
-</body>
+
+        dropZone.addEventListener("click", () => {
+          if (!isWriting) fileInput.click();
+        });
+        dropZone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          if (!isWriting) dropZone.classList.add("drag-over");
+        });
+        dropZone.addEventListener("dragleave", () =>
+          dropZone.classList.remove("drag-over"),
+        );
+        dropZone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          dropZone.classList.remove("drag-over");
+          if (!isWriting && e.dataTransfer.files.length)
+            handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener("change", () => {
+          if (fileInput.files.length) handleFile(fileInput.files[0]);
+        });
+        btnClearFile.addEventListener("click", (e) => {
+          e.stopPropagation();
+          clearFile();
+        });
+        btnStartWrite.addEventListener("click", startWrite);
+        btnCancelWrite.addEventListener("click", cancelWrite);
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && isWriting) cancelWrite();
+        });
+        window.addEventListener("beforeunload", async () => {
+          if (isWriting && abortController) abortController.abort();
+          if (usbDevice) {
+            try {
+              if (usbInterface && usbDevice.opened)
+                await usbDevice.releaseInterface(usbInterface.interfaceNumber);
+            } catch (e) {}
+            try {
+              await usbDevice.close();
+            } catch (e) {}
+          }
+        });
+        if (navigator.usb) {
+          navigator.usb.addEventListener("disconnect", (e) => {
+            if (e.device === usbDevice) {
+              if (isWriting) cancelWrite();
+              resetDeviceState();
+              showStatus("设备已断开", "disconnected");
+              writeStatusArea.innerHTML =
+                '<div class="alert alert-danger"><span class="alert-icon">🔌</span> USB设备已断开！</div>';
+            }
+          });
+        }
+        if (!navigator.usb) {
+          writeStatusArea.innerHTML =
+            '<div class="alert alert-danger"><span class="alert-icon">🚫</span> 浏览器不支持 WebUSB，请使用 Chrome/Edge 并确保 HTTPS/localhost。</div>';
+          btnConnectUSB.disabled = true;
+          btnStartWrite.disabled = true;
+        } else {
+          addLog(
+            'WebUSB 就绪。请先卸载U盘（Windows删除盘符 / macOS卸载），然后点击"选择U盘"。',
+            "info",
+          );
+        }
+      })();
+    </script>
+  </body>
 </html>
