@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>算法异常日报生成工具 V2</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" sizes="any" />
+    <title>日报生成工具</title>
     <style>
         :root {
             --bg-color: #f4f6f8;
@@ -332,13 +333,11 @@
             eventRows.forEach(row => {
                 const event = row.querySelector('.item-event').value.trim();
                 const reason = row.querySelector('.item-reason').value.trim();
-                // 必须节点和原因都有内容才算作有效数据
                 if (event && reason) {
                     records.push({ event, reason });
                 }
             });
 
-            // 只有填写了机位号 并且 至少有一条异常，才会被计入最终排版
             if (standNum && records.length > 0) {
                 data[type].push({ standNum, records });
             }
@@ -347,8 +346,9 @@
         // 2. 组装文字
         let resultText = "";
 
-        // 排版远机位
+        // 排版远机位（现在增加了 "远机位：" 表头）
         if (data['远机位'].length > 0) {
+            resultText += "远机位：\n"; // <--- 新增的标题
             data['远机位'].forEach((item, index) => {
                 const cnIndex = cnNums[index + 1] || (index + 1);
                 resultText += `${cnIndex}、${item.standNum}\n`;
