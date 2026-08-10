@@ -658,6 +658,8 @@
           const allTimes = sortedTimes.map((ts) => ts.includes(' ') ? ts.split(' ')[1] : ts);
           
           let timesToDisplay = allTimes;
+          
+          // 【核心规则调整】：仅行李拖车入位/离开受限，配餐(14,15)等其他所有节点全量保留
           if (code === 'baggage_start') {
             timesToDisplay = [allTimes[0]]; 
           } else if (code === 'baggage_end') {
