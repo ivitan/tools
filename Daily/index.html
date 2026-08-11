@@ -158,12 +158,60 @@
             opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999;
         }
         .toast.show { opacity: 1; }
+
+        /* ======== 新增：完美还原截图的自定义多选下拉框样式 ======== */
+        .multi-select-container { position: relative; width: 100%; }
+        
+        .input-with-arrow {
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%237f8c8d" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 30px; /* 留出箭头空间 */
+            cursor: pointer;
+        }
+
+        .multi-select-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            z-index: 100;
+            max-height: 250px;
+            overflow-y: auto;
+            display: none;
+        }
+        .multi-select-dropdown.show { display: block; }
+        
+        .multi-select-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-main);
+        }
+        .multi-select-option:hover { background: var(--surface-hover); }
+        .multi-select-option.selected {
+            color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.08);
+            font-weight: bold;
+        }
+        .multi-select-option.selected::after {
+            content: '✔';
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
 
-<!-- 【远机位专用词库】有摆渡车、客梯车；无靠桥、撤桥 -->
-<datalist id="event-list-far">
+<!-- 依然保留数据源配置，方便随时增删词库 -->
+<datalist id="event-list-far" style="display: none;">
     <option value="引导车进入"></option><option value="引导车离开"></option>
     <option value="飞机入位开始"></option><option value="飞机入位结束"></option>
     <option value="上轮档"></option><option value="到港摆渡车到位"></option>
@@ -181,8 +229,7 @@
     <option value="飞机离位结束"></option><option value="飞机推出"></option>
 </datalist>
 
-<!-- 【近机位专用词库】有靠桥、撤桥；无摆渡车、客梯车 -->
-<datalist id="event-list-near">
+<datalist id="event-list-near" style="display: none;">
     <option value="引导车进入"></option><option value="引导车离开"></option>
     <option value="飞机入位开始"></option><option value="飞机入位结束"></option>
     <option value="上轮档"></option><option value="靠桥开始"></option>
@@ -200,8 +247,7 @@
     <option value="飞机离位结束"></option><option value="飞机推出"></option>
 </datalist>
 
-<!-- 常见原因词库（通用） -->
-<datalist id="reason-list">
+<datalist id="reason-list" style="display: none;">
     <option value="算法无数据"></option>
     <option value="内嵌式门，后门洞很小导致识别抖动，识别不准"></option>
     <option value="客梯车顶部不透明，关客舱门抖动识别不准"></option>
@@ -238,26 +284,110 @@
 
 <script>
     const cnNums = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"];
+    let baseOptions = {};
+    let activeDropdown = null;
 
     window.onload = () => {
+        // 解析 DOM 中的词库备用
+        ['event-list-far', 'event-list-near', 'reason-list'].forEach(id => {
+            const list = document.getElementById(id);
+            if(list) { baseOptions[id] = Array.from(list.options).map(o => o.value); }
+        });
+
         addStandCard('远机位');
         addStandCard('近机位');
-        document.getElementById('stands-container').addEventListener('input', generatePreview);
+        
+        const container = document.getElementById('stands-container');
+        container.addEventListener('input', generatePreview);
+
+        // 处理自定义下拉框的点击展开与外部点击关闭
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('custom-dropdown-input')) {
+                if (activeDropdown && activeDropdown.parentNode === e.target.parentNode) return;
+                showDropdown(e.target);
+            } else if (!e.target.closest('.multi-select-dropdown')) {
+                closeAllDropdowns();
+            }
+        });
+
+        // 监听手动输入内容，实时勾选/取消下拉菜单状态
+        container.addEventListener('input', (e) => {
+            if (e.target.classList.contains('custom-dropdown-input') && activeDropdown && activeDropdown.parentNode === e.target.parentNode) {
+                renderOptions(e.target, activeDropdown, e.target.getAttribute('data-list'));
+            }
+        });
     };
 
-    // 生成异常行的 HTML 结构，根据机位类型绑定不同的 datalist
+    // ====== 下拉框核心逻辑 ======
+    function showDropdown(input) {
+        closeAllDropdowns();
+        const listId = input.getAttribute('data-list');
+        if (!baseOptions[listId]) return;
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'multi-select-dropdown show';
+        
+        renderOptions(input, dropdown, listId);
+        input.parentNode.appendChild(dropdown);
+        activeDropdown = dropdown;
+    }
+
+    function renderOptions(input, dropdown, listId) {
+        dropdown.innerHTML = '';
+        const currentSelected = input.value.split('、').filter(v => v.trim() !== '');
+
+        baseOptions[listId].forEach(opt => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'multi-select-option';
+            if (currentSelected.includes(opt)) { optionDiv.classList.add('selected'); }
+            optionDiv.innerText = opt;
+            
+            // 使用 mousedown 阻止输入框失焦导致面板异常关闭
+            optionDiv.onmousedown = (e) => {
+                e.preventDefault(); 
+                toggleSelection(input, opt, dropdown, listId);
+            };
+            dropdown.appendChild(optionDiv);
+        });
+    }
+
+    function toggleSelection(input, opt, dropdown, listId) {
+        let currentSelected = input.value.split('、').filter(v => v.trim() !== '');
+        if (currentSelected.includes(opt)) {
+            currentSelected = currentSelected.filter(v => v !== opt); // 已存在则移除
+        } else {
+            currentSelected.push(opt); // 不存在则追加
+        }
+        
+        input.value = currentSelected.join('、');
+        renderOptions(input, dropdown, listId); // 重新渲染更新勾号
+        generatePreview(); 
+    }
+
+    function closeAllDropdowns() {
+        if (activeDropdown) {
+            activeDropdown.remove();
+            activeDropdown = null;
+        }
+    }
+    // =============================
+
+    // 修改：将原有的原生 datalist 替换成了配合样式的自定义输入框包裹层
     function createEventRowHTML(type) {
         const listId = (type === '远机位') ? 'event-list-far' : 'event-list-near';
         return `
             <div class="item-row">
-                <input type="text" class="item-event" list="${listId}" placeholder="节点双击选择">
-                <input type="text" class="item-reason" list="reason-list" placeholder="原因双击选择">
+                <div class="multi-select-container">
+                    <input type="text" class="item-event input-with-arrow custom-dropdown-input" data-list="${listId}" placeholder="点击选择节点">
+                </div>
+                <div class="multi-select-container">
+                    <input type="text" class="item-reason input-with-arrow custom-dropdown-input" data-list="reason-list" placeholder="点击选择原因">
+                </div>
                 <button class="btn-icon" style="padding:4px" onclick="removeEventRow(this)" title="删除此行">✖</button>
             </div>
         `;
     }
 
-    // 添加机位卡片
     function addStandCard(type) {
         const container = document.getElementById('stands-container');
         const card = document.createElement('div');
@@ -277,11 +407,19 @@
             </div>
             <button class="btn-text" onclick="addEventRow(this)">+ 添加异常明细</button>
         `;
-        container.appendChild(card);
+        
+        // 【核心要求保留】：在同类后面追加
+        const existingCards = container.querySelectorAll(`.stand-card[data-type="${type}"]`);
+        if (existingCards.length > 0) {
+            const lastCard = existingCards[existingCards.length - 1];
+            lastCard.parentNode.insertBefore(card, lastCard.nextSibling);
+        } else {
+            container.appendChild(card);
+        }
+        
         generatePreview(); 
     }
 
-    // 在指定卡片内添加一行异常
     function addEventRow(btnElement) {
         const card = btnElement.closest('.stand-card');
         const type = card.getAttribute('data-type');
@@ -290,7 +428,6 @@
         generatePreview();
     }
 
-    // 删除单行异常
     function removeEventRow(btnElement) {
         const row = btnElement.parentElement;
         const container = row.parentElement;
@@ -304,13 +441,11 @@
         generatePreview();
     }
 
-    // 删除整个机位卡片
     function removeStandCard(btnElement) {
         btnElement.closest('.stand-card').remove();
         generatePreview();
     }
 
-    // 清空全部
     function clearAllCards() {
         if(confirm('确定要清空所有录入的数据吗？')) {
             document.getElementById('stands-container').innerHTML = '';
@@ -320,10 +455,8 @@
         }
     }
 
-    // 核心逻辑：遍历 DOM，实时生成日报排版
     function generatePreview() {
         const cards = document.querySelectorAll('.stand-card');
-        
         let data = { '远机位': [], '近机位': [] };
 
         cards.forEach(card => {
