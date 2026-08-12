@@ -159,15 +159,15 @@
         }
         .toast.show { opacity: 1; }
 
-        /* ======== 新增：完美还原截图的自定义多选下拉框样式 ======== */
+        /* ======== 多选下拉框样式 ======== */
         .multi-select-container { position: relative; width: 100%; }
         
         .input-with-arrow {
             background-image: url('data:image/svg+xml;utf8,<svg fill="%237f8c8d" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
             background-repeat: no-repeat;
             background-position: right 8px center;
-            padding-right: 30px; /* 留出箭头空间 */
-            cursor: pointer;
+            padding-right: 30px;
+            cursor: text;
         }
 
         .multi-select-dropdown {
@@ -210,8 +210,8 @@
 </head>
 <body>
 
-<!-- 依然保留数据源配置，方便随时增删词库 -->
 <datalist id="event-list-far" style="display: none;">
+    <option value="所有节点"></option>
     <option value="引导车进入"></option><option value="引导车离开"></option>
     <option value="飞机入位开始"></option><option value="飞机入位结束"></option>
     <option value="上轮档"></option><option value="到港摆渡车到位"></option>
@@ -230,6 +230,7 @@
 </datalist>
 
 <datalist id="event-list-near" style="display: none;">
+    <option value="所有节点"></option>
     <option value="引导车进入"></option><option value="引导车离开"></option>
     <option value="飞机入位开始"></option><option value="飞机入位结束"></option>
     <option value="上轮档"></option><option value="靠桥开始"></option>
@@ -248,14 +249,7 @@
 </datalist>
 
 <datalist id="reason-list" style="display: none;">
-    <option value="算法无数据"></option>
-    <option value="内嵌式门，后门洞很小导致识别抖动，识别不准"></option>
-    <option value="客梯车顶部不透明，关客舱门抖动识别不准"></option>
-    <option value="算法识别的是路过的VIP车"></option>
-    <option value="飞机底部有灯光，导致算法早了"></option>
-    <option value="右侧配餐，算法未配置识别不到"></option>
-    <option value="狠花的涂装导致算法时间早了"></option>
-    <option value="第一次可能与排污同侧同时作业导致识别不准，第二次有点阳光反射"></option>
+    <option value="无异常"></option>
 </datalist>
 
 <div class="container">
@@ -286,9 +280,10 @@
     const cnNums = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"];
     let baseOptions = {};
     let activeDropdown = null;
+    let activeInput = null;
+    let currentSearchQuery = "";
 
     window.onload = () => {
-        // 解析 DOM 中的词库备用
         ['event-list-far', 'event-list-near', 'reason-list'].forEach(id => {
             const list = document.getElementById(id);
             if(list) { baseOptions[id] = Array.from(list.options).map(o => o.value); }
@@ -298,9 +293,8 @@
         addStandCard('近机位');
         
         const container = document.getElementById('stands-container');
-        container.addEventListener('input', generatePreview);
 
-        // 处理自定义下拉框的点击展开与外部点击关闭
+        // 点击输入框展示下拉并处理点击外部关闭
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('custom-dropdown-input')) {
                 if (activeDropdown && activeDropdown.parentNode === e.target.parentNode) return;
@@ -310,15 +304,51 @@
             }
         });
 
-        // 监听手动输入内容，实时勾选/取消下拉菜单状态
+        // 监听实时打字输入
         container.addEventListener('input', (e) => {
             if (e.target.classList.contains('custom-dropdown-input') && activeDropdown && activeDropdown.parentNode === e.target.parentNode) {
-                renderOptions(e.target, activeDropdown, e.target.getAttribute('data-list'));
+                const listId = e.target.getAttribute('data-list');
+                const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
+                const validOptions = baseOptions[listId];
+                
+                const { query } = parseInput(e.target.value, validOptions, isNode);
+                currentSearchQuery = query; // 更新全局搜索记忆
+                renderOptions(e.target, activeDropdown, listId);
             }
+            generatePreview();
         });
     };
 
-    // ====== 下拉框核心逻辑 ======
+    // ====== 下拉框与智能搜索核心逻辑 ======
+    
+    // 解析输入框内容，智能分离出“已选项”和“正在搜索的词”
+    function parseInput(val, validOptions, isNode) {
+        const rawParts = val.split('、').map(v => v.trim());
+        const selected = [];
+        let query = "";
+        
+        for (let i = 0; i < rawParts.length - 1; i++) {
+            if (rawParts[i]) {
+                if (isNode) {
+                    if (validOptions.includes(rawParts[i])) selected.push(rawParts[i]);
+                } else {
+                    selected.push(rawParts[i]); 
+                }
+            }
+        }
+        
+        const lastPart = rawParts[rawParts.length - 1];
+        if (lastPart) {
+            if (validOptions.includes(lastPart)) {
+                selected.push(lastPart);
+                query = ""; 
+            } else {
+                query = lastPart; 
+            }
+        }
+        return { selected, query };
+    }
+
     function showDropdown(input) {
         closeAllDropdowns();
         const listId = input.getAttribute('data-list');
@@ -327,22 +357,48 @@
         const dropdown = document.createElement('div');
         dropdown.className = 'multi-select-dropdown show';
         
+        activeDropdown = dropdown;
+        activeInput = input;
+        
+        const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
+        const validOptions = baseOptions[listId];
+        const { query } = parseInput(input.value, validOptions, isNode);
+        currentSearchQuery = query;
+        
         renderOptions(input, dropdown, listId);
         input.parentNode.appendChild(dropdown);
-        activeDropdown = dropdown;
     }
 
     function renderOptions(input, dropdown, listId) {
         dropdown.innerHTML = '';
-        const currentSelected = input.value.split('、').filter(v => v.trim() !== '');
+        const validOptions = baseOptions[listId];
+        const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
+        const { selected } = parseInput(input.value, validOptions, isNode);
 
-        baseOptions[listId].forEach(opt => {
+        const filteredOptions = validOptions.filter(opt => opt.includes(currentSearchQuery));
+
+        if (filteredOptions.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'multi-select-option';
+            emptyDiv.style.color = 'var(--text-muted)';
+            emptyDiv.style.cursor = 'not-allowed';
+            emptyDiv.innerText = isNode ? '无匹配节点 (请重新搜索)' : '无匹配项 (将作为自定义原因保留)';
+            dropdown.appendChild(emptyDiv);
+            return;
+        }
+
+        filteredOptions.forEach(opt => {
             const optionDiv = document.createElement('div');
             optionDiv.className = 'multi-select-option';
-            if (currentSelected.includes(opt)) { optionDiv.classList.add('selected'); }
-            optionDiv.innerText = opt;
+            if (selected.includes(opt)) { optionDiv.classList.add('selected'); }
             
-            // 使用 mousedown 阻止输入框失焦导致面板异常关闭
+            if (currentSearchQuery) {
+                const parts = opt.split(currentSearchQuery);
+                optionDiv.innerHTML = parts.join(`<span style="color: var(--primary-color); font-weight: bold;">${currentSearchQuery}</span>`);
+            } else {
+                optionDiv.innerText = opt;
+            }
+            
             optionDiv.onmousedown = (e) => {
                 e.preventDefault(); 
                 toggleSelection(input, opt, dropdown, listId);
@@ -352,36 +408,61 @@
     }
 
     function toggleSelection(input, opt, dropdown, listId) {
-        let currentSelected = input.value.split('、').filter(v => v.trim() !== '');
-        if (currentSelected.includes(opt)) {
-            currentSelected = currentSelected.filter(v => v !== opt); // 已存在则移除
+        const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
+        const validOptions = baseOptions[listId];
+        let { selected } = parseInput(input.value, validOptions, isNode);
+        
+        if (selected.includes(opt)) {
+            selected = selected.filter(v => v !== opt); // 反选
         } else {
-            currentSelected.push(opt); // 不存在则追加
+            selected.push(opt); // 勾选
         }
         
-        input.value = currentSelected.join('、');
-        renderOptions(input, dropdown, listId); // 重新渲染更新勾号
-        generatePreview(); 
+        // 【核心修改】：如果是原因框，只拼接文字，不加末尾的“、”
+        if (listId === 'reason-list') {
+            input.value = selected.join('、');
+        } else {
+            input.value = selected.join('、') + (selected.length > 0 ? '、' : '');
+        }
+        
+        generatePreview();
+        input.focus();
+        renderOptions(input, dropdown, listId); 
     }
 
     function closeAllDropdowns() {
         if (activeDropdown) {
+            if (activeInput) {
+                const listId = activeInput.getAttribute('data-list');
+                const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
+                
+                if (isNode) {
+                    const validOptions = baseOptions[listId];
+                    const parts = activeInput.value.split('、').map(v => v.trim());
+                    const validParts = parts.filter(p => validOptions.includes(p));
+                    activeInput.value = validParts.join('、');
+                } else {
+                    activeInput.value = activeInput.value.replace(/、+$/, '');
+                }
+                generatePreview();
+            }
             activeDropdown.remove();
             activeDropdown = null;
+            activeInput = null;
+            currentSearchQuery = ""; 
         }
     }
     // =============================
 
-    // 修改：将原有的原生 datalist 替换成了配合样式的自定义输入框包裹层
     function createEventRowHTML(type) {
         const listId = (type === '远机位') ? 'event-list-far' : 'event-list-near';
         return `
             <div class="item-row">
                 <div class="multi-select-container">
-                    <input type="text" class="item-event input-with-arrow custom-dropdown-input" data-list="${listId}" placeholder="点击选择节点">
+                    <input type="text" class="item-event input-with-arrow custom-dropdown-input" data-list="${listId}" placeholder="点击或输入搜索... (多选)" autocomplete="off">
                 </div>
                 <div class="multi-select-container">
-                    <input type="text" class="item-reason input-with-arrow custom-dropdown-input" data-list="reason-list" placeholder="点击选择原因">
+                    <input type="text" class="item-reason input-with-arrow custom-dropdown-input" data-list="reason-list" placeholder="点击或输入搜索... (多选)" autocomplete="off">
                 </div>
                 <button class="btn-icon" style="padding:4px" onclick="removeEventRow(this)" title="删除此行">✖</button>
             </div>
@@ -408,7 +489,6 @@
             <button class="btn-text" onclick="addEventRow(this)">+ 添加异常明细</button>
         `;
         
-        // 【核心要求保留】：在同类后面追加
         const existingCards = container.querySelectorAll(`.stand-card[data-type="${type}"]`);
         if (existingCards.length > 0) {
             const lastCard = existingCards[existingCards.length - 1];
