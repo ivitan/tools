@@ -329,11 +329,8 @@
         
         for (let i = 0; i < rawParts.length - 1; i++) {
             if (rawParts[i]) {
-                if (isNode) {
-                    if (validOptions.includes(rawParts[i])) selected.push(rawParts[i]);
-                } else {
-                    selected.push(rawParts[i]); 
-                }
+                // 【核心修改】：无论是节点还是原因，前置内容只要通过“、”分隔过，都视为合法保留内容
+                selected.push(rawParts[i]); 
             }
         }
         
@@ -375,6 +372,7 @@
         const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
         const { selected } = parseInput(input.value, validOptions, isNode);
 
+        // 核心：永远基于全局搜索记忆进行过滤，即便输入框被清理也能保持搜索结果
         const filteredOptions = validOptions.filter(opt => opt.includes(currentSearchQuery));
 
         if (filteredOptions.length === 0) {
@@ -382,7 +380,8 @@
             emptyDiv.className = 'multi-select-option';
             emptyDiv.style.color = 'var(--text-muted)';
             emptyDiv.style.cursor = 'not-allowed';
-            emptyDiv.innerText = isNode ? '无匹配节点 (请重新搜索)' : '无匹配项 (将作为自定义原因保留)';
+            // 【核心修改】：提示语变为允许自定义内容保留
+            emptyDiv.innerText = isNode ? '无匹配节点 (将作为自定义内容保留)' : '无匹配项 (将作为自定义原因保留)';
             dropdown.appendChild(emptyDiv);
             return;
         }
@@ -418,7 +417,7 @@
             selected.push(opt); // 勾选
         }
         
-        // 【核心修改】：如果是原因框，只拼接文字，不加末尾的“、”
+        // 如果是原因框，只拼接文字，不加末尾的“、”
         if (listId === 'reason-list') {
             input.value = selected.join('、');
         } else {
@@ -433,17 +432,8 @@
     function closeAllDropdowns() {
         if (activeDropdown) {
             if (activeInput) {
-                const listId = activeInput.getAttribute('data-list');
-                const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
-                
-                if (isNode) {
-                    const validOptions = baseOptions[listId];
-                    const parts = activeInput.value.split('、').map(v => v.trim());
-                    const validParts = parts.filter(p => validOptions.includes(p));
-                    activeInput.value = validParts.join('、');
-                } else {
-                    activeInput.value = activeInput.value.replace(/、+$/, '');
-                }
+                // 【核心修改】：无论是节点还是原因，关闭下拉框时都不再粗暴删除未匹配项，仅移除末尾多余的逗号，保留所有自定义文本
+                activeInput.value = activeInput.value.replace(/、+$/, '');
                 generatePreview();
             }
             activeDropdown.remove();
@@ -459,10 +449,10 @@
         return `
             <div class="item-row">
                 <div class="multi-select-container">
-                    <input type="text" class="item-event input-with-arrow custom-dropdown-input" data-list="${listId}" placeholder="点击或输入搜索... (多选)" autocomplete="off">
+                    <input type="text" class="item-event input-with-arrow custom-dropdown-input" data-list="${listId}" placeholder="点击或输入搜索... (支持多选及自定义)" autocomplete="off">
                 </div>
                 <div class="multi-select-container">
-                    <input type="text" class="item-reason input-with-arrow custom-dropdown-input" data-list="reason-list" placeholder="点击或输入搜索... (多选)" autocomplete="off">
+                    <input type="text" class="item-reason input-with-arrow custom-dropdown-input" data-list="reason-list" placeholder="点击或输入搜索... (支持多选及自定义)" autocomplete="off">
                 </div>
                 <button class="btn-icon" style="padding:4px" onclick="removeEventRow(this)" title="删除此行">✖</button>
             </div>
