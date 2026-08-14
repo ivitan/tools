@@ -161,7 +161,7 @@
       /* 搜索框 */
       .search-box {
         max-width: 560px;
-        margin: 0 auto 32px auto;
+        margin: 0 auto 16px auto;
         position: relative;
       }
 
@@ -197,6 +197,41 @@
         color: var(--text-muted);
         font-size: 1.2rem;
         pointer-events: none;
+      }
+
+      /* 分类筛选条 */
+      .category-bar {
+        max-width: 880px;
+        margin: 0 auto 32px auto;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .category-chip {
+        padding: 8px 18px;
+        border-radius: 40px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: var(--card-shadow);
+        user-select: none;
+      }
+
+      .category-chip:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+      }
+
+      .category-chip.active {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
       }
 
       /* 工具网格 - 核心响应式一行两个 */
@@ -256,7 +291,7 @@
         }
       }
 
-      .tool-card i {
+      .tool-card i.tool-icon {
         font-size: 2.5rem;
         margin-bottom: 14px;
         background: var(--tool-icon-bg);
@@ -270,7 +305,7 @@
         transition: all 0.2s;
       }
 
-      .tool-card:hover i {
+      .tool-card:hover i.tool-icon {
         transform: scale(1.05);
         background: rgba(59, 130, 246, 0.2);
       }
@@ -288,6 +323,21 @@
         color: var(--text-secondary);
         line-height: 1.4;
         max-width: 100%;
+      }
+
+      /* 卡片右上角徽标 (可选: badge) */
+      .tool-card .card-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: #ef4444;
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        padding: 2px 8px;
+        border-radius: 20px;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
       }
 
       /* 无结果提示 */
@@ -380,7 +430,7 @@
         .tool-card {
           padding: 16px 10px 14px;
         }
-        .tool-card i {
+        .tool-card i.tool-icon {
           width: 52px;
           height: 52px;
           font-size: 2rem;
@@ -432,84 +482,18 @@
         <i class="fas fa-search"></i>
       </div>
 
-      <div class="tools-grid" id="toolsGrid">
-        <!-- 卡片 1 - Type搜索 -->
-        <a
-          href="/TypeSearch"
-          class="tool-card"
-          data-name="Type搜索"
-          data-category="搜索工具 开发辅助"
-        >
-          <i class="fas fa-search"></i>
-          <h3>Type搜索</h3>
-          <p>智能类型检索 & 快速定位</p>
-        </a>
+      <!-- 分类筛选条 (由 JS 根据工具列表自动生成) -->
+      <div class="category-bar" id="categoryBar"></div>
 
-        <!-- 卡片 2 - 单位换算 -->
-        <a
-          href="/Exchange"
-          class="tool-card"
-          data-name="单位换算"
-          data-category="计算工具 数值转换"
-        >
-          <i class="fas fa-calculator"></i>
-          <h3>单位换算</h3>
-          <p>百分数 · 小数 · 单位互换</p>
-        </a>
-
-        <!-- 卡片 3 - Markdown 编辑器 -->
-        <a
-          href="/Markdown"
-          class="tool-card"
-          data-name="Markdown编辑器"
-          data-category="编辑器 文档工具"
-        >
-          <i class="fab fa-markdown"></i>
-          <h3>Markdown</h3>
-          <p>即时预览 · 优雅写作</p>
-        </a>
-
-        <!-- 卡片 4 - WebUSB Imager 启动盘工具 -->
-        <a
-          href="/WebUSB"
-          class="tool-card"
-          data-name="WebUSB Imager"
-          data-category="系统工具 启动盘 USB"
-        >
-          <i class="fas fa-sd-card"></i>
-          <h3>WebUSB Imager</h3>
-          <p>浏览器内制作USB启动盘</p>
-        </a>
-
-        <!-- 航班节点信息提取工具 -->
-        <a
-          href="/Airport"
-          class="tool-card"
-          data-name="WebUSB Imager"
-          data-category="航班节点提取"
-        >
-          <i class="fas fa-plane"></i>
-          <h3>Airport Information</h3>
-          <p>航班节点信息提取</p>
-        </a>
-        <a
-          href="/Daily"
-          class="tool-card"
-          data-name="Daily"
-          data-category="日报生成工具"
-        >
-          <i class="fa-regular fa-clipboard"></i>
-          <h3>Daily Tool</h3>
-          <p>日报生成工具</p>
-        </a>
-      </div>tool
+      <div class="tools-grid" id="toolsGrid"></div>
 
       <div class="instructions">
         <h2><i class="fas fa-compass"></i> 使用说明</h2>
         <ol>
           <li>🔍 点击任意工具卡片，即刻跳转至对应功能页面。</li>
-          <li>✨ 使用上方搜索栏快速筛选所需工具（支持名称、分类等）。</li>
+          <li>✨ 使用上方搜索栏或分类标签快速筛选所需工具。</li>
           <li>🌓 点击右上角图标可切换日间/暗色主题，适配不同环境。</li>
+          <li>➕ 新增工具只需在脚本顶部的 <span class="highlight">TOOLS</span> 数组中追加一项。</li>
         </ol>
         <div class="code-example">
           💡 提示：所有工具无需安装，即开即用。<span class="highlight"
@@ -525,7 +509,154 @@
 
     <script>
       (function () {
-        // ==================== 主题切换 (增强) ====================
+        // ============================================================
+        //  工具配置区 —— 后续新增功能卡片只需在此数组追加一项即可
+        //  字段说明：
+        //    name     工具名称（必填）
+        //    icon     Font Awesome 图标类名，如 "fas fa-search"
+        //             （品牌图标用 "fab ..."，常规图标用 "fas ..."）
+        //    href     点击跳转地址（必填）
+        //    category 所属分类（用于自动生成筛选标签，必填）
+        //    desc     卡片描述文字（必填）
+        //    badge    可选，右上角徽标文字，如 "NEW"
+        // ============================================================
+        const TOOLS = [
+          {
+            name: "Type搜索",
+            icon: "fas fa-search",
+            href: "/TypeSearch",
+            category: "搜索工具",
+            desc: "智能类型检索 & 快速定位",
+          },
+          {
+            name: "单位换算",
+            icon: "fas fa-calculator",
+            href: "/Exchange",
+            category: "计算工具",
+            desc: "百分数 · 小数 · 单位互换",
+          },
+          {
+            name: "Markdown编辑器",
+            icon: "fab fa-markdown",
+            href: "/Markdown",
+            category: "编辑器",
+            desc: "即时预览 · 优雅写作",
+          },
+          {
+            name: "WebUSB Imager",
+            icon: "fas fa-sd-card",
+            href: "/WebUSB",
+            category: "系统工具",
+            desc: "浏览器内制作USB启动盘",
+          },
+          {
+            name: "Airport Information",
+            icon: "fas fa-plane",
+            href: "/Airport",
+            category: "航班工具",
+            desc: "航班节点信息提取",
+          },
+          {
+            name: "Daily Tool",
+            icon: "fa-regular fa-clipboard",
+            href: "/Daily",
+            category: "办公工具",
+            desc: "日报生成工具",
+            badge: "NEW",
+          },
+        ];
+
+        // 当前激活的分类筛选（"全部" 表示不筛选）
+        let activeCategory = "全部";
+
+        const toolsGrid = document.getElementById("toolsGrid");
+        const categoryBar = document.getElementById("categoryBar");
+        const searchInput = document.getElementById("toolSearch");
+
+        // -------------------- 渲染卡片 --------------------
+        function renderTools() {
+          toolsGrid.innerHTML = "";
+          TOOLS.forEach((t) => {
+            const card = document.createElement("a");
+            card.className = "tool-card";
+            card.href = t.href;
+            card.dataset.name = t.name;
+            card.dataset.category = t.category;
+            card.dataset.desc = t.desc;
+
+            const badge = t.badge
+              ? `<span class="card-badge">${t.badge}</span>`
+              : "";
+            card.innerHTML = `
+              ${badge}
+              <i class="tool-icon ${t.icon}"></i>
+              <h3>${t.name}</h3>
+              <p>${t.desc}</p>
+            `;
+            toolsGrid.appendChild(card);
+          });
+        }
+
+        // -------------------- 渲染分类标签 --------------------
+        function renderCategories() {
+          const cats = ["全部", ...new Set(TOOLS.map((t) => t.category))];
+          categoryBar.innerHTML = "";
+          cats.forEach((cat) => {
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className =
+              "category-chip" + (cat === activeCategory ? " active" : "");
+            chip.textContent = cat;
+            chip.addEventListener("click", () => {
+              activeCategory = cat;
+              renderCategories();
+              filterTools();
+            });
+            categoryBar.appendChild(chip);
+          });
+        }
+
+        // -------------------- 筛选（搜索 + 分类） --------------------
+        function filterTools() {
+          const term = searchInput.value.trim().toLowerCase();
+          const cards = Array.from(toolsGrid.querySelectorAll(".tool-card"));
+          let hasVisible = false;
+
+          cards.forEach((card) => {
+            const name = (card.dataset.name || "").toLowerCase();
+            const category = (card.dataset.category || "").toLowerCase();
+            const desc = (card.dataset.desc || "").toLowerCase();
+
+            const matchCategory =
+              activeCategory === "全部" ||
+              category === activeCategory.toLowerCase();
+            const matchSearch =
+              term === "" ||
+              name.includes(term) ||
+              category.includes(term) ||
+              desc.includes(term);
+
+            const show = matchCategory && matchSearch;
+            card.style.display = show ? "flex" : "none";
+            if (show) hasVisible = true;
+          });
+
+          // 清理/插入无结果提示
+          const existing = toolsGrid.querySelector(".no-result");
+          if (existing) existing.remove();
+          if (!hasVisible && cards.length > 0) {
+            const noResult = document.createElement("div");
+            noResult.className = "no-result";
+            noResult.innerHTML = `
+              <i class="fas fa-tools"></i>
+              <p>✨ 没有找到相关工具 ✨</p>
+              <small style="opacity:0.7;">试试其他关键词或分类~</small>
+            `;
+            toolsGrid.appendChild(noResult);
+          }
+        }
+
+        // -------------------- 主题切换 --------------------
         const themeToggle = document.getElementById("themeToggle");
         const body = document.body;
         const toggleIcon = themeToggle.querySelector("i");
@@ -547,22 +678,14 @@
           const prefersDark = window.matchMedia(
             "(prefers-color-scheme: dark)",
           ).matches;
-          if (saved === "dark" || (!saved && prefersDark)) {
-            setTheme("dark");
-          } else {
-            setTheme("light");
-          }
+          setTheme(saved === "dark" || (!saved && prefersDark) ? "dark" : "light");
         }
 
-        function toggleTheme() {
-          const isDark = body.classList.contains("dark-mode");
-          setTheme(isDark ? "light" : "dark");
-        }
-
-        themeToggle.addEventListener("click", toggleTheme);
+        themeToggle.addEventListener("click", () => {
+          setTheme(body.classList.contains("dark-mode") ? "light" : "dark");
+        });
         initTheme();
 
-        // 监听系统主题变化 (未手动设置时跟随)
         window
           .matchMedia("(prefers-color-scheme: dark)")
           .addEventListener("change", (e) => {
@@ -571,93 +694,33 @@
             }
           });
 
-        // ==================== 智能搜索 + 无结果状态 ====================
-        const searchInput = document.getElementById("toolSearch");
-        const toolsGrid = document.getElementById("toolsGrid");
-        let noResultDiv = null;
-
-        // 创建无结果占位元素 (仅创建一次)
-        function getNoResultElement() {
-          if (!noResultDiv) {
-            noResultDiv = document.createElement("div");
-            noResultDiv.className = "no-result";
-            noResultDiv.innerHTML = `
-                    <i class="fas fa-tools"></i>
-                    <p>✨ 没有找到相关工具 ✨</p>
-                    <small style="opacity:0.7;">试试其他关键词~</small>
-                `;
-          }
-          return noResultDiv;
-        }
-
-        function filterTools() {
-          const searchTerm = searchInput.value.trim().toLowerCase();
-          const cards = Array.from(document.querySelectorAll(".tool-card"));
-          let hasVisible = false;
-
-          cards.forEach((card) => {
-            const name = (card.getAttribute("data-name") || "").toLowerCase();
-            const category = (
-              card.getAttribute("data-category") || ""
-            ).toLowerCase();
-            const desc = (
-              card.querySelector("p")?.innerText || ""
-            ).toLowerCase();
-
-            const matches =
-              searchTerm === "" ||
-              name.includes(searchTerm) ||
-              category.includes(searchTerm) ||
-              desc.includes(searchTerm);
-
-            if (matches) {
-              card.style.display = "flex";
-              hasVisible = true;
-            } else {
-              card.style.display = "none";
-            }
-          });
-
-          // 移除已有的无结果提示（避免重复）
-          const existingNoResult = toolsGrid.querySelector(".no-result");
-          if (existingNoResult) existingNoResult.remove();
-
-          // 若无可见卡片且存在搜索词 (或空搜索无卡片理论上只有无卡片情况，全展示时不提示)
-          if (!hasVisible && cards.length > 0) {
-            toolsGrid.appendChild(getNoResultElement());
-          }
-          // 如果全部可见并且有no-result残留，删除 (防御)
-          else if (hasVisible && existingNoResult) {
-            existingNoResult.remove();
-          }
-        }
-
-        // 防抖优化
+        // -------------------- 搜索（防抖） --------------------
         let debounceTimer;
-        searchInput.addEventListener("input", function () {
+        searchInput.addEventListener("input", () => {
           clearTimeout(debounceTimer);
           debounceTimer = setTimeout(filterTools, 180);
         });
 
-        // 页面加载完成后执行一次确保显示状态一致(不会残留no-result)
-        document.addEventListener("DOMContentLoaded", () => {
-          filterTools();
-          // 增强卡片触感: 移动端优化
-          if ("ontouchstart" in window) {
-            document.querySelectorAll(".tool-card").forEach((card) => {
-              card.addEventListener(
-                "touchstart",
-                function () {
-                  this.style.transform = "scale(0.97)";
-                },
-                { passive: true },
-              );
-              card.addEventListener("touchend", function () {
-                this.style.transform = "";
-              });
-            });
-          }
-        });
+        // -------------------- 初始化 --------------------
+        renderTools();
+        renderCategories();
+        filterTools();
+
+        // 移动端触感优化
+        if ("ontouchstart" in window) {
+          toolsGrid.addEventListener(
+            "touchstart",
+            (e) => {
+              const card = e.target.closest(".tool-card");
+              if (card) card.style.transform = "scale(0.97)";
+            },
+            { passive: true },
+          );
+          toolsGrid.addEventListener("touchend", (e) => {
+            const card = e.target.closest(".tool-card");
+            if (card) card.style.transform = "";
+          });
+        }
       })();
     </script>
   </body>
