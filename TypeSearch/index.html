@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
   <head>
-    <link rel="icon" type="image/png" href="/img/Type.png">>
+    <link rel="icon" type="image/png" href="/img/Type.png">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Type工具套件</title>
-    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -1318,8 +1317,23 @@ type: 1000 - 有效（空格不影响）
       copyNameOption.addEventListener("click", copyNameColumn);
       copyAllOption.addEventListener("click", copyAllResults);
 
+      // XLSX 解析库懒加载：仅在用户首次上传 Excel 时才从 CDN 拉取，避免打开页面时被近 1MB 脚本阻塞
+      let xlsxPromise = null;
+      function loadXLSX() {
+        if (window.XLSX) return Promise.resolve(window.XLSX);
+        if (xlsxPromise) return xlsxPromise;
+        xlsxPromise = new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = "https://unpkg.com/xlsx/dist/xlsx.full.min.js";
+          s.onload = () => (window.XLSX ? resolve(window.XLSX) : reject(new Error("XLSX 未定义")));
+          s.onerror = () => reject(new Error("XLSX 加载失败"));
+          document.head.appendChild(s);
+        });
+        return xlsxPromise;
+      }
+
       // 处理文件上传
-      function handleFileUpload(file) {
+      async function handleFileUpload(file) {
         // 验证文件类型
         const validExtensions = [".xlsx", ".xls"];
         const fileExtension = file.name
@@ -1336,6 +1350,14 @@ type: 1000 - 有效（空格不影响）
         fileNameSpan.textContent = fileName;
         fileSizeSpan.textContent = formatFileSize(file.size);
         fileInfo.classList.add("active");
+
+        // 确保 XLSX 解析库已加载（仅首次上传 Excel 时动态从 CDN 拉取，不阻塞页面打开）
+        try {
+          await loadXLSX();
+        } catch (err) {
+          showError("Excel 解析库加载失败，请检查网络后重试");
+          return;
+        }
 
         // 读取文件
         const reader = new FileReader();
