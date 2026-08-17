@@ -255,7 +255,7 @@
 <div class="container">
     <div class="panel" id="input-panel">
         <h2>
-            <span>📝 异常数据录入</span>
+            <span style="display:inline-flex; align-items:center; gap:8px;">📝 异常数据录入<a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg></a></span>
             <button class="btn-text" style="color:var(--danger-color)" onclick="clearAllCards()">🗑️ 全部清空</button>
         </h2>
         
@@ -593,5 +593,40 @@
         });
     }
 </script>
+  <!-- 返回主页图标按钮样式 -->
+  <style>
+    .home-back-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      color: inherit;
+      background: rgba(135, 135, 135, 0.16);
+      border: 1px solid transparent;
+      text-decoration: none;
+      flex-shrink: 0;
+      transition: background 0.2s ease, transform 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .home-back-icon:hover {
+      background: rgba(135, 135, 135, 0.30);
+      transform: translateY(-1px);
+    }
+    .home-back-icon svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 5px;
+    }
+    .title-row h1 { margin-bottom: 0; }
+  </style>
 </body>
 </html>
