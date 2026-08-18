@@ -154,7 +154,7 @@
                 <div
                   id="dropZoneSmall"
                   class="hidden relative h-7 w-7 border border-dashed border-gray-400 dark:border-gray-500 rounded flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 shrink-0"
-                  title="点击或拖拽 .db 文件"
+                  title="点击选择 .db 文件，或将文件拖拽至此导入"
                 >
                   <svg
                     class="w-4 h-4 text-gray-500 dark:text-gray-400 pointer-events-none"
@@ -189,8 +189,25 @@
                 class="relative flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded px-2 py-3 text-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 mb-2"
               >
                 <span
-                  class="text-xs text-gray-600 dark:text-gray-400 font-medium"
-                  >点击或拖拽 .db 文件至此</span
+                  class="text-xs text-gray-600 dark:text-gray-400 font-medium inline-flex items-center gap-1.5"
+                >
+                  <svg
+                    class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                    ></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  点击选择 .db 文件，或将文件拖拽至此导入</span
                 >
                 <input
                   type="file"
@@ -219,7 +236,7 @@
               <p
                 class="text-sm font-bold text-gray-500 dark:text-gray-400 mb-2 leading-5"
               >
-                数据库提取条件 (仅过滤数据库):
+                节点时间提取条件:
               </p>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1 content-start">
                 <input
@@ -305,7 +322,7 @@
                   stroke-width="2"
                   d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                 ></path></svg
-              >复制单行时间
+              >复制结果时间
             </button>
             <button
               id="btnExport"
@@ -323,7 +340,7 @@
                   stroke-width="2"
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
                 ></path></svg
-              >导出CSV
+              >导出 CSV
             </button>
             <button
               id="btnCopyTableNums"
@@ -360,7 +377,7 @@
                   stroke-width="2"
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                 ></path></svg
-              >清空重置
+              >清空结果数据
             </button>
           </div>
           <div
@@ -387,7 +404,7 @@
                   >B</span
                 >
                 <span class="text-xs font-bold text-gray-600 dark:text-gray-300"
-                  >数据粘贴与表格展示区 (当前数据:
+                  >数据粘贴与原始数据展示区 (当前数据:
                   <span
                     id="filteredTextCount"
                     class="text-blue-600 dark:text-blue-400 font-bold"
@@ -466,7 +483,7 @@
             >
               <div class="flex items-center space-x-6">
                 <span class="text-xs font-bold text-blue-800 dark:text-blue-300"
-                  >✅ 最终单行节点提取结果 (左右滑动查看)</span
+                  >✅ 节点时间提取结果 (左右滑动查看)</span
                 >
                 <!-- 新增：03节点日期展示区域，包含双击复制功能 -->
                 <span
@@ -510,7 +527,7 @@
                     d="M4 6h16M4 10h16M4 14h16M4 18h16"
                   ></path>
                 </svg>
-                查看数据库原始全量明细 (<span
+                查看原始全量数据明细 (<span
                   id="rawCount"
                   class="text-blue-600 dark:text-blue-400"
                   >0</span
