@@ -195,7 +195,7 @@
 
         /* =============== 统一按钮系统（实色填充 + 区分语义色） =============== */
         button {
-            padding: 9px 16px;
+            padding: 10px 18px;
             border: none;
             border-radius: var(--radius-sm);
             font-size: 0.9rem;
@@ -229,19 +229,21 @@
         .btn-violet { background-color: var(--violet-color); color: #fff; }
         .btn-violet:hover { background-color: var(--violet-dark); }
 
-        /* 删除图标按钮：中性灰实色，保留在网格最右 */
+        /* 删除图标按钮：中性灰实色，固定 36×36 方形，保留在网格最右 */
         .btn-icon {
-            padding: 8px 10px;
+            width: 36px;
+            height: 36px;
+            padding: 0;
             background: var(--danger-color);
             color: #fff;
-            font-size: 0.9rem;
+            font-size: 1rem;
             border: none;
         }
         .btn-icon:hover { background: var(--danger-dark); }
 
         /* 新增机位按钮：并排实色，均分两列 */
         .add-stand-group { display: flex; gap: 12px; margin-top: 20px; }
-        .add-stand-group button { flex: 1; padding: 12px; }
+        .add-stand-group button { flex: 1; }
 
         .preview-panel { position: sticky; top: 20px; }
 
@@ -390,7 +392,7 @@
     <div class="panel preview-panel">
         <h2>📄 日报实时预览</h2>
         <textarea id="preview-box" readonly placeholder="左侧填写数据，此处自动实时排版..."></textarea>
-        <button class="btn-violet" style="width: 100%; padding: 12px; font-size: 1.05rem;" onclick="copyReport()">📋 一键复制日报</button>
+        <button class="btn-violet" style="width: 100%;" onclick="copyReport()">📋 一键复制日报</button>
     </div>
 </div>
 
@@ -574,7 +576,7 @@
                 <div class="multi-select-container">
                     <input type="text" class="item-reason input-with-arrow custom-dropdown-input" data-list="reason-list" placeholder="点击或输入搜索... (支持多选及自定义)" autocomplete="off">
                 </div>
-                <button class="btn-icon" style="padding:4px" onclick="removeEventRow(this)" title="删除此行">✖</button>
+                <button class="btn-icon" onclick="removeEventRow(this)" title="删除此行">✖</button>
             </div>
         `;
     }

@@ -78,7 +78,6 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
         padding: 16px;
         line-height: 1.6;
       }
@@ -89,7 +88,7 @@
         box-shadow: 0 4px 24px var(--shadow-color);
         width: 100%;
         max-width: 650px;
-        margin: 16px 0;
+        margin: auto;
         overflow: hidden;
         animation: fadeIn 0.4s ease-out;
       }
@@ -226,7 +225,7 @@
       /* =============== 统一按钮系统 =============== */
       .buttons-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
         gap: 10px;
       }
 
@@ -370,7 +369,7 @@
       }
 
       #resultText {
-        font-size: 1.4rem;
+        font-size: clamp(1.15rem, 4.5vw, 1.4rem);
         color: var(--success-color);
         font-weight: 700;
         word-break: break-all;
@@ -434,7 +433,21 @@
         border-bottom: 1px dashed var(--border-color);
         display: flex;
         justify-content: space-between;
+        align-items: center;
         gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .history-list li > span:first-child {
+        flex: 1 1 auto;
+        min-width: 0;
+        word-break: break-all;
+      }
+
+      .history-list li > span:last-child {
+        flex-shrink: 0;
+        color: var(--text-light);
+        font-size: 0.78rem;
       }
 
       .history-list li b {
@@ -463,24 +476,69 @@
         opacity: 1;
       }
 
-      @media (max-width: 500px) {
+      @media (max-width: 640px) {
+        .content {
+          padding: 18px;
+        }
+        .container {
+          border-radius: 14px;
+        }
+        header {
+          padding: 14px 18px;
+        }
+        .buttons-grid {
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+        }
+      }
+
+      @media (max-width: 420px) {
         body {
-          padding: 8px;
+          padding: 10px;
         }
         .content {
           padding: 16px;
         }
-        .container {
-          border-radius: 12px;
-        }
         header {
-          padding: 12px 16px;
+          padding: 12px 14px;
         }
         header h3 {
-          font-size: 1rem;
+          font-size: 0.98rem;
+        }
+        .description {
+          font-size: 0.8rem;
+          margin-bottom: 18px;
         }
         .buttons-grid {
           grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+        button {
+          padding: 11px 8px;
+          font-size: 0.84rem;
+          gap: 6px;
+        }
+        .result-wrapper {
+          padding: 14px 16px;
+        }
+      }
+
+      @media (max-width: 340px) {
+        body {
+          padding: 6px;
+        }
+        .content {
+          padding: 12px;
+        }
+        header h3 {
+          font-size: 0.9rem;
+        }
+        .buttons-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        button {
+          font-size: 0.8rem;
+          padding: 10px 6px;
         }
       }
     </style>
