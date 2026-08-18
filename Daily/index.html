@@ -7,50 +7,105 @@
     <title>日报生成工具</title>
     <style>
         :root {
-            --bg-color: #f4f6f8;
-            --surface-color: #ffffff;
-            --surface-hover: #f8fafc;
-            --text-main: #2c3e50;
-            --text-muted: #7f8c8d;
+            /* 日间模式变量 - 简洁中性灰蓝色调（与前两版一致） */
+            --primary-color: #4a7ab5;
+            --primary-dark: #3d6799;
+            --success-color: #5a9e7a;
+            --success-dark: #4a8666;
+            --danger-color: #64748b;
+            --danger-dark: #475569;
+            --warning-color: #c79447;
+            --warning-dark: #ad7f37;
+            --violet-color: #8a72ad;
+            --violet-dark: #745e95;
+            --info-color: #4a7ab5;
+
+            --bg-gradient: #f1f5f9;
+            --container-bg: #ffffff;
+            --panel-bg: #ffffff;
+            --panel-secondary: #f8fafc;
+            --text-color: #1e293b;
+            --text-secondary: #64748b;
+            --text-light: #94a3b8;
+            --label-color: #334155;
+            --input-bg: #ffffff;
+            --input-border: #e2e8f0;
             --border-color: #e2e8f0;
-            --primary-color: #3b82f6;
-            --primary-hover: #2563eb;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --radius: 8px;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-color: rgba(15, 23, 42, 0.08);
+            --hover-bg: rgba(74, 122, 181, 0.08);
+            --radius: 12px;
+            --radius-sm: 8px;
         }
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-color: #0f172a;
-                --surface-color: #1e293b;
-                --surface-hover: #334155;
-                --text-main: #f8fafc;
-                --text-muted: #94a3b8;
+                --bg-gradient: #0f172a;
+                --container-bg: #1e293b;
+                --panel-bg: #1e293b;
+                --panel-secondary: #0f172a;
+                --text-color: #e2e8f0;
+                --text-secondary: #94a3b8;
+                --text-light: #64748b;
+                --label-color: #cbd5e1;
+                --input-bg: #0f172a;
+                --input-border: #334155;
                 --border-color: #334155;
-                --primary-color: #3b82f6;
-                --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+                --shadow-color: rgba(0, 0, 0, 0.3);
+                --hover-bg: rgba(122, 162, 210, 0.14);
             }
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-gradient);
+            color: var(--text-color);
             line-height: 1.6;
-            padding: 20px;
+            padding: 16px;
         }
 
+        /* =============== 顶栏 =============== */
+        header {
+            background: #0f172a;
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .header-content {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+
+        /* =============== 布局 =============== */
         .container {
             max-width: 1300px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1.2fr 1fr;
-            gap: 24px;
+            gap: 20px;
             align-items: start;
+            padding-bottom: 20px;
         }
 
         @media (max-width: 900px) {
@@ -58,17 +113,32 @@
         }
 
         .panel {
-            background: var(--surface-color);
+            background: var(--panel-bg);
             border-radius: var(--radius);
-            padding: 24px;
-            box-shadow: var(--shadow);
+            padding: 22px;
+            box-shadow: 0 4px 24px var(--shadow-color);
             border: 1px solid var(--border-color);
         }
 
-        h2 { font-size: 1.25rem; margin-bottom: 20px; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; }
+        /* 首屏上方两个面板紧贴顶栏，整体卡片感 */
+        .container > .panel:first-child {
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+
+        h2 {
+            font-size: 1.05rem;
+            margin-bottom: 18px;
+            color: var(--text-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
 
         .stand-card {
-            background: var(--surface-hover);
+            background: var(--panel-secondary);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 16px;
@@ -85,30 +155,35 @@
         }
 
         .badge {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            color: white;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #fff;
             white-space: nowrap;
+            letter-spacing: 0.3px;
         }
         .badge-far { background-color: var(--primary-color); }
         .badge-near { background-color: var(--success-color); }
 
         input, textarea {
             width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-size: 0.95rem;
+            padding: 10px 13px;
+            border: 1px solid var(--input-border);
+            border-radius: var(--radius-sm);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 0.9rem;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
         }
-        
-        input:focus, textarea:focus { border-color: var(--primary-color); }
-        .stand-header input { flex: 1; font-weight: bold; }
+
+        input:focus, textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 122, 181, 0.12);
+        }
+        .stand-header input { flex: 1; font-weight: 600; }
 
         .item-row {
             display: grid;
@@ -118,52 +193,80 @@
             align-items: start;
         }
 
+        /* =============== 统一按钮系统（实色填充 + 区分语义色） =============== */
         button {
-            padding: 8px 16px;
+            padding: 9px 16px;
             border: none;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             font-size: 0.9rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
             font-weight: 500;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
         button:active { transform: scale(0.98); }
 
-        .btn-icon { padding: 8px; background: transparent; color: var(--text-muted); font-size: 1rem; border: 1px solid transparent; }
-        .btn-icon:hover { color: var(--danger-color); background: rgba(239, 68, 68, 0.1); border-color: var(--danger-color); }
-        
-        .btn-text { background: transparent; color: var(--primary-color); padding: 4px 8px; font-size: 0.9rem; }
-        .btn-text:hover { background: rgba(59, 130, 246, 0.1); }
+        /* 实色按钮：主操作蓝 / 确认绿 / 警告橙 / 危险红 / 紫 */
+        .btn-primary { background-color: var(--primary-color); color: #fff; }
+        .btn-primary:hover { background-color: var(--primary-dark); }
 
-        .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-        
-        .btn-outline { background-color: transparent; border: 1px dashed var(--border-color); color: var(--text-main); width: 100%; padding: 12px;}
-        .btn-outline:hover { background-color: var(--surface-hover); border-color: var(--primary-color); color: var(--primary-color); }
+        .btn-success { background-color: var(--success-color); color: #fff; }
+        .btn-success:hover { background-color: var(--success-dark); }
 
+        .btn-warning { background-color: var(--warning-color); color: #fff; }
+        .btn-warning:hover { background-color: var(--warning-dark); }
+
+        .btn-danger { background-color: var(--danger-color); color: #fff; }
+        .btn-danger:hover { background-color: var(--danger-dark); }
+
+        /* 中性灰：用于清空/删除等常规操作，不暗示危险 */
+
+        .btn-violet { background-color: var(--violet-color); color: #fff; }
+        .btn-violet:hover { background-color: var(--violet-dark); }
+
+        /* 删除图标按钮：中性灰实色，保留在网格最右 */
+        .btn-icon {
+            padding: 8px 10px;
+            background: var(--danger-color);
+            color: #fff;
+            font-size: 0.9rem;
+            border: none;
+        }
+        .btn-icon:hover { background: var(--danger-dark); }
+
+        /* 新增机位按钮：并排实色，均分两列 */
         .add-stand-group { display: flex; gap: 12px; margin-top: 20px; }
+        .add-stand-group button { flex: 1; padding: 12px; }
 
         .preview-panel { position: sticky; top: 20px; }
 
         #preview-box {
-            width: 100%; height: 600px; resize: vertical;
-            font-family: monospace; white-space: pre-wrap; margin-bottom: 16px;
-            background: var(--surface-hover);
+            width: 100%; height: 560px; resize: vertical;
+            font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+            white-space: pre-wrap; margin-bottom: 16px;
+            background: var(--panel-secondary);
+            line-height: 1.6;
         }
 
         .toast {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background-color: var(--success-color); color: white; padding: 10px 24px;
-            border-radius: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background-color: var(--success-color); color: white; padding: 11px 24px;
+            border-radius: 30px; box-shadow: 0 4px 16px var(--shadow-color);
             opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999;
+            font-size: 0.9rem;
         }
         .toast.show { opacity: 1; }
 
         /* ======== 多选下拉框样式 ======== */
         .multi-select-container { position: relative; width: 100%; }
-        
+
         .input-with-arrow {
-            background-image: url('data:image/svg+xml;utf8,<svg fill="%237f8c8d" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%2364748b" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
             background-repeat: no-repeat;
             background-position: right 8px center;
             padding-right: 30px;
@@ -175,40 +278,57 @@
             top: calc(100% + 4px);
             left: 0;
             right: 0;
-            background: var(--surface-color);
+            background: var(--panel-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 20px var(--shadow-color);
             z-index: 100;
             max-height: 250px;
             overflow-y: auto;
             display: none;
         }
         .multi-select-dropdown.show { display: block; }
-        
+
         .multi-select-option {
-            padding: 8px 12px;
+            padding: 9px 14px;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             transition: background 0.2s;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: var(--text-main);
+            color: var(--text-color);
         }
-        .multi-select-option:hover { background: var(--surface-hover); }
+        .multi-select-option:hover { background: var(--panel-secondary); }
         .multi-select-option.selected {
             color: var(--primary-color);
-            background: rgba(59, 130, 246, 0.08);
-            font-weight: bold;
+            background: var(--hover-bg);
+            font-weight: 600;
         }
         .multi-select-option.selected::after {
             content: '✔';
             font-size: 0.85rem;
         }
+
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            .container { gap: 14px; }
+            .panel { padding: 16px; }
+            .item-row { grid-template-columns: 1fr; }
+            #preview-box { height: 360px; }
+        }
     </style>
 </head>
 <body>
+
+<header>
+    <div class="header-content">
+        <div class="header-left">
+            <h3>📝 日报生成工具</h3>
+        </div>
+        <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg></a>
+    </div>
+</header>
 
 <datalist id="event-list-far" style="display: none;">
     <option value="所有节点"></option>
@@ -255,22 +375,22 @@
 <div class="container">
     <div class="panel" id="input-panel">
         <h2>
-            <span style="display:inline-flex; align-items:center; gap:8px;">📝 异常数据录入<a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg></a></span>
-            <button class="btn-text" style="color:var(--danger-color)" onclick="clearAllCards()">🗑️ 全部清空</button>
+            <span>📝 异常数据录入</span>
+            <button class="btn-danger" onclick="clearAllCards()">🗑️ 全部清空</button>
         </h2>
-        
+
         <div id="stands-container"></div>
 
         <div class="add-stand-group">
-            <button class="btn-outline" onclick="addStandCard('远机位')">+ 新增远机位</button>
-            <button class="btn-outline" onclick="addStandCard('近机位')">+ 新增近机位</button>
+            <button class="btn-primary" onclick="addStandCard('远机位')">+ 新增远机位</button>
+            <button class="btn-success" onclick="addStandCard('近机位')">+ 新增近机位</button>
         </div>
     </div>
 
     <div class="panel preview-panel">
         <h2>📄 日报实时预览</h2>
         <textarea id="preview-box" readonly placeholder="左侧填写数据，此处自动实时排版..."></textarea>
-        <button class="btn-primary" style="width: 100%; padding: 12px; font-size: 1.05rem;" onclick="copyReport()">📋 一键复制日报</button>
+        <button class="btn-violet" style="width: 100%; padding: 12px; font-size: 1.05rem;" onclick="copyReport()">📋 一键复制日报</button>
     </div>
 </div>
 
@@ -291,7 +411,7 @@
 
         addStandCard('远机位');
         addStandCard('近机位');
-        
+
         const container = document.getElementById('stands-container');
 
         // 点击输入框展示下拉并处理点击外部关闭
@@ -310,7 +430,7 @@
                 const listId = e.target.getAttribute('data-list');
                 const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
                 const validOptions = baseOptions[listId];
-                
+
                 const { query } = parseInput(e.target.value, validOptions, isNode);
                 currentSearchQuery = query; // 更新全局搜索记忆
                 renderOptions(e.target, activeDropdown, listId);
@@ -320,27 +440,27 @@
     };
 
     // ====== 下拉框与智能搜索核心逻辑 ======
-    
+
     // 解析输入框内容，智能分离出“已选项”和“正在搜索的词”
     function parseInput(val, validOptions, isNode) {
         const rawParts = val.split('、').map(v => v.trim());
         const selected = [];
         let query = "";
-        
+
         for (let i = 0; i < rawParts.length - 1; i++) {
             if (rawParts[i]) {
                 // 【核心修改】：无论是节点还是原因，前置内容只要通过“、”分隔过，都视为合法保留内容
-                selected.push(rawParts[i]); 
+                selected.push(rawParts[i]);
             }
         }
-        
+
         const lastPart = rawParts[rawParts.length - 1];
         if (lastPart) {
             if (validOptions.includes(lastPart)) {
                 selected.push(lastPart);
-                query = ""; 
+                query = "";
             } else {
-                query = lastPart; 
+                query = lastPart;
             }
         }
         return { selected, query };
@@ -353,15 +473,15 @@
 
         const dropdown = document.createElement('div');
         dropdown.className = 'multi-select-dropdown show';
-        
+
         activeDropdown = dropdown;
         activeInput = input;
-        
+
         const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
         const validOptions = baseOptions[listId];
         const { query } = parseInput(input.value, validOptions, isNode);
         currentSearchQuery = query;
-        
+
         renderOptions(input, dropdown, listId);
         input.parentNode.appendChild(dropdown);
     }
@@ -390,16 +510,16 @@
             const optionDiv = document.createElement('div');
             optionDiv.className = 'multi-select-option';
             if (selected.includes(opt)) { optionDiv.classList.add('selected'); }
-            
+
             if (currentSearchQuery) {
                 const parts = opt.split(currentSearchQuery);
                 optionDiv.innerHTML = parts.join(`<span style="color: var(--primary-color); font-weight: bold;">${currentSearchQuery}</span>`);
             } else {
                 optionDiv.innerText = opt;
             }
-            
+
             optionDiv.onmousedown = (e) => {
-                e.preventDefault(); 
+                e.preventDefault();
                 toggleSelection(input, opt, dropdown, listId);
             };
             dropdown.appendChild(optionDiv);
@@ -410,23 +530,23 @@
         const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
         const validOptions = baseOptions[listId];
         let { selected } = parseInput(input.value, validOptions, isNode);
-        
+
         if (selected.includes(opt)) {
             selected = selected.filter(v => v !== opt); // 反选
         } else {
             selected.push(opt); // 勾选
         }
-        
+
         // 如果是原因框，只拼接文字，不加末尾的“、”
         if (listId === 'reason-list') {
             input.value = selected.join('、');
         } else {
             input.value = selected.join('、') + (selected.length > 0 ? '、' : '');
         }
-        
+
         generatePreview();
         input.focus();
-        renderOptions(input, dropdown, listId); 
+        renderOptions(input, dropdown, listId);
     }
 
     function closeAllDropdowns() {
@@ -439,7 +559,7 @@
             activeDropdown.remove();
             activeDropdown = null;
             activeInput = null;
-            currentSearchQuery = ""; 
+            currentSearchQuery = "";
         }
     }
     // =============================
@@ -464,7 +584,7 @@
         const card = document.createElement('div');
         card.className = 'stand-card';
         card.setAttribute('data-type', type);
-        
+
         const badgeClass = type === '远机位' ? 'badge-far' : 'badge-near';
 
         card.innerHTML = `
@@ -476,9 +596,9 @@
             <div class="items-container">
                 ${createEventRowHTML(type)}
             </div>
-            <button class="btn-text" onclick="addEventRow(this)">+ 添加异常明细</button>
+            <button class="btn-warning" onclick="addEventRow(this)">+ 添加异常明细</button>
         `;
-        
+
         const existingCards = container.querySelectorAll(`.stand-card[data-type="${type}"]`);
         if (existingCards.length > 0) {
             const lastCard = existingCards[existingCards.length - 1];
@@ -486,8 +606,8 @@
         } else {
             container.appendChild(card);
         }
-        
-        generatePreview(); 
+
+        generatePreview();
     }
 
     function addEventRow(btnElement) {
@@ -503,7 +623,7 @@
         const container = row.parentElement;
         const card = container.closest('.stand-card');
         const type = card.getAttribute('data-type');
-        
+
         row.remove();
         if(container.children.length === 0) {
             container.insertAdjacentHTML('beforeend', createEventRowHTML(type));
@@ -533,7 +653,7 @@
             const type = card.getAttribute('data-type');
             const standNum = card.querySelector('.stand-num').value.trim();
             const eventRows = card.querySelectorAll('.item-row');
-            
+
             const records = [];
             eventRows.forEach(row => {
                 const event = row.querySelector('.item-event').value.trim();
@@ -583,7 +703,7 @@
             alert("目前还没有可复制的数据，请先在左侧录入哦。");
             return;
         }
-        
+
         navigator.clipboard.writeText(text).then(() => {
             const toast = document.getElementById('toast');
             toast.classList.add('show');
@@ -599,11 +719,11 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      color: inherit;
-      background: rgba(135, 135, 135, 0.16);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
       border: 1px solid transparent;
       text-decoration: none;
       flex-shrink: 0;
@@ -611,7 +731,7 @@
       -webkit-tap-highlight-color: transparent;
     }
     .home-back-icon:hover {
-      background: rgba(135, 135, 135, 0.30);
+      background: rgba(255, 255, 255, 0.2);
       transform: translateY(-1px);
     }
     .home-back-icon svg {
@@ -619,14 +739,6 @@
       height: 18px;
       display: block;
     }
-    .title-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 5px;
-    }
-    .title-row h1 { margin-bottom: 0; }
   </style>
 </body>
 </html>

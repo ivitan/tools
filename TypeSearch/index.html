@@ -11,196 +11,209 @@
     />
     <style>
       :root {
-        /* 日间模式变量 */
-        --primary-color: #3498db;
-        --primary-dark: #2980b9;
-        --secondary-color: #2c3e50;
-        --success-color: #27ae60;
-        --danger-color: #e74c3c;
-        --warning-color: #f39c12;
-        --info-color: #3498db;
+        /* 日间模式变量 - 简洁中性灰蓝色调 */
+        --primary-color: #2563eb;
+        --primary-dark: #1d4ed8;
+        --secondary-color: #475569;
+        --success-color: #16a34a;
+        --danger-color: #dc2626;
+        --warning-color: #d97706;
+        --info-color: #2563eb;
 
-        --bg-gradient: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-        --container-bg: rgba(255, 255, 255, 0.95);
-        --header-bg: #2c3e50;
-        --tab-bg: #34495e;
-        --tab-active-bg: #3498db;
-        --panel-bg: #f8f9fa;
-        --text-color: #333;
-        --text-light: #7f8c8d;
-        --text-inverse: #fff;
-        --border-color: #ddd;
-        --shadow-color: rgba(0, 0, 0, 0.3);
-        --hover-bg: rgba(52, 152, 219, 0.1);
-        --table-header-bg: #3498db;
-        --table-row-even: #f5f9ff;
-        --table-row-hover: #e3f2fd;
-        --placeholder-bg: rgba(127, 140, 141, 0.1);
+        --bg-gradient: #f1f5f9;
+        --container-bg: #ffffff;
+        --header-bg: #0f172a;
+        --tab-bg: #f8fafc;
+        --tab-active-bg: #2563eb;
+        --panel-bg: #ffffff;
+        --panel-secondary: #f8fafc;
+        --text-color: #1e293b;
+        --text-light: #64748b;
+        --text-inverse: #ffffff;
+        --border-color: #e2e8f0;
+        --shadow-color: rgba(15, 23, 42, 0.08);
+        --hover-bg: rgba(37, 99, 235, 0.06);
+        --table-header-bg: #f1f5f9;
+        --table-row-even: #f8fafc;
+        --table-row-hover: #eff6ff;
+        --placeholder-bg: rgba(100, 116, 139, 0.08);
+        --radius: 12px;
+        --radius-sm: 8px;
       }
 
       .dark-mode {
-        /* 夜间模式变量 */
-        --bg-gradient: linear-gradient(135deg, #0d1b2a, #1b263b, #415a77);
-        --container-bg: rgba(30, 33, 46, 0.95);
-        --header-bg: #1e293b;
+        /* 夜间模式变量 - 深色层次分明 */
+        --bg-gradient: #0f172a;
+        --container-bg: #1e293b;
+        --header-bg: #020617;
         --tab-bg: #1e293b;
         --tab-active-bg: #3b82f6;
         --panel-bg: #1e293b;
+        --panel-secondary: #0f172a;
         --text-color: #e2e8f0;
         --text-light: #94a3b8;
         --text-inverse: #f1f5f9;
         --border-color: #334155;
-        --shadow-color: rgba(0, 0, 0, 0.5);
-        --hover-bg: rgba(59, 130, 246, 0.15);
-        --table-header-bg: #2563eb;
-        --table-row-even: #1e293b;
-        --table-row-hover: #2d3748;
-        --placeholder-bg: rgba(148, 163, 184, 0.1);
+        --shadow-color: rgba(0, 0, 0, 0.3);
+        --hover-bg: rgba(59, 130, 246, 0.12);
+        --table-header-bg: #0f172a;
+        --table-row-even: #0f172a;
+        --table-row-hover: #1e3a5f;
+        --placeholder-bg: rgba(148, 163, 184, 0.08);
       }
 
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
         transition:
-          background-color 0.3s,
-          color 0.3s,
-          border-color 0.3s;
+          background-color 0.25s ease,
+          color 0.25s ease,
+          border-color 0.25s ease;
       }
 
       body {
         background: var(--bg-gradient);
         min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
+        padding: 16px;
         color: var(--text-color);
+        line-height: 1.6;
       }
 
       .container {
-        width: 90%;
+        width: 100%;
         max-width: 1200px;
+        margin: 0 auto;
         background: var(--container-bg);
-        border-radius: 20px;
-        box-shadow: 0 15px 30px var(--shadow-color);
+        border-radius: 16px;
+        box-shadow: 0 4px 24px var(--shadow-color);
         overflow: hidden;
-        animation: fadeIn 0.8s ease-out;
+        animation: fadeIn 0.4s ease-out;
       }
 
       @keyframes fadeIn {
         from {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(12px);
         }
-
         to {
           opacity: 1;
           transform: translateY(0);
         }
       }
 
+      /* =============== 顶栏 =============== */
       header {
         background: var(--header-bg);
         color: var(--text-inverse);
-        padding: 25px;
-        text-align: center;
-        position: relative;
+        padding: 16px 24px;
       }
 
       .header-content {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 12px;
       }
 
-      header h1 {
-        font-size: 2.5rem;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-      }
-
-      header p {
-        font-size: 1rem;
-        opacity: 0.9;
-        max-width: 700px;
-        margin: 0 auto;
-        line-height: 1.6;
-      }
-
-      .theme-toggle {
-        position: absolute;
-        top: 25px;
-        right: 25px;
-        background: rgba(255, 255, 255, 0.1);
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-      }
-
-      .theme-toggle:hover {
-        background: rgba(255, 255, 255, 0.2);
-        transform: rotate(15deg);
-      }
-
-      .theme-toggle i {
-        font-size: 1.5rem;
-        color: #fff;
-      }
-
-      /* 选项卡样式 */
-      .tabs {
-        display: flex;
-        background: var(--tab-bg);
-        padding: 0;
-        margin: 0;
-        border-bottom: 2px solid var(--primary-color);
-      }
-
-      .tab {
-        padding: 15px 30px;
-        cursor: pointer;
-        color: #eceef4;
+      header h3 {
+        font-size: 1.15rem;
         font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-inverse);
+      }
+
+      header h3 i {
+        color: #60a5fa;
         font-size: 1.1rem;
-        transition: all 0.3s;
-        border-bottom: 3px solid transparent;
+      }
+
+      .header-left {
         display: flex;
         align-items: center;
         gap: 10px;
       }
 
-      .tab:hover {
+      .theme-toggle {
         background: rgba(255, 255, 255, 0.1);
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        border: none;
+        flex-shrink: 0;
+      }
+
+      .theme-toggle:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .theme-toggle i {
+        font-size: 1.05rem;
+        color: #fff;
+      }
+
+      /* =============== 选项卡 =============== */
+      .tabs {
+        display: flex;
+        background: var(--tab-bg);
+        padding: 0;
+        margin: 0;
+        border-bottom: 1px solid var(--border-color);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+
+      .tabs::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tab {
+        padding: 14px 24px;
+        cursor: pointer;
+        color: var(--text-light);
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        border-bottom: 2px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .tab:hover {
+        color: var(--primary-color);
+        background: var(--hover-bg);
       }
 
       .tab.active {
-        background: var(--tab-active-bg);
-        border-bottom: 3px solid var(--text-inverse);
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+        font-weight: 600;
       }
 
       .tab-content {
         display: none;
-        padding: 30px;
-        gap: 30px;
-        animation: fadeInContent 0.5s ease;
+        padding: 24px;
+        gap: 24px;
+        animation: fadeInContent 0.3s ease;
       }
 
       @keyframes fadeInContent {
         from {
           opacity: 0;
         }
-
         to {
           opacity: 1;
         }
@@ -214,65 +227,81 @@
         .tab-content.active {
           flex-direction: column;
         }
+        .tab {
+          padding: 12px 18px;
+          font-size: 0.9rem;
+        }
       }
 
-      /* Excel 查询工具样式 */
+      /* =============== 通用面板 =============== */
+      .section-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .section-title i {
+        color: var(--primary-color);
+        font-size: 0.9rem;
+      }
+
+      /* =============== Excel 查询工具 =============== */
       .upload-section {
         flex: 1;
         background: var(--panel-bg);
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        border-radius: var(--radius);
+        padding: 20px;
+        border: 1px solid var(--border-color);
       }
 
       .query-section {
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 25px;
-      }
-
-      .section-title {
-        font-size: 1rem;
-        color: var(--primary-color);
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid var(--primary-color);
-        display: flex;
-        align-items: center;
-        gap: 10px;
+        gap: 20px;
       }
 
       .upload-area {
-        border: 3px dashed var(--primary-color);
-        border-radius: 12px;
-        padding: 40px 20px;
+        border: 2px dashed var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 32px 16px;
         text-align: center;
         cursor: pointer;
-        transition: all 0.3s;
-        background: rgba(52, 152, 219, 0.05);
-        margin-bottom: 20px;
+        transition: all 0.25s ease;
+        background: var(--panel-secondary);
+        margin-bottom: 16px;
       }
 
       .upload-area:hover {
+        border-color: var(--primary-color);
         background: var(--hover-bg);
-        transform: translateY(-3px);
       }
 
       .upload-area i {
-        font-size: 3.5rem;
+        font-size: 2.5rem;
         color: var(--primary-color);
-        margin-bottom: 15px;
+        margin-bottom: 12px;
+        opacity: 0.8;
       }
 
-      .upload-area h3 {
+      .upload-area h4 {
         color: var(--text-color);
-        margin-bottom: 10px;
+        margin-bottom: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
       }
 
       .upload-area p {
         color: var(--text-light);
-        font-size: 0.95rem;
+        font-size: 0.82rem;
       }
 
       #fileInput {
@@ -280,25 +309,30 @@
       }
 
       .file-info {
-        background: rgba(52, 152, 219, 0.1);
-        border-radius: 10px;
-        padding: 15px;
-        margin-top: 20px;
+        background: var(--hover-bg);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        margin-top: 12px;
         display: none;
         color: var(--text-color);
+        font-size: 0.85rem;
+        border: 1px solid var(--border-color);
+      }
+
+      .file-info p {
+        margin: 2px 0;
       }
 
       .file-info.active {
         display: block;
-        animation: slideUp 0.5s ease;
+        animation: slideUp 0.3s ease;
       }
 
       @keyframes slideUp {
         from {
           opacity: 0;
-          transform: translateY(10px);
+          transform: translateY(8px);
         }
-
         to {
           opacity: 1;
           transform: translateY(0);
@@ -306,160 +340,199 @@
       }
 
       .input-group {
-        margin-bottom: 20px;
+        margin-bottom: 16px;
       }
 
       label {
         display: block;
-        margin-bottom: 8px;
-        font-weight: 600;
+        margin-bottom: 6px;
+        font-weight: 500;
         color: var(--text-color);
+        font-size: 0.85rem;
       }
 
       textarea {
         width: 100%;
-        height: 120px;
-        padding: 15px;
-        border: 2px solid var(--border-color);
-        border-radius: 10px;
-        font-size: 1rem;
+        height: 100px;
+        padding: 12px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
         resize: vertical;
-        transition: border 0.3s;
-        background: var(--container-bg);
+        transition: border 0.2s ease, box-shadow 0.2s ease;
+        background: var(--panel-bg);
         color: var(--text-color);
+        font-family: inherit;
+        line-height: 1.5;
+      }
+
+      textarea::placeholder {
+        color: var(--text-light);
+        opacity: 0.7;
       }
 
       textarea:focus {
         outline: none;
         border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      }
+
+      /* =============== 统一按钮系统 =============== */
+      /* 语义色变量：主操作(蓝) / 确认(绿) / 危险(红) / 次要(中性灰) */
+      :root {
+        --btn-primary: var(--primary-color);
+        --btn-primary-hover: var(--primary-dark);
+        --btn-success: var(--success-color);
+        --btn-success-hover: #15803d;
+        --btn-danger: var(--danger-color);
+        --btn-danger-hover: #b91c1c;
+        --btn-neutral: #64748b;
+        --btn-neutral-hover: #475569;
       }
 
       .btn-group {
         display: flex;
-        gap: 15px;
-        margin-top: 10px;
+        gap: 10px;
+        margin-top: 8px;
       }
 
-      button {
-        color: white;
+      /* 所有 button / .btn / .copy-option / .action-btn 共用基础样式 */
+      button,
+      #type-tool .btn,
+      .copy-option,
+      #type-tool .action-btn {
+        padding: 11px 16px;
         border: none;
-        padding: 15px 25px;
-        border-radius: 10px;
-        font-size: 1.3rem;
-        font-weight: 300;
+        border-radius: var(--radius-sm);
+        font-size: 0.88rem;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
         flex: 1;
+        font-family: inherit;
+        line-height: 1.4;
+        -webkit-tap-highlight-color: transparent;
       }
 
-      button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      button:hover,
+      #type-tool .btn:hover,
+      .copy-option:hover,
+      #type-tool .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px var(--shadow-color);
       }
 
-      button:active {
-        transform: translateY(1px);
+      button:active,
+      #type-tool .btn:active,
+      .copy-option:active,
+      #type-tool .action-btn:active {
+        transform: translateY(0);
       }
 
       button:disabled {
-        background: #bdc3c7;
+        background: #94a3b8 !important;
         cursor: not-allowed;
         transform: none;
         box-shadow: none;
       }
 
-      .btn-query {
-        background: var(--primary-color);
+      /* 语义色：主操作 */
+      .btn-query,
+      .btn-copy-all,
+      #type-tool .btn-query-all {
+        background: var(--btn-primary);
+        color: var(--text-inverse);
+      }
+      .btn-query:hover,
+      .btn-copy-all:hover,
+      #type-tool .btn-query-all:hover {
+        background: var(--btn-primary-hover);
       }
 
-      .btn-query:hover {
-        background: var(--primary-dark);
+      /* 语义色：确认/复制 */
+      .btn-copy-name,
+      #type-tool .btn-copy {
+        background: var(--btn-success);
+        color: var(--text-inverse);
+      }
+      .btn-copy-name:hover,
+      #type-tool .btn-copy:hover {
+        background: var(--btn-success-hover);
       }
 
-      .btn-clear {
-        background: var(--danger-color);
+      /* 语义色：危险/清空 */
+      .btn-clear,
+      #type-tool .btn-clear {
+        background: var(--btn-danger);
+        color: var(--text-inverse);
+      }
+      .btn-clear:hover,
+      #type-tool .btn-clear:hover {
+        background: var(--btn-danger-hover);
       }
 
-      .btn-clear:hover {
-        background: #c0392b;
+      /* 语义色：次要/导出 */
+      #type-tool .btn-secondary {
+        background: var(--btn-neutral);
+        color: var(--text-inverse);
+      }
+      #type-tool .btn-secondary:hover {
+        background: var(--btn-neutral-hover);
       }
 
+      /* 复制Type列 — 用主色保持一致，去除原紫色 */
       .btn-copy-type {
-        background: #9b59b6;
+        background: var(--btn-primary);
+        color: var(--text-inverse);
       }
-
       .btn-copy-type:hover {
-        background: #8e44ad;
+        background: var(--btn-primary-hover);
       }
 
-      .btn-copy-name {
-        background: var(--success-color);
-      }
-
-      .btn-copy-name:hover {
-        background: #27ae60;
-      }
-
-      .btn-copy-all {
-        background: var(--primary-color);
-      }
-
-      .btn-copy-all:hover {
-        background: var(--primary-dark);
-      }
-
+      /* =============== 复制选项卡（与其他按钮统一） =============== */
       .copy-options {
         display: flex;
         gap: 10px;
-        margin-top: 15px;
+        margin-top: 12px;
       }
 
       .copy-option {
         flex: 1;
-        padding: 12px;
-        background: rgba(52, 152, 219, 0.1);
-        border-radius: 8px;
+        background: var(--btn-primary);
+        color: var(--text-inverse);
         text-align: center;
-        cursor: pointer;
-        transition: all 0.3s;
-        border: 2px solid transparent;
-        color: var(--text-color);
       }
 
       .copy-option:hover {
-        transform: translateY(-3px);
-        border-color: var(--primary-color);
-        background: rgba(52, 152, 219, 0.2);
+        background: var(--btn-primary-hover);
       }
 
       .copy-option.active {
-        border-color: var(--primary-color);
-        background: rgba(52, 152, 219, 0.2);
+        background: var(--btn-primary-hover);
       }
 
       .copy-option i {
-        font-size: 1.2rem;
-        margin-bottom: 10px;
-        display: block;
-        color: var(--primary-color);
+        font-size: 0.95rem;
+        color: var(--text-inverse);
       }
 
       .copy-option h4 {
-        color: var(--text-color);
-        margin-bottom: 5px;
+        color: var(--text-inverse);
+        margin-bottom: 0;
+        font-size: 0.88rem;
+        font-weight: 500;
       }
 
       .result-section {
         background: var(--panel-bg);
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        min-height: 300px;
+        border-radius: var(--radius);
+        padding: 20px;
+        border: 1px solid var(--border-color);
+        min-height: 280px;
         max-height: auto;
         overflow-y: auto;
         position: relative;
@@ -470,36 +543,46 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 250px;
+        height: 200px;
         color: var(--text-light);
         text-align: center;
+        gap: 8px;
       }
 
       .result-placeholder i {
-        font-size: 2rem;
-        margin-bottom: 20px;
-        opacity: 0.3;
+        font-size: 1.8rem;
+        opacity: 0.4;
+      }
+
+      .result-placeholder p {
+        font-size: 0.85rem;
+        margin: 0;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
-        border-radius: 10px;
+        border-radius: var(--radius-sm);
         overflow: hidden;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        font-size: 0.85rem;
       }
 
       th {
         background: var(--table-header-bg);
-        color: var(--text-inverse);
+        color: var(--text-color);
         text-align: left;
-        padding: 15px;
+        padding: 10px 12px;
         position: sticky;
         top: 0;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 1px solid var(--border-color);
       }
 
       td {
-        padding: 12px 15px;
+        padding: 10px 12px;
         border-bottom: 1px solid var(--border-color);
         color: var(--text-color);
       }
@@ -514,12 +597,13 @@
 
       .error {
         color: var(--danger-color);
-        background: rgba(231, 76, 60, 0.1);
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 15px;
+        background: rgba(220, 38, 38, 0.08);
+        padding: 12px 14px;
+        border-radius: var(--radius-sm);
+        margin-top: 12px;
         display: none;
         border-left: 3px solid var(--danger-color);
+        font-size: 0.82rem;
       }
 
       .error.active {
@@ -528,54 +612,63 @@
 
       footer {
         text-align: center;
-        padding: 20px;
-        background: var(--header-bg);
-        color: var(--text-inverse);
-        font-size: 0.9rem;
+        padding: 16px;
+        background: var(--panel-secondary);
+        color: var(--text-light);
+        font-size: 0.8rem;
+        border-top: 1px solid var(--border-color);
       }
 
       .highlight {
-        background-color: rgba(255, 249, 196, 0.3);
-        padding: 2px 5px;
+        background-color: rgba(217, 119, 7, 0.12);
+        padding: 1px 5px;
         border-radius: 3px;
         color: var(--warning-color);
+        font-weight: 600;
       }
 
       .not-found {
         color: var(--danger-color);
-        font-weight: bold;
+        font-weight: 600;
       }
 
       .empty-result {
         color: var(--warning-color);
-        font-weight: bold;
+        font-weight: 600;
       }
 
       .stats-bar {
         display: flex;
         justify-content: space-between;
-        margin-top: 15px;
-        padding: 10px;
-        background: rgba(52, 152, 219, 0.1);
-        border-radius: 8px;
-        font-size: 0.9rem;
+        margin-top: 16px;
+        padding: 12px;
+        background: var(--panel-secondary);
+        border-radius: var(--radius-sm);
+        font-size: 0.82rem;
         color: var(--text-color);
+        border: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 8px;
       }
 
       .stat-item {
         display: flex;
         flex-direction: column;
         align-items: center;
+        flex: 1;
+        min-width: 70px;
       }
 
       .stat-value {
-        font-weight: bold;
-        font-size: 1.2rem;
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: var(--text-color);
       }
 
       .stat-label {
-        font-size: 0.85rem;
+        font-size: 0.75rem;
         color: var(--text-light);
+        margin-top: 2px;
       }
 
       .found {
@@ -590,11 +683,11 @@
         color: var(--warning-color);
       }
 
-      /* =============== Type数字提取工具样式 =============== */
+      /* =============== Type数字提取工具 =============== */
       #type-tool .main-content {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 30px;
+        gap: 24px;
       }
 
       @media (max-width: 768px) {
@@ -605,308 +698,304 @@
 
       #type-tool .panel {
         background: var(--panel-bg);
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        padding: 25px;
+        border-radius: var(--radius);
+        padding: 20px;
         border: 1px solid var(--border-color);
       }
 
       #type-tool .panel-title {
-        font-size: 1rem;
-        color: var(--primary-color);
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid var(--primary-color);
+        font-size: 0.85rem;
+        color: var(--text-color);
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-color);
         display: flex;
         align-items: center;
         gap: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
       }
 
       #type-tool .panel-title i {
         background: var(--primary-color);
         color: var(--text-inverse);
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 0.8rem;
       }
 
       #type-tool textarea {
         width: 100%;
-        min-height: 200px;
-        padding: 15px;
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
-        font-size: 1rem;
+        min-height: 180px;
+        padding: 12px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
         resize: vertical;
-        transition: all 0.3s;
+        transition: all 0.2s ease;
         line-height: 1.5;
-        font-family: "Courier New", monospace;
-        background: var(--container-bg);
+        font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+        background: var(--panel-bg);
         color: var(--text-color);
       }
 
       #type-tool textarea:focus {
         border-color: var(--primary-color);
         outline: none;
-        box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.2);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
       }
 
       #type-tool .controls {
         display: flex;
-        gap: 15px;
-        margin: 20px 0;
+        gap: 10px;
+        margin: 16px 0;
         flex-wrap: wrap;
       }
 
+      /* .btn / .action-btn 基础样式已在统一按钮系统中定义，此处仅保留尺寸覆盖 */
+
       #type-tool .btn {
-        flex: 1;
-        min-width: 150px;
-        padding: 14px 20px;
-        background: linear-gradient(
-          90deg,
-          var(--primary-color),
-          var(--primary-dark)
-        );
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
+        min-width: 120px;
       }
 
-      #type-tool .btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      /* 图标小按钮：方形尺寸，沿用统一圆角与过渡 */
+      #type-tool .action-btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        flex: none;
+        font-size: 0.8rem;
+        background: var(--btn-neutral);
+        color: var(--text-inverse);
       }
 
-      #type-tool .btn:active {
-        transform: translateY(0);
+      #type-tool .action-btn:hover {
+        background: var(--btn-primary);
       }
 
-      #type-tool .btn-copy {
-        background: linear-gradient(90deg, var(--success-color), #219653);
+      #type-tool .action-btn-query {
+        background: var(--btn-primary);
       }
 
-      #type-tool .btn-clear {
-        background: linear-gradient(90deg, var(--danger-color), #c0392b);
-      }
-
-      #type-tool .btn-secondary {
-        background: linear-gradient(90deg, #6c757d, #5a6268);
-      }
-
-      #type-tool .btn-query-all {
-        background: linear-gradient(
-          90deg,
-          var(--primary-color),
-          var(--primary-dark)
-        );
+      #type-tool .action-btn-query:hover {
+        background: var(--btn-primary-hover);
       }
 
       #type-tool .stats {
         display: flex;
         justify-content: space-between;
-        background: rgba(52, 152, 219, 0.1);
-        padding: 15px;
-        border-radius: 8px;
-        margin: 20px 0;
-        font-weight: 600;
+        background: var(--panel-secondary);
+        padding: 12px;
+        border-radius: var(--radius-sm);
+        margin: 14px 0;
+        font-weight: 500;
         color: var(--text-color);
         border: 1px solid var(--border-color);
         flex-wrap: wrap;
+        gap: 8px;
       }
 
       #type-tool .stat-box {
         text-align: center;
         flex: 1;
-        min-width: 120px;
-        margin: 5px;
+        min-width: 90px;
       }
 
       #type-tool .stat-label {
-        font-size: 0.9rem;
+        font-size: 0.75rem;
         color: var(--text-light);
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
       }
 
       #type-tool .stat-value {
-        font-size: 2rem;
+        font-size: 1.5rem;
         color: var(--primary-color);
-        margin-top: 5px;
+        margin-top: 4px;
         font-weight: 700;
       }
 
       #type-tool .results-container {
-        min-height: 300px;
-        max-height: 400px;
+        min-height: 240px;
+        max-height: 340px;
         overflow-y: auto;
-        padding: 15px;
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
-        background: var(--container-bg);
+        padding: 8px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--panel-secondary);
       }
 
       #type-tool .match-item {
-        padding: 15px;
-        margin: 10px 0;
+        padding: 12px;
+        margin: 6px 0;
         background: var(--panel-bg);
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        border-left: 4px solid var(--primary-color);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        border-left: 3px solid var(--primary-color);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
         color: var(--text-color);
       }
 
       #type-tool .match-item:hover {
-        transform: translateX(5px);
         border-left-color: var(--success-color);
-        background-color: rgba(52, 152, 219, 0.1);
+        background: var(--hover-bg);
       }
 
       #type-tool .match-text {
         font-weight: 600;
-        font-size: 1.1rem;
+        font-size: 0.9rem;
         color: var(--text-color);
+        font-family: "SF Mono", "Fira Code", "Courier New", monospace;
       }
 
       #type-tool .match-digits {
-        background: rgba(52, 152, 219, 0.1);
-        padding: 5px 10px;
+        background: var(--hover-bg);
+        padding: 3px 8px;
         border-radius: 4px;
-        font-weight: bold;
+        font-weight: 700;
         color: var(--primary-color);
+        font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+        font-size: 0.85rem;
       }
 
       #type-tool .no-results {
         text-align: center;
-        padding: 30px;
+        padding: 24px;
         color: var(--text-light);
-        font-style: italic;
+        font-size: 0.85rem;
       }
 
       #type-tool .action-buttons {
         display: flex;
-        gap: 8px;
+        gap: 6px;
       }
 
-      #type-tool .action-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--container-bg);
-        border: 1px solid var(--border-color);
-        cursor: pointer;
-        transition: all 0.2s;
-        color: var(--text-color);
-      }
-
-      #type-tool .action-btn:hover {
-        background: var(--primary-color);
-        color: var(--text-inverse);
-        transform: scale(1.1);
-      }
-
-      #type-tool .action-btn-query {
-        background: var(--primary-color);
-        color: var(--text-inverse);
-      }
-
-      #type-tool .action-btn-query:hover {
-        background: var(--primary-dark);
-      }
+      /* action-btn 样式已在统一按钮系统中定义 */
 
       #type-tool .highlight {
-        background-color: rgba(255, 249, 196, 0.3);
-        padding: 2px 4px;
+        background-color: rgba(217, 119, 7, 0.12);
+        padding: 1px 5px;
         border-radius: 3px;
-        font-weight: bold;
+        font-weight: 700;
         color: var(--warning-color);
       }
 
       #type-tool .instructions {
-        background: rgba(52, 152, 219, 0.1);
-        border-radius: 8px;
-        padding: 20px;
-        margin-top: 20px;
-        border-left: 4px solid var(--primary-color);
+        background: var(--panel-secondary);
+        border-radius: var(--radius-sm);
+        padding: 14px 16px;
+        margin-top: 16px;
+        border: 1px solid var(--border-color);
+        border-left: 3px solid var(--primary-color);
       }
 
       #type-tool .instructions h3 {
-        margin-bottom: 15px;
+        margin-bottom: 10px;
         color: var(--text-color);
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        font-size: 0.88rem;
+        font-weight: 600;
+      }
+
+      #type-tool .instructions h3 i {
+        color: var(--warning-color);
       }
 
       #type-tool .instructions ul {
-        padding-left: 20px;
+        padding-left: 18px;
         color: var(--text-color);
       }
 
       #type-tool .instructions li {
-        margin-bottom: 10px;
+        margin-bottom: 6px;
+        font-size: 0.82rem;
+        line-height: 1.5;
       }
 
       #type-tool .example-text {
-        font-size: 0.9rem;
+        font-size: 0.78rem;
         color: var(--text-light);
-        margin-top: 5px;
-        font-style: italic;
+        margin-top: 4px;
       }
 
       #type-tool .digit-preview {
         font-size: 0.8rem;
         text-align: center;
-        margin: 15px 0;
+        margin: 12px 0;
         padding: 10px;
-        background: rgba(52, 152, 219, 0.1);
-        border-radius: 8px;
-        border: 1px dashed var(--primary-color);
+        background: var(--panel-secondary);
+        border-radius: var(--radius-sm);
+        border: 1px dashed var(--border-color);
         color: var(--text-color);
       }
 
       #type-tool .digit-preview span {
-        font-weight: bold;
+        font-weight: 700;
         color: var(--primary-color);
+        font-family: "SF Mono", "Fira Code", "Courier New", monospace;
       }
 
       .tab-content-type {
         display: flex;
         flex-direction: column;
-        gap: 30px;
+        gap: 24px;
       }
 
       .copy-guide {
-        background: rgba(52, 152, 219, 0.1);
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 15px;
-        font-size: 0.9rem;
-        color: var(--text-color);
+        background: var(--panel-secondary);
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        margin-top: 12px;
+        font-size: 0.8rem;
+        color: var(--text-light);
         text-align: center;
+        border: 1px solid var(--border-color);
+      }
+
+      .copy-guide i {
+        color: var(--primary-color);
       }
 
       .workflow-btn {
         display: flex;
         justify-content: center;
-        margin-top: 20px;
+        margin-top: 16px;
+      }
+
+      /* =============== 响应式微调 =============== */
+      @media (max-width: 480px) {
+        body {
+          padding: 8px;
+        }
+        .tab-content {
+          padding: 16px;
+        }
+        .container {
+          border-radius: 12px;
+        }
+        header {
+          padding: 12px 16px;
+        }
+        header h3 {
+          font-size: 1rem;
+        }
+        .btn-group,
+        #type-tool .controls {
+          flex-direction: column;
+        }
+        .copy-options {
+          flex-direction: column;
+        }
       }
     </style>
   </head>
@@ -915,7 +1004,7 @@
     <div class="container">
       <header>
         <div class="header-content">
-          <div style="display:flex; align-items:center; gap:10px;"><h3><i class="fas fa-tools"></i> Type工具套件</h3><a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg></a></div>
+          <div class="header-left"><h3><i class="fas fa-tools"></i> Type工具套件</h3><a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg></a></div>
           <div class="theme-toggle" id="themeToggle">
             <i class="fas fa-moon"></i>
           </div>
@@ -1206,21 +1295,23 @@ type: 1000 - 有效（空格不影响）
                 ${message}
             `;
 
-        const bgColor = type === "success" ? "#28a745" : "#dc3545";
+        const bgColor = type === "success" ? "#16a34a" : "#dc2626";
         notification.style.cssText = `
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                padding: 15px 25px;
+                padding: 12px 20px;
                 background: ${bgColor};
                 color: white;
                 border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                box-shadow: 0 4px 16px rgba(0,0,0,0.15);
                 z-index: 1000;
                 animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
                 display: flex;
                 align-items: center;
-                gap: 10px;
+                gap: 8px;
+                font-size: 0.88rem;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             `;
 
         document.body.appendChild(notification);
@@ -1278,19 +1369,19 @@ type: 1000 - 有效（空格不影响）
 
       dropArea.addEventListener("dragover", (e) => {
         e.preventDefault();
-        dropArea.style.borderColor = "#27ae60";
-        dropArea.style.backgroundColor = "rgba(39, 174, 96, 0.1)";
+        dropArea.style.borderColor = "var(--success-color)";
+        dropArea.style.backgroundColor = "rgba(22, 163, 74, 0.08)";
       });
 
       dropArea.addEventListener("dragleave", () => {
-        dropArea.style.borderColor = "var(--primary-color)";
-        dropArea.style.backgroundColor = "rgba(52, 152, 219, 0.05)";
+        dropArea.style.borderColor = "var(--border-color)";
+        dropArea.style.backgroundColor = "var(--panel-secondary)";
       });
 
       dropArea.addEventListener("drop", (e) => {
         e.preventDefault();
-        dropArea.style.borderColor = "var(--primary-color)";
-        dropArea.style.backgroundColor = "rgba(52, 152, 219, 0.05)";
+        dropArea.style.borderColor = "var(--border-color)";
+        dropArea.style.backgroundColor = "var(--panel-secondary)";
 
         if (e.dataTransfer.files.length) {
           fileInput.files = e.dataTransfer.files;
@@ -2005,7 +2096,7 @@ type: 1000 - 有效（空格不影响）
       height: 34px;
       border-radius: 50%;
       color: inherit;
-      background: rgba(135, 135, 135, 0.16);
+      background: rgba(255, 255, 255, 0.1);
       border: 1px solid transparent;
       text-decoration: none;
       flex-shrink: 0;
@@ -2013,7 +2104,7 @@ type: 1000 - 有效（空格不影响）
       -webkit-tap-highlight-color: transparent;
     }
     .home-back-icon:hover {
-      background: rgba(135, 135, 135, 0.30);
+      background: rgba(255, 255, 255, 0.2);
       transform: translateY(-1px);
     }
     .home-back-icon svg {
