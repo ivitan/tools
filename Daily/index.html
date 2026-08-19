@@ -35,6 +35,12 @@
             --hover-bg: rgba(74, 122, 181, 0.08);
             --radius: 12px;
             --radius-sm: 8px;
+
+            /* 机位类型配色：远机位=蓝，近机位=橙 */
+            --far-accent: #3b6db5;
+            --far-tint: rgba(59, 109, 181, 0.08);
+            --near-accent: #d9734e;
+            --near-tint: rgba(217, 115, 78, 0.08);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -52,6 +58,8 @@
                 --border-color: #334155;
                 --shadow-color: rgba(0, 0, 0, 0.3);
                 --hover-bg: rgba(122, 162, 210, 0.14);
+                --far-tint: rgba(96, 145, 200, 0.16);
+                --near-tint: rgba(210, 130, 95, 0.16);
             }
         }
 
@@ -103,7 +111,7 @@
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1.2fr 1fr;
-            gap: 20px;
+            gap: 16px;
             align-items: start;
             padding-bottom: 20px;
         }
@@ -115,7 +123,7 @@
         .panel {
             background: var(--panel-bg);
             border-radius: var(--radius);
-            padding: 22px;
+            padding: 14px 16px;
             box-shadow: 0 4px 24px var(--shadow-color);
             border: 1px solid var(--border-color);
         }
@@ -127,53 +135,65 @@
         }
 
         h2 {
-            font-size: 1.05rem;
-            margin-bottom: 18px;
+            font-size: 0.98rem;
+            margin-bottom: 10px;
             color: var(--text-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 12px;
+            padding-bottom: 8px;
             border-bottom: 1px solid var(--border-color);
         }
 
+        /* ===== 机位卡片：远/近机位不同配色区分 ===== */
         .stand-card {
             background: var(--panel-secondary);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-bottom: 16px;
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin-bottom: 10px;
             transition: border-color 0.2s;
         }
-        .stand-card:focus-within { border-color: var(--primary-color); }
+        /* 远机位：蓝色系 */
+        .stand-card[data-type="远机位"] {
+            background: var(--far-tint);
+            border-left: 4px solid var(--far-accent);
+        }
+        .stand-card[data-type="远机位"]:focus-within { border-color: var(--far-accent); }
+        /* 近机位：绿色系 */
+        .stand-card[data-type="近机位"] {
+            background: var(--near-tint);
+            border-left: 4px solid var(--near-accent);
+        }
+        .stand-card[data-type="近机位"]:focus-within { border-color: var(--near-accent); }
 
         .stand-header {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
         }
 
         .badge {
-            padding: 5px 12px;
+            padding: 3px 10px;
             border-radius: 6px;
-            font-size: 0.82rem;
+            font-size: 0.76rem;
             font-weight: 600;
             color: #fff;
             white-space: nowrap;
             letter-spacing: 0.3px;
         }
         .badge-far { background-color: var(--primary-color); }
-        .badge-near { background-color: var(--success-color); }
+        .badge-near { background-color: #d9734e; }
 
         input, textarea {
             width: 100%;
-            padding: 10px 13px;
+            padding: 7px 10px;
             border: 1px solid var(--input-border);
             border-radius: var(--radius-sm);
             background-color: var(--input-bg);
             color: var(--text-color);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
             font-family: inherit;
@@ -188,17 +208,17 @@
         .item-row {
             display: grid;
             grid-template-columns: 1.2fr 2fr auto;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 6px;
             align-items: start;
         }
 
         /* =============== 统一按钮系统（实色填充 + 区分语义色） =============== */
         button {
-            padding: 10px 18px;
+            padding: 7px 13px;
             border: none;
             border-radius: var(--radius-sm);
-            font-size: 0.9rem;
+            font-size: 0.84rem;
             cursor: pointer;
             transition: all 0.2s ease;
             font-weight: 500;
@@ -215,8 +235,8 @@
         .btn-primary { background-color: var(--primary-color); color: #fff; }
         .btn-primary:hover { background-color: var(--primary-dark); }
 
-        .btn-success { background-color: var(--success-color); color: #fff; }
-        .btn-success:hover { background-color: var(--success-dark); }
+        .btn-success { background-color: #d9734e; color: #fff; }
+        .btn-success:hover { background-color: #bf5e3b; }
 
         .btn-warning { background-color: var(--warning-color); color: #fff; }
         .btn-warning:hover { background-color: var(--warning-dark); }
@@ -229,30 +249,32 @@
         .btn-violet { background-color: var(--violet-color); color: #fff; }
         .btn-violet:hover { background-color: var(--violet-dark); }
 
-        /* 删除图标按钮：中性灰实色，固定 36×36 方形，保留在网格最右 */
+        /* 删除图标按钮：中性灰实色，固定 30×30 方形，保留在网格最右 */
         .btn-icon {
-            width: 36px;
-            height: 36px;
+            width: 30px;
+            height: 30px;
             padding: 0;
             background: var(--danger-color);
             color: #fff;
-            font-size: 1rem;
+            font-size: 0.85rem;
             border: none;
+            align-self: center;
         }
         .btn-icon:hover { background: var(--danger-dark); }
 
         /* 新增机位按钮：并排实色，均分两列 */
-        .add-stand-group { display: flex; gap: 12px; margin-top: 20px; }
+        .add-stand-group { display: flex; gap: 10px; margin-top: 12px; }
         .add-stand-group button { flex: 1; }
 
         .preview-panel { position: sticky; top: 20px; }
 
         #preview-box {
-            width: 100%; height: 560px; resize: vertical;
+            width: 100%; height: 52vh; min-height: 320px; resize: vertical;
             font-family: "SF Mono", "Fira Code", "Courier New", monospace;
-            white-space: pre-wrap; margin-bottom: 16px;
+            white-space: pre-wrap; margin-bottom: 12px;
             background: var(--panel-secondary);
             line-height: 1.6;
+            font-size: 0.88rem;
         }
 
         .toast {
@@ -292,9 +314,9 @@
         .multi-select-dropdown.show { display: block; }
 
         .multi-select-option {
-            padding: 9px 14px;
+            padding: 6px 12px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: background 0.2s;
             color: var(--text-color);
             text-align: left;
@@ -319,9 +341,9 @@
         @media (max-width: 480px) {
             body { padding: 8px; }
             .container { gap: 14px; }
-            .panel { padding: 16px; }
+            .panel { padding: 12px; }
             .item-row { grid-template-columns: 1fr; }
-            #preview-box { height: 360px; }
+            #preview-box { height: 40vh; }
         }
     </style>
 </head>
@@ -331,8 +353,8 @@
     <div class="header-content">
         <div class="header-left">
             <h3>📝 日报生成工具</h3>
+            <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg></a>
         </div>
-        <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg></a>
     </div>
 </header>
 
