@@ -401,10 +401,10 @@
       #type-tool .btn,
       .copy-option,
       #type-tool .action-btn {
-        padding: 11px 16px;
+        padding: 10px 18px;
         border: none;
         border-radius: var(--radius-sm);
-        font-size: 0.88rem;
+        font-size: 0.9rem;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -753,6 +753,32 @@
         box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
       }
 
+      /* 文本域自定义滚动条 - 匹配深色主题 */
+      #type-tool textarea::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      #type-tool textarea::-webkit-scrollbar-track {
+        background: transparent;
+        border-radius: 4px;
+      }
+      #type-tool textarea::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.35);
+        border-radius: 4px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+      }
+      #type-tool textarea::-webkit-scrollbar-thumb:hover {
+        background: rgba(148, 163, 184, 0.55);
+      }
+      #type-tool textarea::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+      #type-tool textarea {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+      }
+
       #type-tool .controls {
         display: flex;
         gap: 10px;
@@ -768,11 +794,11 @@
 
       /* 图标小按钮：方形尺寸，沿用统一圆角与过渡 */
       #type-tool .action-btn {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         padding: 0;
         flex: none;
-        font-size: 0.8rem;
+        font-size: 0.9rem;
         background: var(--btn-neutral);
         color: var(--text-inverse);
       }
@@ -825,8 +851,9 @@
 
       #type-tool .results-container {
         min-height: 240px;
-        max-height: 340px;
-        overflow-y: auto;
+        height: auto;
+        max-height: none;
+        overflow-y: visible;
         padding: 8px;
         border: 1px solid var(--border-color);
         border-radius: var(--radius-sm);
@@ -878,6 +905,7 @@
 
       #type-tool .action-buttons {
         display: flex;
+        align-items: center;
         gap: 6px;
       }
 
