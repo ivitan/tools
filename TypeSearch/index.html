@@ -1,1156 +1,1173 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <link rel="icon" type="image/png" href="/img/Type.png">
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Type工具套件</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <style>
-      :root {
-        /* 日间模式变量 - 简洁中性灰蓝色调 */
-        --primary-color: #2563eb;
-        --primary-dark: #1d4ed8;
-        --secondary-color: #475569;
-        --success-color: #16a34a;
-        --danger-color: #dc2626;
-        --warning-color: #d97706;
-        --info-color: #2563eb;
 
-        --bg-gradient: #f1f5f9;
-        --container-bg: #ffffff;
-        --header-bg: #0f172a;
-        --tab-bg: #f8fafc;
-        --tab-active-bg: #2563eb;
-        --panel-bg: #ffffff;
-        --panel-secondary: #f8fafc;
-        --text-color: #1e293b;
-        --text-light: #64748b;
-        --text-inverse: #ffffff;
-        --border-color: #e2e8f0;
-        --shadow-color: rgba(15, 23, 42, 0.08);
-        --hover-bg: rgba(37, 99, 235, 0.06);
-        --table-header-bg: #f1f5f9;
-        --table-row-even: #f8fafc;
-        --table-row-hover: #eff6ff;
-        --placeholder-bg: rgba(100, 116, 139, 0.08);
-        --radius: 12px;
-        --radius-sm: 8px;
+<head>
+  <link rel="icon" type="image/png" href="/img/Type.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Type工具套件</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      /* 日间模式变量 - 简洁中性灰蓝色调 */
+      --primary-color: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary-color: #475569;
+      --success-color: #16a34a;
+      --danger-color: #dc2626;
+      --warning-color: #d97706;
+      --info-color: #2563eb;
+
+      --bg-gradient: #f1f5f9;
+      --container-bg: #ffffff;
+      --header-bg: #0f172a;
+      --tab-bg: #f8fafc;
+      --tab-active-bg: #2563eb;
+      --panel-bg: #ffffff;
+      --panel-secondary: #f8fafc;
+      --text-color: #1e293b;
+      --text-light: #64748b;
+      --text-inverse: #ffffff;
+      --border-color: #e2e8f0;
+      --shadow-color: rgba(15, 23, 42, 0.08);
+      --hover-bg: rgba(37, 99, 235, 0.06);
+      --table-header-bg: #f1f5f9;
+      --table-row-even: #f8fafc;
+      --table-row-hover: #eff6ff;
+      --placeholder-bg: rgba(100, 116, 139, 0.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    .dark-mode {
+      /* 夜间模式变量 - 深色层次分明 */
+      --bg-gradient: #0f172a;
+      --container-bg: #1e293b;
+      --header-bg: #020617;
+      --tab-bg: #1e293b;
+      --tab-active-bg: #3b82f6;
+      --panel-bg: #1e293b;
+      --panel-secondary: #0f172a;
+      --text-color: #e2e8f0;
+      --text-light: #94a3b8;
+      --text-inverse: #f1f5f9;
+      --border-color: #334155;
+      --shadow-color: rgba(0, 0, 0, 0.3);
+      --hover-bg: rgba(59, 130, 246, 0.12);
+      --table-header-bg: #0f172a;
+      --table-row-even: #0f172a;
+      --table-row-hover: #1e3a5f;
+      --placeholder-bg: rgba(148, 163, 184, 0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      padding: 16px;
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--container-bg);
+      border-radius: 16px;
+      box-shadow: 0 4px 24px var(--shadow-color);
+      overflow: hidden;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
       }
 
-      .dark-mode {
-        /* 夜间模式变量 - 深色层次分明 */
-        --bg-gradient: #0f172a;
-        --container-bg: #1e293b;
-        --header-bg: #020617;
-        --tab-bg: #1e293b;
-        --tab-active-bg: #3b82f6;
-        --panel-bg: #1e293b;
-        --panel-secondary: #0f172a;
-        --text-color: #e2e8f0;
-        --text-light: #94a3b8;
-        --text-inverse: #f1f5f9;
-        --border-color: #334155;
-        --shadow-color: rgba(0, 0, 0, 0.3);
-        --hover-bg: rgba(59, 130, 246, 0.12);
-        --table-header-bg: #0f172a;
-        --table-row-even: #0f172a;
-        --table-row-hover: #1e3a5f;
-        --placeholder-bg: rgba(148, 163, 184, 0.08);
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* =============== 顶栏 =============== */
+    header {
+      background: var(--header-bg);
+      color: var(--text-inverse);
+      padding: 16px 24px;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-inverse);
+    }
+
+    header h3 i {
+      color: #60a5fa;
+      font-size: 1.1rem;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .theme-toggle {
+      background: rgba(255, 255, 255, 0.1);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      border: none;
+      flex-shrink: 0;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .theme-toggle i {
+      font-size: 1.05rem;
+      color: #fff;
+    }
+
+    /* =============== 选项卡 =============== */
+    .tabs {
+      display: flex;
+      background: var(--tab-bg);
+      padding: 0;
+      margin: 0;
+      border-bottom: 1px solid var(--border-color);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab {
+      padding: 14px 24px;
+      cursor: pointer;
+      color: var(--text-light);
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .tab:hover {
+      color: var(--primary-color);
+      background: var(--hover-bg);
+    }
+
+    .tab.active {
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--primary-color);
+      font-weight: 600;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 24px;
+      gap: 24px;
+      animation: fadeInContent 0.3s ease;
+    }
+
+    @keyframes fadeInContent {
+      from {
+        opacity: 0;
       }
 
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-        transition:
-          background-color 0.25s ease,
-          color 0.25s ease,
-          border-color 0.25s ease;
+      to {
+        opacity: 1;
       }
+    }
 
-      body {
-        background: var(--bg-gradient);
-        min-height: 100vh;
-        padding: 16px;
-        color: var(--text-color);
-        line-height: 1.6;
-      }
+    .tab-content.active {
+      display: flex;
+    }
 
-      .container {
-        width: 100%;
-        max-width: 1200px;
-        margin: 0 auto;
-        background: var(--container-bg);
-        border-radius: 16px;
-        box-shadow: 0 4px 24px var(--shadow-color);
-        overflow: hidden;
-        animation: fadeIn 0.4s ease-out;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(12px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      /* =============== 顶栏 =============== */
-      header {
-        background: var(--header-bg);
-        color: var(--text-inverse);
-        padding: 16px 24px;
-      }
-
-      .header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-      }
-
-      header h3 {
-        font-size: 1.15rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: var(--text-inverse);
-      }
-
-      header h3 i {
-        color: #60a5fa;
-        font-size: 1.1rem;
-      }
-
-      .header-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .theme-toggle {
-        background: rgba(255, 255, 255, 0.1);
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        border: none;
-        flex-shrink: 0;
-      }
-
-      .theme-toggle:hover {
-        background: rgba(255, 255, 255, 0.2);
-      }
-
-      .theme-toggle i {
-        font-size: 1.05rem;
-        color: #fff;
-      }
-
-      /* =============== 选项卡 =============== */
-      .tabs {
-        display: flex;
-        background: var(--tab-bg);
-        padding: 0;
-        margin: 0;
-        border-bottom: 1px solid var(--border-color);
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-      }
-
-      .tabs::-webkit-scrollbar {
-        display: none;
+    @media (max-width: 768px) {
+      .tab-content.active {
+        flex-direction: column;
       }
 
       .tab {
-        padding: 14px 24px;
-        cursor: pointer;
-        color: var(--text-light);
-        font-weight: 500;
-        font-size: 0.95rem;
-        transition: all 0.2s ease;
-        border-bottom: 2px solid transparent;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-        flex-shrink: 0;
+        padding: 12px 18px;
+        font-size: 0.9rem;
+      }
+    }
+
+    /* =============== 通用面板 =============== */
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-color);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .section-title i {
+      color: var(--primary-color);
+      font-size: 0.9rem;
+    }
+
+    /* =============== Excel 查询工具 =============== */
+    .upload-section {
+      flex: 1;
+      background: var(--panel-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    .query-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 32px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: var(--panel-secondary);
+      margin-bottom: 16px;
+    }
+
+    .upload-area:hover {
+      border-color: var(--primary-color);
+      background: var(--hover-bg);
+    }
+
+    .upload-area i {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 12px;
+      opacity: 0.8;
+    }
+
+    .upload-area h4 {
+      color: var(--text-color);
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .upload-area p {
+      color: var(--text-light);
+      font-size: 0.82rem;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .file-info {
+      background: var(--hover-bg);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-top: 12px;
+      display: none;
+      color: var(--text-color);
+      font-size: 0.85rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .file-info p {
+      margin: 2px 0;
+    }
+
+    .file-info.active {
+      display: block;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
       }
 
-      .tab:hover {
-        color: var(--primary-color);
-        background: var(--hover-bg);
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
+    }
 
-      .tab.active {
-        color: var(--primary-color);
-        border-bottom: 2px solid var(--primary-color);
-        font-weight: 600;
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: var(--text-color);
+      font-size: 0.85rem;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      padding: 12px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      resize: vertical;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+      background: var(--panel-bg);
+      color: var(--text-color);
+      font-family: inherit;
+      line-height: 1.5;
+    }
+
+    textarea::placeholder {
+      color: var(--text-light);
+      opacity: 0.7;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    /* =============== 统一按钮系统 =============== */
+    /* 语义色变量：主操作(蓝) / 确认(绿) / 危险(红) / 次要(中性灰) */
+    :root {
+      --btn-primary: var(--primary-color);
+      --btn-primary-hover: var(--primary-dark);
+      --btn-success: var(--success-color);
+      --btn-success-hover: #15803d;
+      --btn-danger: var(--danger-color);
+      --btn-danger-hover: #b91c1c;
+      --btn-neutral: #64748b;
+      --btn-neutral-hover: #475569;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    /* 所有 button / .btn / .copy-option / .action-btn 共用基础样式 */
+    button,
+    #type-tool .btn,
+    .copy-option,
+    #type-tool .action-btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex: 1;
+      font-family: inherit;
+      line-height: 1.4;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:hover,
+    #type-tool .btn:hover,
+    .copy-option:hover,
+    #type-tool .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px var(--shadow-color);
+    }
+
+    button:active,
+    #type-tool .btn:active,
+    .copy-option:active,
+    #type-tool .action-btn:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      background: #94a3b8 !important;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* 语义色：主操作 */
+    .btn-query,
+    .btn-copy-all,
+    #type-tool .btn-query-all {
+      background: var(--btn-primary);
+      color: var(--text-inverse);
+    }
+
+    .btn-query:hover,
+    .btn-copy-all:hover,
+    #type-tool .btn-query-all:hover {
+      background: var(--btn-primary-hover);
+    }
+
+    /* 语义色：确认/复制 */
+    .btn-copy-name,
+    #type-tool .btn-copy {
+      background: var(--btn-success);
+      color: var(--text-inverse);
+    }
+
+    .btn-copy-name:hover,
+    #type-tool .btn-copy:hover {
+      background: var(--btn-success-hover);
+    }
+
+    /* 语义色：危险/清空 */
+    .btn-clear,
+    #type-tool .btn-clear {
+      background: var(--btn-danger);
+      color: var(--text-inverse);
+    }
+
+    .btn-clear:hover,
+    #type-tool .btn-clear:hover {
+      background: var(--btn-danger-hover);
+    }
+
+    /* 语义色：次要/导出 */
+    #type-tool .btn-secondary {
+      background: var(--btn-neutral);
+      color: var(--text-inverse);
+    }
+
+    #type-tool .btn-secondary:hover {
+      background: var(--btn-neutral-hover);
+    }
+
+    /* 复制Type列 — 用主色保持一致，去除原紫色 */
+    .btn-copy-type {
+      background: var(--btn-primary);
+      color: var(--text-inverse);
+    }
+
+    .btn-copy-type:hover {
+      background: var(--btn-primary-hover);
+    }
+
+    /* =============== 复制选项卡（与其他按钮统一） =============== */
+    .copy-options {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .copy-option {
+      flex: 1;
+      background: var(--btn-primary);
+      color: var(--text-inverse);
+      text-align: center;
+    }
+
+    .copy-option:hover {
+      background: var(--btn-primary-hover);
+    }
+
+    .copy-option.active {
+      background: var(--btn-primary-hover);
+    }
+
+    .copy-option i {
+      font-size: 0.95rem;
+      color: var(--text-inverse);
+    }
+
+    .copy-option h4 {
+      color: var(--text-inverse);
+      margin-bottom: 0;
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    .result-section {
+      background: var(--panel-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--border-color);
+      min-height: 280px;
+      max-height: auto;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .result-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: var(--text-light);
+      text-align: center;
+      gap: 8px;
+    }
+
+    .result-placeholder i {
+      font-size: 1.8rem;
+      opacity: 0.4;
+    }
+
+    .result-placeholder p {
+      font-size: 0.85rem;
+      margin: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      font-size: 0.85rem;
+    }
+
+    th {
+      background: var(--table-header-bg);
+      color: var(--text-color);
+      text-align: left;
+      padding: 10px 12px;
+      position: sticky;
+      top: 0;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+
+    tr:nth-child(even) {
+      background: var(--table-row-even);
+    }
+
+    tr:hover {
+      background: var(--table-row-hover);
+    }
+
+    .error {
+      color: var(--danger-color);
+      background: rgba(220, 38, 38, 0.08);
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      margin-top: 12px;
+      display: none;
+      border-left: 3px solid var(--danger-color);
+      font-size: 0.82rem;
+    }
+
+    .error.active {
+      display: block;
+    }
+
+    footer {
+      text-align: center;
+      padding: 16px;
+      background: var(--panel-secondary);
+      color: var(--text-light);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .highlight {
+      background-color: rgba(217, 119, 7, 0.12);
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: var(--warning-color);
+      font-weight: 600;
+    }
+
+    .not-found {
+      color: var(--danger-color);
+      font-weight: 600;
+    }
+
+    .empty-result {
+      color: var(--warning-color);
+      font-weight: 600;
+    }
+
+    .stats-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding: 12px;
+      background: var(--panel-secondary);
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      min-width: 70px;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text-color);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+
+    .found {
+      color: var(--success-color);
+    }
+
+    .missing {
+      color: var(--danger-color);
+    }
+
+    .empty {
+      color: var(--warning-color);
+    }
+
+    /* =============== Type数字提取工具 =============== */
+    #type-tool .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      width: 100%;
+      flex: 1;
+      min-width: 0;
+    }
+
+    @media (max-width: 768px) {
+      #type-tool .main-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    #type-tool .panel {
+      background: var(--panel-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    #type-tool .panel-title {
+      font-size: 0.85rem;
+      color: var(--text-color);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    #type-tool .panel-title i {
+      background: var(--primary-color);
+      color: var(--text-inverse);
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    #type-tool textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 12px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      resize: vertical;
+      transition: all 0.2s ease;
+      line-height: 1.5;
+      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+      background: var(--panel-bg);
+      color: var(--text-color);
+    }
+
+    #type-tool textarea:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    /* 文本域自定义滚动条 - 匹配深色主题 */
+    #type-tool textarea::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    #type-tool textarea::-webkit-scrollbar-track {
+      background: transparent;
+      border-radius: 4px;
+    }
+
+    #type-tool textarea::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 4px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+
+    #type-tool textarea::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.55);
+    }
+
+    #type-tool textarea::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    #type-tool textarea {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    }
+
+    #type-tool .controls {
+      display: flex;
+      gap: 10px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
+    /* .btn / .action-btn 基础样式已在统一按钮系统中定义，此处仅保留尺寸覆盖 */
+
+    #type-tool .btn {
+      min-width: 120px;
+    }
+
+    /* 图标小按钮：方形尺寸，沿用统一圆角与过渡 */
+    #type-tool .action-btn {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      flex: none;
+      font-size: 0.9rem;
+      background: var(--btn-neutral);
+      color: var(--text-inverse);
+    }
+
+    #type-tool .action-btn:hover {
+      background: var(--btn-primary);
+    }
+
+    #type-tool .action-btn-query {
+      background: var(--btn-primary);
+    }
+
+    #type-tool .action-btn-query:hover {
+      background: var(--btn-primary-hover);
+    }
+
+    #type-tool .stats {
+      display: flex;
+      justify-content: space-between;
+      background: var(--panel-secondary);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      margin: 14px 0;
+      font-weight: 500;
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    #type-tool .stat-box {
+      text-align: center;
+      flex: 1;
+      min-width: 90px;
+    }
+
+    #type-tool .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #type-tool .stat-value {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+      margin-top: 4px;
+      font-weight: 700;
+    }
+
+    #type-tool .results-container {
+      min-height: 240px;
+      height: auto;
+      max-height: none;
+      overflow-y: visible;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--panel-secondary);
+    }
+
+    #type-tool .match-item {
+      padding: 12px;
+      margin: 6px 0;
+      background: var(--panel-bg);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      border-left: 3px solid var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      color: var(--text-color);
+    }
+
+    #type-tool .match-item:hover {
+      border-left-color: var(--success-color);
+      background: var(--hover-bg);
+    }
+
+    #type-tool .match-text {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-color);
+      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+    }
+
+    #type-tool .match-digits {
+      background: var(--hover-bg);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      color: var(--primary-color);
+      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+      font-size: 0.85rem;
+    }
+
+    #type-tool .no-results {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-light);
+      font-size: 0.85rem;
+    }
+
+    #type-tool .action-buttons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* action-btn 样式已在统一按钮系统中定义 */
+
+    #type-tool .highlight {
+      background-color: rgba(217, 119, 7, 0.12);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-weight: 700;
+      color: var(--warning-color);
+    }
+
+    #type-tool .instructions {
+      background: var(--panel-secondary);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-top: 16px;
+      border: 1px solid var(--border-color);
+      border-left: 3px solid var(--primary-color);
+    }
+
+    #type-tool .instructions h3 {
+      margin-bottom: 10px;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    #type-tool .instructions h3 i {
+      color: var(--warning-color);
+    }
+
+    #type-tool .instructions ul {
+      padding-left: 18px;
+      color: var(--text-color);
+    }
+
+    #type-tool .instructions li {
+      margin-bottom: 6px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    #type-tool .example-text {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+
+    #type-tool .digit-preview {
+      font-size: 0.8rem;
+      text-align: center;
+      margin: 12px 0;
+      padding: 10px;
+      background: var(--panel-secondary);
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--border-color);
+      color: var(--text-color);
+    }
+
+    #type-tool .digit-preview span {
+      font-weight: 700;
+      color: var(--primary-color);
+      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+    }
+
+    .tab-content-type {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .copy-guide {
+      background: var(--panel-secondary);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--text-light);
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .copy-guide i {
+      color: var(--primary-color);
+    }
+
+    .workflow-btn {
+      display: flex;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    /* =============== 响应式微调 =============== */
+    @media (max-width: 480px) {
+      body {
+        padding: 8px;
       }
 
       .tab-content {
-        display: none;
-        padding: 24px;
-        gap: 24px;
-        animation: fadeInContent 0.3s ease;
-      }
-
-      @keyframes fadeInContent {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      .tab-content.active {
-        display: flex;
-      }
-
-      @media (max-width: 768px) {
-        .tab-content.active {
-          flex-direction: column;
-        }
-        .tab {
-          padding: 12px 18px;
-          font-size: 0.9rem;
-        }
-      }
-
-      /* =============== 通用面板 =============== */
-      .section-title {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--text-color);
-        margin-bottom: 16px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-      }
-
-      .section-title i {
-        color: var(--primary-color);
-        font-size: 0.9rem;
-      }
-
-      /* =============== Excel 查询工具 =============== */
-      .upload-section {
-        flex: 1;
-        background: var(--panel-bg);
-        border-radius: var(--radius);
-        padding: 20px;
-        border: 1px solid var(--border-color);
-      }
-
-      .query-section {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
-
-      .upload-area {
-        border: 2px dashed var(--border-color);
-        border-radius: var(--radius-sm);
-        padding: 32px 16px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        background: var(--panel-secondary);
-        margin-bottom: 16px;
-      }
-
-      .upload-area:hover {
-        border-color: var(--primary-color);
-        background: var(--hover-bg);
-      }
-
-      .upload-area i {
-        font-size: 2.5rem;
-        color: var(--primary-color);
-        margin-bottom: 12px;
-        opacity: 0.8;
-      }
-
-      .upload-area h4 {
-        color: var(--text-color);
-        margin-bottom: 6px;
-        font-size: 0.95rem;
-        font-weight: 600;
-      }
-
-      .upload-area p {
-        color: var(--text-light);
-        font-size: 0.82rem;
-      }
-
-      #fileInput {
-        display: none;
-      }
-
-      .file-info {
-        background: var(--hover-bg);
-        border-radius: var(--radius-sm);
-        padding: 12px 14px;
-        margin-top: 12px;
-        display: none;
-        color: var(--text-color);
-        font-size: 0.85rem;
-        border: 1px solid var(--border-color);
-      }
-
-      .file-info p {
-        margin: 2px 0;
-      }
-
-      .file-info.active {
-        display: block;
-        animation: slideUp 0.3s ease;
-      }
-
-      @keyframes slideUp {
-        from {
-          opacity: 0;
-          transform: translateY(8px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .input-group {
-        margin-bottom: 16px;
-      }
-
-      label {
-        display: block;
-        margin-bottom: 6px;
-        font-weight: 500;
-        color: var(--text-color);
-        font-size: 0.85rem;
-      }
-
-      textarea {
-        width: 100%;
-        height: 100px;
-        padding: 12px 14px;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-sm);
-        font-size: 0.9rem;
-        resize: vertical;
-        transition: border 0.2s ease, box-shadow 0.2s ease;
-        background: var(--panel-bg);
-        color: var(--text-color);
-        font-family: inherit;
-        line-height: 1.5;
-      }
-
-      textarea::placeholder {
-        color: var(--text-light);
-        opacity: 0.7;
-      }
-
-      textarea:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-      }
-
-      /* =============== 统一按钮系统 =============== */
-      /* 语义色变量：主操作(蓝) / 确认(绿) / 危险(红) / 次要(中性灰) */
-      :root {
-        --btn-primary: var(--primary-color);
-        --btn-primary-hover: var(--primary-dark);
-        --btn-success: var(--success-color);
-        --btn-success-hover: #15803d;
-        --btn-danger: var(--danger-color);
-        --btn-danger-hover: #b91c1c;
-        --btn-neutral: #64748b;
-        --btn-neutral-hover: #475569;
-      }
-
-      .btn-group {
-        display: flex;
-        gap: 10px;
-        margin-top: 8px;
-      }
-
-      /* 所有 button / .btn / .copy-option / .action-btn 共用基础样式 */
-      button,
-      #type-tool .btn,
-      .copy-option,
-      #type-tool .action-btn {
-        padding: 10px 18px;
-        border: none;
-        border-radius: var(--radius-sm);
-        font-size: 0.9rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        flex: 1;
-        font-family: inherit;
-        line-height: 1.4;
-        -webkit-tap-highlight-color: transparent;
-      }
-
-      button:hover,
-      #type-tool .btn:hover,
-      .copy-option:hover,
-      #type-tool .action-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px var(--shadow-color);
-      }
-
-      button:active,
-      #type-tool .btn:active,
-      .copy-option:active,
-      #type-tool .action-btn:active {
-        transform: translateY(0);
-      }
-
-      button:disabled {
-        background: #94a3b8 !important;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-      }
-
-      /* 语义色：主操作 */
-      .btn-query,
-      .btn-copy-all,
-      #type-tool .btn-query-all {
-        background: var(--btn-primary);
-        color: var(--text-inverse);
-      }
-      .btn-query:hover,
-      .btn-copy-all:hover,
-      #type-tool .btn-query-all:hover {
-        background: var(--btn-primary-hover);
-      }
-
-      /* 语义色：确认/复制 */
-      .btn-copy-name,
-      #type-tool .btn-copy {
-        background: var(--btn-success);
-        color: var(--text-inverse);
-      }
-      .btn-copy-name:hover,
-      #type-tool .btn-copy:hover {
-        background: var(--btn-success-hover);
-      }
-
-      /* 语义色：危险/清空 */
-      .btn-clear,
-      #type-tool .btn-clear {
-        background: var(--btn-danger);
-        color: var(--text-inverse);
-      }
-      .btn-clear:hover,
-      #type-tool .btn-clear:hover {
-        background: var(--btn-danger-hover);
-      }
-
-      /* 语义色：次要/导出 */
-      #type-tool .btn-secondary {
-        background: var(--btn-neutral);
-        color: var(--text-inverse);
-      }
-      #type-tool .btn-secondary:hover {
-        background: var(--btn-neutral-hover);
-      }
-
-      /* 复制Type列 — 用主色保持一致，去除原紫色 */
-      .btn-copy-type {
-        background: var(--btn-primary);
-        color: var(--text-inverse);
-      }
-      .btn-copy-type:hover {
-        background: var(--btn-primary-hover);
-      }
-
-      /* =============== 复制选项卡（与其他按钮统一） =============== */
-      .copy-options {
-        display: flex;
-        gap: 10px;
-        margin-top: 12px;
-      }
-
-      .copy-option {
-        flex: 1;
-        background: var(--btn-primary);
-        color: var(--text-inverse);
-        text-align: center;
-      }
-
-      .copy-option:hover {
-        background: var(--btn-primary-hover);
-      }
-
-      .copy-option.active {
-        background: var(--btn-primary-hover);
-      }
-
-      .copy-option i {
-        font-size: 0.95rem;
-        color: var(--text-inverse);
-      }
-
-      .copy-option h4 {
-        color: var(--text-inverse);
-        margin-bottom: 0;
-        font-size: 0.88rem;
-        font-weight: 500;
-      }
-
-      .result-section {
-        background: var(--panel-bg);
-        border-radius: var(--radius);
-        padding: 20px;
-        border: 1px solid var(--border-color);
-        min-height: 280px;
-        max-height: auto;
-        overflow-y: auto;
-        position: relative;
-      }
-
-      .result-placeholder {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 200px;
-        color: var(--text-light);
-        text-align: center;
-        gap: 8px;
-      }
-
-      .result-placeholder i {
-        font-size: 1.8rem;
-        opacity: 0.4;
-      }
-
-      .result-placeholder p {
-        font-size: 0.85rem;
-        margin: 0;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        border-radius: var(--radius-sm);
-        overflow: hidden;
-        font-size: 0.85rem;
-      }
-
-      th {
-        background: var(--table-header-bg);
-        color: var(--text-color);
-        text-align: left;
-        padding: 10px 12px;
-        position: sticky;
-        top: 0;
-        font-weight: 600;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      td {
-        padding: 10px 12px;
-        border-bottom: 1px solid var(--border-color);
-        color: var(--text-color);
-      }
-
-      tr:nth-child(even) {
-        background: var(--table-row-even);
-      }
-
-      tr:hover {
-        background: var(--table-row-hover);
-      }
-
-      .error {
-        color: var(--danger-color);
-        background: rgba(220, 38, 38, 0.08);
-        padding: 12px 14px;
-        border-radius: var(--radius-sm);
-        margin-top: 12px;
-        display: none;
-        border-left: 3px solid var(--danger-color);
-        font-size: 0.82rem;
-      }
-
-      .error.active {
-        display: block;
-      }
-
-      footer {
-        text-align: center;
         padding: 16px;
-        background: var(--panel-secondary);
-        color: var(--text-light);
-        font-size: 0.8rem;
-        border-top: 1px solid var(--border-color);
       }
 
-      .highlight {
-        background-color: rgba(217, 119, 7, 0.12);
-        padding: 1px 5px;
-        border-radius: 3px;
-        color: var(--warning-color);
-        font-weight: 600;
+      .container {
+        border-radius: 12px;
       }
 
-      .not-found {
-        color: var(--danger-color);
-        font-weight: 600;
+      header {
+        padding: 12px 16px;
       }
 
-      .empty-result {
-        color: var(--warning-color);
-        font-weight: 600;
+      header h3 {
+        font-size: 1rem;
       }
 
-      .stats-bar {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 16px;
-        padding: 12px;
-        background: var(--panel-secondary);
-        border-radius: var(--radius-sm);
-        font-size: 0.82rem;
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .stat-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        flex: 1;
-        min-width: 70px;
-      }
-
-      .stat-value {
-        font-weight: 700;
-        font-size: 1.25rem;
-        color: var(--text-color);
-      }
-
-      .stat-label {
-        font-size: 0.75rem;
-        color: var(--text-light);
-        margin-top: 2px;
-      }
-
-      .found {
-        color: var(--success-color);
-      }
-
-      .missing {
-        color: var(--danger-color);
-      }
-
-      .empty {
-        color: var(--warning-color);
-      }
-
-      /* =============== Type数字提取工具 =============== */
-      #type-tool .main-content {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-        width: 100%;
-        flex: 1;
-        min-width: 0;
-      }
-
-      @media (max-width: 768px) {
-        #type-tool .main-content {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      #type-tool .panel {
-        background: var(--panel-bg);
-        border-radius: var(--radius);
-        padding: 20px;
-        border: 1px solid var(--border-color);
-      }
-
-      #type-tool .panel-title {
-        font-size: 0.85rem;
-        color: var(--text-color);
-        margin-bottom: 16px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-      }
-
-      #type-tool .panel-title i {
-        background: var(--primary-color);
-        color: var(--text-inverse);
-        width: 30px;
-        height: 30px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.8rem;
-      }
-
-      #type-tool textarea {
-        width: 100%;
-        min-height: 180px;
-        padding: 12px 14px;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-sm);
-        font-size: 0.85rem;
-        resize: vertical;
-        transition: all 0.2s ease;
-        line-height: 1.5;
-        font-family: "SF Mono", "Fira Code", "Courier New", monospace;
-        background: var(--panel-bg);
-        color: var(--text-color);
-      }
-
-      #type-tool textarea:focus {
-        border-color: var(--primary-color);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-      }
-
-      /* 文本域自定义滚动条 - 匹配深色主题 */
-      #type-tool textarea::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      #type-tool textarea::-webkit-scrollbar-track {
-        background: transparent;
-        border-radius: 4px;
-      }
-      #type-tool textarea::-webkit-scrollbar-thumb {
-        background: rgba(148, 163, 184, 0.35);
-        border-radius: 4px;
-        border: 2px solid transparent;
-        background-clip: padding-box;
-      }
-      #type-tool textarea::-webkit-scrollbar-thumb:hover {
-        background: rgba(148, 163, 184, 0.55);
-      }
-      #type-tool textarea::-webkit-scrollbar-corner {
-        background: transparent;
-      }
-      #type-tool textarea {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
-      }
-
+      .btn-group,
       #type-tool .controls {
-        display: flex;
-        gap: 10px;
-        margin: 16px 0;
-        flex-wrap: wrap;
-      }
-
-      /* .btn / .action-btn 基础样式已在统一按钮系统中定义，此处仅保留尺寸覆盖 */
-
-      #type-tool .btn {
-        min-width: 120px;
-      }
-
-      /* 图标小按钮：方形尺寸，沿用统一圆角与过渡 */
-      #type-tool .action-btn {
-        width: 40px;
-        height: 40px;
-        padding: 0;
-        flex: none;
-        font-size: 0.9rem;
-        background: var(--btn-neutral);
-        color: var(--text-inverse);
-      }
-
-      #type-tool .action-btn:hover {
-        background: var(--btn-primary);
-      }
-
-      #type-tool .action-btn-query {
-        background: var(--btn-primary);
-      }
-
-      #type-tool .action-btn-query:hover {
-        background: var(--btn-primary-hover);
-      }
-
-      #type-tool .stats {
-        display: flex;
-        justify-content: space-between;
-        background: var(--panel-secondary);
-        padding: 12px;
-        border-radius: var(--radius-sm);
-        margin: 14px 0;
-        font-weight: 500;
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      #type-tool .stat-box {
-        text-align: center;
-        flex: 1;
-        min-width: 90px;
-      }
-
-      #type-tool .stat-label {
-        font-size: 0.75rem;
-        color: var(--text-light);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-
-      #type-tool .stat-value {
-        font-size: 1.5rem;
-        color: var(--primary-color);
-        margin-top: 4px;
-        font-weight: 700;
-      }
-
-      #type-tool .results-container {
-        min-height: 240px;
-        height: auto;
-        max-height: none;
-        overflow-y: visible;
-        padding: 8px;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-sm);
-        background: var(--panel-secondary);
-      }
-
-      #type-tool .match-item {
-        padding: 12px;
-        margin: 6px 0;
-        background: var(--panel-bg);
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border-color);
-        border-left: 3px solid var(--primary-color);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        transition: all 0.2s ease;
-        color: var(--text-color);
-      }
-
-      #type-tool .match-item:hover {
-        border-left-color: var(--success-color);
-        background: var(--hover-bg);
-      }
-
-      #type-tool .match-text {
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: var(--text-color);
-        font-family: "SF Mono", "Fira Code", "Courier New", monospace;
-      }
-
-      #type-tool .match-digits {
-        background: var(--hover-bg);
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-weight: 700;
-        color: var(--primary-color);
-        font-family: "SF Mono", "Fira Code", "Courier New", monospace;
-        font-size: 0.85rem;
-      }
-
-      #type-tool .no-results {
-        text-align: center;
-        padding: 24px;
-        color: var(--text-light);
-        font-size: 0.85rem;
-      }
-
-      #type-tool .action-buttons {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      /* action-btn 样式已在统一按钮系统中定义 */
-
-      #type-tool .highlight {
-        background-color: rgba(217, 119, 7, 0.12);
-        padding: 1px 5px;
-        border-radius: 3px;
-        font-weight: 700;
-        color: var(--warning-color);
-      }
-
-      #type-tool .instructions {
-        background: var(--panel-secondary);
-        border-radius: var(--radius-sm);
-        padding: 14px 16px;
-        margin-top: 16px;
-        border: 1px solid var(--border-color);
-        border-left: 3px solid var(--primary-color);
-      }
-
-      #type-tool .instructions h3 {
-        margin-bottom: 10px;
-        color: var(--text-color);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.88rem;
-        font-weight: 600;
-      }
-
-      #type-tool .instructions h3 i {
-        color: var(--warning-color);
-      }
-
-      #type-tool .instructions ul {
-        padding-left: 18px;
-        color: var(--text-color);
-      }
-
-      #type-tool .instructions li {
-        margin-bottom: 6px;
-        font-size: 0.82rem;
-        line-height: 1.5;
-      }
-
-      #type-tool .example-text {
-        font-size: 0.78rem;
-        color: var(--text-light);
-        margin-top: 4px;
-      }
-
-      #type-tool .digit-preview {
-        font-size: 0.8rem;
-        text-align: center;
-        margin: 12px 0;
-        padding: 10px;
-        background: var(--panel-secondary);
-        border-radius: var(--radius-sm);
-        border: 1px dashed var(--border-color);
-        color: var(--text-color);
-      }
-
-      #type-tool .digit-preview span {
-        font-weight: 700;
-        color: var(--primary-color);
-        font-family: "SF Mono", "Fira Code", "Courier New", monospace;
-      }
-
-      .tab-content-type {
-        display: flex;
         flex-direction: column;
-        gap: 24px;
       }
 
-      .copy-guide {
-        background: var(--panel-secondary);
-        padding: 10px 14px;
-        border-radius: var(--radius-sm);
-        margin-top: 12px;
-        font-size: 0.8rem;
-        color: var(--text-light);
-        text-align: center;
-        border: 1px solid var(--border-color);
+      .copy-options {
+        flex-direction: column;
       }
+    }
+  </style>
+</head>
 
-      .copy-guide i {
-        color: var(--primary-color);
-      }
-
-      .workflow-btn {
-        display: flex;
-        justify-content: center;
-        margin-top: 16px;
-      }
-
-      /* =============== 响应式微调 =============== */
-      @media (max-width: 480px) {
-        body {
-          padding: 8px;
-        }
-        .tab-content {
-          padding: 16px;
-        }
-        .container {
-          border-radius: 12px;
-        }
-        header {
-          padding: 12px 16px;
-        }
-        header h3 {
-          font-size: 1rem;
-        }
-        .btn-group,
-        #type-tool .controls {
-          flex-direction: column;
-        }
-        .copy-options {
-          flex-direction: column;
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="container">
-      <header>
-        <div class="header-content">
-          <div class="header-left"><h3><i class="fas fa-tools"></i> Type工具套件</h3><a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg></a></div>
-          <div class="theme-toggle" id="themeToggle">
-            <i class="fas fa-moon"></i>
-          </div>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-content">
+        <div class="header-left">
+          <h3><i class="fas fa-tools"></i> Type工具套件</h3><a href="../" class="home-back-icon" title="返回主页"
+            aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <path d="M9 22V12h6v10"></path>
+            </svg></a>
         </div>
-      </header>
-
-      <!-- 选项卡导航 -->
-      <div class="tabs">
-        <div class="tab" data-tab="type-tool">
-          <i class="fas fa-filter"></i> Type值提取
+        <div class="theme-toggle" id="themeToggle">
+          <i class="fas fa-moon"></i>
         </div>
-        <div class="tab active" data-tab="excel-tool">
-          <i class="fas fa-file-excel"></i> Type名称查询
+      </div>
+    </header>
+
+    <!-- 选项卡导航 -->
+    <div class="tabs">
+      <div class="tab" data-tab="type-tool">
+        <i class="fas fa-filter"></i> Type值提取
+      </div>
+      <div class="tab active" data-tab="excel-tool">
+        <i class="fas fa-file-excel"></i> Type名称查询
+      </div>
+    </div>
+
+    <!-- Excel数据查询工具 -->
+    <div id="excel-tool" class="tab-content active">
+      <div class="upload-section">
+        <h4 class="section-title">
+          <i class="fas fa-upload"></i> 上传Excel文件
+        </h4>
+
+        <div class="upload-area" id="dropArea">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <h4>点击或拖拽文件到此处上传</h4>
+          <p>支持.xlsx格式文件，文件应包含"type"和"名称"两列</p>
+          <input type="file" id="fileInput" accept=".xlsx, .xls" />
+        </div>
+
+        <div class="file-info" id="fileInfo">
+          <p><strong>文件名：</strong><span id="fileName"></span></p>
+          <p><strong>文件大小：</strong><span id="fileSize"></span></p>
+          <p><strong>数据行数：</strong><span id="rowCount"></span></p>
         </div>
       </div>
 
-      <!-- Excel数据查询工具 -->
-      <div id="excel-tool" class="tab-content active">
-        <div class="upload-section">
+      <div class="query-section">
+        <div class="input-section">
           <h4 class="section-title">
-            <i class="fas fa-upload"></i> 上传Excel文件
+            <i class="fas fa-search"></i> 数据查询
           </h4>
 
-          <div class="upload-area" id="dropArea">
-            <i class="fas fa-cloud-upload-alt"></i>
-            <h4>点击或拖拽文件到此处上传</h4>
-            <p>支持.xlsx格式文件，文件应包含"type"和"名称"两列</p>
-            <input type="file" id="fileInput" accept=".xlsx, .xls" />
+          <div class="input-group">
+            <label for="numberInput">输入要查询的type数字（多个用逗号分隔）：</label>
+            <textarea id="numberInput" placeholder="例如：110747, 42277, 112579, 40215, 40332, 99999"></textarea>
           </div>
 
-          <div class="file-info" id="fileInfo">
-            <p><strong>文件名：</strong><span id="fileName"></span></p>
-            <p><strong>文件大小：</strong><span id="fileSize"></span></p>
-            <p><strong>数据行数：</strong><span id="rowCount"></span></p>
+          <div class="btn-group">
+            <button id="clearInputBtn" class="btn-clear">
+              <i class="fas fa-eraser"></i> 清空搜索
+            </button>
+            <button id="queryBtn" class="btn-query">
+              <i class="fas fa-search"></i> 查询数据
+            </button>
+          </div>
+
+          <div class="error" id="errorMsg">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="errorText"></span>
           </div>
         </div>
 
-        <div class="query-section">
-          <div class="input-section">
-            <h4 class="section-title">
-              <i class="fas fa-search"></i> 数据查询
-            </h4>
+        <div class="result-section">
+          <h4 class="section-title"><i class="fas fa-list"></i> 查询结果</h4>
 
-            <div class="input-group">
-              <label for="numberInput"
-                >输入要查询的type数字（多个用逗号分隔）：</label
-              >
-              <textarea
-                id="numberInput"
-                placeholder="例如：110747, 42277, 112579, 40215, 40332, 99999"
-              ></textarea>
-            </div>
-
-            <div class="btn-group">
-              <button id="clearInputBtn" class="btn-clear">
-                <i class="fas fa-eraser"></i> 清空搜索
-              </button>
-              <button id="queryBtn" class="btn-query">
-                <i class="fas fa-search"></i> 查询数据
-              </button>
-            </div>
-
-            <div class="error" id="errorMsg">
-              <i class="fas fa-exclamation-circle"></i>
-              <span id="errorText"></span>
+          <div id="results">
+            <div class="result-placeholder">
+              <i class="fas fa-database"></i>
+              <p>查询结果将显示在这里</p>
+              <p>请先上传Excel文件并输入要查询的数字</p>
             </div>
           </div>
 
-          <div class="result-section">
-            <h4 class="section-title"><i class="fas fa-list"></i> 查询结果</h4>
-
-            <div id="results">
-              <div class="result-placeholder">
-                <i class="fas fa-database"></i>
-                <p>查询结果将显示在这里</p>
-                <p>请先上传Excel文件并输入要查询的数字</p>
-              </div>
+          <div class="copy-options">
+            <div class="copy-option" id="copyTypeOption">
+              <i class="fas fa-hashtag"></i>
+              <h4>复制Type列</h4>
             </div>
-
-            <div class="copy-options">
-              <div class="copy-option" id="copyTypeOption">
-                <i class="fas fa-hashtag"></i>
-                <h4>复制Type列</h4>
-              </div>
-              <div class="copy-option" id="copyNameOption">
-                <i class="fas fa-font"></i>
-                <h4>复制名称列</h4>
-              </div>
-              <div class="copy-option" id="copyAllOption">
-                <i class="fas fa-copy"></i>
-                <h4>复制全部</h4>
-              </div>
+            <div class="copy-option" id="copyNameOption">
+              <i class="fas fa-font"></i>
+              <h4>复制名称列</h4>
             </div>
-
-            <div class="copy-guide">
-              <i class="fas fa-info-circle"></i>
-              点击上方选项复制结果，复制内容将自动保存到剪贴板
+            <div class="copy-option" id="copyAllOption">
+              <i class="fas fa-copy"></i>
+              <h4>复制全部</h4>
             </div>
+          </div>
+
+          <div class="copy-guide">
+            <i class="fas fa-info-circle"></i>
+            点击上方选项复制结果，复制内容将自动保存到剪贴板
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Type数字提取工具 -->
-      <div id="type-tool" class="tab-content">
-        <div class="main-content">
-          <div class="panel">
-            <div class="panel-title">
-              <i class="fas fa-edit"></i>
-              <span>输入文本</span>
-            </div>
+    <!-- Type数字提取工具 -->
+    <div id="type-tool" class="tab-content">
+      <div class="main-content">
+        <div class="panel">
+          <div class="panel-title">
+            <i class="fas fa-edit"></i>
+            <span>输入文本</span>
+          </div>
 
-            <textarea
-              id="inputText"
-              placeholder="请在此粘贴包含 type:数字 的文本..."
-            >
+          <textarea id="inputText" placeholder="请在此粘贴包含 type:数字 的文本...">
 示例文本：
 这里有一些测试数据：
 type:1234 - 有效（4位）
@@ -1162,172 +1179,168 @@ type: 1000 - 有效（空格不影响）
 错误示例：type:12a3（包含字母无效）
 其他内容：这是一个type:9999有效的例子
 最后一行：type:2023
-特殊格式：type:1234567890（长数字）</textarea
-            >
+特殊格式：type:1234567890（长数字）</textarea>
 
-            <div class="stats">
-              <div class="stat-box">
-                <div class="stat-label">文本长度</div>
-                <div class="stat-value" id="textLength">0</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">匹配数量</div>
-                <div class="stat-value" id="matchCount">0</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">去重数量</div>
-                <div class="stat-value" id="uniqueCount">0</div>
-              </div>
+          <div class="stats">
+            <div class="stat-box">
+              <div class="stat-label">文本长度</div>
+              <div class="stat-value" id="textLength">0</div>
             </div>
-
-            <div class="controls">
-              <button class="btn btn-clear" id="clearBtn">
-                <i class="fas fa-trash-alt"></i> 清空内容
-              </button>
-              <button class="btn btn-copy" id="extractBtn">
-                <i class="fas fa-cogs"></i> 提取数字
-              </button>
+            <div class="stat-box">
+              <div class="stat-label">匹配数量</div>
+              <div class="stat-value" id="matchCount">0</div>
             </div>
-
-            <div class="instructions">
-              <h3><i class="fas fa-lightbulb"></i> 使用说明</h3>
-              <ul>
-                <li>
-                  自动提取文本中所有
-                  <span class="highlight">type:数字</span> 格式的内容
-                </li>
-                <li>
-                  数字部分必须至少4位（如
-                  <span class="highlight">type:1234</span>）
-                </li>
-                <li>不区分大小写（可识别 Type、TYPE 等格式）</li>
-                <li>自动去除重复项，保留原始格式</li>
-                <li>复制结果时仅复制数字部分（如 1234）</li>
-                <li>
-                  点击右侧
-                  <i
-                    class="fas fa-search"
-                    style="color: var(--primary-color)"
-                  ></i>
-                  按钮可直接查询该数字
-                </li>
-              </ul>
+            <div class="stat-box">
+              <div class="stat-label">去重数量</div>
+              <div class="stat-value" id="uniqueCount">0</div>
             </div>
           </div>
 
-          <div class="panel">
-            <div class="panel-title">
-              <i class="fas fa-list"></i>
-              <span>提取结果</span>
-            </div>
+          <div class="controls">
+            <button class="btn btn-clear" id="clearBtn">
+              <i class="fas fa-trash-alt"></i> 清空内容
+            </button>
+            <button class="btn btn-copy" id="extractBtn">
+              <i class="fas fa-cogs"></i> 提取数字
+            </button>
+          </div>
 
-            <div class="digit-preview">
-              复制结果示例：<span>56789, 9876, 9999, 2023, 1234567890</span>
-            </div>
+          <div class="instructions">
+            <h3><i class="fas fa-lightbulb"></i> 使用说明</h3>
+            <ul>
+              <li>
+                自动提取文本中所有
+                <span class="highlight">type:数字</span> 格式的内容
+              </li>
+              <li>
+                数字部分必须至少4位（如
+                <span class="highlight">type:1234</span>）
+              </li>
+              <li>不区分大小写（可识别 Type、TYPE 等格式）</li>
+              <li>自动去除重复项，保留原始格式</li>
+              <li>复制结果时仅复制数字部分（如 1234）</li>
+              <li>
+                点击右侧
+                <i class="fas fa-search" style="color: var(--primary-color)"></i>
+                按钮可直接查询该数字
+              </li>
+            </ul>
+          </div>
+        </div>
 
-            <div class="results-container" id="result">
-              <div class="no-results">
-                <i class="fas fa-info-circle"></i> 提取结果将显示在这里
-              </div>
-            </div>
+        <div class="panel">
+          <div class="panel-title">
+            <i class="fas fa-list"></i>
+            <span>提取结果</span>
+          </div>
 
-            <div class="workflow-btn">
-              <button class="btn btn-query-all" id="queryAllBtn">
-                <i class="fas fa-bolt"></i> 一键查询所有提取的Type的指标名称
-              </button>
-            </div>
+          <div class="digit-preview">
+            复制结果示例：<span>56789, 9876, 9999, 2023, 1234567890</span>
+          </div>
 
-            <div class="controls">
-              <button class="btn btn-copy" id="copyBtn">
-                <i class="fas fa-copy"></i> 复制所有数字
-              </button>
-              <button class="btn btn-secondary" id="exportBtn">
-                <i class="fas fa-file-csv"></i> 导出为CSV
-              </button>
+          <div class="results-container" id="result">
+            <div class="no-results">
+              <i class="fas fa-info-circle"></i> 提取结果将显示在这里
             </div>
+          </div>
+
+          <div class="workflow-btn">
+            <button class="btn btn-query-all" id="queryAllBtn">
+              <i class="fas fa-bolt"></i> 一键查询所有提取的Type的指标名称
+            </button>
+          </div>
+
+          <div class="controls">
+            <button class="btn btn-copy" id="copyBtn">
+              <i class="fas fa-copy"></i> 复制所有数字
+            </button>
+            <button class="btn btn-secondary" id="exportBtn">
+              <i class="fas fa-file-csv"></i> 导出为CSV
+            </button>
           </div>
         </div>
       </div>
-
-      <footer>
-        <p>© 2025 工具套件 | 本地处理，不上传任何数据</p>
-      </footer>
     </div>
 
-    <script>
-      // =============== 通用功能 ===============
-      // 初始化主题
-      function initTheme() {
-        const savedTheme = localStorage.getItem("theme");
-        const themeToggle = document.getElementById("themeToggle");
-        const body = document.body;
+    <footer>
+      <p>© 2025 工具套件 | 本地处理，不上传任何数据</p>
+    </footer>
+  </div>
 
-        // 检查系统偏好
-        const prefersDark = window.matchMedia(
-          "(prefers-color-scheme: dark)",
-        ).matches;
+  <script>
+    // =============== 通用功能 ===============
+    // 初始化主题
+    function initTheme() {
+      const savedTheme = localStorage.getItem("theme");
+      const themeToggle = document.getElementById("themeToggle");
+      const body = document.body;
 
-        // 应用主题
-        if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-          body.classList.add("dark-mode");
-          themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-        } else {
-          body.classList.remove("dark-mode");
-          themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-        }
+      // 检查系统偏好
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      ).matches;
+
+      // 应用主题
+      if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+        body.classList.add("dark-mode");
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+      } else {
+        body.classList.remove("dark-mode");
+        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
       }
+    }
 
-      // 切换主题
-      function toggleTheme() {
-        const body = document.body;
-        const themeToggle = document.getElementById("themeToggle");
+    // 切换主题
+    function toggleTheme() {
+      const body = document.body;
+      const themeToggle = document.getElementById("themeToggle");
 
-        if (body.classList.contains("dark-mode")) {
-          body.classList.remove("dark-mode");
-          themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-          localStorage.setItem("theme", "light");
-          showNotification("已切换至日间模式");
-        } else {
-          body.classList.add("dark-mode");
-          themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-          localStorage.setItem("theme", "dark");
-          showNotification("已切换至夜间模式");
-        }
+      if (body.classList.contains("dark-mode")) {
+        body.classList.remove("dark-mode");
+        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem("theme", "light");
+        showNotification("已切换至日间模式");
+      } else {
+        body.classList.add("dark-mode");
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem("theme", "dark");
+        showNotification("已切换至夜间模式");
       }
+    }
 
-      // 选项卡切换
-      document.querySelectorAll(".tab").forEach((tab) => {
-        tab.addEventListener("click", function () {
-          // 移除所有活动标签
-          document
-            .querySelectorAll(".tab")
-            .forEach((t) => t.classList.remove("active"));
-          document
-            .querySelectorAll(".tab-content")
-            .forEach((c) => c.classList.remove("active"));
+    // 选项卡切换
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", function () {
+        // 移除所有活动标签
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((c) => c.classList.remove("active"));
 
-          // 激活当前标签
-          this.classList.add("active");
-          const tabId = this.getAttribute("data-tab");
-          document.getElementById(tabId).classList.add("active");
-        });
+        // 激活当前标签
+        this.classList.add("active");
+        const tabId = this.getAttribute("data-tab");
+        document.getElementById(tabId).classList.add("active");
       });
+    });
 
-      // 显示通知
-      function showNotification(message, type = "success") {
-        // 移除现有的通知
-        const existing = document.querySelector(".notification");
-        if (existing) existing.remove();
+    // 显示通知
+    function showNotification(message, type = "success") {
+      // 移除现有的通知
+      const existing = document.querySelector(".notification");
+      if (existing) existing.remove();
 
-        const notification = document.createElement("div");
-        notification.className = `notification ${type}`;
-        notification.innerHTML = `
+      const notification = document.createElement("div");
+      notification.className = `notification ${type}`;
+      notification.innerHTML = `
                 <i class="fas ${type === "success" ? "fa-check-circle" : "fa-exclamation-circle"}"></i>
                 ${message}
             `;
 
-        const bgColor = type === "success" ? "#16a34a" : "#dc2626";
-        notification.style.cssText = `
+      const bgColor = type === "success" ? "#16a34a" : "#dc2626";
+      notification.style.cssText = `
                 position: fixed;
                 top: 20px;
                 right: 20px;
@@ -1345,19 +1358,19 @@ type: 1000 - 有效（空格不影响）
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             `;
 
-        document.body.appendChild(notification);
+      document.body.appendChild(notification);
 
-        // 3秒后移除通知
-        setTimeout(() => {
-          if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-          }
-        }, 3000);
-      }
+      // 3秒后移除通知
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 3000);
+    }
 
-      // 添加CSS动画
-      const style = document.createElement("style");
-      style.textContent = `
+    // 添加CSS动画
+    const style = document.createElement("style");
+    style.textContent = `
             @keyframes fadeIn {
                 from { opacity: 0; transform: translateY(-20px); }
                 to { opacity: 1; transform: translateY(0); }
@@ -1368,341 +1381,341 @@ type: 1000 - 有效（空格不影响）
                 to { opacity: 0; transform: translateY(-20px); }
             }
         `;
-      document.head.appendChild(style);
+    document.head.appendChild(style);
 
-      // =============== Excel数据查询工具功能 ===============
-      // 全局变量
-      let excelData = null;
-      let fileName = "";
-      let lastQueryResults = [];
+    // =============== Excel数据查询工具功能 ===============
+    // 全局变量
+    let excelData = null;
+    let fileName = "";
+    let lastQueryResults = [];
 
-      // DOM元素
-      const dropArea = document.getElementById("dropArea");
-      const fileInput = document.getElementById("fileInput");
-      const fileInfo = document.getElementById("fileInfo");
-      const fileNameSpan = document.getElementById("fileName");
-      const fileSizeSpan = document.getElementById("fileSize");
-      const rowCountSpan = document.getElementById("rowCount");
-      const numberInput = document.getElementById("numberInput");
-      const clearInputBtn = document.getElementById("clearInputBtn");
-      const queryBtn = document.getElementById("queryBtn");
-      const resultsDiv = document.getElementById("results");
-      const errorMsg = document.getElementById("errorMsg");
-      const errorText = document.getElementById("errorText");
+    // DOM元素
+    const dropArea = document.getElementById("dropArea");
+    const fileInput = document.getElementById("fileInput");
+    const fileInfo = document.getElementById("fileInfo");
+    const fileNameSpan = document.getElementById("fileName");
+    const fileSizeSpan = document.getElementById("fileSize");
+    const rowCountSpan = document.getElementById("rowCount");
+    const numberInput = document.getElementById("numberInput");
+    const clearInputBtn = document.getElementById("clearInputBtn");
+    const queryBtn = document.getElementById("queryBtn");
+    const resultsDiv = document.getElementById("results");
+    const errorMsg = document.getElementById("errorMsg");
+    const errorText = document.getElementById("errorText");
 
-      // 新增的复制选项元素
-      const copyTypeOption = document.getElementById("copyTypeOption");
-      const copyNameOption = document.getElementById("copyNameOption");
-      const copyAllOption = document.getElementById("copyAllOption");
+    // 新增的复制选项元素
+    const copyTypeOption = document.getElementById("copyTypeOption");
+    const copyNameOption = document.getElementById("copyNameOption");
+    const copyAllOption = document.getElementById("copyAllOption");
 
-      // 事件监听器
-      dropArea.addEventListener("click", () => fileInput.click());
+    // 事件监听器
+    dropArea.addEventListener("click", () => fileInput.click());
 
-      dropArea.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        dropArea.style.borderColor = "var(--success-color)";
-        dropArea.style.backgroundColor = "rgba(22, 163, 74, 0.08)";
+    dropArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropArea.style.borderColor = "var(--success-color)";
+      dropArea.style.backgroundColor = "rgba(22, 163, 74, 0.08)";
+    });
+
+    dropArea.addEventListener("dragleave", () => {
+      dropArea.style.borderColor = "var(--border-color)";
+      dropArea.style.backgroundColor = "var(--panel-secondary)";
+    });
+
+    dropArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropArea.style.borderColor = "var(--border-color)";
+      dropArea.style.backgroundColor = "var(--panel-secondary)";
+
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileUpload(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files.length) {
+        handleFileUpload(e.target.files[0]);
+      }
+    });
+
+    clearInputBtn.addEventListener("click", () => {
+      numberInput.value = "";
+      numberInput.focus();
+      showNotification("搜索框已清空");
+    });
+
+    queryBtn.addEventListener("click", performQuery);
+
+    // 添加复制选项事件监听
+    copyTypeOption.addEventListener("click", copyTypeColumn);
+    copyNameOption.addEventListener("click", copyNameColumn);
+    copyAllOption.addEventListener("click", copyAllResults);
+
+    // XLSX 解析库懒加载：仅在用户首次上传 Excel 时才从 CDN 拉取，避免打开页面时被近 1MB 脚本阻塞
+    let xlsxPromise = null;
+    function loadXLSX() {
+      if (window.XLSX) return Promise.resolve(window.XLSX);
+      if (xlsxPromise) return xlsxPromise;
+      xlsxPromise = new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://unpkg.com/xlsx/dist/xlsx.full.min.js";
+        s.onload = () => (window.XLSX ? resolve(window.XLSX) : reject(new Error("XLSX 未定义")));
+        s.onerror = () => reject(new Error("XLSX 加载失败"));
+        document.head.appendChild(s);
       });
+      return xlsxPromise;
+    }
 
-      dropArea.addEventListener("dragleave", () => {
-        dropArea.style.borderColor = "var(--border-color)";
-        dropArea.style.backgroundColor = "var(--panel-secondary)";
-      });
+    // 处理文件上传
+    async function handleFileUpload(file) {
+      // 验证文件类型
+      const validExtensions = [".xlsx", ".xls"];
+      const fileExtension = file.name
+        .substring(file.name.lastIndexOf("."))
+        .toLowerCase();
 
-      dropArea.addEventListener("drop", (e) => {
-        e.preventDefault();
-        dropArea.style.borderColor = "var(--border-color)";
-        dropArea.style.backgroundColor = "var(--panel-secondary)";
-
-        if (e.dataTransfer.files.length) {
-          fileInput.files = e.dataTransfer.files;
-          handleFileUpload(e.dataTransfer.files[0]);
-        }
-      });
-
-      fileInput.addEventListener("change", (e) => {
-        if (e.target.files.length) {
-          handleFileUpload(e.target.files[0]);
-        }
-      });
-
-      clearInputBtn.addEventListener("click", () => {
-        numberInput.value = "";
-        numberInput.focus();
-        showNotification("搜索框已清空");
-      });
-
-      queryBtn.addEventListener("click", performQuery);
-
-      // 添加复制选项事件监听
-      copyTypeOption.addEventListener("click", copyTypeColumn);
-      copyNameOption.addEventListener("click", copyNameColumn);
-      copyAllOption.addEventListener("click", copyAllResults);
-
-      // XLSX 解析库懒加载：仅在用户首次上传 Excel 时才从 CDN 拉取，避免打开页面时被近 1MB 脚本阻塞
-      let xlsxPromise = null;
-      function loadXLSX() {
-        if (window.XLSX) return Promise.resolve(window.XLSX);
-        if (xlsxPromise) return xlsxPromise;
-        xlsxPromise = new Promise((resolve, reject) => {
-          const s = document.createElement("script");
-          s.src = "https://unpkg.com/xlsx/dist/xlsx.full.min.js";
-          s.onload = () => (window.XLSX ? resolve(window.XLSX) : reject(new Error("XLSX 未定义")));
-          s.onerror = () => reject(new Error("XLSX 加载失败"));
-          document.head.appendChild(s);
-        });
-        return xlsxPromise;
+      if (!validExtensions.includes(fileExtension)) {
+        showError("请上传有效的Excel文件 (.xlsx 或 .xls)");
+        return;
       }
 
-      // 处理文件上传
-      async function handleFileUpload(file) {
-        // 验证文件类型
-        const validExtensions = [".xlsx", ".xls"];
-        const fileExtension = file.name
-          .substring(file.name.lastIndexOf("."))
-          .toLowerCase();
+      // 显示文件信息
+      fileName = file.name;
+      fileNameSpan.textContent = fileName;
+      fileSizeSpan.textContent = formatFileSize(file.size);
+      fileInfo.classList.add("active");
 
-        if (!validExtensions.includes(fileExtension)) {
-          showError("请上传有效的Excel文件 (.xlsx 或 .xls)");
-          return;
-        }
+      // 确保 XLSX 解析库已加载（仅首次上传 Excel 时动态从 CDN 拉取，不阻塞页面打开）
+      try {
+        await loadXLSX();
+      } catch (err) {
+        showError("Excel 解析库加载失败，请检查网络后重试");
+        return;
+      }
 
-        // 显示文件信息
-        fileName = file.name;
-        fileNameSpan.textContent = fileName;
-        fileSizeSpan.textContent = formatFileSize(file.size);
-        fileInfo.classList.add("active");
+      // 读取文件
+      const reader = new FileReader();
 
-        // 确保 XLSX 解析库已加载（仅首次上传 Excel 时动态从 CDN 拉取，不阻塞页面打开）
+      reader.onload = function (e) {
         try {
-          await loadXLSX();
-        } catch (err) {
-          showError("Excel 解析库加载失败，请检查网络后重试");
-          return;
-        }
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, {
+            type: "array",
+          });
 
-        // 读取文件
-        const reader = new FileReader();
+          // 获取第一个工作表
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
 
-        reader.onload = function (e) {
-          try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {
-              type: "array",
-            });
+          // 转换为JSON
+          excelData = XLSX.utils.sheet_to_json(worksheet);
 
-            // 获取第一个工作表
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
+          // 显示行数
+          rowCountSpan.textContent = excelData.length;
 
-            // 转换为JSON
-            excelData = XLSX.utils.sheet_to_json(worksheet);
-
-            // 显示行数
-            rowCountSpan.textContent = excelData.length;
-
-            // 重置错误和结果
-            hideError();
-            resultsDiv.innerHTML = `
+          // 重置错误和结果
+          hideError();
+          resultsDiv.innerHTML = `
                         <div class="result-placeholder">
                             <i class="fas fa-check-circle"></i>
                             <p>文件加载成功！</p>
                             <p>共加载了 ${excelData.length} 条数据</p>
                         </div>
                     `;
-          } catch (error) {
-            showError("解析Excel文件时出错: " + error.message);
-            console.error(error);
-          }
-        };
+        } catch (error) {
+          showError("解析Excel文件时出错: " + error.message);
+          console.error(error);
+        }
+      };
 
-        reader.onerror = function () {
-          showError("读取文件时发生错误");
-        };
+      reader.onerror = function () {
+        showError("读取文件时发生错误");
+      };
 
-        reader.readAsArrayBuffer(file);
+      reader.readAsArrayBuffer(file);
+    }
+
+    // 执行查询
+    function performQuery() {
+      // 清除之前的结果和错误
+      hideError();
+
+      // 验证输入
+      const input = numberInput.value.trim();
+      if (!input) {
+        showError("请输入要查询的数字");
+        return;
       }
 
-      // 执行查询
-      function performQuery() {
-        // 清除之前的结果和错误
-        hideError();
+      if (!excelData) {
+        showError("请先上传Excel文件");
+        return;
+      }
 
-        // 验证输入
-        const input = numberInput.value.trim();
-        if (!input) {
-          showError("请输入要查询的数字");
-          return;
-        }
+      // 解析输入的数字
+      const numbersToFind = input
+        .split(",")
+        .map((num) => num.trim())
+        .filter((num) => num !== "");
 
-        if (!excelData) {
-          showError("请先上传Excel文件");
-          return;
-        }
+      if (numbersToFind.length === 0) {
+        showError("请输入有效的数字");
+        return;
+      }
 
-        // 解析输入的数字
-        const numbersToFind = input
-          .split(",")
-          .map((num) => num.trim())
-          .filter((num) => num !== "");
+      // 创建三个数组分别存储不同类型的结果
+      const foundResults = []; // 找到且名称不为空
+      const emptyResults = []; // 找到但名称为空
+      const notFoundResults = []; // 未找到
 
-        if (numbersToFind.length === 0) {
-          showError("请输入有效的数字");
-          return;
-        }
+      numbersToFind.forEach((num) => {
+        const foundItem = excelData.find((item) => String(item.type) === num);
 
-        // 创建三个数组分别存储不同类型的结果
-        const foundResults = []; // 找到且名称不为空
-        const emptyResults = []; // 找到但名称为空
-        const notFoundResults = []; // 未找到
+        if (foundItem) {
+          const nameValue = foundItem.指标名称 || foundItem.name || "";
 
-        numbersToFind.forEach((num) => {
-          const foundItem = excelData.find((item) => String(item.type) === num);
-
-          if (foundItem) {
-            const nameValue = foundItem.指标名称 || foundItem.name || "";
-
-            if (nameValue.trim() === "") {
-              // 名称为空的结果
-              emptyResults.push({
-                type: num,
-                name: "[名称为空]",
-                found: true,
-                empty: true,
-              });
-            } else {
-              // 正常找到的结果
-              foundResults.push({
-                type: num,
-                name: nameValue,
-                found: true,
-                empty: false,
-              });
-            }
-          } else {
-            // 未找到的结果
-            notFoundResults.push({
+          if (nameValue.trim() === "") {
+            // 名称为空的结果
+            emptyResults.push({
               type: num,
-              name: "未找到",
-              found: false,
+              name: "[名称为空]",
+              found: true,
+              empty: true,
+            });
+          } else {
+            // 正常找到的结果
+            foundResults.push({
+              type: num,
+              name: nameValue,
+              found: true,
               empty: false,
             });
           }
+        } else {
+          // 未找到的结果
+          notFoundResults.push({
+            type: num,
+            name: "未找到",
+            found: false,
+            empty: false,
+          });
+        }
+      });
+
+      // 合并结果：正常结果 -> 空结果 -> 未找到
+      const results = [...foundResults, ...emptyResults, ...notFoundResults];
+
+      // 保存查询结果
+      lastQueryResults = results;
+
+      // 显示结果
+      displayResults(results);
+    }
+
+    // 复制Type列
+    function copyTypeColumn() {
+      if (lastQueryResults.length === 0) {
+        showNotification("没有可复制的查询结果", "error");
+        return;
+      }
+
+      // 生成复制内容
+      const content = lastQueryResults.map((item) => item.type).join("\n");
+
+      // 复制到剪贴板
+      navigator.clipboard
+        .writeText(content)
+        .then(() => {
+          showNotification(`已复制 ${lastQueryResults.length} 个Type值`);
+
+          // 添加视觉反馈
+          copyTypeOption.classList.add("active");
+          setTimeout(() => {
+            copyTypeOption.classList.remove("active");
+          }, 1000);
+        })
+        .catch((err) => {
+          console.error("复制失败:", err);
+          showNotification("复制失败，请手动复制", "error");
         });
+    }
 
-        // 合并结果：正常结果 -> 空结果 -> 未找到
-        const results = [...foundResults, ...emptyResults, ...notFoundResults];
-
-        // 保存查询结果
-        lastQueryResults = results;
-
-        // 显示结果
-        displayResults(results);
+    // 复制名称列
+    function copyNameColumn() {
+      if (lastQueryResults.length === 0) {
+        showNotification("没有可复制的查询结果", "error");
+        return;
       }
 
-      // 复制Type列
-      function copyTypeColumn() {
-        if (lastQueryResults.length === 0) {
-          showNotification("没有可复制的查询结果", "error");
-          return;
-        }
+      // 生成复制内容
+      const content = lastQueryResults.map((item) => item.name).join("\n");
 
-        // 生成复制内容
-        const content = lastQueryResults.map((item) => item.type).join("\n");
+      // 复制到剪贴板
+      navigator.clipboard
+        .writeText(content)
+        .then(() => {
+          showNotification(`已复制 ${lastQueryResults.length} 个名称值`);
 
-        // 复制到剪贴板
-        navigator.clipboard
-          .writeText(content)
-          .then(() => {
-            showNotification(`已复制 ${lastQueryResults.length} 个Type值`);
+          // 添加视觉反馈
+          copyNameOption.classList.add("active");
+          setTimeout(() => {
+            copyNameOption.classList.remove("active");
+          }, 1000);
+        })
+        .catch((err) => {
+          console.error("复制失败:", err);
+          showNotification("复制失败，请手动复制", "error");
+        });
+    }
 
-            // 添加视觉反馈
-            copyTypeOption.classList.add("active");
-            setTimeout(() => {
-              copyTypeOption.classList.remove("active");
-            }, 1000);
-          })
-          .catch((err) => {
-            console.error("复制失败:", err);
-            showNotification("复制失败，请手动复制", "error");
-          });
+    // 复制全部结果
+    function copyAllResults() {
+      if (lastQueryResults.length === 0) {
+        showNotification("没有可复制的查询结果", "error");
+        return;
       }
 
-      // 复制名称列
-      function copyNameColumn() {
-        if (lastQueryResults.length === 0) {
-          showNotification("没有可复制的查询结果", "error");
-          return;
-        }
+      // 生成复制内容
+      const content = lastQueryResults
+        .map((item) => {
+          return `${item.type}/${item.name}`;
+        })
+        .join("\n");
 
-        // 生成复制内容
-        const content = lastQueryResults.map((item) => item.name).join("\n");
+      // 复制到剪贴板
+      navigator.clipboard
+        .writeText(content)
+        .then(() => {
+          showNotification(`已复制 ${lastQueryResults.length} 条完整记录`);
 
-        // 复制到剪贴板
-        navigator.clipboard
-          .writeText(content)
-          .then(() => {
-            showNotification(`已复制 ${lastQueryResults.length} 个名称值`);
+          // 添加视觉反馈
+          copyAllOption.classList.add("active");
+          setTimeout(() => {
+            copyAllOption.classList.remove("active");
+          }, 1000);
+        })
+        .catch((err) => {
+          console.error("复制失败:", err);
+          showNotification("复制失败，请手动复制", "error");
+        });
+    }
 
-            // 添加视觉反馈
-            copyNameOption.classList.add("active");
-            setTimeout(() => {
-              copyNameOption.classList.remove("active");
-            }, 1000);
-          })
-          .catch((err) => {
-            console.error("复制失败:", err);
-            showNotification("复制失败，请手动复制", "error");
-          });
-      }
-
-      // 复制全部结果
-      function copyAllResults() {
-        if (lastQueryResults.length === 0) {
-          showNotification("没有可复制的查询结果", "error");
-          return;
-        }
-
-        // 生成复制内容
-        const content = lastQueryResults
-          .map((item) => {
-            return `${item.type}/${item.name}`;
-          })
-          .join("\n");
-
-        // 复制到剪贴板
-        navigator.clipboard
-          .writeText(content)
-          .then(() => {
-            showNotification(`已复制 ${lastQueryResults.length} 条完整记录`);
-
-            // 添加视觉反馈
-            copyAllOption.classList.add("active");
-            setTimeout(() => {
-              copyAllOption.classList.remove("active");
-            }, 1000);
-          })
-          .catch((err) => {
-            console.error("复制失败:", err);
-            showNotification("复制失败，请手动复制", "error");
-          });
-      }
-
-      // 显示查询结果
-      function displayResults(results) {
-        if (results.length === 0) {
-          resultsDiv.innerHTML = `
+    // 显示查询结果
+    function displayResults(results) {
+      if (results.length === 0) {
+        resultsDiv.innerHTML = `
                     <div class="result-placeholder">
                         <i class="fas fa-exclamation-triangle"></i>
                         <p>没有找到匹配的数据</p>
                         <p>请检查输入的数字是否正确</p>
                     </div>
                 `;
-          return;
-        }
+        return;
+      }
 
-        // 创建结果表格
-        let tableHTML = `
+      // 创建结果表格
+      let tableHTML = `
                 <table>
                     <thead>
                         <tr>
@@ -1714,57 +1727,57 @@ type: 1000 - 有效（空格不影响）
                     <tbody>
             `;
 
-        results.forEach((item) => {
-          let statusClass = "";
-          let statusText = "";
+      results.forEach((item) => {
+        let statusClass = "";
+        let statusText = "";
 
-          if (item.empty) {
-            statusClass = "empty";
-            statusText = "名称空";
-          } else if (item.found) {
-            statusClass = "found";
-            statusText = "已找到";
-          } else {
-            statusClass = "not-found";
-            statusText = "未找到";
-          }
+        if (item.empty) {
+          statusClass = "empty";
+          statusText = "名称空";
+        } else if (item.found) {
+          statusClass = "found";
+          statusText = "已找到";
+        } else {
+          statusClass = "not-found";
+          statusText = "未找到";
+        }
 
-          const nameClass = item.empty
-            ? "empty-result"
-            : item.found
-              ? ""
-              : "not-found";
+        const nameClass = item.empty
+          ? "empty-result"
+          : item.found
+            ? ""
+            : "not-found";
 
-          tableHTML += `
+        tableHTML += `
                     <tr>
                         <td>${item.type}</td>
                         <td class="${nameClass}">${item.name}</td>
                         <td class="${statusClass}">${statusText}</td>
                     </tr>
                 `;
-        });
+      });
 
-        tableHTML += `
+      tableHTML += `
                     </tbody>
                 </table>
             `;
 
-        // 添加统计信息
-        const foundCount = results.filter(
-          (item) => item.found && !item.empty,
-        ).length;
-        const emptyCount = results.filter((item) => item.empty).length;
-        const notFoundCount = results.filter((item) => !item.found).length;
-        const totalCount = results.length;
+      // 添加统计信息
+      const foundCount = results.filter(
+        (item) => item.found && !item.empty,
+      ).length;
+      const emptyCount = results.filter((item) => item.empty).length;
+      const notFoundCount = results.filter((item) => !item.found).length;
+      const totalCount = results.length;
 
-        const notFoundItems = results
-          .filter((item) => !item.found)
-          .map((item) => item.type);
-        const emptyItems = results
-          .filter((item) => item.empty)
-          .map((item) => item.type);
+      const notFoundItems = results
+        .filter((item) => !item.found)
+        .map((item) => item.type);
+      const emptyItems = results
+        .filter((item) => item.empty)
+        .map((item) => item.type);
 
-        tableHTML += `
+      tableHTML += `
                 <div class="stats-bar">
                     <div class="stat-item">
                         <div class="stat-value">${totalCount}</div>
@@ -1785,131 +1798,131 @@ type: 1000 - 有效（空格不影响）
                 </div>
             `;
 
-        // 添加状态通知
-        let statusMessages = [];
+      // 添加状态通知
+      let statusMessages = [];
 
-        if (emptyItems.length > 0) {
-          statusMessages.push(`名称为空: ${emptyItems.join(", ")}`);
-        }
+      if (emptyItems.length > 0) {
+        statusMessages.push(`名称为空: ${emptyItems.join(", ")}`);
+      }
 
-        if (notFoundItems.length > 0) {
-          statusMessages.push(`没有找到: ${notFoundItems.join(", ")}`);
-        }
+      if (notFoundItems.length > 0) {
+        statusMessages.push(`没有找到: ${notFoundItems.join(", ")}`);
+      }
 
-        if (statusMessages.length > 0) {
-          tableHTML += `
+      if (statusMessages.length > 0) {
+        tableHTML += `
                     <div class="error active" style="margin-top: 15px;">
                         <i class="fas fa-exclamation-circle"></i>
                         ${statusMessages.join("<br>")}
                     </div>
                 `;
-        }
-
-        resultsDiv.innerHTML = tableHTML;
       }
 
-      // 辅助函数
-      function formatFileSize(bytes) {
-        if (bytes === 0) return "0 Bytes";
-        const k = 1024;
-        const sizes = ["Bytes", "KB", "MB", "GB"];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+      resultsDiv.innerHTML = tableHTML;
+    }
+
+    // 辅助函数
+    function formatFileSize(bytes) {
+      if (bytes === 0) return "0 Bytes";
+      const k = 1024;
+      const sizes = ["Bytes", "KB", "MB", "GB"];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    }
+
+    function showError(message) {
+      errorText.textContent = message;
+      errorMsg.classList.add("active");
+    }
+
+    function hideError() {
+      errorMsg.classList.remove("active");
+    }
+
+    // =============== Type数字提取工具功能 ===============
+    // 存储提取结果
+    let extractionResults = [];
+
+    // DOM元素
+    const inputText = document.getElementById("inputText");
+    const extractBtn = document.getElementById("extractBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const exportBtn = document.getElementById("exportBtn");
+    const queryAllBtn = document.getElementById("queryAllBtn");
+
+    // 事件监听器
+    extractBtn.addEventListener("click", extractTypes);
+    clearBtn.addEventListener("click", clearAll);
+    copyBtn.addEventListener("click", copyDigits);
+    exportBtn.addEventListener("click", exportCSV);
+    queryAllBtn.addEventListener("click", queryAllDigits);
+
+    function extractTypes() {
+      const inputTextValue = inputText.value;
+      const resultDiv = document.getElementById("result");
+
+      // 更新文本长度统计
+      document.getElementById("textLength").textContent =
+        inputTextValue.length;
+
+      // 清空结果区域
+      resultDiv.innerHTML = "";
+
+      // 重置结果数组
+      extractionResults = [];
+
+      // 正则表达式：匹配 "type:" 后跟至少4位数字
+      const regex = /\btype:\s*(\d{4,})\b/gi;
+      let match;
+      const matches = [];
+
+      // 使用循环获取所有匹配项和捕获组
+      while ((match = regex.exec(inputTextValue)) !== null) {
+        matches.push({
+          fullText: match[0],
+          digits: match[1],
+        });
       }
 
-      function showError(message) {
-        errorText.textContent = message;
-        errorMsg.classList.add("active");
+      // 更新匹配统计
+      document.getElementById("matchCount").textContent = matches.length;
+
+      if (matches.length === 0) {
+        resultDiv.innerHTML =
+          '<div class="no-results"><i class="fas fa-exclamation-circle"></i> 未找到符合要求的 type 字段</div>';
+        document.getElementById("uniqueCount").textContent = "0";
+        updateDigitStats([]);
+        return;
       }
 
-      function hideError() {
-        errorMsg.classList.remove("active");
-      }
+      // 去重处理（保留原始大小写）
+      const uniqueMatches = [];
+      const seen = new Set();
 
-      // =============== Type数字提取工具功能 ===============
-      // 存储提取结果
-      let extractionResults = [];
+      for (const match of matches) {
+        const digits = match.digits;
+        if (!seen.has(digits)) {
+          seen.add(digits);
+          uniqueMatches.push(match);
 
-      // DOM元素
-      const inputText = document.getElementById("inputText");
-      const extractBtn = document.getElementById("extractBtn");
-      const clearBtn = document.getElementById("clearBtn");
-      const copyBtn = document.getElementById("copyBtn");
-      const exportBtn = document.getElementById("exportBtn");
-      const queryAllBtn = document.getElementById("queryAllBtn");
-
-      // 事件监听器
-      extractBtn.addEventListener("click", extractTypes);
-      clearBtn.addEventListener("click", clearAll);
-      copyBtn.addEventListener("click", copyDigits);
-      exportBtn.addEventListener("click", exportCSV);
-      queryAllBtn.addEventListener("click", queryAllDigits);
-
-      function extractTypes() {
-        const inputTextValue = inputText.value;
-        const resultDiv = document.getElementById("result");
-
-        // 更新文本长度统计
-        document.getElementById("textLength").textContent =
-          inputTextValue.length;
-
-        // 清空结果区域
-        resultDiv.innerHTML = "";
-
-        // 重置结果数组
-        extractionResults = [];
-
-        // 正则表达式：匹配 "type:" 后跟至少4位数字
-        const regex = /\btype:\s*(\d{4,})\b/gi;
-        let match;
-        const matches = [];
-
-        // 使用循环获取所有匹配项和捕获组
-        while ((match = regex.exec(inputTextValue)) !== null) {
-          matches.push({
-            fullText: match[0],
-            digits: match[1],
+          // 存储到结果数组
+          extractionResults.push({
+            text: match.fullText,
+            digits: digits,
           });
         }
+      }
 
-        // 更新匹配统计
-        document.getElementById("matchCount").textContent = matches.length;
+      // 更新去重统计
+      document.getElementById("uniqueCount").textContent =
+        uniqueMatches.length;
 
-        if (matches.length === 0) {
-          resultDiv.innerHTML =
-            '<div class="no-results"><i class="fas fa-exclamation-circle"></i> 未找到符合要求的 type 字段</div>';
-          document.getElementById("uniqueCount").textContent = "0";
-          updateDigitStats([]);
-          return;
-        }
-
-        // 去重处理（保留原始大小写）
-        const uniqueMatches = [];
-        const seen = new Set();
-
-        for (const match of matches) {
-          const digits = match.digits;
-          if (!seen.has(digits)) {
-            seen.add(digits);
-            uniqueMatches.push(match);
-
-            // 存储到结果数组
-            extractionResults.push({
-              text: match.fullText,
-              digits: digits,
-            });
-          }
-        }
-
-        // 更新去重统计
-        document.getElementById("uniqueCount").textContent =
-          uniqueMatches.length;
-
-        // 显示去重后的结果
-        uniqueMatches.forEach((match, index) => {
-          const item = document.createElement("div");
-          item.className = "match-item";
-          item.innerHTML = `
+      // 显示去重后的结果
+      uniqueMatches.forEach((match, index) => {
+        const item = document.createElement("div");
+        item.className = "match-item";
+        item.innerHTML = `
                     <div>
                         <div class="match-text">${match.fullText}</div>
                         <div class="example-text">数字部分: <span class="match-digits">${match.digits}</span></div>
@@ -1923,152 +1936,152 @@ type: 1000 - 有效（空格不影响）
                         </div>
                     </div>
                 `;
-          resultDiv.appendChild(item);
+        resultDiv.appendChild(item);
+      });
+
+      // 更新数字统计
+      updateDigitStats(uniqueMatches.map((m) => m.digits));
+    }
+
+    // 更新数字统计（保留函数但不使用，避免引用不存在的DOM元素）
+    function updateDigitStats(digitsArray) {
+      // 统计功能已简化，直接返回
+      // 如果需要统计信息，可以在这里添加自定义实现
+      console.log("提取了 " + digitsArray.length + " 个有效数字");
+    }
+
+    // 查询单个数字
+    function querySingleDigit(digits) {
+      // 切换到Excel查询工具标签页
+      document.querySelector('.tab[data-tab="excel-tool"]').click();
+
+      // 设置输入框的值
+      document.getElementById("numberInput").value = digits;
+
+      // 执行查询
+      setTimeout(() => {
+        document.getElementById("queryBtn").click();
+        showNotification(`正在查询数字: ${digits}`);
+      }, 300);
+    }
+
+    // 查询所有提取的数字
+    function queryAllDigits() {
+      if (extractionResults.length === 0) {
+        showNotification("没有可查询的数字", "error");
+        return;
+      }
+
+      // 获取所有提取的数字
+      const allDigits = extractionResults
+        .map((item) => item.digits)
+        .join(", ");
+
+      // 切换到Excel查询工具标签页
+      document.querySelector('.tab[data-tab="excel-tool"]').click();
+
+      // 设置输入框的值
+      document.getElementById("numberInput").value = allDigits;
+
+      // 执行查询
+      setTimeout(() => {
+        document.getElementById("queryBtn").click();
+        showNotification(`正在查询 ${extractionResults.length} 个提取的数字`);
+      }, 300);
+    }
+
+    function copySingleDigit(digits) {
+      navigator.clipboard
+        .writeText(digits)
+        .then(() => {
+          showNotification(`已复制数字: ${digits}`);
+        })
+        .catch((err) => {
+          console.error("复制失败:", err);
+          showNotification("复制失败，请手动复制", "error");
         });
+    }
 
-        // 更新数字统计
-        updateDigitStats(uniqueMatches.map((m) => m.digits));
+    function copyDigits() {
+      if (extractionResults.length === 0) {
+        showNotification("没有可复制的内容", "error");
+        return;
       }
 
-      // 更新数字统计（保留函数但不使用，避免引用不存在的DOM元素）
-      function updateDigitStats(digitsArray) {
-        // 统计功能已简化，直接返回
-        // 如果需要统计信息，可以在这里添加自定义实现
-        console.log("提取了 " + digitsArray.length + " 个有效数字");
-      }
-
-      // 查询单个数字
-      function querySingleDigit(digits) {
-        // 切换到Excel查询工具标签页
-        document.querySelector('.tab[data-tab="excel-tool"]').click();
-
-        // 设置输入框的值
-        document.getElementById("numberInput").value = digits;
-
-        // 执行查询
-        setTimeout(() => {
-          document.getElementById("queryBtn").click();
-          showNotification(`正在查询数字: ${digits}`);
-        }, 300);
-      }
-
-      // 查询所有提取的数字
-      function queryAllDigits() {
-        if (extractionResults.length === 0) {
-          showNotification("没有可查询的数字", "error");
-          return;
-        }
-
-        // 获取所有提取的数字
-        const allDigits = extractionResults
-          .map((item) => item.digits)
-          .join(", ");
-
-        // 切换到Excel查询工具标签页
-        document.querySelector('.tab[data-tab="excel-tool"]').click();
-
-        // 设置输入框的值
-        document.getElementById("numberInput").value = allDigits;
-
-        // 执行查询
-        setTimeout(() => {
-          document.getElementById("queryBtn").click();
-          showNotification(`正在查询 ${extractionResults.length} 个提取的数字`);
-        }, 300);
-      }
-
-      function copySingleDigit(digits) {
-        navigator.clipboard
-          .writeText(digits)
-          .then(() => {
-            showNotification(`已复制数字: ${digits}`);
-          })
-          .catch((err) => {
-            console.error("复制失败:", err);
-            showNotification("复制失败，请手动复制", "error");
-          });
-      }
-
-      function copyDigits() {
-        if (extractionResults.length === 0) {
-          showNotification("没有可复制的内容", "error");
-          return;
-        }
-
-        const digitsToCopy = extractionResults
-          .map((item) => item.digits)
-          .join(", ");
-        navigator.clipboard
-          .writeText(digitsToCopy)
-          .then(() => {
-            showNotification(
-              `已复制 ${extractionResults.length} 个数字到剪贴板`,
-            );
-          })
-          .catch((err) => {
-            console.error("复制失败:", err);
-            showNotification("复制失败，请手动复制", "error");
-          });
-      }
-
-      function exportCSV() {
-        if (extractionResults.length === 0) {
-          showNotification("没有可导出的内容", "error");
-          return;
-        }
-
-        let csvContent = "Type 文本,数字部分\n";
-        extractionResults.forEach((item) => {
-          csvContent += `"${item.text}","${item.digits}"\n`;
+      const digitsToCopy = extractionResults
+        .map((item) => item.digits)
+        .join(", ");
+      navigator.clipboard
+        .writeText(digitsToCopy)
+        .then(() => {
+          showNotification(
+            `已复制 ${extractionResults.length} 个数字到剪贴板`,
+          );
+        })
+        .catch((err) => {
+          console.error("复制失败:", err);
+          showNotification("复制失败，请手动复制", "error");
         });
+    }
 
-        const blob = new Blob([csvContent], {
-          type: "text/csv;charset=utf-8;",
-        });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", "type_digits_export.csv");
-        link.style.visibility = "hidden";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        showNotification(`已导出 ${extractionResults.length} 条数据`);
+    function exportCSV() {
+      if (extractionResults.length === 0) {
+        showNotification("没有可导出的内容", "error");
+        return;
       }
 
-      function clearAll() {
-        inputText.value = "";
-        document.getElementById("result").innerHTML =
-          '<div class="no-results"><i class="fas fa-info-circle"></i> 提取结果将显示在这里</div>';
-        document.getElementById("textLength").textContent = "0";
-        document.getElementById("matchCount").textContent = "0";
-        document.getElementById("uniqueCount").textContent = "0";
-        extractionResults = [];
-      }
+      let csvContent = "Type 文本,数字部分\n";
+      extractionResults.forEach((item) => {
+        csvContent += `"${item.text}","${item.digits}"\n`;
+      });
 
-      // 初始提取示例文本
-      document.addEventListener("DOMContentLoaded", () => {
-        // 初始化主题
-        initTheme();
+      const blob = new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "type_digits_export.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-        // 设置主题切换监听
-        document
-          .getElementById("themeToggle")
-          .addEventListener("click", toggleTheme);
+      showNotification(`已导出 ${extractionResults.length} 条数据`);
+    }
 
-        // 设置Excel工具的示例输入
-        numberInput.value =
-          "110747, 42277, 112579, 40215, 40332, 99999, 88888, 77777, 55555";
+    function clearAll() {
+      inputText.value = "";
+      document.getElementById("result").innerHTML =
+        '<div class="no-results"><i class="fas fa-info-circle"></i> 提取结果将显示在这里</div>';
+      document.getElementById("textLength").textContent = "0";
+      document.getElementById("matchCount").textContent = "0";
+      document.getElementById("uniqueCount").textContent = "0";
+      extractionResults = [];
+    }
 
-        // 模拟Excel上传完成（仅供演示）
-        setTimeout(() => {
-          fileNameSpan.textContent = "示例数据.xlsx";
-          fileSizeSpan.textContent = "5.24 KB";
-          rowCountSpan.textContent = "500";
-          fileInfo.classList.add("active");
+    // 初始提取示例文本
+    document.addEventListener("DOMContentLoaded", () => {
+      // 初始化主题
+      initTheme();
 
-          resultsDiv.innerHTML = `
+      // 设置主题切换监听
+      document
+        .getElementById("themeToggle")
+        .addEventListener("click", toggleTheme);
+
+      // 设置Excel工具的示例输入
+      numberInput.value =
+        "110747, 42277, 112579, 40215, 40332, 99999, 88888, 77777, 55555";
+
+      // 模拟Excel上传完成（仅供演示）
+      setTimeout(() => {
+        fileNameSpan.textContent = "示例数据.xlsx";
+        fileSizeSpan.textContent = "5.24 KB";
+        rowCountSpan.textContent = "500";
+        fileInfo.classList.add("active");
+
+        resultsDiv.innerHTML = `
                     <div class="result-placeholder">
                         <i class="fas fa-info-circle"></i>
                         <p>演示模式已激活</p>
@@ -2076,48 +2089,48 @@ type: 1000 - 有效（空格不影响）
                     </div>
                 `;
 
-          // 创建模拟数据（包含名称为空的记录）
-          excelData = [
-            {
-              type: 110747,
-              名称: "项目A",
-            },
-            {
-              type: 42277,
-              名称: "产品B",
-            },
-            {
-              type: 112579,
-              名称: "服务C",
-            },
-            {
-              type: 40215,
-              名称: "资源D",
-            },
-            {
-              type: 40332,
-              名称: "",
-            }, // 名称为空
-            {
-              type: 55555,
-              名称: "测试F",
-            },
-            {
-              type: 66666,
-              名称: "",
-            }, // 名称为空
-            {
-              type: 77777,
-              名称: "演示H",
-            },
-          ];
+        // 创建模拟数据（包含名称为空的记录）
+        excelData = [
+          {
+            type: 110747,
+            名称: "项目A",
+          },
+          {
+            type: 42277,
+            名称: "产品B",
+          },
+          {
+            type: 112579,
+            名称: "服务C",
+          },
+          {
+            type: 40215,
+            名称: "资源D",
+          },
+          {
+            type: 40332,
+            名称: "",
+          }, // 名称为空
+          {
+            type: 55555,
+            名称: "测试F",
+          },
+          {
+            type: 66666,
+            名称: "",
+          }, // 名称为空
+          {
+            type: 77777,
+            名称: "演示H",
+          },
+        ];
 
-          // 初始提取Type工具示例文本
-          setTimeout(extractTypes, 500);
-        }, 1000);
-      });
-    </script>
-    <!-- 返回主页图标按钮样式 -->
+        // 初始提取Type工具示例文本
+        setTimeout(extractTypes, 500);
+      }, 1000);
+    });
+  </script>
+  <!-- 返回主页图标按钮样式 -->
   <style>
     .home-back-icon {
       display: inline-flex;
@@ -2134,15 +2147,18 @@ type: 1000 - 有效（空格不影响）
       transition: background 0.2s ease, transform 0.2s ease;
       -webkit-tap-highlight-color: transparent;
     }
+
     .home-back-icon:hover {
       background: rgba(255, 255, 255, 0.2);
       transform: translateY(-1px);
     }
+
     .home-back-icon svg {
       width: 18px;
       height: 18px;
       display: block;
     }
+
     .title-row {
       display: flex;
       align-items: center;
@@ -2150,7 +2166,11 @@ type: 1000 - 有效（空格不影响）
       gap: 10px;
       margin-bottom: 5px;
     }
-    .title-row h1 { margin-bottom: 0; }
+
+    .title-row h1 {
+      margin-bottom: 0;
+    }
   </style>
 </body>
+
 </html>

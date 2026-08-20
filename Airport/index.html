@@ -1,1325 +1,1093 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>节点信息提取</title>
-    <link rel="icon" type="image/png" href="/img/Airport.png" />
-    <!-- 开启 Tailwind 暗色模式支持 -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: "class",
-      };
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-    <style>
-      .custom-scrollbar::-webkit-scrollbar {
-        height: 6px;
-        width: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 3px;
-      }
-      .dark .custom-scrollbar::-webkit-scrollbar-track {
-        background: #1e293b;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 3px;
-      }
-      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #475569;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
-      .node-table th,
-      .node-table td,
-      .raw-table th,
-      .raw-table td,
-      .paste-table th,
-      .paste-table td {
-        white-space: nowrap;
-      }
-      .placeholder-shrink::placeholder {
-        font-size: 10px;
-      }
-      #pasteGridWrapper:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 1px #3b82f6;
-      }
-      .drag-active {
-        border-color: #3b82f6 !important;
-        background-color: #eff6ff !important;
-      }
-      .dark .drag-active {
-        background-color: #1e3a8a !important;
-      }
-      summary::-webkit-details-marker {
-        display: none;
-      }
-    </style>
-  </head>
-  <body
-    class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans min-h-screen flex flex-col md:p-4 p-2 transition-colors duration-300"
-  >
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>节点信息提取</title>
+  <link rel="icon" type="image/png" href="/img/Airport.png" />
+  <!-- 开启 Tailwind 暗色模式支持 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+    };
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 3px;
+    }
+
+    .dark .custom-scrollbar::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #475569;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .node-table th,
+    .node-table td,
+    .raw-table th,
+    .raw-table td,
+    .paste-table th,
+    .paste-table td {
+      white-space: nowrap;
+    }
+
+    .placeholder-shrink::placeholder {
+      font-size: 10px;
+    }
+
+    #pasteGridWrapper:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 1px #3b82f6;
+    }
+
+    .drag-active {
+      border-color: #3b82f6 !important;
+      background-color: #eff6ff !important;
+    }
+
+    .dark .drag-active {
+      background-color: #1e3a8a !important;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+  </style>
+</head>
+
+<body
+  class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans min-h-screen flex flex-col md:p-4 p-2 transition-colors duration-300">
+  <div
+    class="w-full max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-colors duration-300">
+    <!-- 头部 -->
     <div
-      class="w-full max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-colors duration-300"
-    >
-      <!-- 头部 -->
+      class="bg-blue-600 dark:bg-blue-800 px-5 py-3 flex flex-row justify-between items-center shrink-0 transition-colors duration-300">
+      <div class="flex items-center gap-2">
+        <h1 class="text-base sm:text-lg font-bold text-white tracking-wide">
+          节点信息提取
+        </h1>
+        <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <path d="M9 22V12h6v10"></path>
+          </svg></a>
+      </div>
+      <!-- 暗色模式切换开关 -->
+      <button id="themeToggle"
+        class="text-white hover:text-blue-200 focus:outline-none p-1 rounded-full transition-colors">
+        <svg id="themeIconLight" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+          </path>
+        </svg>
+        <svg id="themeIconDark" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- 主体区 -->
+    <div class="p-3 sm:p-5 flex flex-col gap-4">
+      <!-- 通道 A：数据库源输入区 -->
       <div
-        class="bg-blue-600 dark:bg-blue-800 px-5 py-3 flex flex-row justify-between items-center shrink-0 transition-colors duration-300"
-      >
-        <div class="flex items-center gap-2">
-          <h1 class="text-base sm:text-lg font-bold text-white tracking-wide">
-            节点信息提取
-          </h1>
-          <a
-            href="../"
-            class="home-back-icon"
-            title="返回主页"
-            aria-label="返回主页"
-            ><svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <path d="M9 22V12h6v10"></path></svg
-          ></a>
+        class="border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 sm:p-4 shadow-sm flex flex-col transition-colors duration-300">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <div class="flex flex-col h-full">
+            <div class="flex items-start gap-3 mb-2">
+              <span
+                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold shrink-0">A</span>
+              <span class="text-sm font-bold text-gray-700 dark:text-gray-200 leading-5">导入数据库 (可选)</span>
+              <div id="dropZoneSmall"
+                class="hidden relative h-7 w-7 border border-dashed border-gray-400 dark:border-gray-500 rounded flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 shrink-0"
+                title="点击选择 .db 文件，或将文件拖拽至此导入">
+                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 pointer-events-none" fill="none"
+                  stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <input type="file" id="dbFilesSmall" multiple accept=".db,.sqlite"
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              </div>
+              <span id="fileInfo" class="ml-auto text-xs text-blue-600 dark:text-blue-400 font-bold hidden"></span>
+            </div>
+            <div id="dropZoneLarge"
+              class="relative flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded px-2 py-3 text-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 mb-2">
+              <span class="text-xs text-gray-600 dark:text-gray-400 font-medium inline-flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                点击选择 .db 文件，或将文件拖拽至此导入</span>
+              <input type="file" id="dbFilesLarge" multiple accept=".db,.sqlite"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            </div>
+            <div id="tableSelectionSection"
+              class="hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded p-2 overflow-y-auto max-h-48 custom-scrollbar">
+              <p class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">
+                勾选要提取的表:
+              </p>
+              <div id="tableList" class="grid grid-cols-3 gap-1.5"></div>
+            </div>
+          </div>
+          <div class="flex flex-col h-full">
+            <p class="text-sm font-bold text-gray-600 dark:text-gray-300 mb-2 leading-5">
+              节点时间提取条件
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1 content-start">
+              <input type="text" id="startTime" placeholder="开始时间：2026-06-08 08:08:08"
+                title="开始时间格式：2026-06-08 08:08:08"
+                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors placeholder-shrink" />
+              <input type="text" id="endTime" placeholder="结束时间：2026-09-09 09:09:09" title="结束时间格式：2026-09-09 09:09:09"
+                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors placeholder-shrink" />
+              <input type="text" id="aproCode" placeholder="机位号：933" title="输入 aproCode"
+                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors placeholder-shrink" />
+            </div>
+          </div>
         </div>
-        <!-- 暗色模式切换开关 -->
-        <button
-          id="themeToggle"
-          class="text-white hover:text-blue-200 focus:outline-none p-1 rounded-full transition-colors"
-        >
-          <svg
-            id="themeIconLight"
-            class="w-6 h-6 hidden"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-            ></path>
-          </svg>
-          <svg
-            id="themeIconDark"
-            class="w-6 h-6 hidden"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-            ></path>
-          </svg>
-        </button>
       </div>
 
-      <!-- 主体区 -->
-      <div class="p-3 sm:p-5 flex flex-col gap-4">
-        <!-- 通道 A：数据库源输入区 -->
-        <div
-          class="border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 sm:p-4 shadow-sm flex flex-col transition-colors duration-300"
-        >
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-            <div class="flex flex-col h-full">
-              <div class="flex items-start gap-3 mb-2">
-                <span
-                  class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold shrink-0"
-                  >A</span
-                >
-                <span
-                  class="text-sm font-bold text-gray-700 dark:text-gray-200 leading-5"
-                  >导入数据库 (可选)</span
-                >
-                <div
-                  id="dropZoneSmall"
-                  class="hidden relative h-7 w-7 border border-dashed border-gray-400 dark:border-gray-500 rounded flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 shrink-0"
-                  title="点击选择 .db 文件，或将文件拖拽至此导入"
-                >
-                  <svg
-                    class="w-4 h-4 text-gray-500 dark:text-gray-400 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path
-                      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                    ></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                  </svg>
-                  <input
-                    type="file"
-                    id="dbFilesSmall"
-                    multiple
-                    accept=".db,.sqlite"
-                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                </div>
-                <span
-                  id="fileInfo"
-                  class="ml-auto text-xs text-blue-600 dark:text-blue-400 font-bold hidden"
-                ></span>
-              </div>
-              <div
-                id="dropZoneLarge"
-                class="relative flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded px-2 py-3 text-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 mb-2"
-              >
-                <span
-                  class="text-xs text-gray-600 dark:text-gray-400 font-medium inline-flex items-center gap-1.5"
-                >
-                  <svg
-                    class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                    ></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                  </svg>
-                  点击选择 .db 文件，或将文件拖拽至此导入</span
-                >
-                <input
-                  type="file"
-                  id="dbFilesLarge"
-                  multiple
-                  accept=".db,.sqlite"
-                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-              </div>
-              <div
-                id="tableSelectionSection"
-                class="hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded p-2 overflow-y-auto max-h-48 custom-scrollbar"
-              >
-                <p
-                  class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1"
-                >
-                  勾选要提取的表:
-                </p>
-                <div
-                  id="tableList"
-                  class="grid grid-cols-3 gap-1.5"
-                ></div>
-              </div>
-            </div>
-            <div class="flex flex-col h-full">
-              <p
-                class="text-sm font-bold text-gray-500 dark:text-gray-400 mb-2 leading-5"
-              >
-                节点时间提取条件:
-              </p>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1 content-start">
-                <input
-                  type="text"
-                  id="startTime"
-                  placeholder="开始时间：2026-06-08 08:08:08"
-                  title="开始时间格式：2026-06-08 08:08:08"
-                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors placeholder-shrink"
-                />
-                <input
-                  type="text"
-                  id="endTime"
-                  placeholder="结束时间：2026-09-09 09:09:09"
-                  title="结束时间格式：2026-09-09 09:09:09"
-                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors placeholder-shrink"
-                />
-                <input
-                  type="text"
-                  id="aproCode"
-                  placeholder="机位号：933"
-                  title="输入 aproCode"
-                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors placeholder-shrink"
-                />
-              </div>
-            </div>
-          </div>
+      <!-- 核心操作按钮组 -->
+      <div
+        class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm flex flex-col md:flex-row md:items-center gap-3 transition-colors duration-300">
+        <div class="grid grid-cols-2 md:flex gap-2 w-full md:w-auto">
+          <button id="btnParseNear"
+            class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+              </path>
+            </svg>近机位提取
+          </button>
+          <button id="btnParseRemote"
+            class="bg-sky-500 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+              </path>
+            </svg>远机位提取
+          </button>
+          <button id="btnCopy"
+            class="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>复制结果时间
+          </button>
+          <button id="btnExport"
+            class="bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+            </svg>导出 CSV
+          </button>
+          <button id="btnCopyTableNums"
+            class="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
+            title="复制镜头编号">
+            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+              </path>
+            </svg>复制镜头编号
+          </button>
+          <button id="btnClear"
+            class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+              </path>
+            </svg>清空结果数据
+          </button>
         </div>
-
-        <!-- 核心操作按钮组 -->
         <div
-          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm flex flex-col md:flex-row md:items-center gap-3 transition-colors duration-300"
-        >
-          <div class="grid grid-cols-2 md:flex gap-2 w-full md:w-auto">
-            <button
-              id="btnParseNear"
-              class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
-            >
-              <svg
-                class="w-3.5 h-3.5 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                ></path></svg
-              >近机位提取
-            </button>
-            <button
-              id="btnParseRemote"
-              class="bg-sky-500 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
-            >
-              <svg
-                class="w-3.5 h-3.5 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path></svg
-              >远机位提取
-            </button>
-            <button
-              id="btnCopy"
-              class="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
-            >
-              <svg
-                class="w-3.5 h-3.5 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                ></path></svg
-              >复制结果时间
-            </button>
-            <button
-              id="btnExport"
-              class="bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
-            >
-              <svg
-                class="w-3.5 h-3.5 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                ></path></svg
-              >导出 CSV
-            </button>
-            <button
-              id="btnCopyTableNums"
-              class="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
-              title="复制镜头编号"
-            >
-              <svg
-                class="w-3.5 h-3.5 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                ></path></svg
-              >复制镜头编号
-            </button>
-            <button
-              id="btnClear"
-              class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
-            >
-              <svg
-                class="w-3.5 h-3.5 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                ></path></svg
-              >清空结果数据
-            </button>
-          </div>
-          <div
-            class="md:ml-auto md:border-l md:border-gray-200 dark:md:border-gray-700 md:pl-4 pt-2 md:pt-0 border-t md:border-t-0 border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 font-medium text-center md:text-right"
-            id="queryStatus"
-          >
-            请配置数据并选择提取模式...
-          </div>
+          class="md:ml-auto md:border-l md:border-gray-200 dark:md:border-gray-700 md:pl-4 pt-2 md:pt-0 border-t md:border-t-0 border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 font-medium text-center md:text-right"
+          id="queryStatus">
+          请配置数据并选择提取模式...
         </div>
+      </div>
 
-        <!-- 结果与数据展示大区 -->
-        <div class="flex flex-col gap-4">
-          <!-- 通道 B：折叠式数据粘贴与表格回显区 -->
-          <div
-            class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300"
-          >
-            <div
-              id="pasteToggleBtn"
-              class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <div class="flex items-center">
-                <span
-                  class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-2"
-                  >B</span
-                >
-                <span class="text-xs font-bold text-gray-600 dark:text-gray-300"
-                  >数据粘贴与原始数据展示区 (当前数据:
-                  <span
-                    id="filteredTextCount"
-                    class="text-blue-600 dark:text-blue-400 font-bold"
-                    >0</span
-                  >
-                  行)</span
-                >
-              </div>
+      <!-- 结果与数据展示大区 -->
+      <div class="flex flex-col gap-4">
+        <!-- 通道 B：折叠式数据粘贴与表格回显区 -->
+        <div
+          class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
+          <div id="pasteToggleBtn"
+            class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-center">
               <span
-                id="pasteToggleIcon"
-                class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90"
-                >▼</span
-              >
+                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-2">B</span>
+              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">数据粘贴与原始数据展示区 (当前数据:
+                <span id="filteredTextCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>
+                行)</span>
             </div>
-            <!-- 默认折叠内容区 -->
-            <div
-              id="pasteContainer"
-              class="hidden flex-col p-3 bg-gray-50/50 dark:bg-gray-800/50"
-            >
-              <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2 pl-1">
-                点击下方网格区域按
-                <kbd class="bg-gray-200 dark:bg-gray-700 px-1 rounded"
-                  >Ctrl+V</kbd
-                >
-                粘贴测试数据；或查看数据库提取后的回显结果。
-              </p>
-              <textarea id="pasteArea" class="hidden"></textarea>
-
-              <div
-                id="pasteGridWrapper"
-                tabindex="0"
-                class="flex-1 w-full min-h-[140px] max-h-[30vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow"
-              >
-                <div
-                  id="pastePlaceholder"
-                  class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 text-xs text-center p-4 pointer-events-none select-none"
-                >
-                  <svg
-                    class="w-6 h-6 mb-2 text-gray-300 dark:text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                    ></path>
-                  </svg>
-                  点击此处激活<br />按 Ctrl+V 粘贴数据
-                </div>
-                <table
-                  id="pasteVisualTable"
-                  class="paste-table min-w-full text-[12px] border-collapse hidden"
-                >
-                  <thead
-                    id="pasteVisualThead"
-                    class="bg-gray-50 dark:bg-gray-700 sticky top-0 shadow-sm z-10"
-                  ></thead>
-                  <tbody
-                    id="pasteVisualTbody"
-                    class="divide-y divide-gray-100 dark:divide-gray-700"
-                  ></tbody>
-                </table>
-              </div>
-            </div>
+            <span id="pasteToggleIcon"
+              class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
           </div>
+          <!-- 默认折叠内容区 -->
+          <div id="pasteContainer" class="hidden flex-col p-3 bg-gray-50/50 dark:bg-gray-800/50">
+            <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2 pl-1">
+              点击下方网格区域按
+              <kbd class="bg-gray-200 dark:bg-gray-700 px-1 rounded">Ctrl+V</kbd>
+              粘贴测试数据；或查看数据库提取后的回显结果。
+            </p>
+            <textarea id="pasteArea" class="hidden"></textarea>
 
-          <!-- 解析节点提取表 (固定展开) -->
-          <div
-            class="border border-blue-200 dark:border-blue-800/50 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300"
-          >
-            <div
-              class="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 border-b border-blue-100 dark:border-blue-800/50 flex justify-between items-center"
-            >
-              <div class="flex items-center space-x-6">
-                <span class="text-xs font-bold text-blue-800 dark:text-blue-300"
-                  >✅ 节点时间提取结果 (左右滑动查看)</span
-                >
-                <!-- 新增：03节点日期展示区域，包含双击复制功能 -->
-                <span
-                  id="extractedDateDisplay"
-                  class="text-[13px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hidden hover:text-blue-800 dark:hover:text-blue-200 transition-colors select-none"
-                  title="双击复制日期"
-                ></span>
-              </div>
-            </div>
-            <div class="overflow-x-auto custom-scrollbar p-2">
-              <table
-                class="node-table min-w-full border-collapse text-center text-xs sm:text-[13px]"
-              >
-                <thead id="exactTableHeader"></thead>
-                <tbody id="exactTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 原始查询数据明细 (默认折叠) -->
-          <div
-            class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300"
-          >
-            <div
-              id="rawToggleBtn"
-              class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <span
-                class="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center"
-              >
-                <svg
-                  class="w-3.5 h-3.5 mr-1 text-gray-500 dark:text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                  ></path>
+            <div id="pasteGridWrapper" tabindex="0"
+              class="flex-1 w-full min-h-[140px] max-h-[30vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
+              <div id="pastePlaceholder"
+                class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 text-xs text-center p-4 pointer-events-none select-none">
+                <svg class="w-6 h-6 mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                  </path>
                 </svg>
-                查看原始全量数据明细 (<span
-                  id="rawCount"
-                  class="text-blue-600 dark:text-blue-400"
-                  >0</span
-                >
-                条)
-              </span>
-              <span
-                id="rawToggleIcon"
-                class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90"
-                >▼</span
-              >
-            </div>
-            <div
-              id="rawContainer"
-              class="hidden overflow-auto custom-scrollbar max-h-48 sm:max-h-64"
-            >
-              <table
-                class="raw-table min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-[11px] sm:text-xs border-collapse"
-                id="rawTable"
-              >
-                <thead
-                  class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10 shadow-sm"
-                  id="rawTableHeader"
-                ></thead>
-                <tbody
-                  class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700"
-                  id="rawTableBody"
-                ></tbody>
+                点击此处激活<br />按 Ctrl+V 粘贴数据
+              </div>
+              <table id="pasteVisualTable" class="paste-table min-w-full text-[12px] border-collapse hidden">
+                <thead id="pasteVisualThead" class="bg-gray-50 dark:bg-gray-700 sticky top-0 shadow-sm z-10"></thead>
+                <tbody id="pasteVisualTbody" class="divide-y divide-gray-100 dark:divide-gray-700"></tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <!-- 解析节点提取表 (固定展开) -->
+        <div
+          class="border border-blue-200 dark:border-blue-800/50 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
+          <div
+            class="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 border-b border-blue-100 dark:border-blue-800/50 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+              <span class="text-xs font-bold text-blue-800 dark:text-blue-300">✅ 节点时间提取结果 (左右滑动查看)</span>
+              <!-- 新增：03节点日期展示区域，包含双击复制功能 -->
+              <span id="extractedDateDisplay"
+                class="text-[13px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hidden hover:text-blue-800 dark:hover:text-blue-200 transition-colors select-none"
+                title="双击复制日期"></span>
+            </div>
+          </div>
+          <div class="overflow-x-auto custom-scrollbar p-2">
+            <table class="node-table min-w-full border-collapse text-center text-xs sm:text-[13px]">
+              <thead id="exactTableHeader"></thead>
+              <tbody id="exactTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 原始查询数据明细 (默认折叠) -->
+        <div
+          class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
+          <div id="rawToggleBtn"
+            class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <span class="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center">
+              <svg class="w-3.5 h-3.5 mr-1 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+              </svg>
+              查看原始全量数据明细 (<span id="rawCount" class="text-blue-600 dark:text-blue-400">0</span>
+              条)
+            </span>
+            <span id="rawToggleIcon"
+              class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
+          </div>
+          <div id="rawContainer" class="hidden overflow-auto custom-scrollbar max-h-48 sm:max-h-64">
+            <table
+              class="raw-table min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-[11px] sm:text-xs border-collapse"
+              id="rawTable">
+              <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10 shadow-sm" id="rawTableHeader"></thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700" id="rawTableBody">
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <script>
-      // ==========================================
-      // 常量与正则预编译优化
-      // ==========================================
-      const TIME_REGEX = /(?:\d{4}-\d{2}-\d{2}\s)?\d{2}:\d{2}:\d{2}/;
-      const SPLIT_REGEX = /[\t, |，]/;
-      const MAX_RENDER_ROWS = 5000;
+  <script>
+    // ==========================================
+    // 常量与正则预编译优化
+    // ==========================================
+    const TIME_REGEX = /(?:\d{4}-\d{2}-\d{2}\s)?\d{2}:\d{2}:\d{2}/;
+    const SPLIT_REGEX = /[\t, |，]/;
+    const MAX_RENDER_ROWS = 5000;
 
-      // ==========================================
-      // 暗色模式切换逻辑
-      // ==========================================
-      const themeToggleBtn = document.getElementById("themeToggle");
-      const themeIconLight = document.getElementById("themeIconLight");
-      const themeIconDark = document.getElementById("themeIconDark");
-      const htmlElement = document.documentElement;
+    // ==========================================
+    // 暗色模式切换逻辑
+    // ==========================================
+    const themeToggleBtn = document.getElementById("themeToggle");
+    const themeIconLight = document.getElementById("themeIconLight");
+    const themeIconDark = document.getElementById("themeIconDark");
+    const htmlElement = document.documentElement;
 
-      if (
-        localStorage.theme === "dark" ||
-        (!("theme" in localStorage) &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches)
-      ) {
-        htmlElement.classList.add("dark");
+    if (
+      localStorage.theme === "dark" ||
+      (!("theme" in localStorage) &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches)
+    ) {
+      htmlElement.classList.add("dark");
+      themeIconLight.classList.remove("hidden");
+      themeIconDark.classList.add("hidden");
+    } else {
+      htmlElement.classList.remove("dark");
+      themeIconLight.classList.add("hidden");
+      themeIconDark.classList.remove("hidden");
+    }
+
+    themeToggleBtn.addEventListener("click", () => {
+      htmlElement.classList.toggle("dark");
+      if (htmlElement.classList.contains("dark")) {
+        localStorage.theme = "dark";
         themeIconLight.classList.remove("hidden");
         themeIconDark.classList.add("hidden");
       } else {
-        htmlElement.classList.remove("dark");
+        localStorage.theme = "light";
         themeIconLight.classList.add("hidden");
         themeIconDark.classList.remove("hidden");
       }
+    });
 
-      themeToggleBtn.addEventListener("click", () => {
-        htmlElement.classList.toggle("dark");
-        if (htmlElement.classList.contains("dark")) {
-          localStorage.theme = "dark";
-          themeIconLight.classList.remove("hidden");
-          themeIconDark.classList.add("hidden");
-        } else {
-          localStorage.theme = "light";
-          themeIconLight.classList.add("hidden");
-          themeIconDark.classList.remove("hidden");
+    // ==========================================
+    // 字典配置区
+    // ==========================================
+    const DICT_NEAR = {
+      "03": "引导车进入",
+      followme_end: "引导车离开",
+      airplane_in_start: "飞机入位开始",
+      airplane_in_end: "飞机入位结束",
+      "04": "上轮档",
+      bridge_close_start: "靠桥开始",
+      bridge_close_end: "靠桥结束",
+      bridge_far_start: "撤桥开始",
+      bridge_far_end: "撤桥结束",
+      garbage_start: "垃圾车到位",
+      garbage_end: "垃圾车离位",
+      14: "配餐开始",
+      15: "配餐结束",
+      16: "加油开始",
+      17: "加油结束",
+      "06": "开客舱门",
+      29: "关客舱门",
+      "09": "开货舱门",
+      28: "关货舱门",
+      121: "开始加清水",
+      13: "完成加清水",
+      112: "开始排污",
+      12: "完成排污",
+      baggage_start: "行李拖车入位",
+      baggage_end: "行李拖车离开",
+      32: "撤轮挡",
+      33: "牵引车对接",
+      airplane_out_start: "飞机离位开始",
+      airplane_out_end: "飞机离位结束",
+      79: "飞机推出",
+    };
+
+    const ORDER_NEAR = [
+      "03",
+      "followme_end",
+      "airplane_in_start",
+      "airplane_in_end",
+      "04",
+      "bridge_close_start",
+      "bridge_close_end",
+      "bridge_far_start",
+      "bridge_far_end",
+      "garbage_start",
+      "garbage_end",
+      "14",
+      "15",
+      "16",
+      "17",
+      "06",
+      "29",
+      "09",
+      "28",
+      "121",
+      "13",
+      "112",
+      "12",
+      "baggage_start",
+      "baggage_end",
+      "32",
+      "33",
+      "airplane_out_start",
+      "airplane_out_end",
+      "79",
+    ];
+
+    const DICT_REMOTE = {
+      "03": "引导车进入",
+      followme_end: "引导车离开",
+      airplane_in_start: "飞机入位开始",
+      airplane_in_end: "飞机入位结束",
+      "04": "上轮档",
+      "052": "到港摆渡车到位",
+      27: "离港摆渡车到位",
+      "051": "客梯车对接",
+      272: "客梯车撤离",
+      garbage_start: "垃圾车到位",
+      garbage_end: "垃圾车离位",
+      14: "配餐开始",
+      15: "配餐结束",
+      16: "加油开始",
+      17: "加油结束",
+      "06": "开客舱门",
+      29: "关客舱门",
+      "09": "开货舱门",
+      28: "关货舱门",
+      121: "开始加清水",
+      13: "完成加清水",
+      112: "开始排污",
+      12: "完成排污",
+      baggage_start: "行李拖车入位",
+      baggage_end: "行李拖车离开",
+      32: "撤轮挡",
+      33: "牵引车对接",
+      airplane_out_start: "飞机离位开始",
+      airplane_out_end: "飞机离位结束",
+      79: "飞机推出",
+    };
+
+    const ORDER_REMOTE = [
+      "03",
+      "followme_end",
+      "airplane_in_start",
+      "airplane_in_end",
+      "04",
+      "052",
+      "27",
+      "051",
+      "272",
+      "garbage_start",
+      "garbage_end",
+      "14",
+      "15",
+      "16",
+      "17",
+      "06",
+      "29",
+      "09",
+      "28",
+      "121",
+      "13",
+      "112",
+      "12",
+      "baggage_start",
+      "baggage_end",
+      "32",
+      "33",
+      "airplane_out_start",
+      "airplane_out_end",
+      "79",
+    ];
+
+    const CONFIG = {
+      near: {dict: DICT_NEAR, order: ORDER_NEAR, label: "近机位"},
+      remote: {dict: DICT_REMOTE, order: ORDER_REMOTE, label: "远机位"},
+    };
+
+    let currentMode = "near";
+    let sqlEngine;
+    let databases = [];
+    let finalCleanedTimes = {};
+    let lastUsedTables = []; // 记录本次提取实际用到的数据表名（供"复制镜头编号"使用）
+    let lastExtractionFilter = null; // 记录本次提取时的过滤条件快照（startTime/endTime/aproCode）
+
+    // 初始化 SQL 引擎
+    async function init() {
+      try {
+        const config = {
+          locateFile: (filename) =>
+            `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}`,
+        };
+        sqlEngine = await initSqlJs(config);
+        renderEmptyTable("near");
+        document.getElementById("queryStatus").innerHTML =
+          `<span class="text-green-600 dark:text-green-400 font-bold">系统引擎已就绪。</span>`;
+      } catch (e) {
+        document.getElementById("queryStatus").innerHTML =
+          `<span class="text-red-500 font-bold">引擎加载失败，请检查网络环境。</span>`;
+      }
+    }
+    init();
+
+    // 拖拽与文件上传
+    const dropZoneLarge = document.getElementById("dropZoneLarge");
+    const dropZoneSmall = document.getElementById("dropZoneSmall");
+    const fileInputLarge = document.getElementById("dbFilesLarge");
+    const fileInputSmall = document.getElementById("dbFilesSmall");
+
+    function setupDropZone(zone, input) {
+      ["dragenter", "dragover"].forEach((e) =>
+        zone.addEventListener(e, (ev) => {
+          ev.preventDefault();
+          zone.classList.add("drag-active");
+        }),
+      );
+      ["dragleave", "drop"].forEach((e) =>
+        zone.addEventListener(e, (ev) => {
+          ev.preventDefault();
+          zone.classList.remove("drag-active");
+        }),
+      );
+
+      zone.addEventListener("drop", (e) => {
+        if (e.dataTransfer.files.length > 0) {
+          input.files = e.dataTransfer.files;
+          handleFiles(e.dataTransfer.files);
         }
       });
 
-      // ==========================================
-      // 字典配置区
-      // ==========================================
-      const DICT_NEAR = {
-        "03": "引导车进入",
-        followme_end: "引导车离开",
-        airplane_in_start: "飞机入位开始",
-        airplane_in_end: "飞机入位结束",
-        "04": "上轮档",
-        bridge_close_start: "靠桥开始",
-        bridge_close_end: "靠桥结束",
-        bridge_far_start: "撤桥开始",
-        bridge_far_end: "撤桥结束",
-        garbage_start: "垃圾车到位",
-        garbage_end: "垃圾车离位",
-        14: "配餐开始",
-        15: "配餐结束",
-        16: "加油开始",
-        17: "加油结束",
-        "06": "开客舱门",
-        29: "关客舱门",
-        "09": "开货舱门",
-        28: "关货舱门",
-        121: "开始加清水",
-        13: "完成加清水",
-        112: "开始排污",
-        12: "完成排污",
-        baggage_start: "行李拖车入位",
-        baggage_end: "行李拖车离开",
-        32: "撤轮挡",
-        33: "牵引车对接",
-        airplane_out_start: "飞机离位开始",
-        airplane_out_end: "飞机离位结束",
-        79: "飞机推出",
-      };
+      input.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          handleFiles(e.target.files);
+        }
+      });
+    }
 
-      const ORDER_NEAR = [
-        "03",
-        "followme_end",
-        "airplane_in_start",
-        "airplane_in_end",
-        "04",
-        "bridge_close_start",
-        "bridge_close_end",
-        "bridge_far_start",
-        "bridge_far_end",
-        "garbage_start",
-        "garbage_end",
-        "14",
-        "15",
-        "16",
-        "17",
-        "06",
-        "29",
-        "09",
-        "28",
-        "121",
-        "13",
-        "112",
-        "12",
-        "baggage_start",
-        "baggage_end",
-        "32",
-        "33",
-        "airplane_out_start",
-        "airplane_out_end",
-        "79",
-      ];
+    setupDropZone(dropZoneLarge, fileInputLarge);
+    setupDropZone(dropZoneSmall, fileInputSmall);
 
-      const DICT_REMOTE = {
-        "03": "引导车进入",
-        followme_end: "引导车离开",
-        airplane_in_start: "飞机入位开始",
-        airplane_in_end: "飞机入位结束",
-        "04": "上轮档",
-        "052": "到港摆渡车到位",
-        27: "离港摆渡车到位",
-        "051": "客梯车对接",
-        272: "客梯车撤离",
-        garbage_start: "垃圾车到位",
-        garbage_end: "垃圾车离位",
-        14: "配餐开始",
-        15: "配餐结束",
-        16: "加油开始",
-        17: "加油结束",
-        "06": "开客舱门",
-        29: "关客舱门",
-        "09": "开货舱门",
-        28: "关货舱门",
-        121: "开始加清水",
-        13: "完成加清水",
-        112: "开始排污",
-        12: "完成排污",
-        baggage_start: "行李拖车入位",
-        baggage_end: "行李拖车离开",
-        32: "撤轮挡",
-        33: "牵引车对接",
-        airplane_out_start: "飞机离位开始",
-        airplane_out_end: "飞机离位结束",
-        79: "飞机推出",
-      };
+    async function handleFiles(files) {
+      document.getElementById("fileInfo").innerText =
+        `已载入 ${files.length} 个库`;
+      document.getElementById("fileInfo").classList.remove("hidden");
 
-      const ORDER_REMOTE = [
-        "03",
-        "followme_end",
-        "airplane_in_start",
-        "airplane_in_end",
-        "04",
-        "052",
-        "27",
-        "051",
-        "272",
-        "garbage_start",
-        "garbage_end",
-        "14",
-        "15",
-        "16",
-        "17",
-        "06",
-        "29",
-        "09",
-        "28",
-        "121",
-        "13",
-        "112",
-        "12",
-        "baggage_start",
-        "baggage_end",
-        "32",
-        "33",
-        "airplane_out_start",
-        "airplane_out_end",
-        "79",
-      ];
+      // 导入后切换布局：大上传框隐藏，小上传框与表选择区显示
+      dropZoneLarge.classList.add("hidden");
+      dropZoneSmall.classList.remove("hidden");
 
-      const CONFIG = {
-        near: { dict: DICT_NEAR, order: ORDER_NEAR, label: "近机位" },
-        remote: { dict: DICT_REMOTE, order: ORDER_REMOTE, label: "远机位" },
-      };
+      databases = [];
+      const tableMap = new Map();
 
-      let currentMode = "near";
-      let sqlEngine;
-      let databases = [];
-      let finalCleanedTimes = {};
-      let lastUsedTables = []; // 记录本次提取实际用到的数据表名（供"复制镜头编号"使用）
-      let lastExtractionFilter = null; // 记录本次提取时的过滤条件快照（startTime/endTime/aproCode）
+      for (let file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        const db = new sqlEngine.Database(new Uint8Array(arrayBuffer));
+        databases.push({name: file.name, db: db});
 
-      // 初始化 SQL 引擎
-      async function init() {
-        try {
-          const config = {
-            locateFile: (filename) =>
-              `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}`,
-          };
-          sqlEngine = await initSqlJs(config);
-          renderEmptyTable("near");
-          document.getElementById("queryStatus").innerHTML =
-            `<span class="text-green-600 dark:text-green-400 font-bold">系统引擎已就绪。</span>`;
-        } catch (e) {
-          document.getElementById("queryStatus").innerHTML =
-            `<span class="text-red-500 font-bold">引擎加载失败，请检查网络环境。</span>`;
+        const res = db.exec(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
+        );
+        if (res.length > 0) {
+          res[0].values.forEach((row) => {
+            const tableName = row[0];
+            if (!tableMap.has(tableName)) {
+              tableMap.set(tableName, []);
+            }
+            tableMap.get(tableName).push(file.name);
+          });
         }
       }
-      init();
 
-      // 拖拽与文件上传
-      const dropZoneLarge = document.getElementById("dropZoneLarge");
-      const dropZoneSmall = document.getElementById("dropZoneSmall");
-      const fileInputLarge = document.getElementById("dbFilesLarge");
-      const fileInputSmall = document.getElementById("dbFilesSmall");
-
-      function setupDropZone(zone, input) {
-        ["dragenter", "dragover"].forEach((e) =>
-          zone.addEventListener(e, (ev) => {
-            ev.preventDefault();
-            zone.classList.add("drag-active");
-          }),
-        );
-        ["dragleave", "drop"].forEach((e) =>
-          zone.addEventListener(e, (ev) => {
-            ev.preventDefault();
-            zone.classList.remove("drag-active");
-          }),
-        );
-
-        zone.addEventListener("drop", (e) => {
-          if (e.dataTransfer.files.length > 0) {
-            input.files = e.dataTransfer.files;
-            handleFiles(e.dataTransfer.files);
-          }
-        });
-
-        input.addEventListener("change", (e) => {
-          if (e.target.files.length > 0) {
-            handleFiles(e.target.files);
-          }
-        });
-      }
-
-      setupDropZone(dropZoneLarge, fileInputLarge);
-      setupDropZone(dropZoneSmall, fileInputSmall);
-
-      async function handleFiles(files) {
-        document.getElementById("fileInfo").innerText =
-          `已载入 ${files.length} 个库`;
-        document.getElementById("fileInfo").classList.remove("hidden");
-
-        // 导入后切换布局：大上传框隐藏，小上传框与表选择区显示
-        dropZoneLarge.classList.add("hidden");
-        dropZoneSmall.classList.remove("hidden");
-
-        databases = [];
-        const tableMap = new Map();
-
-        for (let file of files) {
-          const arrayBuffer = await file.arrayBuffer();
-          const db = new sqlEngine.Database(new Uint8Array(arrayBuffer));
-          databases.push({ name: file.name, db: db });
-
-          const res = db.exec(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
-          );
-          if (res.length > 0) {
-            res[0].values.forEach((row) => {
-              const tableName = row[0];
-              if (!tableMap.has(tableName)) {
-                tableMap.set(tableName, []);
-              }
-              tableMap.get(tableName).push(file.name);
-            });
-          }
-        }
-
-        const tableListDiv = document.getElementById("tableList");
-        tableListDiv.innerHTML = "";
-        tableMap.forEach((files, tableName) => {
-          const isChecked = "checked";
-          const div = document.createElement("div");
-          div.className = "flex items-center space-x-1";
-          div.innerHTML = `
+      const tableListDiv = document.getElementById("tableList");
+      tableListDiv.innerHTML = "";
+      tableMap.forEach((files, tableName) => {
+        const isChecked = "checked";
+        const div = document.createElement("div");
+        div.className = "flex items-center space-x-1";
+        div.innerHTML = `
         <input type="checkbox" value="${tableName}" class="table-checkbox w-3.5 h-3.5 text-blue-600 rounded" ${isChecked}>
         <label class="text-xs text-gray-700 dark:text-gray-300 cursor-pointer truncate" title="${tableName}" onclick="this.previousElementSibling.click()">
           ${tableName}
         </label>
       `;
-          tableListDiv.appendChild(div);
-        });
-        document
-          .getElementById("tableSelectionSection")
-          .classList.remove("hidden");
-      }
-
-      // 绘制空表头
-      function renderEmptyTable(mode) {
-        if (mode) currentMode = mode;
-        const { order, dict } = CONFIG[currentMode];
-        let theadRows = ["<tr>"];
-        let tbodyRows = ["<tr>"];
-
-        for (let i = 0; i < order.length; i++) {
-          const code = order[i];
-          theadRows.push(`
-        <th class="border-r border-b border-gray-200 dark:border-gray-600 px-3 py-2 font-normal bg-gray-50 dark:bg-gray-700 min-w-[100px] sm:min-w-[120px]">
-          <div class="font-bold text-gray-800 dark:text-gray-200">${dict[code]}</div>
-          <div class="text-gray-400 dark:text-gray-400 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
-        </th>`);
-          tbodyRows.push(
-            `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-300 dark:text-gray-600">-</td>`,
-          );
-        }
-        theadRows.push("</tr>");
-        tbodyRows.push("</tr>");
-
-        document.getElementById("exactTableHeader").innerHTML =
-          theadRows.join("");
-        document.getElementById("exactTableBody").innerHTML =
-          tbodyRows.join("");
-        document.getElementById("rawTableHeader").innerHTML = "";
-        document.getElementById("rawTableBody").innerHTML = "";
-        document.getElementById("rawCount").innerText = "0";
-      }
-
-      // 折叠区域事件绑定
+        tableListDiv.appendChild(div);
+      });
       document
-        .getElementById("pasteToggleBtn")
-        .addEventListener("click", () => {
-          const container = document.getElementById("pasteContainer");
-          const icon = document.getElementById("pasteToggleIcon");
-          container.classList.toggle("hidden");
-          container.classList.toggle("flex");
-          icon.classList.toggle("-rotate-90");
-        });
+        .getElementById("tableSelectionSection")
+        .classList.remove("hidden");
+    }
 
-      document.getElementById("rawToggleBtn").addEventListener("click", () => {
-        const container = document.getElementById("rawContainer");
-        const icon = document.getElementById("rawToggleIcon");
+    // 绘制空表头
+    function renderEmptyTable(mode) {
+      if (mode) currentMode = mode;
+      const {order, dict} = CONFIG[currentMode];
+      let theadRows = ["<tr>"];
+      let tbodyRows = ["<tr>"];
+
+      for (let i = 0; i < order.length; i++) {
+        const code = order[i];
+        theadRows.push(`
+          <th class="border-r border-b border-gray-200 dark:border-gray-600 px-3 py-2 font-normal bg-gray-50 dark:bg-gray-700 min-w-[100px] sm:min-w-[120px]">
+          <div class="font-bold text-gray-800 dark:text-gray-200">${dict[code]}</div>
+          <div class="text-gray-500 dark:text-gray-300 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
+        </th>`);
+        tbodyRows.push(
+          `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-400 dark:text-gray-500">-</td>`,
+        );
+      }
+      theadRows.push("</tr>");
+      tbodyRows.push("</tr>");
+
+      document.getElementById("exactTableHeader").innerHTML =
+        theadRows.join("");
+      document.getElementById("exactTableBody").innerHTML =
+        tbodyRows.join("");
+      document.getElementById("rawTableHeader").innerHTML = "";
+      document.getElementById("rawTableBody").innerHTML = "";
+      document.getElementById("rawCount").innerText = "0";
+    }
+
+    // 折叠区域事件绑定
+    document
+      .getElementById("pasteToggleBtn")
+      .addEventListener("click", () => {
+        const container = document.getElementById("pasteContainer");
+        const icon = document.getElementById("pasteToggleIcon");
         container.classList.toggle("hidden");
+        container.classList.toggle("flex");
         icon.classList.toggle("-rotate-90");
       });
 
-      // 辅助网格：接收用户粘贴文本并渲染表格
-      document
-        .getElementById("pasteGridWrapper")
-        .addEventListener("paste", (e) => {
-          e.preventDefault();
-          const text = (e.clipboardData || window.clipboardData).getData(
-            "text",
-          );
-          if (!text) return;
+    document.getElementById("rawToggleBtn").addEventListener("click", () => {
+      const container = document.getElementById("rawContainer");
+      const icon = document.getElementById("rawToggleIcon");
+      container.classList.toggle("hidden");
+      icon.classList.toggle("-rotate-90");
+    });
 
-          const pasteArea = document.getElementById("pasteArea");
-          pasteArea.value = pasteArea.value
-            ? pasteArea.value + "\n" + text
-            : text;
+    // 辅助网格：接收用户粘贴文本并渲染表格
+    document
+      .getElementById("pasteGridWrapper")
+      .addEventListener("paste", (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData(
+          "text",
+        );
+        if (!text) return;
 
+        const pasteArea = document.getElementById("pasteArea");
+        pasteArea.value = pasteArea.value
+          ? pasteArea.value + "\n" + text
+          : text;
+
+        document.getElementById("queryStatus").innerHTML =
+          `<span class="text-blue-500 dark:text-blue-400">正在渲染数据，请稍候...</span>`;
+
+        // 异步释放主线程，防止浏览器卡死
+        setTimeout(() => {
+          renderPasteTableGrid();
           document.getElementById("queryStatus").innerHTML =
-            `<span class="text-blue-500 dark:text-blue-400">正在渲染数据，请稍候...</span>`;
+            `<span class="text-green-600 dark:text-green-400">数据已粘贴至网格，请点击提取按钮。</span>`;
+        }, 50);
+      });
 
-          // 异步释放主线程，防止浏览器卡死
+    function renderPasteTableGrid() {
+      const text = document.getElementById("pasteArea").value.trim();
+      const table = document.getElementById("pasteVisualTable");
+      const thead = document.getElementById("pasteVisualThead");
+      const tbody = document.getElementById("pasteVisualTbody");
+      const placeholder = document.getElementById("pastePlaceholder");
+
+      if (!text) {
+        placeholder.classList.remove("hidden");
+        table.classList.add("hidden");
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
+        document.getElementById("filteredTextCount").innerText = "0";
+        return;
+      }
+
+      placeholder.classList.add("hidden");
+      table.classList.remove("hidden");
+
+      const lines = text.split("\n").filter((l) => l.trim() !== "");
+      if (lines.length === 0) return;
+
+      const firstLineCols = lines[0].split("\t").map((c) => c.trim());
+      const hasHeader =
+        firstLineCols.includes("nodeCode") ||
+        firstLineCols.includes("report_time") ||
+        firstLineCols.includes("aproCode");
+
+      let headers = [];
+      let startRowIdx = 0;
+
+      if (hasHeader) {
+        headers = firstLineCols;
+        startRowIdx = 1;
+      } else {
+        const maxCols = Math.max(
+          ...lines.slice(0, 5).map((l) => l.split("\t").length),
+        );
+        for (let c = 1; c <= maxCols; c++) {
+          headers.push(`列 ${c}`);
+        }
+        startRowIdx = 0;
+      }
+
+      // 使用数组拼接替代字符串累加
+      let theadRows = ["<tr>"];
+      for (let h = 0; h < headers.length; h++) {
+        theadRows.push(
+          `<th class="border-b border-r border-gray-200 dark:border-gray-600 px-3 py-1.5 font-semibold text-gray-700 dark:text-gray-200 text-left bg-gray-50 dark:bg-gray-700 shadow-sm sticky top-0">${headers[h]}</th>`,
+        );
+      }
+      theadRows.push("</tr>");
+      thead.innerHTML = theadRows.join("");
+
+      // DOM 限流保护：截断过长展示数据
+      const isTruncated = lines.length > MAX_RENDER_ROWS;
+      const displayLines = isTruncated
+        ? lines.slice(0, MAX_RENDER_ROWS)
+        : lines;
+
+      let tbodyLines = new Array(displayLines.length - startRowIdx);
+      let validRows = lines.length - startRowIdx;
+
+      for (let i = startRowIdx; i < displayLines.length; i++) {
+        const cols = displayLines[i].split("\t");
+        let trHtml =
+          '<tr class="hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors">';
+        for (let j = 0; j < headers.length; j++) {
+          const cellVal = cols[j] !== undefined ? cols[j].trim() : "";
+          trHtml += `<td class="border-b border-r border-gray-100 dark:border-gray-700 px-3 py-1.5 text-gray-700 dark:text-gray-200 whitespace-nowrap">${cellVal}</td>`;
+        }
+        trHtml += "</tr>";
+        tbodyLines[i - startRowIdx] = trHtml;
+      }
+
+      tbody.innerHTML = tbodyLines.join("");
+      const truncNote = isTruncated
+        ? ` (为保证性能，仅渲染前${MAX_RENDER_ROWS}行)`
+        : "";
+      document.getElementById("filteredTextCount").innerText =
+        `${validRows}${truncNote}`;
+    }
+
+    // 事件绑定
+    document
+      .getElementById("btnParseNear")
+      .addEventListener("click", () => executeExtraction("near"));
+    document
+      .getElementById("btnParseRemote")
+      .addEventListener("click", () => executeExtraction("remote"));
+
+    // 双击复制日期的通用逻辑
+    document
+      .getElementById("extractedDateDisplay")
+      .addEventListener("dblclick", function () {
+        const text = this.textContent;
+        if (!text || text === "已复制！") return;
+
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+
+        try {
+          document.execCommand("copy");
+          const originalText = text;
+          this.textContent = "已复制！";
           setTimeout(() => {
-            renderPasteTableGrid();
+            this.textContent = originalText;
+          }, 1000);
+        } catch (err) {
+          alert("复制失败，请手动选择复制。");
+        }
+        document.body.removeChild(textArea);
+      });
+
+    // 【核心引擎】
+    function executeExtraction(mode) {
+      if (!sqlEngine) return alert("引擎尚未就绪，请稍候。");
+
+      currentMode = mode;
+      const {dict, order, label} = CONFIG[currentMode];
+
+      const selectedTables = Array.from(
+        document.querySelectorAll(".table-checkbox:checked"),
+      ).map((cb) => cb.value);
+      const startTime = document.getElementById("startTime").value.trim();
+      const endTime = document.getElementById("endTime").value.trim();
+      const aproCode = document.getElementById("aproCode").value.trim();
+      let pasteText = document.getElementById("pasteArea").value.trim();
+
+      // 记录本次提取实际用到的数据表名与过滤条件（供"复制镜头编号"按钮使用）
+      lastUsedTables = selectedTables.slice();
+      lastExtractionFilter = {startTime, endTime, aproCode};
+
+      document.getElementById("queryStatus").innerHTML =
+        `<span class="text-blue-500 dark:text-blue-400">正在解析并合并数据流，请稍候...</span>`;
+
+      // 使用 setTimeout 释放主线程以渲染 loading 状态
+      setTimeout(() => {
+        let temporaryMap = {};
+        let allRawResults = [];
+        let allColumns = new Set();
+        let hasDataParsed = false;
+        let dbFilteredRawDataForTextarea = [];
+        let dbFilteredColumns = new Set();
+
+        if (selectedTables.length > 0) {
+          databases.forEach(({name, db}) => {
+            selectedTables.forEach((tableName) => {
+              try {
+                let conditions = [];
+                if (startTime)
+                  conditions.push(`report_time >= '${startTime}'`);
+                if (endTime) conditions.push(`report_time <= '${endTime}'`);
+                if (aproCode) conditions.push(`aproCode = '${aproCode}'`);
+                const whereClause =
+                  conditions.length > 0
+                    ? `WHERE ${conditions.join(" AND ")}`
+                    : "";
+
+                const sqlFull = `SELECT * FROM "${tableName}" ${whereClause}`;
+                const resultFull = db.exec(sqlFull);
+                if (resultFull.length > 0) {
+                  const cols = resultFull[0].columns;
+                  cols.forEach((c) => dbFilteredColumns.add(c));
+                  resultFull[0].values.forEach((row) => {
+                    let rowObj = {};
+                    cols.forEach((col, idx) => {
+                      rowObj[col] = row[idx];
+                    });
+                    dbFilteredRawDataForTextarea.push(rowObj);
+                  });
+                }
+
+                const sqlRaw = `SELECT * FROM "${tableName}"`;
+                const resultRaw = db.exec(sqlRaw);
+                if (resultRaw.length > 0) {
+                  const colsRaw = resultRaw[0].columns;
+                  colsRaw.forEach((col) => allColumns.add(col));
+                  resultRaw[0].values.forEach((row) => {
+                    let rowObj = {
+                      _source_db: name,
+                      _source_table: tableName,
+                    };
+                    colsRaw.forEach((col, idx) => {
+                      rowObj[col] = row[idx];
+                    });
+                    allRawResults.push(rowObj);
+                  });
+                }
+              } catch (e) {
+                console.warn("DB Read Error:", e.message);
+              }
+            });
+          });
+        }
+
+        if (dbFilteredRawDataForTextarea.length > 0) {
+          const colsArr = Array.from(dbFilteredColumns);
+          const priorityCols = ["nodeCode", "report_time", "aproCode"];
+          let filteredColsArr = colsArr.filter(
+            (c) => !priorityCols.includes(c),
+          );
+          const finalColsArr = [
+            ...priorityCols.filter((c) => dbFilteredColumns.has(c)),
+            ...filteredColsArr,
+          ];
+
+          // 优化大文本拼接速度
+          let dbTsvLines = [finalColsArr.join("\t")];
+          for (let i = 0; i < dbFilteredRawDataForTextarea.length; i++) {
+            const row = dbFilteredRawDataForTextarea[i];
+            const lineVals = new Array(finalColsArr.length);
+            for (let j = 0; j < finalColsArr.length; j++) {
+              lineVals[j] = row[finalColsArr[j]] || "";
+            }
+            dbTsvLines.push(lineVals.join("\t"));
+          }
+
+          const dbTsvString = dbTsvLines.join("\n") + "\n";
+          if (
+            pasteText &&
+            !pasteText.includes(dbTsvString.substring(0, 30))
+          ) {
+            document.getElementById("pasteArea").value =
+              dbTsvString + "\n" + pasteText;
+          } else {
+            document.getElementById("pasteArea").value = dbTsvString;
+          }
+          pasteText = document.getElementById("pasteArea").value.trim();
+          renderPasteTableGrid();
+        }
+
+        if (pasteText) {
+          const lines = pasteText.split("\n");
+          const headers = lines[0].split("\t").map((h) => h.trim());
+          let globalCodeIdx = headers.indexOf("nodeCode");
+          let globalTimeIdx = headers.indexOf("report_time");
+
+          let inferredCodeIdx = -1;
+          let inferredTimeIdx = -1;
+
+          // 全局智能列定位推断（解决无表头时数字被模糊兜底误杀问题）
+          if (globalCodeIdx === -1 || globalTimeIdx === -1) {
+            for (let i = 0; i < lines.length; i++) {
+              let sampleLine = lines[i].trim();
+              if (!sampleLine) continue;
+
+              let sampleCols = sampleLine.split("\t");
+              if (sampleCols.length > 1) {
+                let tIdx = sampleCols.findIndex((c) => TIME_REGEX.test(c));
+                if (tIdx !== -1) {
+                  if (
+                    tIdx + 1 < sampleCols.length &&
+                    dict[sampleCols[tIdx + 1].trim()]
+                  ) {
+                    inferredTimeIdx = tIdx;
+                    inferredCodeIdx = tIdx + 1;
+                    break;
+                  }
+                  if (tIdx - 1 >= 0 && dict[sampleCols[tIdx - 1].trim()]) {
+                    inferredTimeIdx = tIdx;
+                    inferredCodeIdx = tIdx - 1;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            let matchedCode = null;
+            let matchedTime = null;
+
+            if (globalCodeIdx !== -1 && globalTimeIdx !== -1 && i > 0) {
+              const cols = line.split("\t");
+              if (cols.length > Math.max(globalCodeIdx, globalTimeIdx)) {
+                let code = cols[globalCodeIdx].trim();
+                let rTime = cols[globalTimeIdx].trim();
+                if (dict[code] && rTime) {
+                  matchedCode = code;
+                  let tMatch = rTime.match(TIME_REGEX);
+                  if (tMatch) matchedTime = tMatch[0];
+                }
+              }
+            } else if (inferredCodeIdx !== -1 && inferredTimeIdx !== -1) {
+              const cols = line.split("\t");
+              if (cols.length > Math.max(inferredCodeIdx, inferredTimeIdx)) {
+                let code = cols[inferredCodeIdx].trim();
+                let rTime = cols[inferredTimeIdx].trim();
+                if (dict[code] && rTime) {
+                  matchedCode = code;
+                  let tMatch = rTime.match(TIME_REGEX);
+                  if (tMatch) matchedTime = tMatch[0];
+                }
+              }
+            } else if (globalCodeIdx === -1) {
+              let tMatch = line.match(TIME_REGEX);
+              if (tMatch) {
+                matchedTime = tMatch[0];
+                const tokens = line.split(SPLIT_REGEX);
+                for (let j = 0; j < tokens.length; j++) {
+                  let cleanToken = tokens[j].trim();
+                  if (
+                    cleanToken &&
+                    dict[cleanToken] &&
+                    cleanToken !== matchedTime
+                  ) {
+                    matchedCode = cleanToken;
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (matchedCode && matchedTime) {
+              if (!temporaryMap[matchedCode]) {
+                temporaryMap[matchedCode] = new Set();
+              }
+              temporaryMap[matchedCode].add(matchedTime);
+              hasDataParsed = true;
+            }
+          }
+        }
+
+        if (!hasDataParsed) {
+          if (selectedTables.length === 0 && !pasteText) {
             document.getElementById("queryStatus").innerHTML =
-              `<span class="text-green-600 dark:text-green-400">数据已粘贴至网格，请点击提取按钮。</span>`;
-          }, 50);
-        });
-
-      function renderPasteTableGrid() {
-        const text = document.getElementById("pasteArea").value.trim();
-        const table = document.getElementById("pasteVisualTable");
-        const thead = document.getElementById("pasteVisualThead");
-        const tbody = document.getElementById("pasteVisualTbody");
-        const placeholder = document.getElementById("pastePlaceholder");
-
-        if (!text) {
-          placeholder.classList.remove("hidden");
-          table.classList.add("hidden");
-          thead.innerHTML = "";
-          tbody.innerHTML = "";
-          document.getElementById("filteredTextCount").innerText = "0";
+              `<span class="text-red-500 font-bold">请勾选数据表，或在工作网格粘贴数据！</span>`;
+          } else {
+            document.getElementById("queryStatus").innerHTML =
+              `<span class="text-orange-500 font-bold">未在数据中提取到匹配【${label}】的有效节点。</span>`;
+          }
           return;
         }
 
-        placeholder.classList.add("hidden");
-        table.classList.remove("hidden");
-
-        const lines = text.split("\n").filter((l) => l.trim() !== "");
-        if (lines.length === 0) return;
-
-        const firstLineCols = lines[0].split("\t").map((c) => c.trim());
-        const hasHeader =
-          firstLineCols.includes("nodeCode") ||
-          firstLineCols.includes("report_time") ||
-          firstLineCols.includes("aproCode");
-
-        let headers = [];
-        let startRowIdx = 0;
-
-        if (hasHeader) {
-          headers = firstLineCols;
-          startRowIdx = 1;
-        } else {
-          const maxCols = Math.max(
-            ...lines.slice(0, 5).map((l) => l.split("\t").length),
-          );
-          for (let c = 1; c <= maxCols; c++) {
-            headers.push(`列 ${c}`);
-          }
-          startRowIdx = 0;
-        }
-
-        // 使用数组拼接替代字符串累加
+        finalCleanedTimes = {};
+        let hitCount = 0;
         let theadRows = ["<tr>"];
-        for (let h = 0; h < headers.length; h++) {
-          theadRows.push(
-            `<th class="border-b border-r border-gray-200 dark:border-gray-600 px-3 py-1.5 font-semibold text-gray-600 dark:text-gray-300 text-left bg-gray-50 dark:bg-gray-700 shadow-sm sticky top-0">${headers[h]}</th>`,
-          );
-        }
-        theadRows.push("</tr>");
-        thead.innerHTML = theadRows.join("");
+        let tbodyRows = ["<tr>"];
 
-        // DOM 限流保护：截断过长展示数据
-        const isTruncated = lines.length > MAX_RENDER_ROWS;
-        const displayLines = isTruncated
-          ? lines.slice(0, MAX_RENDER_ROWS)
-          : lines;
+        let extractedDate = "";
 
-        let tbodyLines = new Array(displayLines.length - startRowIdx);
-        let validRows = lines.length - startRowIdx;
+        order.forEach((code) => {
+          const timesSet = temporaryMap[code];
+          const sortedTimes = timesSet
+            ? Array.from(timesSet).sort((a, b) => a.localeCompare(b))
+            : [];
+          let finalSelectedTime = "";
+          let displayHtml = "-";
 
-        for (let i = startRowIdx; i < displayLines.length; i++) {
-          const cols = displayLines[i].split("\t");
-          let trHtml =
-            '<tr class="hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors">';
-          for (let j = 0; j < headers.length; j++) {
-            const cellVal = cols[j] !== undefined ? cols[j].trim() : "";
-            trHtml += `<td class="border-b border-r border-gray-100 dark:border-gray-700 px-3 py-1.5 text-gray-600 dark:text-gray-300 whitespace-nowrap">${cellVal}</td>`;
-          }
-          trHtml += "</tr>";
-          tbodyLines[i - startRowIdx] = trHtml;
-        }
-
-        tbody.innerHTML = tbodyLines.join("");
-        const truncNote = isTruncated
-          ? ` (为保证性能，仅渲染前${MAX_RENDER_ROWS}行)`
-          : "";
-        document.getElementById("filteredTextCount").innerText =
-          `${validRows}${truncNote}`;
-      }
-
-      // 事件绑定
-      document
-        .getElementById("btnParseNear")
-        .addEventListener("click", () => executeExtraction("near"));
-      document
-        .getElementById("btnParseRemote")
-        .addEventListener("click", () => executeExtraction("remote"));
-
-      // 双击复制日期的通用逻辑
-      document
-        .getElementById("extractedDateDisplay")
-        .addEventListener("dblclick", function () {
-          const text = this.textContent;
-          if (!text || text === "已复制！") return;
-
-          const textArea = document.createElement("textarea");
-          textArea.value = text;
-          textArea.style.position = "fixed";
-          textArea.style.opacity = "0";
-          document.body.appendChild(textArea);
-          textArea.select();
-
-          try {
-            document.execCommand("copy");
-            const originalText = text;
-            this.textContent = "已复制！";
-            setTimeout(() => {
-              this.textContent = originalText;
-            }, 1000);
-          } catch (err) {
-            alert("复制失败，请手动选择复制。");
-          }
-          document.body.removeChild(textArea);
-        });
-
-      // 【核心引擎】
-      function executeExtraction(mode) {
-        if (!sqlEngine) return alert("引擎尚未就绪，请稍候。");
-
-        currentMode = mode;
-        const { dict, order, label } = CONFIG[currentMode];
-
-        const selectedTables = Array.from(
-          document.querySelectorAll(".table-checkbox:checked"),
-        ).map((cb) => cb.value);
-        const startTime = document.getElementById("startTime").value.trim();
-        const endTime = document.getElementById("endTime").value.trim();
-        const aproCode = document.getElementById("aproCode").value.trim();
-        let pasteText = document.getElementById("pasteArea").value.trim();
-
-        // 记录本次提取实际用到的数据表名与过滤条件（供"复制镜头编号"按钮使用）
-        lastUsedTables = selectedTables.slice();
-        lastExtractionFilter = { startTime, endTime, aproCode };
-
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="text-blue-500 dark:text-blue-400">正在解析并合并数据流，请稍候...</span>`;
-
-        // 使用 setTimeout 释放主线程以渲染 loading 状态
-        setTimeout(() => {
-          let temporaryMap = {};
-          let allRawResults = [];
-          let allColumns = new Set();
-          let hasDataParsed = false;
-          let dbFilteredRawDataForTextarea = [];
-          let dbFilteredColumns = new Set();
-
-          if (selectedTables.length > 0) {
-            databases.forEach(({ name, db }) => {
-              selectedTables.forEach((tableName) => {
-                try {
-                  let conditions = [];
-                  if (startTime)
-                    conditions.push(`report_time >= '${startTime}'`);
-                  if (endTime) conditions.push(`report_time <= '${endTime}'`);
-                  if (aproCode) conditions.push(`aproCode = '${aproCode}'`);
-                  const whereClause =
-                    conditions.length > 0
-                      ? `WHERE ${conditions.join(" AND ")}`
-                      : "";
-
-                  const sqlFull = `SELECT * FROM "${tableName}" ${whereClause}`;
-                  const resultFull = db.exec(sqlFull);
-                  if (resultFull.length > 0) {
-                    const cols = resultFull[0].columns;
-                    cols.forEach((c) => dbFilteredColumns.add(c));
-                    resultFull[0].values.forEach((row) => {
-                      let rowObj = {};
-                      cols.forEach((col, idx) => {
-                        rowObj[col] = row[idx];
-                      });
-                      dbFilteredRawDataForTextarea.push(rowObj);
-                    });
-                  }
-
-                  const sqlRaw = `SELECT * FROM "${tableName}"`;
-                  const resultRaw = db.exec(sqlRaw);
-                  if (resultRaw.length > 0) {
-                    const colsRaw = resultRaw[0].columns;
-                    colsRaw.forEach((col) => allColumns.add(col));
-                    resultRaw[0].values.forEach((row) => {
-                      let rowObj = {
-                        _source_db: name,
-                        _source_table: tableName,
-                      };
-                      colsRaw.forEach((col, idx) => {
-                        rowObj[col] = row[idx];
-                      });
-                      allRawResults.push(rowObj);
-                    });
-                  }
-                } catch (e) {
-                  console.warn("DB Read Error:", e.message);
-                }
-              });
-            });
+          // 【新增点】：悄悄提取 03 节点的第一条记录的日期部分
+          if (code === "03" && sortedTimes.length > 0) {
+            const firstTimeStr = sortedTimes[0];
+            if (firstTimeStr.includes(" ")) {
+              extractedDate = firstTimeStr.split(" ")[0];
+            }
           }
 
-          if (dbFilteredRawDataForTextarea.length > 0) {
-            const colsArr = Array.from(dbFilteredColumns);
-            const priorityCols = ["nodeCode", "report_time", "aproCode"];
-            let filteredColsArr = colsArr.filter(
-              (c) => !priorityCols.includes(c),
+          if (sortedTimes.length > 0) {
+            hitCount++;
+            const allTimes = sortedTimes.map((ts) =>
+              ts.includes(" ") ? ts.split(" ")[1] : ts,
             );
-            const finalColsArr = [
-              ...priorityCols.filter((c) => dbFilteredColumns.has(c)),
-              ...filteredColsArr,
-            ];
 
-            // 优化大文本拼接速度
-            let dbTsvLines = [finalColsArr.join("\t")];
-            for (let i = 0; i < dbFilteredRawDataForTextarea.length; i++) {
-              const row = dbFilteredRawDataForTextarea[i];
-              const lineVals = new Array(finalColsArr.length);
-              for (let j = 0; j < finalColsArr.length; j++) {
-                lineVals[j] = row[finalColsArr[j]] || "";
-              }
-              dbTsvLines.push(lineVals.join("\t"));
+            let timesToDisplay = allTimes;
+            // 行李车过滤规则：入位取首，离开取末
+            if (code === "baggage_start") {
+              timesToDisplay = [allTimes[0]];
+            } else if (code === "baggage_end") {
+              timesToDisplay = [allTimes[allTimes.length - 1]];
             }
 
-            const dbTsvString = dbTsvLines.join("\n") + "\n";
-            if (
-              pasteText &&
-              !pasteText.includes(dbTsvString.substring(0, 30))
-            ) {
-              document.getElementById("pasteArea").value =
-                dbTsvString + "\n" + pasteText;
+            finalSelectedTime = timesToDisplay.join("\n");
+            finalCleanedTimes[code] = finalSelectedTime;
+
+            if (timesToDisplay.length === 1) {
+              displayHtml = timesToDisplay[0];
+            } else if (timesToDisplay.length === 2) {
+              displayHtml = timesToDisplay.join("<br>");
             } else {
-              document.getElementById("pasteArea").value = dbTsvString;
-            }
-            pasteText = document.getElementById("pasteArea").value.trim();
-            renderPasteTableGrid();
-          }
-
-          if (pasteText) {
-            const lines = pasteText.split("\n");
-            const headers = lines[0].split("\t").map((h) => h.trim());
-            let globalCodeIdx = headers.indexOf("nodeCode");
-            let globalTimeIdx = headers.indexOf("report_time");
-
-            let inferredCodeIdx = -1;
-            let inferredTimeIdx = -1;
-
-            // 全局智能列定位推断（解决无表头时数字被模糊兜底误杀问题）
-            if (globalCodeIdx === -1 || globalTimeIdx === -1) {
-              for (let i = 0; i < lines.length; i++) {
-                let sampleLine = lines[i].trim();
-                if (!sampleLine) continue;
-
-                let sampleCols = sampleLine.split("\t");
-                if (sampleCols.length > 1) {
-                  let tIdx = sampleCols.findIndex((c) => TIME_REGEX.test(c));
-                  if (tIdx !== -1) {
-                    if (
-                      tIdx + 1 < sampleCols.length &&
-                      dict[sampleCols[tIdx + 1].trim()]
-                    ) {
-                      inferredTimeIdx = tIdx;
-                      inferredCodeIdx = tIdx + 1;
-                      break;
-                    }
-                    if (tIdx - 1 >= 0 && dict[sampleCols[tIdx - 1].trim()]) {
-                      inferredTimeIdx = tIdx;
-                      inferredCodeIdx = tIdx - 1;
-                      break;
-                    }
-                  }
-                }
-              }
-            }
-
-            for (let i = 0; i < lines.length; i++) {
-              const line = lines[i].trim();
-              if (!line) continue;
-
-              let matchedCode = null;
-              let matchedTime = null;
-
-              if (globalCodeIdx !== -1 && globalTimeIdx !== -1 && i > 0) {
-                const cols = line.split("\t");
-                if (cols.length > Math.max(globalCodeIdx, globalTimeIdx)) {
-                  let code = cols[globalCodeIdx].trim();
-                  let rTime = cols[globalTimeIdx].trim();
-                  if (dict[code] && rTime) {
-                    matchedCode = code;
-                    let tMatch = rTime.match(TIME_REGEX);
-                    if (tMatch) matchedTime = tMatch[0];
-                  }
-                }
-              } else if (inferredCodeIdx !== -1 && inferredTimeIdx !== -1) {
-                const cols = line.split("\t");
-                if (cols.length > Math.max(inferredCodeIdx, inferredTimeIdx)) {
-                  let code = cols[inferredCodeIdx].trim();
-                  let rTime = cols[inferredTimeIdx].trim();
-                  if (dict[code] && rTime) {
-                    matchedCode = code;
-                    let tMatch = rTime.match(TIME_REGEX);
-                    if (tMatch) matchedTime = tMatch[0];
-                  }
-                }
-              } else if (globalCodeIdx === -1) {
-                let tMatch = line.match(TIME_REGEX);
-                if (tMatch) {
-                  matchedTime = tMatch[0];
-                  const tokens = line.split(SPLIT_REGEX);
-                  for (let j = 0; j < tokens.length; j++) {
-                    let cleanToken = tokens[j].trim();
-                    if (
-                      cleanToken &&
-                      dict[cleanToken] &&
-                      cleanToken !== matchedTime
-                    ) {
-                      matchedCode = cleanToken;
-                      break;
-                    }
-                  }
-                }
-              }
-
-              if (matchedCode && matchedTime) {
-                if (!temporaryMap[matchedCode]) {
-                  temporaryMap[matchedCode] = new Set();
-                }
-                temporaryMap[matchedCode].add(matchedTime);
-                hasDataParsed = true;
-              }
-            }
-          }
-
-          if (!hasDataParsed) {
-            if (selectedTables.length === 0 && !pasteText) {
-              document.getElementById("queryStatus").innerHTML =
-                `<span class="text-red-500 font-bold">请勾选数据表，或在工作网格粘贴数据！</span>`;
-            } else {
-              document.getElementById("queryStatus").innerHTML =
-                `<span class="text-orange-500 font-bold">未在数据中提取到匹配【${label}】的有效节点。</span>`;
-            }
-            return;
-          }
-
-          finalCleanedTimes = {};
-          let hitCount = 0;
-          let theadRows = ["<tr>"];
-          let tbodyRows = ["<tr>"];
-
-          let extractedDate = "";
-
-          order.forEach((code) => {
-            const timesSet = temporaryMap[code];
-            const sortedTimes = timesSet
-              ? Array.from(timesSet).sort((a, b) => a.localeCompare(b))
-              : [];
-            let finalSelectedTime = "";
-            let displayHtml = "-";
-
-            // 【新增点】：悄悄提取 03 节点的第一条记录的日期部分
-            if (code === "03" && sortedTimes.length > 0) {
-              const firstTimeStr = sortedTimes[0];
-              if (firstTimeStr.includes(" ")) {
-                extractedDate = firstTimeStr.split(" ")[0];
-              }
-            }
-
-            if (sortedTimes.length > 0) {
-              hitCount++;
-              const allTimes = sortedTimes.map((ts) =>
-                ts.includes(" ") ? ts.split(" ")[1] : ts,
-              );
-
-              let timesToDisplay = allTimes;
-              // 行李车过滤规则：入位取首，离开取末
-              if (code === "baggage_start") {
-                timesToDisplay = [allTimes[0]];
-              } else if (code === "baggage_end") {
-                timesToDisplay = [allTimes[allTimes.length - 1]];
-              }
-
-              finalSelectedTime = timesToDisplay.join("\n");
-              finalCleanedTimes[code] = finalSelectedTime;
-
-              if (timesToDisplay.length === 1) {
-                displayHtml = timesToDisplay[0];
-              } else if (timesToDisplay.length === 2) {
-                displayHtml = timesToDisplay.join("<br>");
-              } else {
-                displayHtml = `
+              displayHtml = `
               <details class="cursor-pointer group">
                 <summary class="outline-none list-none text-center" style="list-style: none;">
                   <div>${timesToDisplay[0]}</div>
@@ -1331,171 +1099,358 @@
                 </div>
               </details>
             `;
-              }
-            } else {
-              finalCleanedTimes[code] = "";
             }
+          } else {
+            finalCleanedTimes[code] = "";
+          }
 
-            theadRows.push(`
+          theadRows.push(`
           <th class="border-r border-b border-gray-200 dark:border-gray-600 px-3 py-2 font-normal bg-gray-50 dark:bg-gray-700 min-w-[100px] sm:min-w-[120px]">
             <div class="font-bold text-gray-800 dark:text-gray-200">${dict[code]}</div>
-            <div class="text-gray-500 dark:text-gray-400 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
+            <div class="text-gray-500 dark:text-gray-300 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
           </th>`);
-            tbodyRows.push(
-              `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 align-middle font-mono font-medium">${displayHtml}</td>`,
-            );
-          });
-
-          theadRows.push("</tr>");
-          tbodyRows.push("</tr>");
-
-          // 更新 03 节点日期 UI
-          const dateDisplayEl = document.getElementById("extractedDateDisplay");
-          if (extractedDate) {
-            dateDisplayEl.textContent = extractedDate;
-            dateDisplayEl.classList.remove("hidden");
-          } else {
-            dateDisplayEl.classList.add("hidden");
-            dateDisplayEl.textContent = "";
-          }
-
-          document.getElementById("exactTableHeader").innerHTML =
-            theadRows.join("");
-          document.getElementById("exactTableBody").innerHTML =
-            tbodyRows.join("");
-
-          if (selectedTables.length > 0) {
-            renderRawTable(allRawResults, Array.from(allColumns));
-          } else {
-            document.getElementById("rawTableHeader").innerHTML = "";
-            document.getElementById("rawTableBody").innerHTML = "";
-            document.getElementById("rawCount").innerText = "0";
-          }
-
-          document.getElementById("queryStatus").innerHTML =
-            `<span class="text-${mode === "near" ? "blue" : "sky"}-600 dark:text-${mode === "near" ? "blue" : "sky"}-400 font-bold">[${label}]</span> 解析完毕！提取到 ${hitCount} 个节点。`;
-        }, 50); // 让出主线程完毕
-      }
-
-      function renderRawTable(data, columns) {
-        const isTruncated = data.length > MAX_RENDER_ROWS;
-        const displayData = isTruncated ? data.slice(0, MAX_RENDER_ROWS) : data;
-        const truncNote = isTruncated
-          ? ` (为保证性能，仅渲染前${MAX_RENDER_ROWS}条)`
-          : "";
-        document.getElementById("rawCount").innerText =
-          `${data.length}${truncNote}`;
-
-        const thead = document.getElementById("rawTableHeader");
-        const tbody = document.getElementById("rawTableBody");
-
-        if (data.length === 0) {
-          thead.innerHTML = "";
-          tbody.innerHTML = "";
-          return;
-        }
-
-        const expectedOrder = [
-          "id",
-          "appid",
-          "taskid",
-          "aproCode",
-          "camera",
-          "report_time",
-          "nodeCode",
-          "visualId",
-          "image_path",
-          "info",
-          "create_time",
-        ];
-        let finalColumns = ["_source_db", "_source_table"];
-        expectedOrder.forEach((col) => {
-          if (columns.includes(col)) finalColumns.push(col);
-        });
-        columns.forEach((col) => {
-          if (!expectedOrder.includes(col)) finalColumns.push(col);
-        });
-
-        let theadRows = ["<tr>"];
-        finalColumns.forEach((col) => {
-          let title =
-            col === "_source_db"
-              ? "来源库"
-              : col === "_source_table"
-                ? "表名"
-                : col;
-          theadRows.push(
-            `<th class="px-3 py-2 text-left font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 whitespace-nowrap border-b border-gray-200 dark:border-gray-600">${title}</th>`,
+          tbodyRows.push(
+            `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 align-middle font-mono font-medium">${displayHtml}</td>`,
           );
         });
-        theadRows.push("</tr>");
-        thead.innerHTML = theadRows.join("");
 
-        let tbodyLines = new Array(displayData.length);
-        for (let i = 0; i < displayData.length; i++) {
-          const row = displayData[i];
-          let trHtml =
-            '<tr class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">';
-          for (let j = 0; j < finalColumns.length; j++) {
-            let cellData = row[finalColumns[j]];
-            if (cellData === null || cellData === undefined) {
-              trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-300 dark:text-gray-600">-</td>`;
-            } else {
-              const textStr = String(cellData);
-              if (textStr.length > 40) {
-                trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700 dark:text-gray-300" title="${textStr}">${textStr.substring(0, 40)}...</td>`;
-              } else {
-                trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700 dark:text-gray-300">${textStr}</td>`;
-              }
-            }
-          }
-          trHtml += "</tr>";
-          tbodyLines[i] = trHtml;
+        theadRows.push("</tr>");
+        tbodyRows.push("</tr>");
+
+        // 更新 03 节点日期 UI
+        const dateDisplayEl = document.getElementById("extractedDateDisplay");
+        if (extractedDate) {
+          dateDisplayEl.textContent = extractedDate;
+          dateDisplayEl.classList.remove("hidden");
+        } else {
+          dateDisplayEl.classList.add("hidden");
+          dateDisplayEl.textContent = "";
         }
-        tbody.innerHTML = tbodyLines.join("");
+
+        document.getElementById("exactTableHeader").innerHTML =
+          theadRows.join("");
+        document.getElementById("exactTableBody").innerHTML =
+          tbodyRows.join("");
+
+        if (selectedTables.length > 0) {
+          renderRawTable(allRawResults, Array.from(allColumns));
+        } else {
+          document.getElementById("rawTableHeader").innerHTML = "";
+          document.getElementById("rawTableBody").innerHTML = "";
+          document.getElementById("rawCount").innerText = "0";
+        }
+
+        document.getElementById("queryStatus").innerHTML =
+          `<span class="text-${mode === "near" ? "blue" : "sky"}-600 dark:text-${mode === "near" ? "blue" : "sky"}-400 font-bold">[${label}]</span> 解析完毕！提取到 ${hitCount} 个节点。`;
+      }, 50); // 让出主线程完毕
+    }
+
+    function renderRawTable(data, columns) {
+      const isTruncated = data.length > MAX_RENDER_ROWS;
+      const displayData = isTruncated ? data.slice(0, MAX_RENDER_ROWS) : data;
+      const truncNote = isTruncated
+        ? ` (为保证性能，仅渲染前${MAX_RENDER_ROWS}条)`
+        : "";
+      document.getElementById("rawCount").innerText =
+        `${data.length}${truncNote}`;
+
+      const thead = document.getElementById("rawTableHeader");
+      const tbody = document.getElementById("rawTableBody");
+
+      if (data.length === 0) {
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
+        return;
       }
 
-      // 清空重置
-      document.getElementById("btnClear").addEventListener("click", () => {
-        finalCleanedTimes = {};
-        lastUsedTables = []; // 同步清空本次提取用到的表记录
-        lastExtractionFilter = null; // 同步清空过滤条件快照
-        document.getElementById("pasteArea").value = "";
-
-        document.querySelectorAll(".table-checkbox").forEach((cb) => {
-          cb.checked = true;
-        });
-
-        renderEmptyTable();
-
-        document.getElementById("pastePlaceholder").classList.remove("hidden");
-        document.getElementById("pasteVisualTable").classList.add("hidden");
-        document.getElementById("pasteVisualThead").innerHTML = "";
-        document.getElementById("pasteVisualTbody").innerHTML = "";
-        document.getElementById("filteredTextCount").innerText = "0";
-
-        // 清空日期 UI
-        document.getElementById("extractedDateDisplay").classList.add("hidden");
-        document.getElementById("extractedDateDisplay").textContent = "";
-
-        document.getElementById("queryStatus").innerText = "页面已全部清空重置";
+      const expectedOrder = [
+        "id",
+        "appid",
+        "taskid",
+        "aproCode",
+        "camera",
+        "report_time",
+        "nodeCode",
+        "visualId",
+        "image_path",
+        "info",
+        "create_time",
+      ];
+      let finalColumns = ["_source_db", "_source_table"];
+      expectedOrder.forEach((col) => {
+        if (columns.includes(col)) finalColumns.push(col);
+      });
+      columns.forEach((col) => {
+        if (!expectedOrder.includes(col)) finalColumns.push(col);
       });
 
-      // 强力复制
-      document.getElementById("btnCopy").addEventListener("click", () => {
-        if (Object.keys(finalCleanedTimes).length === 0)
-          return alert("没有可复制的数据，请先执行提取。");
+      let theadRows = ["<tr>"];
+      finalColumns.forEach((col) => {
+        let title =
+          col === "_source_db"
+            ? "来源库"
+            : col === "_source_table"
+              ? "表名"
+              : col;
+        theadRows.push(
+          `<th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 whitespace-nowrap border-b border-gray-200 dark:border-gray-600">${title}</th>`,
+        );
+      });
+      theadRows.push("</tr>");
+      thead.innerHTML = theadRows.join("");
 
-        const { order } = CONFIG[currentMode];
-        let text = order
-          .map((code) => {
-            let val = finalCleanedTimes[code] || "";
-            if (val.includes("\n")) {
-              return `"${val}"`;
+      let tbodyLines = new Array(displayData.length);
+      for (let i = 0; i < displayData.length; i++) {
+        const row = displayData[i];
+        let trHtml =
+          '<tr class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">';
+        for (let j = 0; j < finalColumns.length; j++) {
+          let cellData = row[finalColumns[j]];
+          if (cellData === null || cellData === undefined) {
+            trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-400 dark:text-gray-500">-</td>`;
+          } else {
+            const textStr = String(cellData);
+            if (textStr.length > 40) {
+              trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700 dark:text-gray-200" title="${textStr}">${textStr.substring(0, 40)}...</td>`;
+            } else {
+              trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700 dark:text-gray-200">${textStr}</td>`;
             }
-            return val;
-          })
-          .join("\t");
+          }
+        }
+        trHtml += "</tr>";
+        tbodyLines[i] = trHtml;
+      }
+      tbody.innerHTML = tbodyLines.join("");
+    }
+
+    // 清空重置
+    document.getElementById("btnClear").addEventListener("click", () => {
+      finalCleanedTimes = {};
+      lastUsedTables = []; // 同步清空本次提取用到的表记录
+      lastExtractionFilter = null; // 同步清空过滤条件快照
+      document.getElementById("pasteArea").value = "";
+
+      document.querySelectorAll(".table-checkbox").forEach((cb) => {
+        cb.checked = true;
+      });
+
+      renderEmptyTable();
+
+      document.getElementById("pastePlaceholder").classList.remove("hidden");
+      document.getElementById("pasteVisualTable").classList.add("hidden");
+      document.getElementById("pasteVisualThead").innerHTML = "";
+      document.getElementById("pasteVisualTbody").innerHTML = "";
+      document.getElementById("filteredTextCount").innerText = "0";
+
+      // 清空日期 UI
+      document.getElementById("extractedDateDisplay").classList.add("hidden");
+      document.getElementById("extractedDateDisplay").textContent = "";
+
+      document.getElementById("queryStatus").innerText = "页面已全部清空重置";
+    });
+
+    // 强力复制
+    document.getElementById("btnCopy").addEventListener("click", () => {
+      if (Object.keys(finalCleanedTimes).length === 0)
+        return alert("没有可复制的数据，请先执行提取。");
+
+      const {order} = CONFIG[currentMode];
+      let text = order
+        .map((code) => {
+          let val = finalCleanedTimes[code] || "";
+          if (val.includes("\n")) {
+            return `"${val}"`;
+          }
+          return val;
+        })
+        .join("\t");
+
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.opacity = "0";
+
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        const successful = document.execCommand("copy");
+        if (successful) {
+          document.getElementById("queryStatus").innerHTML =
+            `✅ <span class="text-green-600 dark:text-green-400 font-bold">时间行已成功复制，快去粘贴吧！</span>`;
+        } else {
+          alert("写入失败，请手动框选结果复制。");
+        }
+      } catch (err) {
+        alert("当前浏览器环境受限，请手动框选。");
+      }
+
+      document.body.removeChild(textArea);
+    });
+
+    // CSV导出
+    document.getElementById("btnExport").addEventListener("click", () => {
+      if (Object.keys(finalCleanedTimes).length === 0)
+        return alert("没有可导出的数据，请先执行提取。");
+
+      const {order, dict, label} = CONFIG[currentMode];
+      let csv = "\uFEFF";
+
+      csv += order.map((code) => `"${dict[code]}\n${code}"`).join(",") + "\n";
+      csv += order
+        .map((code) => `"${finalCleanedTimes[code] || ""}"`)
+        .join(",");
+
+      const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"});
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `航班保障提取(${label})_${new Date().getTime()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      document.getElementById("queryStatus").innerHTML =
+        `✅ <span class="text-purple-600 dark:text-purple-400 font-bold">CSV数据已成功导出！</span>`;
+    });
+
+    // 复制镜头编号（一行一个）排序规则：
+    //   含 "03" 且同表还有摆渡车(052/27)或客舱门(06/29) → 最前；仅含 "03"（无摆渡车/客舱门）→ 次前（有 03 其他规则一律不生效）
+    //   有摆渡车(052/27)、客舱门(06/29) 或 客梯车(051/272) 且【没有 03】的表 → 排最后
+    //   其余表 → 排在中间
+    // 各组内部保持表的原始顺序，不做任何时间排序。
+    document
+      .getElementById("btnCopyTableNums")
+      .addEventListener("click", () => {
+        if (!lastUsedTables || lastUsedTables.length === 0) {
+          return alert("请先执行节点提取，再复制镜头编号。");
+        }
+        if (!sqlEngine) return alert("引擎尚未就绪，请稍候。");
+
+        const aproCodeVal = document.getElementById("aproCode").value.trim();
+
+        // 命名规则：xxx_aproCode_xxxxx。aproCode 是下划线分隔的「整段」，必须精确相等匹配，
+        // 严禁子串匹配（否则 90903 会被 903 误匹配进来）。复制的镜头编号必须严格来自该 aproCode 的表。
+        let matchedTables = [];
+        if (aproCodeVal) {
+          matchedTables = lastUsedTables.filter((tn) =>
+            tn.split("_").some((seg) => seg.trim() === aproCodeVal),
+          );
+        } else {
+          // 无 aproCode 输入时，按命名规则 xxx_aproCode_xxxxx 兜底匹配（至少两段下划线）
+          matchedTables = lastUsedTables.filter(
+            (tn) => (tn.match(/_/g) || []).length >= 2,
+          );
+        }
+
+        if (matchedTables.length === 0) {
+          return alert(
+            "未找到包含 aproCode 的数据表，请检查表名命名或 aproCode 输入。",
+          );
+        }
+
+        // 扫描整张表收集 nodeCode 特征（不再套用提取时间过滤，避免摆渡车/客舱门/客梯车节点因时间超出范围而被漏判）
+        const infos = matchedTables.map((tn) => {
+          let has03 = false,
+            hasBus = false,
+            hasDoor = false,
+            hasStair = false;
+          databases.forEach(({db}) => {
+            try {
+              const res = db.exec(`SELECT nodeCode FROM "${tn}"`);
+              if (res.length > 0) {
+                const cols = res[0].columns;
+                const iCode = cols.indexOf("nodeCode");
+                if (iCode === -1) return;
+                res[0].values.forEach((row) => {
+                  const code = String(
+                    row[iCode] === null || row[iCode] === undefined
+                      ? ""
+                      : row[iCode],
+                  ).trim();
+                  // 03：永远排第一（无论同表是否还有摆渡车/客舱门，其他规则对其不生效）
+                  if (code === "03" || code.split("/").includes("03"))
+                    has03 = true;
+                  // 摆渡车：052（到港摆渡车到位）/ 27（离港摆渡车到位）
+                  if (
+                    ["052", "27", "52"].some((t) =>
+                      code.split("/").includes(t),
+                    )
+                  )
+                    hasBus = true;
+                  // 客舱门：06（开客舱门）/ 29（关客舱门）
+                  if (["06", "29"].some((t) => code.split("/").includes(t)))
+                    hasDoor = true;
+                  // 客梯车：051（客梯车对接）/ 272（客梯车撤离），并入尾组特征
+                  if (["051", "272"].some((t) => code.split("/").includes(t)))
+                    hasStair = true;
+                });
+              }
+            } catch (e) {
+              /* 该库中无此表等情况，忽略 */
+            }
+          });
+          return {tn, has03, hasTailFeat: hasBus || hasDoor || hasStair};
+        });
+
+        // 分组排序规则（不做任何时间排序，各组保持表的原始顺序）：
+        // 1) 含 03 且同表有摆渡车(052/27)或客舱门(06/29) → 最前组（比仅 03 更靠前）
+        // 2) 仅含 03（同表无摆渡车/客舱门）→ 次前组
+        // 3) 不含 03 但有摆渡车(052/27)、客舱门(06/29) 或 客梯车(051/272) 任一 → 尾组排最后
+        // 4) 其余 → 中间组
+        const firstBusGroup = [],
+          firstGroup = [],
+          middleGroup = [],
+          lastGroup = [];
+        infos.forEach((it) => {
+          if (it.has03 && it.hasTailFeat)
+            firstBusGroup.push(it); // 03 + 摆渡车/客舱门 同表 → 最最前
+          else if (it.has03)
+            firstGroup.push(it); // 仅 03（同表无摆渡车/客舱门）→ 次前
+          else if (it.hasTailFeat) lastGroup.push(it);
+          else middleGroup.push(it);
+        });
+
+        const ordered = [
+          ...firstBusGroup,
+          ...firstGroup,
+          ...middleGroup,
+          ...lastGroup,
+        ];
+
+        // 提取每个表名末尾的数字（取最后一个下划线后的连续数字段；若无下划线则取表名末尾连续数字）
+        const tailNums = [];
+        ordered.forEach((it) => {
+          const tn = it.tn;
+          const parts = tn.split("_");
+          let tail = parts[parts.length - 1];
+          const m = tail.match(/\d+/);
+          if (m) {
+            tailNums.push(m[0]);
+          } else {
+            // 兜底：从整个表名末尾抓连续数字
+            const fm = tn.match(/(\d+)$/);
+            if (fm) tailNums.push(fm[1]);
+          }
+        });
+
+        if (tailNums.length === 0) {
+          return alert("已匹配到表，但未在表名末尾解析出数字。");
+        }
+
+        // 去重保序
+        const uniqNums = [];
+        const seen = new Set();
+        for (const n of tailNums) {
+          if (!seen.has(n)) {
+            seen.add(n);
+            uniqNums.push(n);
+          }
+        }
+
+        // 一行一个，换行分隔，便于粘贴到 Excel 单列
+        const text = uniqNums.join("\n");
 
         const textArea = document.createElement("textarea");
         textArea.value = text;
@@ -1503,7 +1458,6 @@
         textArea.style.top = "0";
         textArea.style.left = "0";
         textArea.style.opacity = "0";
-
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
@@ -1512,239 +1466,60 @@
           const successful = document.execCommand("copy");
           if (successful) {
             document.getElementById("queryStatus").innerHTML =
-              `✅ <span class="text-green-600 dark:text-green-400 font-bold">时间行已成功复制，快去粘贴吧！</span>`;
+              `✅ <span class="text-amber-600 dark:text-amber-400 font-bold">已复制 ${uniqNums.length} 个镜头编号！</span>`;
           } else {
-            alert("写入失败，请手动框选结果复制。");
+            alert("写入失败，请手动复制。");
           }
         } catch (err) {
-          alert("当前浏览器环境受限，请手动框选。");
+          alert("当前浏览器环境受限，请手动复制。");
         }
-
         document.body.removeChild(textArea);
       });
+  </script>
 
-      // CSV导出
-      document.getElementById("btnExport").addEventListener("click", () => {
-        if (Object.keys(finalCleanedTimes).length === 0)
-          return alert("没有可导出的数据，请先执行提取。");
+  <!-- 返回主页图标按钮样式 -->
+  <style>
+    .home-back-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      color: inherit;
+      background: rgba(135, 135, 135, 0.16);
+      border: 1px solid transparent;
+      text-decoration: none;
+      flex-shrink: 0;
+      transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        const { order, dict, label } = CONFIG[currentMode];
-        let csv = "\uFEFF";
+    .home-back-icon:hover {
+      background: rgba(135, 135, 135, 0.3);
+      transform: translateY(-1px);
+    }
 
-        csv += order.map((code) => `"${dict[code]}\n${code}"`).join(",") + "\n";
-        csv += order
-          .map((code) => `"${finalCleanedTimes[code] || ""}"`)
-          .join(",");
+    .home-back-icon svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
 
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `航班保障提取(${label})_${new Date().getTime()}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        document.getElementById("queryStatus").innerHTML =
-          `✅ <span class="text-purple-600 dark:text-purple-400 font-bold">CSV数据已成功导出！</span>`;
-      });
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 5px;
+    }
 
-      // 复制镜头编号（一行一个）排序规则：
-      //   含 "03" 且同表还有摆渡车(052/27)或客舱门(06/29) → 最前；仅含 "03"（无摆渡车/客舱门）→ 次前（有 03 其他规则一律不生效）
-      //   有摆渡车(052/27)、客舱门(06/29) 或 客梯车(051/272) 且【没有 03】的表 → 排最后
-      //   其余表 → 排在中间
-      // 各组内部保持表的原始顺序，不做任何时间排序。
-      document
-        .getElementById("btnCopyTableNums")
-        .addEventListener("click", () => {
-          if (!lastUsedTables || lastUsedTables.length === 0) {
-            return alert("请先执行节点提取，再复制镜头编号。");
-          }
-          if (!sqlEngine) return alert("引擎尚未就绪，请稍候。");
+    .title-row h1 {
+      margin-bottom: 0;
+    }
+  </style>
+</body>
 
-          const aproCodeVal = document.getElementById("aproCode").value.trim();
-
-          // 命名规则：xxx_aproCode_xxxxx。aproCode 是下划线分隔的「整段」，必须精确相等匹配，
-          // 严禁子串匹配（否则 90903 会被 903 误匹配进来）。复制的镜头编号必须严格来自该 aproCode 的表。
-          let matchedTables = [];
-          if (aproCodeVal) {
-            matchedTables = lastUsedTables.filter((tn) =>
-              tn.split("_").some((seg) => seg.trim() === aproCodeVal),
-            );
-          } else {
-            // 无 aproCode 输入时，按命名规则 xxx_aproCode_xxxxx 兜底匹配（至少两段下划线）
-            matchedTables = lastUsedTables.filter(
-              (tn) => (tn.match(/_/g) || []).length >= 2,
-            );
-          }
-
-          if (matchedTables.length === 0) {
-            return alert(
-              "未找到包含 aproCode 的数据表，请检查表名命名或 aproCode 输入。",
-            );
-          }
-
-          // 扫描整张表收集 nodeCode 特征（不再套用提取时间过滤，避免摆渡车/客舱门/客梯车节点因时间超出范围而被漏判）
-          const infos = matchedTables.map((tn) => {
-            let has03 = false,
-              hasBus = false,
-              hasDoor = false,
-              hasStair = false;
-            databases.forEach(({ db }) => {
-              try {
-                const res = db.exec(`SELECT nodeCode FROM "${tn}"`);
-                if (res.length > 0) {
-                  const cols = res[0].columns;
-                  const iCode = cols.indexOf("nodeCode");
-                  if (iCode === -1) return;
-                  res[0].values.forEach((row) => {
-                    const code = String(
-                      row[iCode] === null || row[iCode] === undefined
-                        ? ""
-                        : row[iCode],
-                    ).trim();
-                    // 03：永远排第一（无论同表是否还有摆渡车/客舱门，其他规则对其不生效）
-                    if (code === "03" || code.split("/").includes("03"))
-                      has03 = true;
-                    // 摆渡车：052（到港摆渡车到位）/ 27（离港摆渡车到位）
-                    if (
-                      ["052", "27", "52"].some((t) => code.split("/").includes(t))
-                    )
-                      hasBus = true;
-                    // 客舱门：06（开客舱门）/ 29（关客舱门）
-                    if (["06", "29"].some((t) => code.split("/").includes(t)))
-                      hasDoor = true;
-                    // 客梯车：051（客梯车对接）/ 272（客梯车撤离），并入尾组特征
-                    if (["051", "272"].some((t) => code.split("/").includes(t)))
-                      hasStair = true;
-                  });
-                }
-              } catch (e) {
-                /* 该库中无此表等情况，忽略 */
-              }
-            });
-            return { tn, has03, hasTailFeat: hasBus || hasDoor || hasStair };
-          });
-
-          // 分组排序规则（不做任何时间排序，各组保持表的原始顺序）：
-          // 1) 含 03 且同表有摆渡车(052/27)或客舱门(06/29) → 最前组（比仅 03 更靠前）
-          // 2) 仅含 03（同表无摆渡车/客舱门）→ 次前组
-          // 3) 不含 03 但有摆渡车(052/27)、客舱门(06/29) 或 客梯车(051/272) 任一 → 尾组排最后
-          // 4) 其余 → 中间组
-          const firstBusGroup = [],
-            firstGroup = [],
-            middleGroup = [],
-            lastGroup = [];
-          infos.forEach((it) => {
-            if (it.has03 && it.hasTailFeat)
-              firstBusGroup.push(it); // 03 + 摆渡车/客舱门 同表 → 最最前
-            else if (it.has03)
-              firstGroup.push(it); // 仅 03（同表无摆渡车/客舱门）→ 次前
-            else if (it.hasTailFeat) lastGroup.push(it);
-            else middleGroup.push(it);
-          });
-
-          const ordered = [
-            ...firstBusGroup,
-            ...firstGroup,
-            ...middleGroup,
-            ...lastGroup,
-          ];
-
-          // 提取每个表名末尾的数字（取最后一个下划线后的连续数字段；若无下划线则取表名末尾连续数字）
-          const tailNums = [];
-          ordered.forEach((it) => {
-            const tn = it.tn;
-            const parts = tn.split("_");
-            let tail = parts[parts.length - 1];
-            const m = tail.match(/\d+/);
-            if (m) {
-              tailNums.push(m[0]);
-            } else {
-              // 兜底：从整个表名末尾抓连续数字
-              const fm = tn.match(/(\d+)$/);
-              if (fm) tailNums.push(fm[1]);
-            }
-          });
-
-          if (tailNums.length === 0) {
-            return alert("已匹配到表，但未在表名末尾解析出数字。");
-          }
-
-          // 去重保序
-          const uniqNums = [];
-          const seen = new Set();
-          for (const n of tailNums) {
-            if (!seen.has(n)) {
-              seen.add(n);
-              uniqNums.push(n);
-            }
-          }
-
-          // 一行一个，换行分隔，便于粘贴到 Excel 单列
-          const text = uniqNums.join("\n");
-
-          const textArea = document.createElement("textarea");
-          textArea.value = text;
-          textArea.style.position = "fixed";
-          textArea.style.top = "0";
-          textArea.style.left = "0";
-          textArea.style.opacity = "0";
-          document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-
-          try {
-            const successful = document.execCommand("copy");
-            if (successful) {
-              document.getElementById("queryStatus").innerHTML =
-                `✅ <span class="text-amber-600 dark:text-amber-400 font-bold">已复制 ${uniqNums.length} 个镜头编号！</span>`;
-            } else {
-              alert("写入失败，请手动复制。");
-            }
-          } catch (err) {
-            alert("当前浏览器环境受限，请手动复制。");
-          }
-          document.body.removeChild(textArea);
-        });
-    </script>
-
-    <!-- 返回主页图标按钮样式 -->
-    <style>
-      .home-back-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        color: inherit;
-        background: rgba(135, 135, 135, 0.16);
-        border: 1px solid transparent;
-        text-decoration: none;
-        flex-shrink: 0;
-        transition:
-          background 0.2s ease,
-          transform 0.2s ease;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .home-back-icon:hover {
-        background: rgba(135, 135, 135, 0.3);
-        transform: translateY(-1px);
-      }
-      .home-back-icon svg {
-        width: 18px;
-        height: 18px;
-        display: block;
-      }
-      .title-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 5px;
-      }
-      .title-row h1 {
-        margin-bottom: 0;
-      }
-    </style>
-  </body>
 </html>
