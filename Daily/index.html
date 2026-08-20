@@ -37,6 +37,9 @@
             --radius: 12px;
             --radius-sm: 8px;
 
+            /* 统一字体：全局与预览框共用，避免等宽/无衬线混用 */
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+
             /* 机位类型配色：远机位=蓝，近机位=橙 */
             --far-accent: #3b6db5;
             --far-tint: rgba(59, 109, 181, 0.08);
@@ -71,7 +74,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-family: var(--font-main);
             background-color: var(--bg-gradient);
             color: var(--text-color);
             line-height: 1.6;
@@ -345,7 +348,7 @@
             width: 100%;
             min-height: 120px;
             height: auto;
-            font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+            font-family: var(--font-main);
             white-space: pre-wrap;
             margin-bottom: 12px;
             background: var(--panel-secondary);
@@ -594,7 +597,7 @@
         window.onload = () => {
             ['event-list-far', 'event-list-near', 'reason-list'].forEach(id => {
                 const list = document.getElementById(id);
-                if (list) {baseOptions[id] = Array.from(list.options).map(o => o.value);}
+                if (list) { baseOptions[id] = Array.from(list.options).map(o => o.value); }
             });
 
             addStandCard('远机位');
@@ -619,7 +622,7 @@
                     const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
                     const validOptions = baseOptions[listId];
 
-                    const {query} = parseInput(e.target.value, validOptions, isNode);
+                    const { query } = parseInput(e.target.value, validOptions, isNode);
                     currentSearchQuery = query; // 更新全局搜索记忆
                     renderOptions(e.target, activeDropdown, listId);
                 }
@@ -651,7 +654,7 @@
                     query = lastPart;
                 }
             }
-            return {selected, query};
+            return { selected, query };
         }
 
         function showDropdown(input) {
@@ -667,7 +670,7 @@
 
             const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
             const validOptions = baseOptions[listId];
-            const {query} = parseInput(input.value, validOptions, isNode);
+            const { query } = parseInput(input.value, validOptions, isNode);
             currentSearchQuery = query;
 
             renderOptions(input, dropdown, listId);
@@ -678,7 +681,7 @@
             dropdown.innerHTML = '';
             const validOptions = baseOptions[listId];
             const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
-            const {selected} = parseInput(input.value, validOptions, isNode);
+            const { selected } = parseInput(input.value, validOptions, isNode);
 
             // 核心：永远基于全局搜索记忆进行过滤，即便输入框被清理也能保持搜索结果
             const filteredOptions = validOptions.filter(opt => opt.includes(currentSearchQuery));
@@ -697,7 +700,7 @@
             filteredOptions.forEach(opt => {
                 const optionDiv = document.createElement('div');
                 optionDiv.className = 'multi-select-option';
-                if (selected.includes(opt)) {optionDiv.classList.add('selected');}
+                if (selected.includes(opt)) { optionDiv.classList.add('selected'); }
 
                 if (currentSearchQuery) {
                     const parts = opt.split(currentSearchQuery);
@@ -717,7 +720,7 @@
         function toggleSelection(input, opt, dropdown, listId) {
             const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
             const validOptions = baseOptions[listId];
-            let {selected} = parseInput(input.value, validOptions, isNode);
+            let { selected } = parseInput(input.value, validOptions, isNode);
 
             if (selected.includes(opt)) {
                 selected = selected.filter(v => v !== opt); // 反选
@@ -835,7 +838,7 @@
 
         function generatePreview() {
             const cards = document.querySelectorAll('.stand-card');
-            let data = {'远机位': [], '近机位': []};
+            let data = { '远机位': [], '近机位': [] };
 
             cards.forEach(card => {
                 const type = card.getAttribute('data-type');
@@ -847,12 +850,12 @@
                     const event = row.querySelector('.item-event').value.trim();
                     const reason = row.querySelector('.item-reason').value.trim();
                     if (event && reason) {
-                        records.push({event, reason});
+                        records.push({ event, reason });
                     }
                 });
 
                 if (standNum && records.length > 0) {
-                    data[type].push({standNum, records});
+                    data[type].push({ standNum, records });
                 }
             });
 
@@ -896,7 +899,7 @@
             navigator.clipboard.writeText(text).then(() => {
                 const toast = document.getElementById('toast');
                 toast.classList.add('show');
-                setTimeout(() => {toast.classList.remove('show');}, 2000);
+                setTimeout(() => { toast.classList.remove('show'); }, 2000);
             }).catch(err => {
                 alert('复制失败，请手动选择文本复制。');
             });

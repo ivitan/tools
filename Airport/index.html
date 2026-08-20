@@ -286,10 +286,21 @@
             class="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 border-b border-blue-100 dark:border-blue-800/50 flex justify-between items-center">
             <div class="flex items-center space-x-6">
               <span class="text-xs font-bold text-blue-800 dark:text-blue-300">✅ 节点时间提取结果 (左右滑动查看)</span>
-              <!-- 新增：03节点日期展示区域，包含双击复制功能 -->
+              <!-- 新增：03节点日期展示区域，包含单击复制功能 -->
               <span id="extractedDateDisplay"
-                class="text-[13px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hidden hover:text-blue-800 dark:hover:text-blue-200 transition-colors select-none"
-                title="双击复制日期"></span>
+                class="group inline-flex items-center gap-1.5 text-[13px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hidden hover:text-blue-800 dark:hover:text-blue-300 transition-colors select-none"
+                title="单击复制日期">
+                <span class="date-text"></span>
+                <svg class="copy-icon w-3.5 h-3.5 opacity-80 group-hover:opacity-100" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <svg class="check-icon hidden w-3.5 h-3.5 text-green-500 dark:text-green-400" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
             </div>
           </div>
           <div class="overflow-x-auto custom-scrollbar p-2">
@@ -510,8 +521,8 @@
     ];
 
     const CONFIG = {
-      near: {dict: DICT_NEAR, order: ORDER_NEAR, label: "近机位"},
-      remote: {dict: DICT_REMOTE, order: ORDER_REMOTE, label: "远机位"},
+      near: { dict: DICT_NEAR, order: ORDER_NEAR, label: "近机位" },
+      remote: { dict: DICT_REMOTE, order: ORDER_REMOTE, label: "远机位" },
     };
 
     let currentMode = "near";
@@ -591,7 +602,7 @@
       for (let file of files) {
         const arrayBuffer = await file.arrayBuffer();
         const db = new sqlEngine.Database(new Uint8Array(arrayBuffer));
-        databases.push({name: file.name, db: db});
+        databases.push({ name: file.name, db: db });
 
         const res = db.exec(
           "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
@@ -629,7 +640,7 @@
     // 绘制空表头
     function renderEmptyTable(mode) {
       if (mode) currentMode = mode;
-      const {order, dict} = CONFIG[currentMode];
+      const { order, dict } = CONFIG[currentMode];
       let theadRows = ["<tr>"];
       let tbodyRows = ["<tr>"];
 
@@ -791,12 +802,13 @@
       .getElementById("btnParseRemote")
       .addEventListener("click", () => executeExtraction("remote"));
 
-    // 双击复制日期的通用逻辑
+    // 单击复制日期的通用逻辑
     document
       .getElementById("extractedDateDisplay")
-      .addEventListener("dblclick", function () {
-        const text = this.textContent;
-        if (!text || text === "已复制！") return;
+      .addEventListener("click", function () {
+        const dateTextEl = this.querySelector(".date-text");
+        const text = dateTextEl ? dateTextEl.textContent : "";
+        if (!text) return;
 
         const textArea = document.createElement("textarea");
         textArea.value = text;
@@ -807,11 +819,16 @@
 
         try {
           document.execCommand("copy");
-          const originalText = text;
-          this.textContent = "已复制！";
-          setTimeout(() => {
-            this.textContent = originalText;
-          }, 1000);
+          const copyIcon = this.querySelector(".copy-icon");
+          const checkIcon = this.querySelector(".check-icon");
+          if (copyIcon && checkIcon) {
+            copyIcon.classList.add("hidden");
+            checkIcon.classList.remove("hidden");
+            setTimeout(() => {
+              copyIcon.classList.remove("hidden");
+              checkIcon.classList.add("hidden");
+            }, 1200);
+          }
         } catch (err) {
           alert("复制失败，请手动选择复制。");
         }
@@ -823,7 +840,7 @@
       if (!sqlEngine) return alert("引擎尚未就绪，请稍候。");
 
       currentMode = mode;
-      const {dict, order, label} = CONFIG[currentMode];
+      const { dict, order, label } = CONFIG[currentMode];
 
       const selectedTables = Array.from(
         document.querySelectorAll(".table-checkbox:checked"),
@@ -835,7 +852,7 @@
 
       // 记录本次提取实际用到的数据表名与过滤条件（供"复制镜头编号"按钮使用）
       lastUsedTables = selectedTables.slice();
-      lastExtractionFilter = {startTime, endTime, aproCode};
+      lastExtractionFilter = { startTime, endTime, aproCode };
 
       document.getElementById("queryStatus").innerHTML =
         `<span class="text-blue-500 dark:text-blue-400">正在解析并合并数据流，请稍候...</span>`;
@@ -850,7 +867,7 @@
         let dbFilteredColumns = new Set();
 
         if (selectedTables.length > 0) {
-          databases.forEach(({name, db}) => {
+          databases.forEach(({ name, db }) => {
             selectedTables.forEach((tableName) => {
               try {
                 let conditions = [];
@@ -1119,12 +1136,13 @@
 
         // 更新 03 节点日期 UI
         const dateDisplayEl = document.getElementById("extractedDateDisplay");
+        const dateTextEl = dateDisplayEl.querySelector(".date-text");
         if (extractedDate) {
-          dateDisplayEl.textContent = extractedDate;
+          if (dateTextEl) dateTextEl.textContent = extractedDate;
           dateDisplayEl.classList.remove("hidden");
         } else {
           dateDisplayEl.classList.add("hidden");
-          dateDisplayEl.textContent = "";
+          if (dateTextEl) dateTextEl.textContent = "";
         }
 
         document.getElementById("exactTableHeader").innerHTML =
@@ -1243,8 +1261,10 @@
       document.getElementById("filteredTextCount").innerText = "0";
 
       // 清空日期 UI
-      document.getElementById("extractedDateDisplay").classList.add("hidden");
-      document.getElementById("extractedDateDisplay").textContent = "";
+      const resetDateDisplay = document.getElementById("extractedDateDisplay");
+      resetDateDisplay.classList.add("hidden");
+      const resetDateText = resetDateDisplay.querySelector(".date-text");
+      if (resetDateText) resetDateText.textContent = "";
 
       document.getElementById("queryStatus").innerText = "页面已全部清空重置";
     });
@@ -1254,7 +1274,7 @@
       if (Object.keys(finalCleanedTimes).length === 0)
         return alert("没有可复制的数据，请先执行提取。");
 
-      const {order} = CONFIG[currentMode];
+      const { order } = CONFIG[currentMode];
       let text = order
         .map((code) => {
           let val = finalCleanedTimes[code] || "";
@@ -1296,7 +1316,7 @@
       if (Object.keys(finalCleanedTimes).length === 0)
         return alert("没有可导出的数据，请先执行提取。");
 
-      const {order, dict, label} = CONFIG[currentMode];
+      const { order, dict, label } = CONFIG[currentMode];
       let csv = "\uFEFF";
 
       csv += order.map((code) => `"${dict[code]}\n${code}"`).join(",") + "\n";
@@ -1304,7 +1324,7 @@
         .map((code) => `"${finalCleanedTimes[code] || ""}"`)
         .join(",");
 
-      const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"});
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `航班保障提取(${label})_${new Date().getTime()}.csv`;
@@ -1356,7 +1376,7 @@
             hasBus = false,
             hasDoor = false,
             hasStair = false;
-          databases.forEach(({db}) => {
+          databases.forEach(({ db }) => {
             try {
               const res = db.exec(`SELECT nodeCode FROM "${tn}"`);
               if (res.length > 0) {
@@ -1391,7 +1411,7 @@
               /* 该库中无此表等情况，忽略 */
             }
           });
-          return {tn, has03, hasTailFeat: hasBus || hasDoor || hasStair};
+          return { tn, has03, hasTailFeat: hasBus || hasDoor || hasStair };
         });
 
         // 分组排序规则（不做任何时间排序，各组保持表的原始顺序）：
