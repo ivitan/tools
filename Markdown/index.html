@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="/img/Markdown.png">
   <title>Markdown 编辑器 · 双向实时跟随</title>
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
   <!-- Marked.js -->
   <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
@@ -155,40 +156,28 @@
       font-weight: 700;
     }
 
-    .btn-theme-toggle {
-      width: 44px;
-      height: 44px;
+    .theme-toggle {
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      border: 2px solid var(--border-secondary);
-      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      font-size: 20px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-secondary);
+      color: var(--text-color);
       transition: all var(--transition-normal);
+      flex-shrink: 0;
     }
 
-    .btn-theme-toggle .icon-sun,
-    .btn-theme-toggle .icon-moon {
-      position: absolute;
+    .theme-toggle:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
     }
 
-    .dark-mode .icon-sun {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    .dark-mode .icon-moon {
-      opacity: 0;
-      transform: scale(0.5);
-    }
-
-    .icon-sun {
-      opacity: 0;
-      transform: scale(0.5);
-    }
-
-    .icon-moon {
-      opacity: 1;
-      transform: scale(1);
+    .theme-toggle i {
+      font-size: 1.05rem;
     }
 
     .toolbar {
@@ -387,9 +376,8 @@
           <path d="M9 22V12h6v10"></path>
         </svg></a>
     </div>
-    <button class="btn-theme-toggle" id="themeToggle">
-      <span class="icon-sun">☀️</span>
-      <span class="icon-moon">🌙</span>
+    <button class="theme-toggle" id="themeToggle" title="切换主题">
+      <i class="fas fa-moon"></i>
     </button>
   </header>
 
@@ -632,6 +620,9 @@ print(fibonacci(10))  # 55
       function applyTheme(dark) {
         isDarkMode = dark;
         document.body.classList.toggle("dark-mode", dark);
+        themeToggle.innerHTML = dark
+          ? '<i class="fas fa-sun"></i>'
+          : '<i class="fas fa-moon"></i>';
         hljsThemeLink.href = dark
           ? "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
           : "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";

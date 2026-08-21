@@ -14,6 +14,7 @@
     };
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     .custom-scrollbar::-webkit-scrollbar {
       height: 6px;
@@ -96,15 +97,7 @@
       <!-- 暗色模式切换开关 -->
       <button id="themeToggle"
         class="text-white hover:text-blue-200 focus:outline-none p-1 rounded-full transition-colors">
-        <svg id="themeIconLight" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
-          </path>
-        </svg>
-        <svg id="themeIconDark" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-        </svg>
+        <i id="themeIcon" class="fas fa-moon text-2xl"></i>
       </button>
     </div>
 
@@ -354,9 +347,14 @@
     // 暗色模式切换逻辑
     // ==========================================
     const themeToggleBtn = document.getElementById("themeToggle");
-    const themeIconLight = document.getElementById("themeIconLight");
-    const themeIconDark = document.getElementById("themeIconDark");
+    const themeIcon = document.getElementById("themeIcon");
     const htmlElement = document.documentElement;
+
+    function renderThemeIcon() {
+      themeIcon.className = htmlElement.classList.contains("dark")
+        ? "fas fa-sun text-2xl"
+        : "fas fa-moon text-2xl";
+    }
 
     if (
       localStorage.theme === "dark" ||
@@ -364,25 +362,19 @@
         window.matchMedia("(prefers-color-scheme: dark)").matches)
     ) {
       htmlElement.classList.add("dark");
-      themeIconLight.classList.remove("hidden");
-      themeIconDark.classList.add("hidden");
     } else {
       htmlElement.classList.remove("dark");
-      themeIconLight.classList.add("hidden");
-      themeIconDark.classList.remove("hidden");
     }
+    renderThemeIcon();
 
     themeToggleBtn.addEventListener("click", () => {
       htmlElement.classList.toggle("dark");
       if (htmlElement.classList.contains("dark")) {
         localStorage.theme = "dark";
-        themeIconLight.classList.remove("hidden");
-        themeIconDark.classList.add("hidden");
       } else {
         localStorage.theme = "light";
-        themeIconLight.classList.add("hidden");
-        themeIconDark.classList.remove("hidden");
       }
+      renderThemeIcon();
     });
 
     // ==========================================
@@ -1506,8 +1498,8 @@
       width: 34px;
       height: 34px;
       border-radius: 50%;
-      color: inherit;
-      background: rgba(135, 135, 135, 0.16);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.16);
       border: 1px solid transparent;
       text-decoration: none;
       flex-shrink: 0;
@@ -1518,7 +1510,7 @@
     }
 
     .home-back-icon:hover {
-      background: rgba(135, 135, 135, 0.3);
+      background: rgba(255, 255, 255, 0.28);
       transform: translateY(-1px);
     }
 

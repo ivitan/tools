@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="/img/USB.png">
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <title>USB启动盘制作工具 - 增强兼容版</title>
   <style>
     :root {
@@ -17,12 +18,12 @@
       --accent: #2563eb;
       --accent-hover: #1d4ed8;
       --accent-light: #eff4ff;
-      --danger: #dc2626;
-      --danger-hover: #b91c1c;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
       --danger-light: #fef2f2;
-      --success: #16a34a;
+      --success: #10b981;
       --success-light: #f0fdf6;
-      --warning: #d97706;
+      --warning: #f59e0b;
       --warning-light: #fffbeb;
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
       --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -41,22 +42,22 @@
         "Microsoft YaHei", sans-serif;
     }
 
-    [data-theme="dark"] {
-      --bg: #0d1117;
-      --card-bg: #161b22;
-      --card-border: #30363d;
-      --text-primary: #e6edf3;
-      --text-secondary: #b0b8c4;
-      --text-muted: #6e7681;
-      --accent: #58a6ff;
-      --accent-hover: #79b8ff;
-      --accent-light: #0d2847;
-      --danger: #f85149;
-      --danger-hover: #da3633;
+    .dark-mode {
+      --bg: #111827;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --accent-light: #1e3a8a;
+      --danger: #f87171;
+      --danger-hover: #fca5a5;
       --danger-light: #1f1315;
-      --success: #3fb950;
+      --success: #34d399;
       --success-light: #0d1d12;
-      --warning: #d2991d;
+      --warning: #fbbf24;
       --warning-light: #1b1509;
     }
 
@@ -99,78 +100,107 @@
       gap: 20px;
     }
 
-    .header {
-      text-align: center;
-      padding: 8px 0;
+    /* =============== 统一顶栏（与套件一致：鲜蓝 + 白字） =============== */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--accent);
+      color: #fff;
+      padding: 14px 20px;
+      border-radius: var(--radius) var(--radius) 0 0;
     }
 
-    .header .logo-icon {
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .topbar .logo-icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 52px;
-      height: 52px;
-      border-radius: var(--radius-lg);
-      background: var(--accent);
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.18);
       color: #fff;
-      font-size: 26px;
-      margin-bottom: 10px;
-      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+      font-size: 22px;
+      flex-shrink: 0;
+      box-shadow: none;
     }
 
-    .header h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+    .topbar-titles {
+      min-width: 0;
     }
 
-    .header .subtitle {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      margin-top: 2px;
-    }
-
-    .theme-toggle-wrapper {
+    .topbar h1 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
       display: flex;
-      justify-content: flex-end;
-    }
-
-    .theme-toggle {
-      display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 14px;
-      border-radius: 50px;
-      border: 1.5px solid var(--card-border);
-      background: var(--card-bg);
+      color: #fff;
+    }
+
+    .topbar .subtitle {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.82);
+      margin-top: 1px;
+    }
+
+    .topbar .home-back-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid transparent;
+      text-decoration: none;
+      flex-shrink: 0;
+      transition: background var(--transition);
+    }
+
+    .topbar .home-back-icon:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .topbar .home-back-icon svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+
+    .topbar .theme-toggle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      transition: all var(--transition);
-      box-shadow: var(--shadow-sm);
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      flex-shrink: 0;
+      transition: background 0.25s ease;
       font-family: var(--font-sans);
       user-select: none;
     }
 
-    .theme-toggle:hover {
-      border-color: var(--accent);
-      color: var(--accent);
+    .topbar .theme-toggle:hover {
+      background: rgba(255, 255, 255, 0.2);
     }
 
-    [data-theme="dark"] .theme-toggle .icon-moon {
-      display: inline;
-    }
-
-    [data-theme="dark"] .theme-toggle .icon-sun {
-      display: none;
-    }
-
-    [data-theme="light"] .theme-toggle .icon-moon {
-      display: none;
-    }
-
-    [data-theme="light"] .theme-toggle .icon-sun {
-      display: inline;
+    .topbar .theme-toggle i {
+      font-size: 1.05rem;
+      color: #fff;
     }
 
     .card {
@@ -272,7 +302,7 @@
       opacity: 0.6;
     }
 
-    [data-theme="dark"] .btn-primary:disabled {
+    .dark-mode .btn-primary:disabled {
       background: #2a3a55;
       opacity: 0.5;
     }
@@ -292,7 +322,7 @@
       opacity: 0.6;
     }
 
-    [data-theme="dark"] .btn-danger:disabled {
+    .dark-mode .btn-danger:disabled {
       background: #4a2a2a;
       opacity: 0.5;
     }
@@ -469,22 +499,22 @@
       color: #9d174d;
     }
 
-    [data-theme="dark"] .file-type-badge.img {
+    .dark-mode .file-type-badge.img {
       background: #1e3a5f;
       color: #93c5fd;
     }
 
-    [data-theme="dark"] .file-type-badge.iso {
+    .dark-mode .file-type-badge.iso {
       background: #422006;
       color: #fcd34d;
     }
 
-    [data-theme="dark"] .file-type-badge.bin {
+    .dark-mode .file-type-badge.bin {
       background: #2d1b4e;
       color: #c4b5fd;
     }
 
-    [data-theme="dark"] .file-type-badge.raw {
+    .dark-mode .file-type-badge.raw {
       background: #4a1942;
       color: #f9a8d4;
     }
@@ -706,8 +736,8 @@
         padding: 18px 14px;
       }
 
-      .header h1 {
-        font-size: 1.3rem;
+      .topbar h1 {
+        font-size: 1.05rem;
       }
 
       .btn {
@@ -734,22 +764,24 @@
 
 <body>
   <div class="container">
-    <div class="header">
-      <div class="logo-icon">💿</div>
-      <h1 style="display:inline-flex; align-items:center; justify-content:center; gap:10px;">USB 启动盘制作工具<a href="../"
-          class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <path d="M9 22V12h6v10"></path>
-          </svg></a></h1>
-      <p class="subtitle">增强兼容版 · 支持非标准U盘</p>
-    </div>
-    <div class="theme-toggle-wrapper">
-      <button class="theme-toggle" id="themeToggle">
-        <span class="icon-sun">☀️</span><span class="icon-moon">🌙</span>
-        <span id="themeLabel">暗色模式</span>
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="logo-icon">💿</span>
+        <div class="topbar-titles">
+          <h1>USB 启动盘制作工具
+            <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <path d="M9 22V12h6v10"></path>
+              </svg></a>
+          </h1>
+          <p class="subtitle">增强兼容版 · 支持非标准U盘</p>
+        </div>
+      </div>
+      <button class="theme-toggle" id="themeToggle" title="切换主题">
+        <i class="fas fa-moon"></i>
       </button>
-    </div>
+    </header>
 
     <!-- 步骤1 -->
     <div class="card" id="cardStep1">
@@ -924,32 +956,23 @@
         logToggle.textContent = isOpen ? "收起" : "展开";
       });
 
-      function applyTheme(t) {
-        document.documentElement.setAttribute("data-theme", t);
-        themeLabel.textContent = t === "dark" ? "亮色模式" : "暗色模式";
-        try {
-          localStorage.setItem("usb-imager-theme", t);
-        } catch (e) { }
-      }
-      const saved = (() => {
-        try {
-          return localStorage.getItem("usb-imager-theme");
-        } catch (e) {
-          return null;
+      function applyTheme(theme) {
+        const body = document.body;
+        if (theme === "dark") {
+          body.classList.add("dark-mode");
+          themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+          localStorage.setItem("theme", "dark");
+        } else {
+          body.classList.remove("dark-mode");
+          themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+          localStorage.setItem("theme", "light");
         }
-      })();
-      applyTheme(
-        saved ||
-        (window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light"),
-      );
+      }
+      const saved = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      applyTheme(saved === "dark" || (!saved && prefersDark) ? "dark" : "light");
       themeToggle.addEventListener("click", () => {
-        applyTheme(
-          document.documentElement.getAttribute("data-theme") === "dark"
-            ? "light"
-            : "dark",
-        );
+        applyTheme(document.body.classList.contains("dark-mode") ? "light" : "dark");
       });
 
       // 查找大容量存储接口（兼容各种子类）
