@@ -2,6 +2,15 @@
 <html lang="zh-CN">
 
 <head>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("theme");
+        var dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark-mode");
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="/img/USB.png">
@@ -957,7 +966,7 @@
       });
 
       function applyTheme(theme) {
-        const body = document.body;
+        const body = document.documentElement;
         if (theme === "dark") {
           body.classList.add("dark-mode");
           themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
@@ -972,7 +981,7 @@
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       applyTheme(saved === "dark" || (!saved && prefersDark) ? "dark" : "light");
       themeToggle.addEventListener("click", () => {
-        applyTheme(document.body.classList.contains("dark-mode") ? "light" : "dark");
+        applyTheme(document.documentElement.classList.contains("dark-mode") ? "light" : "dark");
       });
 
       // 查找大容量存储接口（兼容各种子类）

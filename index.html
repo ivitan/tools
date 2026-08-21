@@ -2,6 +2,15 @@
 <html lang="zh-CN">
 
 <head>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("theme");
+        var dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark-mode");
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" href="/img/Logo.svg" type="image/svg+xml" sizes="any" />
@@ -649,7 +658,7 @@
 
       // -------------------- 主题切换 --------------------
       const themeToggle = document.getElementById("themeToggle");
-      const body = document.body;
+      const body = document.documentElement;
       const toggleIcon = themeToggle.querySelector("i");
 
       function setTheme(theme) {

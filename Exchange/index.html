@@ -2,6 +2,15 @@
 <html lang="zh-CN">
 
 <head>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("theme");
+        var dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark-mode");
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="/img/Calculate.png">
@@ -734,7 +743,7 @@
     document.addEventListener("DOMContentLoaded", function () {
       // ================= 主题逻辑 =================
       const themeToggle = document.getElementById("themeToggle");
-      const body = document.body;
+      const body = document.documentElement;
 
       function toggleTheme() {
         if (body.classList.contains("dark-mode")) {

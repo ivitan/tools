@@ -2,6 +2,15 @@
 <html lang="zh-CN">
 
 <head>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("theme");
+        var dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark-mode");
+      } catch (e) {}
+    })();
+  </script>
   <link rel="icon" type="image/png" href="/img/Type.png">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -1276,7 +1285,7 @@ type: 1000 - 有效（空格不影响）
     function initTheme() {
       const savedTheme = localStorage.getItem("theme");
       const themeToggle = document.getElementById("themeToggle");
-      const body = document.body;
+      const body = document.documentElement;
 
       // 检查系统偏好
       const prefersDark = window.matchMedia(
@@ -1295,7 +1304,7 @@ type: 1000 - 有效（空格不影响）
 
     // 切换主题
     function toggleTheme() {
-      const body = document.body;
+      const body = document.documentElement;
       const themeToggle = document.getElementById("themeToggle");
 
       if (body.classList.contains("dark-mode")) {

@@ -2,6 +2,15 @@
 <html lang="zh-CN">
 
 <head>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem("theme");
+                var dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
+                if (dark) document.documentElement.classList.add("dark-mode");
+            } catch (e) {}
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/img/Bug.png" type="image/svg+xml" sizes="any" />
@@ -620,7 +629,7 @@
         // ================= 主题切换（日间/夜间） =================
         (function () {
             const themeToggle = document.getElementById("themeToggle");
-            const body = document.body;
+            const body = document.documentElement;
 
             function applyTheme(theme) {
                 if (theme === "dark") {
