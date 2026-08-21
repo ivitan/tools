@@ -8,18 +8,18 @@
     <title>日报生成工具</title>
     <style>
         :root {
-            /* 日间模式变量 - 简洁中性灰蓝色调（与前两版一致） */
-            --primary-color: #4a7ab5;
-            --primary-dark: #3d6799;
-            --success-color: #5a9e7a;
-            --success-dark: #4a8666;
-            --danger-color: #64748b;
-            --danger-dark: #475569;
-            --warning-color: #c79447;
-            --warning-dark: #ad7f37;
-            --violet-color: #8a72ad;
-            --violet-dark: #745e95;
-            --info-color: #4a7ab5;
+            /* 日间模式变量 - Tailwind 风格鲜亮配色（参考 Airport） */
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success-color: #10b981;
+            --success-dark: #059669;
+            --danger-color: #ef4444;
+            --danger-dark: #dc2626;
+            --warning-color: #f59e0b;
+            --warning-dark: #d97706;
+            --violet-color: #8b5cf6;
+            --violet-dark: #7c3aed;
+            --info-color: #2563eb;
 
             --bg-gradient: #f1f5f9;
             --container-bg: #ffffff;
@@ -33,7 +33,7 @@
             --input-border: #e2e8f0;
             --border-color: #e2e8f0;
             --shadow-color: rgba(15, 23, 42, 0.08);
-            --hover-bg: rgba(74, 122, 181, 0.08);
+            --hover-bg: rgba(37, 99, 235, 0.08);
             --radius: 12px;
             --radius-sm: 8px;
 
@@ -41,10 +41,10 @@
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
 
             /* 机位类型配色：远机位=蓝，近机位=橙 */
-            --far-accent: #3b6db5;
-            --far-tint: rgba(59, 109, 181, 0.08);
-            --near-accent: #d9734e;
-            --near-tint: rgba(217, 115, 78, 0.08);
+            --far-accent: #2563eb;
+            --far-tint: rgba(37, 99, 235, 0.08);
+            --near-accent: #f97316;
+            --near-tint: rgba(249, 115, 22, 0.08);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -61,9 +61,9 @@
                 --input-border: #334155;
                 --border-color: #334155;
                 --shadow-color: rgba(0, 0, 0, 0.3);
-                --hover-bg: rgba(122, 162, 210, 0.14);
-                --far-tint: rgba(96, 145, 200, 0.16);
-                --near-tint: rgba(210, 130, 95, 0.16);
+                --hover-bg: rgba(96, 165, 250, 0.14);
+                --far-tint: rgba(96, 165, 250, 0.16);
+                --near-tint: rgba(251, 146, 60, 0.16);
             }
         }
 
@@ -207,7 +207,7 @@
         }
 
         .badge-near {
-            background-color: #d9734e;
+            background-color: var(--near-accent);
         }
 
         input,
@@ -224,10 +224,11 @@
             font-family: inherit;
         }
 
+        /* 输入框 focus 用新的鲜亮主蓝 */
         input:focus,
         textarea:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(74, 122, 181, 0.12);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
         }
 
         .stand-header input {
@@ -274,13 +275,14 @@
             background-color: var(--primary-dark);
         }
 
+        /* "新增近机位" 实色按钮：使用新的鲜亮橙 */
         .btn-success {
-            background-color: #d9734e;
+            background-color: var(--near-accent);
             color: #fff;
         }
 
         .btn-success:hover {
-            background-color: #bf5e3b;
+            background-color: #ea580c;
         }
 
         .btn-warning {
