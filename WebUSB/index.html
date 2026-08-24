@@ -8,12 +8,12 @@
         var saved = localStorage.getItem("theme");
         var dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
         if (dark) document.documentElement.classList.add("dark-mode");
-      } catch (e) {}
+      } catch (e) { }
     })();
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/png" href="/img/USB.png">
+  <link rel="icon" type="image/svg+xml" href="/img/WebUSB.svg" />
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <title>USB启动盘制作工具</title>
   <style>
@@ -779,7 +779,8 @@
         <div class="topbar-titles">
           <h1>USB 启动盘制作工具
             <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
                 <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                 <path d="M9 22V12h6v10"></path>
               </svg></a>
@@ -1009,7 +1010,7 @@
             else if (ep.direction === "in" && !inp) inp = ep;
           }
         }
-        return {bulkOut: out, bulkIn: inp};
+        return { bulkOut: out, bulkIn: inp };
       }
       function buildCBW(tag, len, flags, lun, cb) {
         const buf = new ArrayBuffer(31),
@@ -1058,14 +1059,14 @@
         try {
           const useWide = chkWideMode.checked;
           const filters = useWide
-            ? [{classCode: 0x08}] // 宽松：只要求大容量存储类
-            : [{classCode: 0x08, subclassCode: 0x06, protocolCode: 0x50}]; // 严格：标准BOT
+            ? [{ classCode: 0x08 }] // 宽松：只要求大容量存储类
+            : [{ classCode: 0x08, subclassCode: 0x06, protocolCode: 0x50 }]; // 严格：标准BOT
 
           addLog(
             `正在请求USB设备 (${useWide ? "宽松模式 - class=0x08" : "标准模式 - 仅BOT"})...`,
             "info",
           );
-          const device = await navigator.usb.requestDevice({filters});
+          const device = await navigator.usb.requestDevice({ filters });
           if (!device) {
             showStatus("未选择设备", "disconnected");
             return;
@@ -1089,7 +1090,7 @@
         if (!ms) throw new Error("该设备不是大容量存储设备");
         usbInterface = ms;
         await device.claimInterface(ms.interfaceNumber);
-        const {bulkOut, bulkIn} = findEndpoints(ms.endpoints);
+        const { bulkOut, bulkIn } = findEndpoints(ms.endpoints);
         if (!bulkOut || !bulkIn) throw new Error("未找到批量端点");
         bulkOutEp = bulkOut;
         bulkInEp = bulkIn;

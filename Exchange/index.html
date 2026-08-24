@@ -8,12 +8,12 @@
         var saved = localStorage.getItem("theme");
         var dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
         if (dark) document.documentElement.classList.add("dark-mode");
-      } catch (e) {}
+      } catch (e) { }
     })();
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/png" href="/img/Calculate.png">
+  <link rel="icon" type="image/svg+xml" href="/img/Exchange.svg" />
   <title>全能数值与进制转换工作台</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
@@ -783,7 +783,7 @@
       });
 
       function addHistory(input, result, type) {
-        historyData.unshift({input, result, type});
+        historyData.unshift({ input, result, type });
         if (historyData.length > 5) historyData.pop();
         renderHistory();
       }

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/png" href="/img/Markdown.png">
+  <link rel="icon" type="image/svg+xml" href="/img/Markdown.svg" />
   <title>Markdown 编辑器 · 双向实时跟随</title>
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
@@ -21,7 +21,7 @@
           var saved = localStorage.getItem("md-editor-theme");
           if (saved === "dark") return true;
           if (saved === "light") return false;
-        } catch (e) {}
+        } catch (e) { }
         return window.matchMedia("(prefers-color-scheme: dark)").matches;
       }
       var dark = isDark();
@@ -479,12 +479,12 @@
       let userScrollingPreview = false;
 
       // Marked 配置
-      marked.use({breaks: true, gfm: true});
+      marked.use({ breaks: true, gfm: true });
       const renderer = new marked.Renderer();
       renderer.code = function (code, language) {
         let highlighted;
         if (language && hljs.getLanguage(language)) {
-          highlighted = hljs.highlight(code, {language}).value;
+          highlighted = hljs.highlight(code, { language }).value;
         } else {
           highlighted = hljs.highlightAuto(code).value;
         }
@@ -493,7 +493,7 @@
       renderer.link = function (href, title, text) {
         return `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${title || ""}">${text}</a>`;
       };
-      marked.use({renderer});
+      marked.use({ renderer });
 
       // 范文（保留原有风格）
       const defaultContent = `# 👋 欢迎使用 Markdown 编辑器
