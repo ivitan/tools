@@ -1,38 +1,66 @@
 <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-    <!-- 工具箱主体 -->
-    <path d="M30 60H170V160H30V60Z" fill="#3498db" stroke="#2980b9" stroke-width="2"/>
-    
-    <!-- 工具箱内部 -->
-    <path d="M30 60H170V90H30V60Z" fill="#2980b9"/>
-    
-    <!-- 工具箱提手 -->
-    <path d="M70 40C70 37.2386 72.2386 35 75 35H125C127.761 35 130 37.2386 130 40V60H70V40Z" fill="#3498db" stroke="#2980b9" stroke-width="2"/>
-    
-    <!-- 工具箱分隔 -->
-    <path d="M100 90V160" stroke="#2980b9" stroke-width="2"/>
-    <path d="M30 120H170" stroke="#2980b9" stroke-width="2"/>
-    
-    <!-- 锤子 -->
-    <g transform="translate(50, 100)">
-        <rect x="-5" y="-25" width="10" height="40" fill="#95a5a6"/>
-        <rect x="-15" y="-35" width="30" height="10" fill="#7f8c8d"/>
-    </g>
-    
-    <!-- 扳手 -->
-    <g transform="translate(120, 110)">
-        <path d="M0 -15C8.284 -15 15 -8.284 15 0C15 8.284 8.284 15 0 15C-8.284 15 -15 8.284 -15 0C-15 -8.284 -8.284 -15 0 -15Z" fill="#95a5a6"/>
-        <rect x="-3" y="-30" width="6" height="45" fill="#95a5a6"/>
-    </g>
-    
-    <!-- 螺丝刀 -->
-    <g transform="translate(50, 140)">
-        <rect x="-3" y="-20" width="6" height="40" fill="#7f8c8d"/>
-        <rect x="-5" y="-25" width="10" height="5" fill="#95a5a6"/>
-    </g>
-    
-    <!-- 钳子 -->
-    <g transform="translate(140, 140)">
-        <path d="M-15 0C-15 -10 -5 -15 0 -15C5 -15 15 -10 15 0C15 10 5 15 0 15C-5 15 -15 10 -15 0Z" fill="#7f8c8d"/>
-        <rect x="-15" y="0" width="30" height="5" fill="#95a5a6"/>
-    </g>
+  <defs>
+    <linearGradient id="boxGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#1e40af"/>
+    </linearGradient>
+    <linearGradient id="lidGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f5f7fa"/>
+      <stop offset="0.5" stop-color="#c3cdd6"/>
+      <stop offset="1" stop-color="#8a9aa6"/>
+    </linearGradient>
+    <linearGradient id="metalDark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#cfd8dc"/>
+      <stop offset="1" stop-color="#607d8b"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#0f172a" flood-opacity="0.30"/>
+    </filter>
+  </defs>
+
+  <!-- 箱体 + 提手（带投影，立体感） -->
+  <g filter="url(#softShadow)">
+    <rect x="32" y="72" width="136" height="104" rx="16" fill="url(#boxGrad)" stroke="#15317a" stroke-width="2.5"/>
+    <path d="M80 74 L80 58 Q80 45 93 45 L107 45 Q120 45 120 58 L120 74 Z" fill="url(#lidGrad)" stroke="#15317a" stroke-width="2.5"/>
+  </g>
+
+  <!-- 内盖高光条 -->
+  <path d="M48 72 a16 16 0 0 1 16 -16 H136 a16 16 0 0 1 16 16 V94 H48 Z" fill="url(#lidGrad)" opacity="0.9"/>
+
+  <!-- 分隔线 -->
+  <g stroke="#15317a" stroke-width="2" opacity="0.45" stroke-linecap="round">
+    <line x1="100" y1="94" x2="100" y2="176"/>
+    <line x1="32" y1="135" x2="168" y2="135"/>
+  </g>
+
+  <!-- 锤子 -->
+  <g transform="translate(64 116) rotate(-20)">
+    <rect x="-4.5" y="0" width="9" height="42" rx="4" fill="url(#metalDark)"/>
+    <rect x="-17" y="-12" width="34" height="15" rx="4" fill="url(#metal)"/>
+    <rect x="-17" y="-12" width="34" height="4" rx="2" fill="#ffffff" opacity="0.4"/>
+  </g>
+
+  <!-- 螺丝刀 -->
+  <g transform="translate(62 150) rotate(22)">
+    <rect x="-4.5" y="-24" width="9" height="36" rx="4" fill="url(#metalDark)"/>
+    <rect x="-3" y="10" width="6" height="16" rx="2" fill="url(#metal)"/>
+    <rect x="-6" y="-24" width="12" height="7" rx="2" fill="#37474f"/>
+  </g>
+
+  <!-- 扳手 -->
+  <g transform="translate(132 120) rotate(12)">
+    <rect x="-4.5" y="-2" width="9" height="42" rx="4" fill="url(#metal)"/>
+    <circle cx="0" cy="-14" r="11" fill="none" stroke="url(#metal)" stroke-width="7"/>
+  </g>
+
+  <!-- 钳子 -->
+  <g transform="translate(134 150) rotate(-6)">
+    <rect x="-3" y="-2" width="6" height="20" rx="3" fill="url(#metalDark)"/>
+    <rect x="-12" y="-14" width="7" height="22" rx="3.5" fill="url(#metal)" transform="rotate(-22)"/>
+    <rect x="5" y="-14" width="7" height="22" rx="3.5" fill="url(#metal)" transform="rotate(22)"/>
+  </g>
 </svg>
