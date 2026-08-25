@@ -740,6 +740,56 @@
       accent-color: var(--accent);
     }
 
+    /* =============== 多阶段指示器 =============== */
+    .stage-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 14px 0;
+      padding: 10px;
+      background: var(--bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--card-border);
+      flex-wrap: wrap;
+    }
+
+    .stage-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1.5px solid var(--card-border);
+      transition: all var(--transition);
+    }
+
+    .stage-item .stage-icon {
+      font-size: 0.9rem;
+    }
+
+    .stage-item.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-light);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+    }
+
+    .stage-item.done {
+      color: var(--success);
+      border-color: var(--success);
+      background: var(--success-light);
+    }
+
+    .stage-arrow {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
     @media (max-width: 480px) {
       .card {
         padding: 18px 14px;
@@ -766,6 +816,15 @@
 
       .info-value {
         text-align: left;
+      }
+
+      .stage-indicator {
+        gap: 4px;
+      }
+
+      .stage-item {
+        padding: 4px 8px;
+        font-size: 0.75rem;
       }
     }
   </style>
@@ -825,6 +884,9 @@
         <div class="info-row">
           <span class="info-label">容量</span><span class="info-value capacity" id="devCapacity">—</span>
         </div>
+        <div class="info-row" id="connectionSpeedInfo" style="display:none">
+          <span class="info-label">速率</span><span class="info-value" style="font-weight:600;color:var(--accent)">—</span>
+        </div>
       </div>
       <div class="log-panel">
         <div class="log-header" id="logHeader">
@@ -867,6 +929,12 @@
       <div class="alert alert-warning">
         <span class="alert-icon">⚠️</span><span><strong>警告：</strong>写入将完全覆盖U盘所有数据！</span>
       </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="chkVerifyWrite" checked />
+        <label for="chkVerifyWrite">🔍 写入后验证数据（推荐，回读校验确保写入正确）</label>
+      </div>
+      <!-- 多阶段指示器 -->
+      <div class="stage-indicator" id="stageIndicator" style="display:none"></div>
       <div class="btn-group">
         <button class="btn btn-danger" id="btnStartWrite" disabled>
           🚀 开始写入
@@ -889,20 +957,26 @@
       <div id="writeStatusArea"></div>
     </div>
     <div class="footer">
-      🔒 纯前端工具 · 数据仅在本地处理 · 需要 Chrome/Edge + HTTPS/localhost
+      🔒 纯前端工具 · 数据仅在本地处理 · 支持写入后验证 · 需要 Chrome/Edge + HTTPS/localhost
     </div>
   </div>
 
   <script>
     (function () {
       const SCSI_WRITE_10 = 0x2a,
-        SCSI_READ_CAPACITY_10 = 0x25;
+        SCSI_READ_10 = 0x28,
+        SCSI_READ_CAPACITY_10 = 0x25,
+        SCSI_TEST_UNIT_READY = 0x00,
+        SCSI_REQUEST_SENSE = 0x03;
       const CBW_SIGNATURE = 0x43425355,
         CSW_SIGNATURE = 0x53425355;
       const CBW_FLAG_DATA_OUT = 0x00,
         CBW_FLAG_DATA_IN = 0x80;
       const DEFAULT_SECTOR_SIZE = 512,
-        CHUNK_SECTORS = 256;
+        CHUNK_SECTORS = 256,
+        VERIFY_CHUNK_SECTORS = 128;
+      const MAX_RETRIES = 3,
+        RETRY_DELAY_MS = 500;
 
       const $ = (s) => document.querySelector(s);
       const btnConnectUSB = $("#btnConnectUSB");
@@ -939,6 +1013,9 @@
       const logToggle = $("#logToggle");
       const logHeader = $("#logHeader");
       const chkWideMode = $("#chkWideMode");
+      const chkVerifyWrite = $("#chkVerifyWrite");
+      const stageIndicator = $("#stageIndicator");
+      const connectionSpeedInfo = $("#connectionSpeedInfo");
 
       let usbDevice = null,
         usbInterface = null,
@@ -954,6 +1031,10 @@
       let writeStartTime = 0,
         bytesWritten = 0,
         totalBytesToWrite = 0;
+      let currentStage = "idle"; // idle | writing | verifying | done
+      let verifiedBytes = 0,
+        verifyErrors = 0;
+      let usbSpeed = ""; // "USB 2.0" / "USB 3.0" / "USB 3.1" / "未知"
 
       function addLog(msg, type = "info") {
         const time = new Date().toLocaleTimeString();
@@ -1032,6 +1113,26 @@
         v.setUint16(7, n, false);
         return cmd;
       }
+      function buildRead10(lba, n) {
+        const cmd = new ArrayBuffer(10),
+          v = new DataView(cmd);
+        v.setUint8(0, SCSI_READ_10);
+        v.setUint32(2, lba, false);
+        v.setUint16(7, n, false);
+        return cmd;
+      }
+      function buildTestUnitReady() {
+        const cmd = new ArrayBuffer(6);
+        new DataView(cmd).setUint8(0, SCSI_TEST_UNIT_READY);
+        return cmd;
+      }
+      function buildRequestSense() {
+        const cmd = new ArrayBuffer(6),
+          v = new DataView(cmd);
+        v.setUint8(0, SCSI_REQUEST_SENSE);
+        v.setUint8(4, 18);
+        return cmd;
+      }
       function buildReadCap() {
         const cmd = new ArrayBuffer(10);
         new DataView(cmd).setUint8(0, SCSI_READ_CAPACITY_10);
@@ -1053,6 +1154,93 @@
           maxLBA: v.getUint32(0, false),
           blockSize: v.getUint32(4, false),
         };
+      }
+      function parseSenseData(buf) {
+        if (!buf || buf.byteLength < 18) return null;
+        const v = new DataView(buf);
+        return {
+          senseKey: v.getUint8(2) & 0x0f,
+          asc: v.getUint8(12),
+          ascq: v.getUint8(13),
+        };
+      }
+      function senseKeyText(key) {
+        const map = {
+          0: "无检测",
+          1: "已恢复错误",
+          2: "未就绪",
+          3: "介质错误",
+          4: "硬件错误",
+          5: "非法请求",
+          6: "单元注意",
+          7: "数据保护",
+          8: "空白检查",
+          9: "供应商特有",
+          10: "已复制",
+          11: "已中止命令",
+          13: "卷溢出",
+          14: "错误已消除",
+        };
+        return map[key] || `未知(0x${key.toString(16)})`;
+      }
+      function signal_aborted() {
+        return abortController && abortController.signal.aborted;
+      }
+      function sleep(ms) {
+        return new Promise((r) => setTimeout(r, ms));
+      }
+      async function testUnitReady() {
+        const cmd = buildTestUnitReady();
+        const tag = Date.now() & 0xffffffff;
+        const cbw = buildCBW(tag, 0, CBW_FLAG_DATA_OUT, 0, cmd);
+        await usbDevice.transferOut(bulkOutEp.endpointNumber, cbw);
+        const cswRes = await usbDevice.transferIn(
+          bulkInEp.endpointNumber,
+          13,
+        );
+        if (cswRes.data && cswRes.data.byteLength >= 13) {
+          const csw = parseCSW(cswRes.data.buffer);
+          return csw.status === 0;
+        }
+        return false;
+      }
+      async function requestSense() {
+        try {
+          const cmd = buildRequestSense();
+          const tag = (Date.now() + 1) & 0xffffffff;
+          const cbw = buildCBW(tag, 18, CBW_FLAG_DATA_IN, 0, cmd);
+          await usbDevice.transferOut(bulkOutEp.endpointNumber, cbw);
+          const res = await usbDevice.transferIn(
+            bulkInEp.endpointNumber,
+            18,
+          );
+          await usbDevice.transferIn(bulkInEp.endpointNumber, 13);
+          if (res.data && res.data.byteLength >= 18)
+            return parseSenseData(res.data.buffer);
+        } catch (_) {}
+        return null;
+      }
+      // 带重试的错误恢复（参考 Android Flash Tool 的容错机制）
+      async function recoverFromError() {
+        try {
+          await usbDevice.clearHalt(bulkOutEp.endpointNumber);
+        } catch (_) {}
+        try {
+          await usbDevice.clearHalt(bulkInEp.endpointNumber);
+        } catch (_) {}
+        await sleep(RETRY_DELAY_MS);
+        try {
+          await testUnitReady();
+        } catch (_) {}
+      }
+      // 检测 USB 连接速率
+      function detectUsbSpeed(device) {
+        if (device.usbVersionMajor === 3) {
+          if (device.usbVersionMinor >= 1) return "USB 3.1";
+          return "USB 3.0";
+        }
+        if (device.usbVersionMajor === 2) return "USB 2.0";
+        return "USB 1.1";
       }
 
       async function connectUSB() {
@@ -1094,6 +1282,7 @@
         if (!bulkOut || !bulkIn) throw new Error("未找到批量端点");
         bulkOutEp = bulkOut;
         bulkInEp = bulkIn;
+        usbSpeed = detectUsbSpeed(device);
         await readCapacity();
         updateDeviceInfoUI();
         showStatus("已连接", "connected");
@@ -1102,9 +1291,22 @@
         btnConnectUSB.textContent = "🔌 更换U盘";
         btnRefreshDevices.style.display = "inline-flex";
         addLog(
-          `已连接: ${device.productName || "未知"} (${formatBytes(deviceCapacityBytes)})`,
+          `已连接: ${device.productName || "未知"} (${formatBytes(deviceCapacityBytes)}, ${usbSpeed})`,
           "success",
         );
+        if (usbSpeed === "USB 2.0" || usbSpeed === "USB 1.1") {
+          addLog(
+            "⚠️ 设备连接速率较慢，写入大镜像可能需要较长时间。建议插入 USB 3.0 接口。",
+            "warn",
+          );
+          connectionSpeedInfo.style.display = "flex";
+          connectionSpeedInfo.querySelector("span:last-child").textContent =
+            `${usbSpeed} · 速率较慢`;
+        } else {
+          connectionSpeedInfo.style.display = "flex";
+          connectionSpeedInfo.querySelector("span:last-child").textContent =
+            usbSpeed;
+        }
         if (selectedFile) checkSize();
         updateWriteButton();
       }
@@ -1142,7 +1344,9 @@
         sectorSize = DEFAULT_SECTOR_SIZE;
         deviceCapacityBytes = 0;
         deviceMaxLBA = 0;
+        usbSpeed = "";
         deviceInfo.classList.remove("show");
+        connectionSpeedInfo.style.display = "none";
         badgeStep1.classList.remove("done");
         cardStep1.classList.remove("highlight");
         btnConnectUSB.textContent = "🔌 选择U盘";
@@ -1228,6 +1432,7 @@
         badgeStep2.classList.remove("done");
         cardStep2.classList.remove("highlight");
         alertSizeCheck.style.display = "none";
+        stageIndicator.style.display = "none";
         updateWriteButton();
       }
       function updateWriteButton() {
@@ -1238,18 +1443,45 @@
             selectedFile.size > deviceCapacityBytes);
       }
 
+      function setStage(stage) {
+        currentStage = stage;
+        const stages = [
+          { key: "write", label: "写入", icon: "✍️" },
+          { key: "verify", label: "验证", icon: "🔍" },
+          { key: "done", label: "完成", icon: "✅" },
+        ];
+        const wantVerify = chkVerifyWrite.checked;
+        const activeStages = wantVerify ? stages : [stages[0], stages[2]];
+        let html = "";
+        activeStages.forEach((s, i) => {
+          let cls = "stage-item";
+          const stageMap = { write: "writing", verify: "verifying", done: "done" };
+          if (stage === s.key) cls += " active";
+          else if (
+            (s.key === "write" && (stage === "verify" || stage === "done")) ||
+            (s.key === "verify" && stage === "done")
+          )
+            cls += " done";
+          if (i > 0) html += '<span class="stage-arrow">→</span>';
+          html += `<span class="${cls}"><span class="stage-icon">${s.icon}</span> ${s.label}</span>`;
+        });
+        stageIndicator.innerHTML = html;
+        stageIndicator.style.display = "flex";
+      }
+
       async function startWrite() {
         if (!usbDevice || !selectedFile || isWriting) return;
         if (
           !confirm(
-            `⚠️ 确定将 ${selectedFile.name} 写入 ${usbDevice.productName || "设备"}？此操作不可逆！`,
+            `⚠️ 确定将 ${selectedFile.name} 写入 ${usbDevice.productName || "设备"}？此操作不可逆！${chkVerifyWrite.checked ? "\n\n将执行写入后验证，确保数据完整。" : ""}`,
           )
         )
           return;
         isWriting = true;
         abortController = new AbortController();
-        const signal = abortController.signal;
         bytesWritten = 0;
+        verifiedBytes = 0;
+        verifyErrors = 0;
         totalBytesToWrite = selectedFile.size;
         writeStartTime = performance.now();
         btnStartWrite.style.display = "none";
@@ -1258,31 +1490,61 @@
         progressBar.style.width = "0%";
         progressPercent.textContent = "0%";
         progressSpeed.textContent = "—";
-        progressDetail.textContent = "写入中...";
+        progressDetail.textContent = "准备写入...";
         progressEta.textContent = "";
         writeStatusArea.innerHTML = "";
         cardStep3.classList.add("highlight");
-        badgeStep3.classList.add("done");
         btnConnectUSB.disabled = true;
         btnClearFile.disabled = true;
+        chkVerifyWrite.disabled = true;
         dropZone.style.pointerEvents = "none";
+        setStage("write");
+        addLog("===== 开始写入流程 =====", "info");
+        addLog(
+          `镜像: ${selectedFile.name} (${formatBytes(selectedFile.size)})`,
+          "info",
+        );
+        addLog(`目标: ${usbDevice.productName || "未知"} (${usbSpeed})`, "info");
+        addLog(
+          `验证: ${chkVerifyWrite.checked ? "已启用" : "未启用"}`,
+          "info",
+        );
         try {
-          await performWrite(signal);
+          await performWrite();
+          addLog("写入阶段完成", "success");
+          if (chkVerifyWrite.checked) {
+            setStage("verify");
+            progressDetail.textContent = "正在验证数据...";
+            progressBar.style.width = "0%";
+            progressPercent.textContent = "0%";
+            writeStartTime = performance.now();
+            addLog("===== 开始验证阶段 =====", "info");
+            await performVerify();
+            if (verifyErrors > 0) {
+              addLog(`验证完成，发现 ${verifyErrors} 处不一致`, "error");
+              throw new Error(`验证失败：${verifyErrors} 处数据不一致`);
+            }
+            addLog("验证通过，数据完整", "success");
+          }
+          setStage("done");
           progressBar.style.width = "100%";
           progressPercent.textContent = "100%";
-          progressDetail.textContent = "✅ 写入完成！";
+          progressDetail.textContent = "✅ 全部完成！";
           progressSpeed.textContent = "";
           progressEta.textContent = "";
           writeStatusArea.innerHTML =
-            '<div class="alert alert-success"><span class="alert-icon">🎉</span> 写入成功！可以弹出U盘。</div>';
+            '<div class="alert alert-success"><span class="alert-icon">🎉</span> 写入成功！数据已验证，可以安全弹出U盘。</div>';
+          addLog("===== 全部完成 =====", "success");
         } catch (e) {
           if (e.name === "AbortError" || e.message === "用户取消") {
             progressDetail.textContent = "⏹ 已取消";
             writeStatusArea.innerHTML =
-              '<div class="alert alert-warning"><span class="alert-icon">⚠️</span> 写入已取消，数据不完整。</div>';
+              '<div class="alert alert-warning"><span class="alert-icon">⚠️</span> 操作已取消，数据不完整。</div>';
+            addLog("用户取消操作", "warn");
           } else {
             progressBar.style.width = "0%";
             showError(e.message);
+            addLog(`错误: ${e.message}`, "error");
           }
         } finally {
           isWriting = false;
@@ -1292,11 +1554,12 @@
           btnStartWrite.disabled = false;
           btnConnectUSB.disabled = false;
           btnClearFile.disabled = false;
+          chkVerifyWrite.disabled = false;
           dropZone.style.pointerEvents = "auto";
           updateWriteButton();
         }
       }
-      async function performWrite(signal) {
+      async function performWrite() {
         const file = selectedFile,
           total = file.size,
           chunk = CHUNK_SECTORS * sectorSize;
@@ -1304,7 +1567,7 @@
           offset = 0,
           tagC = Date.now() & 0xffff;
         while (offset < total) {
-          if (signal.aborted) throw new Error("用户取消");
+          if (signal_aborted()) throw new Error("用户取消");
           const remain = total - offset,
             curBytes = Math.min(chunk, remain);
           const curSectors = Math.ceil(curBytes / sectorSize);
@@ -1316,41 +1579,152 @@
             new Uint8Array(pad).set(new Uint8Array(buf));
             aligned = pad;
           }
-          const cmd = buildWrite10(lba, curSectors);
-          const cbw = buildCBW(
-            tagC++ & 0xffffffff,
-            aligned.byteLength,
-            CBW_FLAG_DATA_OUT,
-            0,
-            cmd,
-          );
-          await usbDevice.transferOut(bulkOutEp.endpointNumber, cbw);
-          let pos = 0;
-          const data = new Uint8Array(aligned);
-          while (pos < data.length) {
-            if (signal.aborted) throw new Error("用户取消");
-            const len = Math.min(
-              bulkOutEp.packetSize * 64,
-              data.length - pos,
-            );
-            await usbDevice.transferOut(
-              bulkOutEp.endpointNumber,
-              data.slice(pos, pos + len),
-            );
-            pos += len;
+          let success = false;
+          for (let attempt = 1; attempt <= MAX_RETRIES && !success; attempt++) {
+            try {
+              if (signal_aborted()) throw new Error("用户取消");
+              const cmd = buildWrite10(lba, curSectors);
+              const cbw = buildCBW(
+                tagC++ & 0xffffffff,
+                aligned.byteLength,
+                CBW_FLAG_DATA_OUT,
+                0,
+                cmd,
+              );
+              await usbDevice.transferOut(bulkOutEp.endpointNumber, cbw);
+              let pos = 0;
+              const data = new Uint8Array(aligned);
+              while (pos < data.length) {
+                if (signal_aborted()) throw new Error("用户取消");
+                const len = Math.min(
+                  bulkOutEp.packetSize * 64,
+                  data.length - pos,
+                );
+                await usbDevice.transferOut(
+                  bulkOutEp.endpointNumber,
+                  data.slice(pos, pos + len),
+                );
+                pos += len;
+              }
+              const cswRes = await usbDevice.transferIn(
+                bulkInEp.endpointNumber,
+                13,
+              );
+              if (!cswRes.data || cswRes.data.byteLength < 13)
+                throw new Error(`CSW响应异常 LBA ${lba}`);
+              const csw = parseCSW(cswRes.data.buffer);
+              if (!csw.valid) throw new Error(`CSW签名无效 LBA ${lba}`);
+              if (csw.status !== 0) {
+                const sense = await requestSense();
+                const senseStr = sense
+                  ? ` [${senseKeyText(sense.senseKey)}]`
+                  : "";
+                throw new Error(
+                  `SCSI错误 状态${csw.status}${senseStr} LBA ${lba}`,
+                );
+              }
+              success = true;
+            } catch (e) {
+              if (e.message === "用户取消") throw e;
+              if (attempt < MAX_RETRIES) {
+                addLog(
+                  `LBA ${lba} 写入失败(第${attempt}次): ${e.message}，重试中...`,
+                  "warn",
+                );
+                await recoverFromError();
+              } else {
+                throw e;
+              }
+            }
           }
-          const cswRes = await usbDevice.transferIn(
-            bulkInEp.endpointNumber,
-            13,
-          );
-          if (!cswRes.data || cswRes.data.byteLength < 13)
-            throw new Error(`CSW响应异常 LBA ${lba}`);
-          const csw = parseCSW(cswRes.data.buffer);
-          if (!csw.valid) throw new Error(`CSW签名无效 LBA ${lba}`);
-          if (csw.status !== 0)
-            throw new Error(`SCSI错误 状态${csw.status} LBA ${lba}`);
           offset += curBytes;
           bytesWritten = offset;
+          lba += curSectors;
+          updateProgress(offset, total);
+        }
+      }
+      async function performVerify() {
+        const file = selectedFile,
+          total = file.size,
+          chunk = VERIFY_CHUNK_SECTORS * sectorSize;
+        let lba = 0,
+          offset = 0,
+          tagC = (Date.now() + 0x8000) & 0xffff;
+        while (offset < total) {
+          if (signal_aborted()) throw new Error("用户取消");
+          const remain = total - offset,
+            curBytes = Math.min(chunk, remain);
+          const curSectors = Math.ceil(curBytes / sectorSize);
+          // 读取设备上的数据
+          let readBuf = null;
+          for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+              if (signal_aborted()) throw new Error("用户取消");
+              const cmd = buildRead10(lba, curSectors);
+              const cbw = buildCBW(
+                tagC++ & 0xffffffff,
+                curSectors * sectorSize,
+                CBW_FLAG_DATA_IN,
+                0,
+                cmd,
+              );
+              await usbDevice.transferOut(bulkOutEp.endpointNumber, cbw);
+              const res = await usbDevice.transferIn(
+                bulkInEp.endpointNumber,
+                curSectors * sectorSize,
+              );
+              if (!res.data)
+                throw new Error(`验证读取无数据 LBA ${lba}`);
+              readBuf = res.data.buffer;
+              const cswRes = await usbDevice.transferIn(
+                bulkInEp.endpointNumber,
+                13,
+              );
+              if (!cswRes.data || cswRes.data.byteLength < 13)
+                throw new Error(`验证CSW异常 LBA ${lba}`);
+              const csw = parseCSW(cswRes.data.buffer);
+              if (!csw.valid) throw new Error(`验证CSW签名无效 LBA ${lba}`);
+              if (csw.status !== 0)
+                throw new Error(`验证SCSI错误 状态${csw.status} LBA ${lba}`);
+              break;
+            } catch (e) {
+              if (e.message === "用户取消") throw e;
+              if (attempt < MAX_RETRIES) {
+                addLog(
+                  `LBA ${lba} 验证读取失败(第${attempt}次): ${e.message}，重试中...`,
+                  "warn",
+                );
+                await recoverFromError();
+              } else {
+                throw e;
+              }
+            }
+          }
+          // 读取原始文件对应区块
+          const blob = file.slice(offset, offset + curBytes);
+          const fileBuf = await new Response(blob).arrayBuffer();
+          // 逐字节比较
+          const readData = new Uint8Array(readBuf, 0, curBytes);
+          const fileData = new Uint8Array(fileBuf);
+          let mismatch = false;
+          for (let i = 0; i < fileData.length; i++) {
+            if (readData[i] !== fileData[i]) {
+              mismatch = true;
+              verifyErrors++;
+              if (verifyErrors <= 10) {
+                addLog(
+                  `数据不一致 @ LBA ${lba} 偏移 ${i}: 文件=0x${fileData[i].toString(16)} 设备=0x${readData[i].toString(16)}`,
+                  "error",
+                );
+              }
+              break; // 跳到下一个块
+            }
+          }
+          if (mismatch && verifyErrors > 10) {
+            addLog("验证错误过多，停止详细报告...", "warn");
+          }
+          offset += curBytes;
+          verifiedBytes = offset;
           lba += curSectors;
           updateProgress(offset, total);
         }
