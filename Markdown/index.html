@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 
 <head>
@@ -921,12 +921,14 @@ print(fibonacci(10))  # 55
       border: 1px solid transparent;
       text-decoration: none;
       flex-shrink: 0;
-      transition: background 0.2s ease, transform 0.2s ease;
+      transition:
+        background 0.2s ease,
+        transform 0.2s ease;
       -webkit-tap-highlight-color: transparent;
     }
 
     .home-back-icon:hover {
-      background: rgba(135, 135, 135, 0.30);
+      background: rgba(135, 135, 135, 0.3);
       transform: translateY(-1px);
     }
 

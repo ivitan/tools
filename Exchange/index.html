@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 
 <head>
@@ -6,7 +6,10 @@
     (function () {
       try {
         var saved = localStorage.getItem("theme");
-        var dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        var dark =
+          saved === "dark" ||
+          (!saved &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
         if (dark) document.documentElement.classList.add("dark-mode");
       } catch (e) { }
     })();
@@ -73,7 +76,8 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
         "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
       transition:
         background-color 0.25s ease,
@@ -202,7 +206,9 @@
       background: var(--input-bg);
       color: var(--text-color);
       letter-spacing: 0.5px;
-      transition: border 0.2s ease, box-shadow 0.2s ease;
+      transition:
+        border 0.2s ease,
+        box-shadow 0.2s ease;
     }
 
     input:focus {
@@ -653,7 +659,8 @@
     <header>
       <div class="header-content">
         <div class="header-left">
-          <h3><i class="fas fa-calculator" style="font-size: 22px;"></i> 数值与进制工作台</h3>
+          <h3><i class="fas fa-calculator" style="font-size: 22px"></i>
+            数值与进制工作台</h3>
           <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -1031,7 +1038,9 @@
       border: 1px solid transparent;
       text-decoration: none;
       flex-shrink: 0;
-      transition: background 0.2s ease, transform 0.2s ease;
+      transition:
+        background 0.2s ease,
+        transform 0.2s ease;
       -webkit-tap-highlight-color: transparent;
     }
 

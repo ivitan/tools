@@ -1,827 +1,881 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 
 <head>
-    <script>
-        (function () {
-            try {
-                var saved = localStorage.getItem("theme");
-                var dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
-                if (dark) document.documentElement.classList.add("dark-mode");
-            } catch (e) {}
-        })();
-    </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="/img/Daily.svg" sizes="any" />
-    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <title>日报生成工具</title>
-    <style>
-        :root {
-            /* 日间模式变量 - Tailwind 风格鲜亮配色（参考 Airport） */
-            --primary-color: #2563eb;
-            --primary-dark: #1d4ed8;
-            --success-color: #10b981;
-            --success-dark: #059669;
-            --danger-color: #ef4444;
-            --danger-dark: #dc2626;
-            --warning-color: #f59e0b;
-            --warning-dark: #d97706;
-            --violet-color: #8b5cf6;
-            --violet-dark: #7c3aed;
-            --info-color: #2563eb;
-
-            --bg-gradient: #f3f4f6;
-            --container-bg: #ffffff;
-            --header-bg: #2563eb;
-            --panel-bg: #ffffff;
-            --panel-secondary: #f8fafc;
-            --text-color: #1e293b;
-            --text-secondary: #64748b;
-            --text-light: #94a3b8;
-            --label-color: #334155;
-            --input-bg: #ffffff;
-            --input-border: #e2e8f0;
-            --border-color: #e2e8f0;
-            --shadow-color: rgba(15, 23, 42, 0.08);
-            --hover-bg: rgba(37, 99, 235, 0.08);
-            --radius: 12px;
-            --radius-sm: 8px;
-
-            /* 统一字体：全局与预览框共用，避免等宽/无衬线混用 */
-            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-
-            /* 机位类型配色：远机位=蓝，近机位=橙 */
-            --far-accent: #2563eb;
-            --far-tint: rgba(37, 99, 235, 0.08);
-            --near-accent: #f97316;
-            --near-tint: rgba(249, 115, 22, 0.08);
-        }
-
-        .dark-mode {
-            --bg-gradient: #111827;
-            --container-bg: #1e293b;
-            --header-bg: #1e40af;
-            --panel-bg: #1e293b;
-            --panel-secondary: #0f172a;
-            --text-color: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --text-light: #64748b;
-            --label-color: #cbd5e1;
-            --input-bg: #0f172a;
-            --input-border: #334155;
-            --border-color: #334155;
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --hover-bg: rgba(96, 165, 250, 0.14);
-            --far-tint: rgba(96, 165, 250, 0.16);
-            --near-tint: rgba(251, 146, 60, 0.16);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: var(--font-main);
-            background-color: var(--bg-gradient);
-            color: var(--text-color);
-            line-height: 1.6;
-            padding: 16px;
-        }
-
-        /* =============== 顶栏 =============== */
-        header {
-            background: var(--header-bg);
-            color: #fff;
-            padding: 14px 24px;
-            border-radius: 16px 16px 0 0;
-        }
-
-        .header-content {
-            max-width: 1300px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        header h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #fff;
-        }
-
-        .theme-toggle {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            flex-shrink: 0;
-            transition: background 0.25s ease;
-        }
-
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .theme-toggle i {
-            font-size: 1.05rem;
-            color: #fff;
-        }
-
-        /* =============== 布局 =============== */
-        .container {
-            max-width: 1300px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 16px;
-            align-items: start;
-            padding-bottom: 20px;
-        }
-
-        @media (max-width: 900px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .panel {
-            background: var(--panel-bg);
-            border-radius: var(--radius);
-            padding: 14px 16px;
-            box-shadow: 0 4px 24px var(--shadow-color);
-            border: 1px solid var(--border-color);
-        }
-
-        /* 首屏上方两个面板紧贴顶栏，整体卡片感 */
-        .container>.panel:first-child {
-            border-top-left-radius: 0;
-            border-top-right-radius: 0;
-        }
-
-        h2 {
-            font-size: 0.98rem;
-            margin-bottom: 10px;
-            color: var(--text-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        /* ===== 机位卡片：远/近机位不同配色区分 ===== */
-        .stand-card {
-            background: var(--panel-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            padding: 10px 12px;
-            margin-bottom: 10px;
-            transition: border-color 0.2s;
-        }
-
-        /* 远机位：蓝色系 */
-        .stand-card[data-type="远机位"] {
-            background: var(--far-tint);
-            border-left: 4px solid var(--far-accent);
-        }
-
-        .stand-card[data-type="远机位"]:focus-within {
-            border-color: var(--far-accent);
-        }
-
-        /* 近机位：绿色系 */
-        .stand-card[data-type="近机位"] {
-            background: var(--near-tint);
-            border-left: 4px solid var(--near-accent);
-        }
-
-        .stand-card[data-type="近机位"]:focus-within {
-            border-color: var(--near-accent);
-        }
-
-        .stand-header {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .badge {
-            padding: 3px 10px;
-            border-radius: 6px;
-            font-size: 0.76rem;
-            font-weight: 600;
-            color: #fff;
-            white-space: nowrap;
-            letter-spacing: 0.3px;
-        }
-
-        .badge-far {
-            background-color: var(--primary-color);
-        }
-
-        .badge-near {
-            background-color: var(--near-accent);
-        }
-
-        input,
-        textarea {
-            width: 100%;
-            padding: 7px 10px;
-            border: 1px solid var(--input-border);
-            border-radius: var(--radius-sm);
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            font-size: 0.85rem;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            font-family: inherit;
-        }
-
-        /* 输入框 focus 用新的鲜亮主蓝 */
-        input:focus,
-        textarea:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
-        }
-
-        .stand-header input {
-            flex: 1;
-            font-weight: 600;
-        }
-
-        .item-row {
-            display: grid;
-            grid-template-columns: 1.2fr 2fr auto;
-            gap: 8px;
-            margin-bottom: 6px;
-            align-items: start;
-        }
-
-        /* =============== 统一按钮系统（实色填充 + 区分语义色） =============== */
-        button {
-            padding: 7px 13px;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-size: 0.84rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-weight: 500;
-            font-family: inherit;
-            -webkit-tap-highlight-color: transparent;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        button:active {
-            transform: scale(0.98);
-        }
-
-        /* 实色按钮：主操作蓝 / 确认绿 / 警告橙 / 危险红 / 紫 */
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: #fff;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-        }
-
-        /* "新增近机位" 实色按钮：使用新的鲜亮橙 */
-        .btn-success {
-            background-color: var(--near-accent);
-            color: #fff;
-        }
-
-        .btn-success:hover {
-            background-color: #ea580c;
-        }
-
-        .btn-warning {
-            background-color: var(--warning-color);
-            color: #fff;
-        }
-
-        .btn-warning:hover {
-            background-color: var(--warning-dark);
-        }
-
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: #fff;
-        }
-
-        .btn-danger:hover {
-            background-color: var(--danger-dark);
-        }
-
-        /* 中性灰：用于清空/删除等常规操作，不暗示危险 */
-
-        .btn-violet {
-            background-color: var(--violet-color);
-            color: #fff;
-        }
-
-        .btn-violet:hover {
-            background-color: var(--violet-dark);
-        }
-
-        /* 删除图标按钮：中性灰实色，固定 30×30 方形，保留在网格最右 */
-        .btn-icon {
-            width: 30px;
-            height: 30px;
-            padding: 0;
-            background: var(--danger-color);
-            color: #fff;
-            font-size: 0.85rem;
-            border: none;
-            align-self: center;
-        }
-
-        .btn-icon:hover {
-            background: var(--danger-dark);
-        }
-
-        /* 新增机位按钮：并排实色，均分两列 */
-        .add-stand-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .add-stand-group button {
-            flex: 1;
-        }
-
-        .preview-panel {
-            position: sticky;
-            top: 20px;
-        }
-
-        #preview-box {
-            width: 100%;
-            min-height: 120px;
-            height: auto;
-            font-family: var(--font-main);
-            white-space: pre-wrap;
-            margin-bottom: 12px;
-            background: var(--panel-secondary);
-            line-height: 1.6;
-            font-size: 0.88rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            padding: 10px 12px;
-            color: var(--text-color);
-            overflow: visible;
-        }
-
-        #preview-box:empty::before {
-            content: attr(data-placeholder);
-            color: var(--text-light);
-        }
-
-        .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--success-color);
-            color: white;
-            padding: 11px 24px;
-            border-radius: 30px;
-            box-shadow: 0 4px 16px var(--shadow-color);
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 999;
-            font-size: 0.9rem;
-        }
-
-        .toast.show {
-            opacity: 1;
-        }
-
-        /* ======== 多选下拉框样式 ======== */
-        .multi-select-container {
-            position: relative;
-            width: 100%;
-        }
-
-        .input-with-arrow {
-            background-image: url('data:image/svg+xml;utf8,<svg fill="%2364748b" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
-            background-repeat: no-repeat;
-            background-position: right 8px center;
-            padding-right: 30px;
-            cursor: text;
-        }
-
-        .multi-select-dropdown {
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            right: 0;
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            box-shadow: 0 8px 20px var(--shadow-color);
-            z-index: 100;
-            max-height: 250px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .multi-select-dropdown.show {
-            display: block;
-        }
-
-        .multi-select-option {
-            padding: 6px 12px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: background 0.2s;
-            color: var(--text-color);
-            text-align: left;
-        }
-
-        .multi-select-option:hover {
-            background: var(--panel-secondary);
-        }
-
-        .multi-select-option.selected {
-            color: var(--primary-color);
-            background: var(--hover-bg);
-            font-weight: 600;
-        }
-
-        .multi-select-option.selected::after {
-            content: '✔';
-            float: right;
-            font-size: 0.85rem;
-            margin-left: 8px;
-        }
-
-        .match-text {
-            color: #e11d48;
-            font-weight: 700;
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 8px;
-            }
-
-            .container {
-                gap: 14px;
-            }
-
-            .panel {
-                padding: 12px;
-            }
-
-            .item-row {
-                grid-template-columns: 1fr;
-            }
-
-            #preview-box {
-                min-height: 100px;
-            }
-        }
-    </style>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("theme");
+        var dark =
+          saved === "dark" ||
+          (!saved &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark-mode");
+      } catch (e) { }
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/img/Daily.svg" sizes="any" />
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <title>日报生成工具</title>
+  <style>
+    :root {
+      /* 日间模式变量 - Tailwind 风格鲜亮配色（参考 Airport） */
+      --primary-color: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success-color: #10b981;
+      --success-dark: #059669;
+      --danger-color: #ef4444;
+      --danger-dark: #dc2626;
+      --warning-color: #f59e0b;
+      --warning-dark: #d97706;
+      --violet-color: #8b5cf6;
+      --violet-dark: #7c3aed;
+      --info-color: #2563eb;
+
+      --bg-gradient: #f3f4f6;
+      --container-bg: #ffffff;
+      --header-bg: #2563eb;
+      --panel-bg: #ffffff;
+      --panel-secondary: #f8fafc;
+      --text-color: #1e293b;
+      --text-secondary: #64748b;
+      --text-light: #94a3b8;
+      --label-color: #334155;
+      --input-bg: #ffffff;
+      --input-border: #e2e8f0;
+      --border-color: #e2e8f0;
+      --shadow-color: rgba(15, 23, 42, 0.08);
+      --hover-bg: rgba(37, 99, 235, 0.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+
+      /* 统一字体：全局与预览框共用，避免等宽/无衬线混用 */
+      --font-main:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+
+      /* 机位类型配色：远机位=蓝，近机位=橙 */
+      --far-accent: #2563eb;
+      --far-tint: rgba(37, 99, 235, 0.08);
+      --near-accent: #f97316;
+      --near-tint: rgba(249, 115, 22, 0.08);
+    }
+
+    .dark-mode {
+      --bg-gradient: #111827;
+      --container-bg: #1e293b;
+      --header-bg: #1e40af;
+      --panel-bg: #1e293b;
+      --panel-secondary: #0f172a;
+      --text-color: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-light: #64748b;
+      --label-color: #cbd5e1;
+      --input-bg: #0f172a;
+      --input-border: #334155;
+      --border-color: #334155;
+      --shadow-color: rgba(0, 0, 0, 0.3);
+      --hover-bg: rgba(96, 165, 250, 0.14);
+      --far-tint: rgba(96, 165, 250, 0.16);
+      --near-tint: rgba(251, 146, 60, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-gradient);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 16px;
+    }
+
+    /* =============== 顶栏 =============== */
+    header {
+      background: var(--header-bg);
+      color: #fff;
+      padding: 14px 24px;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .header-content {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    header h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+    }
+
+    .theme-toggle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      flex-shrink: 0;
+      transition: background 0.25s ease;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .theme-toggle i {
+      font-size: 1.05rem;
+      color: #fff;
+    }
+
+    /* =============== 布局 =============== */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+      align-items: start;
+      padding-bottom: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--panel-bg);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: 0 4px 24px var(--shadow-color);
+      border: 1px solid var(--border-color);
+    }
+
+    /* 首屏上方两个面板紧贴顶栏，整体卡片感 */
+    .container>.panel:first-child {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+
+    h2 {
+      font-size: 0.98rem;
+      margin-bottom: 10px;
+      color: var(--text-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    /* ===== 机位卡片：远/近机位不同配色区分 ===== */
+    .stand-card {
+      background: var(--panel-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+    }
+
+    /* 远机位：蓝色系 */
+    .stand-card[data-type="远机位"] {
+      background: var(--far-tint);
+      border-left: 4px solid var(--far-accent);
+    }
+
+    .stand-card[data-type="远机位"]:focus-within {
+      border-color: var(--far-accent);
+    }
+
+    /* 近机位：绿色系 */
+    .stand-card[data-type="近机位"] {
+      background: var(--near-tint);
+      border-left: 4px solid var(--near-accent);
+    }
+
+    .stand-card[data-type="近机位"]:focus-within {
+      border-color: var(--near-accent);
+    }
+
+    .stand-header {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-far {
+      background-color: var(--primary-color);
+    }
+
+    .badge-near {
+      background-color: var(--near-accent);
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      font-size: 0.85rem;
+      outline: none;
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+      font-family: inherit;
+    }
+
+    /* 输入框 focus 用新的鲜亮主蓝 */
+    input:focus,
+    textarea:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+
+    .stand-header input {
+      flex: 1;
+      font-weight: 600;
+    }
+
+    .item-row {
+      display: grid;
+      grid-template-columns: 1.2fr 2fr auto;
+      gap: 8px;
+      margin-bottom: 6px;
+      align-items: start;
+    }
+
+    /* =============== 统一按钮系统（实色填充 + 区分语义色） =============== */
+    button {
+      padding: 7px 13px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.84rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    /* 实色按钮：主操作蓝 / 确认绿 / 警告橙 / 危险红 / 紫 */
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+
+    /* "新增近机位" 实色按钮：使用新的鲜亮橙 */
+    .btn-success {
+      background-color: var(--near-accent);
+      color: #fff;
+    }
+
+    .btn-success:hover {
+      background-color: #ea580c;
+    }
+
+    .btn-warning {
+      background-color: var(--warning-color);
+      color: #fff;
+    }
+
+    .btn-warning:hover {
+      background-color: var(--warning-dark);
+    }
+
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background-color: var(--danger-dark);
+    }
+
+    /* 中性灰：用于清空/删除等常规操作，不暗示危险 */
+
+    .btn-violet {
+      background-color: var(--violet-color);
+      color: #fff;
+    }
+
+    .btn-violet:hover {
+      background-color: var(--violet-dark);
+    }
+
+    /* 删除图标按钮：中性灰实色，固定 30×30 方形，保留在网格最右 */
+    .btn-icon {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      background: var(--danger-color);
+      color: #fff;
+      font-size: 0.85rem;
+      border: none;
+      align-self: center;
+    }
+
+    .btn-icon:hover {
+      background: var(--danger-dark);
+    }
+
+    /* 新增机位按钮：并排实色，均分两列 */
+    .add-stand-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .add-stand-group button {
+      flex: 1;
+    }
+
+    .preview-panel {
+      position: sticky;
+      top: 20px;
+    }
+
+    #preview-box {
+      width: 100%;
+      min-height: 120px;
+      height: auto;
+      font-family: var(--font-main);
+      white-space: pre-wrap;
+      margin-bottom: 12px;
+      background: var(--panel-secondary);
+      line-height: 1.6;
+      font-size: 0.88rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      color: var(--text-color);
+      overflow: visible;
+    }
+
+    #preview-box:empty::before {
+      content: attr(data-placeholder);
+      color: var(--text-light);
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--success-color);
+      color: white;
+      padding: 11px 24px;
+      border-radius: 30px;
+      box-shadow: 0 4px 16px var(--shadow-color);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 999;
+      font-size: 0.9rem;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    /* ======== 多选下拉框样式 ======== */
+    .multi-select-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .input-with-arrow {
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%2364748b" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 30px;
+      cursor: text;
+    }
+
+    .multi-select-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 20px var(--shadow-color);
+      z-index: 100;
+      max-height: 250px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .multi-select-dropdown.show {
+      display: block;
+    }
+
+    .multi-select-option {
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+      color: var(--text-color);
+      text-align: left;
+    }
+
+    .multi-select-option:hover {
+      background: var(--panel-secondary);
+    }
+
+    .multi-select-option.selected {
+      color: var(--primary-color);
+      background: var(--hover-bg);
+      font-weight: 600;
+    }
+
+    .multi-select-option.selected::after {
+      content: "✔";
+      float: right;
+      font-size: 0.85rem;
+      margin-left: 8px;
+    }
+
+    .match-text {
+      color: #e11d48;
+      font-weight: 700;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 8px;
+      }
+
+      .container {
+        gap: 14px;
+      }
+
+      .panel {
+        padding: 12px;
+      }
+
+      .item-row {
+        grid-template-columns: 1fr;
+      }
+
+      #preview-box {
+        min-height: 100px;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <header>
+    <div class="header-content">
+      <div class="header-left">
+        <h3><i class="fas fa-clipboard-list" style="font-size: 22px"></i>
+          日报生成工具</h3>
+        <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <path d="M9 22V12h6v10"></path>
+          </svg></a>
+      </div>
+      <div class="theme-toggle" id="themeToggle" title="切换主题">
+        <i class="fas fa-moon"></i>
+      </div>
+    </div>
+  </header>
 
-    <header>
-        <div class="header-content">
-            <div class="header-left">
-                <h3><i class="fas fa-clipboard-list" style="font-size: 22px;"></i> 日报生成工具</h3>
-                <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        aria-hidden="true">
-                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                        <path d="M9 22V12h6v10"></path>
-                    </svg></a>
-            </div>
-            <div class="theme-toggle" id="themeToggle" title="切换主题">
-                <i class="fas fa-moon"></i>
-            </div>
-        </div>
-    </header>
+  <datalist id="event-list-far" style="display: none">
+    <option value="所有节点"></option>
+    <option value="引导车进入"></option>
+    <option value="引导车离开"></option>
+    <option value="飞机入位开始"></option>
+    <option value="飞机入位结束"></option>
+    <option value="上轮档"></option>
+    <option value="到港摆渡车到位"></option>
+    <option value="离港摆渡车到位"></option>
+    <option value="客梯车对接"></option>
+    <option value="客梯车撤离"></option>
+    <option value="垃圾车到位"></option>
+    <option value="垃圾车离位"></option>
+    <option value="配餐开始"></option>
+    <option value="配餐结束"></option>
+    <option value="加油开始"></option>
+    <option value="加油结束"></option>
+    <option value="开客舱门"></option>
+    <option value="关客舱门"></option>
+    <option value="开货舱门"></option>
+    <option value="关货舱门"></option>
+    <option value="开始加清水"></option>
+    <option value="完成加清水"></option>
+    <option value="开始排污"></option>
+    <option value="完成排污"></option>
+    <option value="行李拖车入位"></option>
+    <option value="行李拖车离开"></option>
+    <option value="撤轮挡"></option>
+    <option value="牵引车对接"></option>
+    <option value="飞机离位开始"></option>
+    <option value="飞机离位结束"></option>
+    <option value="飞机推出"></option>
+  </datalist>
 
-    <datalist id="event-list-far" style="display: none;">
-        <option value="所有节点"></option>
-        <option value="引导车进入"></option>
-        <option value="引导车离开"></option>
-        <option value="飞机入位开始"></option>
-        <option value="飞机入位结束"></option>
-        <option value="上轮档"></option>
-        <option value="到港摆渡车到位"></option>
-        <option value="离港摆渡车到位"></option>
-        <option value="客梯车对接"></option>
-        <option value="客梯车撤离"></option>
-        <option value="垃圾车到位"></option>
-        <option value="垃圾车离位"></option>
-        <option value="配餐开始"></option>
-        <option value="配餐结束"></option>
-        <option value="加油开始"></option>
-        <option value="加油结束"></option>
-        <option value="开客舱门"></option>
-        <option value="关客舱门"></option>
-        <option value="开货舱门"></option>
-        <option value="关货舱门"></option>
-        <option value="开始加清水"></option>
-        <option value="完成加清水"></option>
-        <option value="开始排污"></option>
-        <option value="完成排污"></option>
-        <option value="行李拖车入位"></option>
-        <option value="行李拖车离开"></option>
-        <option value="撤轮挡"></option>
-        <option value="牵引车对接"></option>
-        <option value="飞机离位开始"></option>
-        <option value="飞机离位结束"></option>
-        <option value="飞机推出"></option>
-    </datalist>
+  <datalist id="event-list-near" style="display: none">
+    <option value="所有节点"></option>
+    <option value="引导车进入"></option>
+    <option value="引导车离开"></option>
+    <option value="飞机入位开始"></option>
+    <option value="飞机入位结束"></option>
+    <option value="上轮档"></option>
+    <option value="靠桥开始"></option>
+    <option value="靠桥结束"></option>
+    <option value="撤桥开始"></option>
+    <option value="撤桥结束"></option>
+    <option value="垃圾车到位"></option>
+    <option value="垃圾车离位"></option>
+    <option value="配餐开始"></option>
+    <option value="配餐结束"></option>
+    <option value="加油开始"></option>
+    <option value="加油结束"></option>
+    <option value="开客舱门"></option>
+    <option value="关客舱门"></option>
+    <option value="开货舱门"></option>
+    <option value="关货舱门"></option>
+    <option value="开始加清水"></option>
+    <option value="完成加清水"></option>
+    <option value="开始排污"></option>
+    <option value="完成排污"></option>
+    <option value="行李拖车入位"></option>
+    <option value="行李拖车离开"></option>
+    <option value="撤轮挡"></option>
+    <option value="牵引车对接"></option>
+    <option value="飞机离位开始"></option>
+    <option value="飞机离位结束"></option>
+    <option value="飞机推出"></option>
+  </datalist>
 
-    <datalist id="event-list-near" style="display: none;">
-        <option value="所有节点"></option>
-        <option value="引导车进入"></option>
-        <option value="引导车离开"></option>
-        <option value="飞机入位开始"></option>
-        <option value="飞机入位结束"></option>
-        <option value="上轮档"></option>
-        <option value="靠桥开始"></option>
-        <option value="靠桥结束"></option>
-        <option value="撤桥开始"></option>
-        <option value="撤桥结束"></option>
-        <option value="垃圾车到位"></option>
-        <option value="垃圾车离位"></option>
-        <option value="配餐开始"></option>
-        <option value="配餐结束"></option>
-        <option value="加油开始"></option>
-        <option value="加油结束"></option>
-        <option value="开客舱门"></option>
-        <option value="关客舱门"></option>
-        <option value="开货舱门"></option>
-        <option value="关货舱门"></option>
-        <option value="开始加清水"></option>
-        <option value="完成加清水"></option>
-        <option value="开始排污"></option>
-        <option value="完成排污"></option>
-        <option value="行李拖车入位"></option>
-        <option value="行李拖车离开"></option>
-        <option value="撤轮挡"></option>
-        <option value="牵引车对接"></option>
-        <option value="飞机离位开始"></option>
-        <option value="飞机离位结束"></option>
-        <option value="飞机推出"></option>
-    </datalist>
+  <datalist id="reason-list" style="display: none">
+    <option value="无异常"></option>
+  </datalist>
 
-    <datalist id="reason-list" style="display: none;">
-        <option value="无异常"></option>
-    </datalist>
+  <div class="container">
+    <div class="panel" id="input-panel">
+      <h2>
+        <span>📝 异常数据录入</span>
+        <button class="btn-danger" onclick="clearAllCards()">🗑️ 全部清空</button>
+      </h2>
 
-    <div class="container">
-        <div class="panel" id="input-panel">
-            <h2>
-                <span>📝 异常数据录入</span>
-                <button class="btn-danger" onclick="clearAllCards()">🗑️ 全部清空</button>
-            </h2>
+      <div id="stands-container"></div>
 
-            <div id="stands-container"></div>
-
-            <div class="add-stand-group">
-                <button class="btn-primary" onclick="addStandCard('远机位')">+ 新增远机位</button>
-                <button class="btn-success" onclick="addStandCard('近机位')">+ 新增近机位</button>
-            </div>
-        </div>
-
-        <div class="panel preview-panel">
-            <h2>📄 日报实时预览</h2>
-            <pre id="preview-box" data-placeholder="左侧填写数据，此处自动实时排版..."></pre>
-            <button class="btn-violet" style="width: 100%;" onclick="copyReport()">📋 一键复制日报</button>
-        </div>
+      <div class="add-stand-group">
+        <button class="btn-primary" onclick="addStandCard('远机位')">+ 新增远机位</button>
+        <button class="btn-success" onclick="addStandCard('近机位')">+ 新增近机位</button>
+      </div>
     </div>
 
-    <div class="toast" id="toast">复制成功！</div>
+    <div class="panel preview-panel">
+      <h2>📄 日报实时预览</h2>
+      <pre id="preview-box" data-placeholder="左侧填写数据，此处自动实时排版..."></pre>
+      <button class="btn-violet" style="width: 100%" onclick="copyReport()">📋 一键复制日报</button>
+    </div>
+  </div>
 
-    <script>
-        // ================= 主题切换（日间/夜间） =================
-        (function () {
-            const themeToggle = document.getElementById("themeToggle");
-            const body = document.documentElement;
+  <div class="toast" id="toast">复制成功！</div>
 
-            function applyTheme(theme) {
-                if (theme === "dark") {
-                    body.classList.add("dark-mode");
-                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-                    localStorage.setItem("theme", "dark");
-                } else {
-                    body.classList.remove("dark-mode");
-                    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-                    localStorage.setItem("theme", "light");
-                }
-            }
+  <script>
+    // ================= 主题切换（日间/夜间） =================
+    (function () {
+      const themeToggle = document.getElementById("themeToggle");
+      const body = document.documentElement;
 
-            const saved = localStorage.getItem("theme");
-            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-            applyTheme(saved === "dark" || (!saved && prefersDark) ? "dark" : "light");
+      function applyTheme(theme) {
+        if (theme === "dark") {
+          body.classList.add("dark-mode");
+          themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+          localStorage.setItem("theme", "dark");
+        } else {
+          body.classList.remove("dark-mode");
+          themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+          localStorage.setItem("theme", "light");
+        }
+      }
 
-            themeToggle.addEventListener("click", () => {
-                applyTheme(body.classList.contains("dark-mode") ? "light" : "dark");
-            });
-        })();
+      const saved = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      ).matches;
+      applyTheme(
+        saved === "dark" || (!saved && prefersDark) ? "dark" : "light",
+      );
 
-        const cnNums = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"];
-        let baseOptions = {};
-        let activeDropdown = null;
-        let activeInput = null;
-        let currentSearchQuery = "";
+      themeToggle.addEventListener("click", () => {
+        applyTheme(body.classList.contains("dark-mode") ? "light" : "dark");
+      });
+    })();
 
-        window.onload = () => {
-            ['event-list-far', 'event-list-near', 'reason-list'].forEach(id => {
-                const list = document.getElementById(id);
-                if (list) { baseOptions[id] = Array.from(list.options).map(o => o.value); }
-            });
+    const cnNums = [
+      "",
+      "一",
+      "二",
+      "三",
+      "四",
+      "五",
+      "六",
+      "七",
+      "八",
+      "九",
+      "十",
+      "十一",
+      "十二",
+      "十三",
+      "十四",
+      "十五",
+      "十六",
+      "十七",
+      "十八",
+      "十九",
+      "二十",
+    ];
+    let baseOptions = {};
+    let activeDropdown = null;
+    let activeInput = null;
+    let currentSearchQuery = "";
 
-            addStandCard('远机位');
-            addStandCard('近机位');
+    window.onload = () => {
+      ["event-list-far", "event-list-near", "reason-list"].forEach((id) => {
+        const list = document.getElementById(id);
+        if (list) {
+          baseOptions[id] = Array.from(list.options).map((o) => o.value);
+        }
+      });
 
-            const container = document.getElementById('stands-container');
+      addStandCard("远机位");
+      addStandCard("近机位");
 
-            // 点击输入框展示下拉并处理点击外部关闭
-            document.addEventListener('click', (e) => {
-                if (e.target.classList.contains('custom-dropdown-input')) {
-                    if (activeDropdown && activeDropdown.parentNode === e.target.parentNode) return;
-                    showDropdown(e.target);
-                } else if (!e.target.closest('.multi-select-dropdown')) {
-                    closeAllDropdowns();
-                }
-            });
+      const container = document.getElementById("stands-container");
 
-            // 监听实时打字输入
-            container.addEventListener('input', (e) => {
-                if (e.target.classList.contains('custom-dropdown-input') && activeDropdown && activeDropdown.parentNode === e.target.parentNode) {
-                    const listId = e.target.getAttribute('data-list');
-                    const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
-                    const validOptions = baseOptions[listId];
+      // 点击输入框展示下拉并处理点击外部关闭
+      document.addEventListener("click", (e) => {
+        if (e.target.classList.contains("custom-dropdown-input")) {
+          if (
+            activeDropdown &&
+            activeDropdown.parentNode === e.target.parentNode
+          )
+            return;
+          showDropdown(e.target);
+        } else if (!e.target.closest(".multi-select-dropdown")) {
+          closeAllDropdowns();
+        }
+      });
 
-                    const { query } = parseInput(e.target.value, validOptions, isNode);
-                    currentSearchQuery = query; // 更新全局搜索记忆
-                    renderOptions(e.target, activeDropdown, listId);
-                }
-                generatePreview();
-            });
+      // 监听实时打字输入
+      container.addEventListener("input", (e) => {
+        if (
+          e.target.classList.contains("custom-dropdown-input") &&
+          activeDropdown &&
+          activeDropdown.parentNode === e.target.parentNode
+        ) {
+          const listId = e.target.getAttribute("data-list");
+          const isNode =
+            listId === "event-list-far" || listId === "event-list-near";
+          const validOptions = baseOptions[listId];
+
+          const { query } = parseInput(e.target.value, validOptions, isNode);
+          currentSearchQuery = query; // 更新全局搜索记忆
+          renderOptions(e.target, activeDropdown, listId);
+        }
+        generatePreview();
+      });
+    };
+
+    // ====== 下拉框与智能搜索核心逻辑 ======
+
+    // 解析输入框内容，智能分离出“已选项”和“正在搜索的词”
+    function parseInput(val, validOptions, isNode) {
+      const rawParts = val.split("、").map((v) => v.trim());
+      const selected = [];
+      let query = "";
+
+      for (let i = 0; i < rawParts.length - 1; i++) {
+        if (rawParts[i]) {
+          // 【核心修改】：无论是节点还是原因，前置内容只要通过“、”分隔过，都视为合法保留内容
+          selected.push(rawParts[i]);
+        }
+      }
+
+      const lastPart = rawParts[rawParts.length - 1];
+      if (lastPart) {
+        if (validOptions.includes(lastPart)) {
+          selected.push(lastPart);
+          query = "";
+        } else {
+          query = lastPart;
+        }
+      }
+      return { selected, query };
+    }
+
+    function showDropdown(input) {
+      closeAllDropdowns();
+      const listId = input.getAttribute("data-list");
+      if (!baseOptions[listId]) return;
+
+      const dropdown = document.createElement("div");
+      dropdown.className = "multi-select-dropdown show";
+
+      activeDropdown = dropdown;
+      activeInput = input;
+
+      const isNode =
+        listId === "event-list-far" || listId === "event-list-near";
+      const validOptions = baseOptions[listId];
+      const { query } = parseInput(input.value, validOptions, isNode);
+      currentSearchQuery = query;
+
+      renderOptions(input, dropdown, listId);
+      input.parentNode.appendChild(dropdown);
+    }
+
+    function renderOptions(input, dropdown, listId) {
+      dropdown.innerHTML = "";
+      const validOptions = baseOptions[listId];
+      const isNode =
+        listId === "event-list-far" || listId === "event-list-near";
+      const { selected } = parseInput(input.value, validOptions, isNode);
+
+      // 核心：永远基于全局搜索记忆进行过滤，即便输入框被清理也能保持搜索结果
+      const filteredOptions = validOptions.filter((opt) =>
+        opt.includes(currentSearchQuery),
+      );
+
+      if (filteredOptions.length === 0) {
+        const emptyDiv = document.createElement("div");
+        emptyDiv.className = "multi-select-option";
+        emptyDiv.style.color = "var(--text-light)";
+        emptyDiv.style.cursor = "not-allowed";
+        // 【核心修改】：提示语变为允许自定义内容保留
+        emptyDiv.innerText = isNode
+          ? "无匹配节点 (将作为自定义内容保留)"
+          : "无匹配项 (将作为自定义原因保留)";
+        dropdown.appendChild(emptyDiv);
+        return;
+      }
+
+      filteredOptions.forEach((opt) => {
+        const optionDiv = document.createElement("div");
+        optionDiv.className = "multi-select-option";
+        if (selected.includes(opt)) {
+          optionDiv.classList.add("selected");
+        }
+
+        if (currentSearchQuery) {
+          const parts = opt.split(currentSearchQuery);
+          optionDiv.innerHTML = parts.join(
+            `<span class="match-text">${currentSearchQuery}</span>`,
+          );
+        } else {
+          optionDiv.innerText = opt;
+        }
+
+        optionDiv.onmousedown = (e) => {
+          e.preventDefault();
+          toggleSelection(input, opt, dropdown, listId);
         };
+        dropdown.appendChild(optionDiv);
+      });
+    }
 
-        // ====== 下拉框与智能搜索核心逻辑 ======
+    function toggleSelection(input, opt, dropdown, listId) {
+      const isNode =
+        listId === "event-list-far" || listId === "event-list-near";
+      const validOptions = baseOptions[listId];
+      let { selected } = parseInput(input.value, validOptions, isNode);
 
-        // 解析输入框内容，智能分离出“已选项”和“正在搜索的词”
-        function parseInput(val, validOptions, isNode) {
-            const rawParts = val.split('、').map(v => v.trim());
-            const selected = [];
-            let query = "";
+      if (selected.includes(opt)) {
+        selected = selected.filter((v) => v !== opt); // 反选
+      } else {
+        selected.push(opt); // 勾选
+      }
 
-            for (let i = 0; i < rawParts.length - 1; i++) {
-                if (rawParts[i]) {
-                    // 【核心修改】：无论是节点还是原因，前置内容只要通过“、”分隔过，都视为合法保留内容
-                    selected.push(rawParts[i]);
-                }
-            }
+      // 如果是原因框，只拼接文字，不加末尾的“、”
+      if (listId === "reason-list") {
+        input.value = selected.join("、");
+      } else {
+        input.value = selected.join("、") + (selected.length > 0 ? "、" : "");
+      }
 
-            const lastPart = rawParts[rawParts.length - 1];
-            if (lastPart) {
-                if (validOptions.includes(lastPart)) {
-                    selected.push(lastPart);
-                    query = "";
-                } else {
-                    query = lastPart;
-                }
-            }
-            return { selected, query };
+      generatePreview();
+      input.focus();
+      renderOptions(input, dropdown, listId);
+    }
+
+    function closeAllDropdowns() {
+      if (activeDropdown) {
+        if (activeInput) {
+          // 【核心修改】：无论是节点还是原因，关闭下拉框时都不再粗暴删除未匹配项，仅移除末尾多余的逗号，保留所有自定义文本
+          activeInput.value = activeInput.value.replace(/、+$/, "");
+          generatePreview();
         }
+        activeDropdown.remove();
+        activeDropdown = null;
+        activeInput = null;
+        currentSearchQuery = "";
+      }
+    }
+    // =============================
 
-        function showDropdown(input) {
-            closeAllDropdowns();
-            const listId = input.getAttribute('data-list');
-            if (!baseOptions[listId]) return;
-
-            const dropdown = document.createElement('div');
-            dropdown.className = 'multi-select-dropdown show';
-
-            activeDropdown = dropdown;
-            activeInput = input;
-
-            const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
-            const validOptions = baseOptions[listId];
-            const { query } = parseInput(input.value, validOptions, isNode);
-            currentSearchQuery = query;
-
-            renderOptions(input, dropdown, listId);
-            input.parentNode.appendChild(dropdown);
-        }
-
-        function renderOptions(input, dropdown, listId) {
-            dropdown.innerHTML = '';
-            const validOptions = baseOptions[listId];
-            const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
-            const { selected } = parseInput(input.value, validOptions, isNode);
-
-            // 核心：永远基于全局搜索记忆进行过滤，即便输入框被清理也能保持搜索结果
-            const filteredOptions = validOptions.filter(opt => opt.includes(currentSearchQuery));
-
-            if (filteredOptions.length === 0) {
-                const emptyDiv = document.createElement('div');
-                emptyDiv.className = 'multi-select-option';
-                emptyDiv.style.color = 'var(--text-light)';
-                emptyDiv.style.cursor = 'not-allowed';
-                // 【核心修改】：提示语变为允许自定义内容保留
-                emptyDiv.innerText = isNode ? '无匹配节点 (将作为自定义内容保留)' : '无匹配项 (将作为自定义原因保留)';
-                dropdown.appendChild(emptyDiv);
-                return;
-            }
-
-            filteredOptions.forEach(opt => {
-                const optionDiv = document.createElement('div');
-                optionDiv.className = 'multi-select-option';
-                if (selected.includes(opt)) { optionDiv.classList.add('selected'); }
-
-                if (currentSearchQuery) {
-                    const parts = opt.split(currentSearchQuery);
-                    optionDiv.innerHTML = parts.join(`<span class="match-text">${currentSearchQuery}</span>`);
-                } else {
-                    optionDiv.innerText = opt;
-                }
-
-                optionDiv.onmousedown = (e) => {
-                    e.preventDefault();
-                    toggleSelection(input, opt, dropdown, listId);
-                };
-                dropdown.appendChild(optionDiv);
-            });
-        }
-
-        function toggleSelection(input, opt, dropdown, listId) {
-            const isNode = (listId === 'event-list-far' || listId === 'event-list-near');
-            const validOptions = baseOptions[listId];
-            let { selected } = parseInput(input.value, validOptions, isNode);
-
-            if (selected.includes(opt)) {
-                selected = selected.filter(v => v !== opt); // 反选
-            } else {
-                selected.push(opt); // 勾选
-            }
-
-            // 如果是原因框，只拼接文字，不加末尾的“、”
-            if (listId === 'reason-list') {
-                input.value = selected.join('、');
-            } else {
-                input.value = selected.join('、') + (selected.length > 0 ? '、' : '');
-            }
-
-            generatePreview();
-            input.focus();
-            renderOptions(input, dropdown, listId);
-        }
-
-        function closeAllDropdowns() {
-            if (activeDropdown) {
-                if (activeInput) {
-                    // 【核心修改】：无论是节点还是原因，关闭下拉框时都不再粗暴删除未匹配项，仅移除末尾多余的逗号，保留所有自定义文本
-                    activeInput.value = activeInput.value.replace(/、+$/, '');
-                    generatePreview();
-                }
-                activeDropdown.remove();
-                activeDropdown = null;
-                activeInput = null;
-                currentSearchQuery = "";
-            }
-        }
-        // =============================
-
-        function createEventRowHTML(type) {
-            const listId = (type === '远机位') ? 'event-list-far' : 'event-list-near';
-            return `
+    function createEventRowHTML(type) {
+      const listId = type === "远机位" ? "event-list-far" : "event-list-near";
+      return `
             <div class="item-row">
                 <div class="multi-select-container">
                     <input type="text" class="item-event input-with-arrow custom-dropdown-input" data-list="${listId}" placeholder="点击或输入搜索... (支持多选及自定义)" autocomplete="off">
@@ -832,17 +886,17 @@
                 <button class="btn-icon" onclick="removeEventRow(this)" title="删除此行">✖</button>
             </div>
         `;
-        }
+    }
 
-        function addStandCard(type) {
-            const container = document.getElementById('stands-container');
-            const card = document.createElement('div');
-            card.className = 'stand-card';
-            card.setAttribute('data-type', type);
+    function addStandCard(type) {
+      const container = document.getElementById("stands-container");
+      const card = document.createElement("div");
+      card.className = "stand-card";
+      card.setAttribute("data-type", type);
 
-            const badgeClass = type === '远机位' ? 'badge-far' : 'badge-near';
+      const badgeClass = type === "远机位" ? "badge-far" : "badge-near";
 
-            card.innerHTML = `
+      card.innerHTML = `
             <div class="stand-header">
                 <span class="badge ${badgeClass}">${type}</span>
                 <input type="text" class="stand-num" placeholder="机位号 (如: 903)">
@@ -854,150 +908,162 @@
             <button class="btn-warning" onclick="addEventRow(this)">+ 添加异常明细</button>
         `;
 
-            const existingCards = container.querySelectorAll(`.stand-card[data-type="${type}"]`);
-            if (existingCards.length > 0) {
-                const lastCard = existingCards[existingCards.length - 1];
-                lastCard.parentNode.insertBefore(card, lastCard.nextSibling);
-            } else {
-                container.appendChild(card);
-            }
+      const existingCards = container.querySelectorAll(
+        `.stand-card[data-type="${type}"]`,
+      );
+      if (existingCards.length > 0) {
+        const lastCard = existingCards[existingCards.length - 1];
+        lastCard.parentNode.insertBefore(card, lastCard.nextSibling);
+      } else {
+        container.appendChild(card);
+      }
 
-            generatePreview();
+      generatePreview();
+    }
+
+    function addEventRow(btnElement) {
+      const card = btnElement.closest(".stand-card");
+      const type = card.getAttribute("data-type");
+      const itemsContainer = btnElement.previousElementSibling;
+      itemsContainer.insertAdjacentHTML(
+        "beforeend",
+        createEventRowHTML(type),
+      );
+      generatePreview();
+    }
+
+    function removeEventRow(btnElement) {
+      const row = btnElement.parentElement;
+      const container = row.parentElement;
+      const card = container.closest(".stand-card");
+      const type = card.getAttribute("data-type");
+
+      row.remove();
+      if (container.children.length === 0) {
+        container.insertAdjacentHTML("beforeend", createEventRowHTML(type));
+      }
+      generatePreview();
+    }
+
+    function removeStandCard(btnElement) {
+      btnElement.closest(".stand-card").remove();
+      generatePreview();
+    }
+
+    function clearAllCards() {
+      if (confirm("确定要清空所有录入的数据吗？")) {
+        document.getElementById("stands-container").innerHTML = "";
+        addStandCard("远机位");
+        addStandCard("近机位");
+        generatePreview();
+      }
+    }
+
+    function generatePreview() {
+      const cards = document.querySelectorAll(".stand-card");
+      let data = { 远机位: [], 近机位: [] };
+
+      cards.forEach((card) => {
+        const type = card.getAttribute("data-type");
+        const standNum = card.querySelector(".stand-num").value.trim();
+        const eventRows = card.querySelectorAll(".item-row");
+
+        const records = [];
+        eventRows.forEach((row) => {
+          const event = row.querySelector(".item-event").value.trim();
+          const reason = row.querySelector(".item-reason").value.trim();
+          if (event && reason) {
+            records.push({ event, reason });
+          }
+        });
+
+        if (standNum && records.length > 0) {
+          data[type].push({ standNum, records });
         }
+      });
 
-        function addEventRow(btnElement) {
-            const card = btnElement.closest('.stand-card');
-            const type = card.getAttribute('data-type');
-            const itemsContainer = btnElement.previousElementSibling;
-            itemsContainer.insertAdjacentHTML('beforeend', createEventRowHTML(type));
-            generatePreview();
-        }
+      let resultText = "";
 
-        function removeEventRow(btnElement) {
-            const row = btnElement.parentElement;
-            const container = row.parentElement;
-            const card = container.closest('.stand-card');
-            const type = card.getAttribute('data-type');
+      if (data["远机位"].length > 0) {
+        resultText += "远机位：\n";
+        data["远机位"].forEach((item, index) => {
+          const cnIndex = cnNums[index + 1] || index + 1;
+          resultText += `${cnIndex}、${item.standNum}\n`;
+          item.records.forEach((rec, recIndex) => {
+            resultText += `${recIndex + 1}、${rec.event}：${rec.reason}\n`;
+          });
+          resultText += "\n";
+        });
+      }
 
-            row.remove();
-            if (container.children.length === 0) {
-                container.insertAdjacentHTML('beforeend', createEventRowHTML(type));
-            }
-            generatePreview();
-        }
+      if (data["近机位"].length > 0) {
+        resultText += "近机位：\n";
+        data["近机位"].forEach((item, index) => {
+          const cnIndex = cnNums[index + 1] || index + 1;
+          resultText += `${cnIndex}、${item.standNum}\n`;
+          item.records.forEach((rec, recIndex) => {
+            resultText += `${recIndex + 1}、${rec.event}：${rec.reason}\n`;
+          });
+          resultText += "\n";
+        });
+      }
 
-        function removeStandCard(btnElement) {
-            btnElement.closest('.stand-card').remove();
-            generatePreview();
-        }
+      const previewBox = document.getElementById("preview-box");
+      previewBox.textContent = resultText.trim();
+    }
 
-        function clearAllCards() {
-            if (confirm('确定要清空所有录入的数据吗？')) {
-                document.getElementById('stands-container').innerHTML = '';
-                addStandCard('远机位');
-                addStandCard('近机位');
-                generatePreview();
-            }
-        }
+    function copyReport() {
+      const text = document.getElementById("preview-box").textContent;
+      if (!text) {
+        alert("目前还没有可复制的数据，请先在左侧录入哦。");
+        return;
+      }
 
-        function generatePreview() {
-            const cards = document.querySelectorAll('.stand-card');
-            let data = { '远机位': [], '近机位': [] };
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          const toast = document.getElementById("toast");
+          toast.classList.add("show");
+          setTimeout(() => {
+            toast.classList.remove("show");
+          }, 2000);
+        })
+        .catch((err) => {
+          alert("复制失败，请手动选择文本复制。");
+        });
+    }
+  </script>
+  <!-- 返回主页图标按钮样式 -->
+  <style>
+    .home-back-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid transparent;
+      text-decoration: none;
+      flex-shrink: 0;
+      transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-            cards.forEach(card => {
-                const type = card.getAttribute('data-type');
-                const standNum = card.querySelector('.stand-num').value.trim();
-                const eventRows = card.querySelectorAll('.item-row');
+    .home-back-icon:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
 
-                const records = [];
-                eventRows.forEach(row => {
-                    const event = row.querySelector('.item-event').value.trim();
-                    const reason = row.querySelector('.item-reason').value.trim();
-                    if (event && reason) {
-                        records.push({ event, reason });
-                    }
-                });
-
-                if (standNum && records.length > 0) {
-                    data[type].push({ standNum, records });
-                }
-            });
-
-            let resultText = "";
-
-            if (data['远机位'].length > 0) {
-                resultText += "远机位：\n";
-                data['远机位'].forEach((item, index) => {
-                    const cnIndex = cnNums[index + 1] || (index + 1);
-                    resultText += `${cnIndex}、${item.standNum}\n`;
-                    item.records.forEach((rec, recIndex) => {
-                        resultText += `${recIndex + 1}、${rec.event}：${rec.reason}\n`;
-                    });
-                    resultText += "\n";
-                });
-            }
-
-            if (data['近机位'].length > 0) {
-                resultText += "近机位：\n";
-                data['近机位'].forEach((item, index) => {
-                    const cnIndex = cnNums[index + 1] || (index + 1);
-                    resultText += `${cnIndex}、${item.standNum}\n`;
-                    item.records.forEach((rec, recIndex) => {
-                        resultText += `${recIndex + 1}、${rec.event}：${rec.reason}\n`;
-                    });
-                    resultText += "\n";
-                });
-            }
-
-            const previewBox = document.getElementById('preview-box');
-            previewBox.textContent = resultText.trim();
-        }
-
-        function copyReport() {
-            const text = document.getElementById('preview-box').textContent;
-            if (!text) {
-                alert("目前还没有可复制的数据，请先在左侧录入哦。");
-                return;
-            }
-
-            navigator.clipboard.writeText(text).then(() => {
-                const toast = document.getElementById('toast');
-                toast.classList.add('show');
-                setTimeout(() => { toast.classList.remove('show'); }, 2000);
-            }).catch(err => {
-                alert('复制失败，请手动选择文本复制。');
-            });
-        }
-    </script>
-    <!-- 返回主页图标按钮样式 -->
-    <style>
-        .home-back-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            color: #fff;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid transparent;
-            text-decoration: none;
-            flex-shrink: 0;
-            transition: background 0.2s ease, transform 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .home-back-icon:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .home-back-icon svg {
-            width: 18px;
-            height: 18px;
-            display: block;
-        }
-    </style>
+    .home-back-icon svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+  </style>
 </body>
 
 </html>
