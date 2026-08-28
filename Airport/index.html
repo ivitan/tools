@@ -1158,7 +1158,7 @@
         }
 
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-${mode === "near" ? "blue" : "sky"}-600 dark:text-${mode === "near" ? "blue" : "sky"}-400 font-bold">[${label}]</span> 解析完毕，提取到 ${hitCount} 个节点`;
+          `<span class="text-${mode === "near" ? "blue" : "sky"}-600 dark:text-${mode === "near" ? "blue" : "sky"}-400 font-bold">[${label}]</span> 解析完毕，提取到 <span class="text-red-600 dark:text-red-400 font-bold">${hitCount}</span> 个节点`;
       }, 50); // 让出主线程完毕
     }
 
@@ -1304,7 +1304,7 @@
         const successful = document.execCommand("copy");
         if (successful) {
           document.getElementById("queryStatus").innerHTML =
-            `✅ <span class="text-green-600 dark:text-green-400 font-bold">时间行已成功复制，快去粘贴吧</span>`;
+            `<span class="text-green-600 dark:text-green-400 font-bold">时间行已成功复制，快去粘贴吧</span>`;
         } else {
           alert("写入失败，请手动框选结果复制。");
         }
@@ -1336,7 +1336,7 @@
       link.click();
       document.body.removeChild(link);
       document.getElementById("queryStatus").innerHTML =
-        `✅ <span class="text-purple-600 dark:text-purple-400 font-bold">CSV数据已成功导出</span>`;
+        `<span class="text-purple-600 dark:text-purple-400 font-bold">CSV数据已成功导出</span>`;
     });
 
     // 复制镜头编号（一行一个）排序规则：
@@ -1490,7 +1490,7 @@
           const successful = document.execCommand("copy");
           if (successful) {
             document.getElementById("queryStatus").innerHTML =
-              `✅ <span class="text-amber-600 dark:text-amber-400 font-bold">已复制 ${uniqNums.length} 个镜头编号</span>`;
+              `<span class="text-amber-600 dark:text-amber-400 font-bold">已复制 ${uniqNums.length} 个镜头编号</span>`;
           } else {
             alert("写入失败，请手动复制。");
           }
