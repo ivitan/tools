@@ -63,10 +63,6 @@
       white-space: nowrap;
     }
 
-    .placeholder-shrink::placeholder {
-      font-size: 10px;
-    }
-
     #pasteGridWrapper:focus {
       outline: none;
       border-color: #3b82f6;
@@ -114,13 +110,13 @@
     </div>
 
     <!-- 主体区 -->
-    <div class="p-3 sm:p-5 flex flex-col gap-4">
+    <div class="p-3 sm:p-5 flex flex-col gap-3">
       <!-- 通道 A：数据库源输入区 -->
       <div
         class="border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 sm:p-4 shadow-sm flex flex-col transition-colors duration-300">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 items-stretch">
           <div class="flex flex-col h-full">
-            <div class="flex items-start gap-3 mb-2">
+            <div class="flex items-start gap-1 mb-2">
               <span
                 class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold shrink-0">A</span>
               <span class="text-sm font-bold text-gray-700 dark:text-gray-200 leading-5">导入数据库 (可选)</span>
@@ -141,7 +137,7 @@
             </div>
             <div id="dropZoneLarge"
               class="relative h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded px-2 py-3 flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 mb-2">
-              <span class="text-xs text-gray-600 dark:text-gray-400 font-medium inline-flex items-center gap-1.5">
+              <span class="text-xs text-gray-600 dark:text-gray-400 font-medium inline-flex items-center gap-1">
                 <svg class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor"
                   viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                   aria-hidden="true">
@@ -162,88 +158,96 @@
             </div>
           </div>
           <div class="flex flex-col h-full">
-            <p class="text-sm font-bold text-gray-600 dark:text-gray-300 mb-2 leading-5">
-              节点时间提取条件
-            </p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <input type="text" id="startTime" placeholder="开始时间：2026-06-08 08:08:08"
-                title="开始时间格式：2026-06-08 08:08:08"
-                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors placeholder-shrink" />
-              <input type="text" id="endTime" placeholder="结束时间：2026-09-09 09:09:09" title="结束时间格式：2026-09-09 09:09:09"
-                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors placeholder-shrink" />
-              <input type="text" id="aproCode" placeholder="机位号：933" title="输入 aproCode"
-                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors placeholder-shrink" />
-            </div>
-            <!-- 核心操作按钮组：每行 3 个，排成两行 -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
-              <button id="btnParseNear"
-                class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                  </path>
-                </svg>近机位提取
-              </button>
-              <button id="btnParseRemote"
-                class="bg-sky-500 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                  </path>
-                </svg>远机位提取
-              </button>
-              <button id="btnExport"
-                class="bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                </svg>导出 CSV
-              </button>
-              <button id="btnCopy"
-                class="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-                  </path>
-                </svg>复制结果时间
-              </button>
-              <button id="btnCopyTableNums"
-                class="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
-                title="复制镜头编号">
-                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                  </path>
-                </svg>复制镜头编号
-              </button>
-              <button id="btnClear"
-                class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                  </path>
-                </svg>清空结果数据
-              </button>
-            </div>
-            <div id="queryStatus" class="mt-auto pt-2 text-xs text-gray-500 dark:text-gray-400 font-medium text-right">
-              请配置数据并选择提取模式...
+            <p class="text-sm font-bold text-gray-600 dark:text-gray-300 mb-2 leading-5 flex items-center"><svg
+                class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>节点时间提取条件</p>
+            <div class="flex-1 flex flex-col justify-between gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input type="text" id="startTime" placeholder="开始时间:2026-06-08 08:08:08"
+                  title="开始时间格式:2026-06-08 08:08:08"
+                  class="w-full h-8 sm:h-9 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
+                <input type="text" id="endTime" placeholder="结束时间:2026-09-09 09:09:09" title="结束时间格式:2026-09-09 09:09:09"
+                  class="w-full h-8 sm:h-9 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
+                <input type="text" id="aproCode" placeholder="机位号:933" title="输入 aproCode"
+                  class="w-full h-8 sm:h-9 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
+              </div>
+              <!-- 核心操作按钮组：每行 3 个，排成两行 -->
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <button id="btnParseNear"
+                  class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                    </path>
+                  </svg>近机位提取
+                </button>
+                <button id="btnParseRemote"
+                  class="bg-sky-500 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                    </path>
+                  </svg>远机位提取
+                </button>
+                <button id="btnExport"
+                  class="bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                  </svg>导出结果表
+                </button>
+                <button id="btnCopy"
+                  class="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                    </path>
+                  </svg>复制时间点
+                </button>
+                <button id="btnCopyTableNums"
+                  class="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
+                  title="复制镜头号">
+                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                  </svg>复制镜头号
+                </button>
+                <button id="btnClear"
+                  class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                    </path>
+                  </svg>清空结果集
+                </button>
+              </div>
+              <div id="queryStatus" class="mb-2 text-xs text-gray-500 dark:text-gray-400 font-medium text-center">
+                请配置数据并选择提取模式
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 结果与数据展示大区 -->
-      <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-3">
         <!-- 解析节点提取表 (固定展开) -->
         <div
           class="border border-blue-200 dark:border-blue-800/50 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
           <div
             class="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 border-b border-blue-100 dark:border-blue-800/50 flex justify-between items-center">
             <div class="flex items-center space-x-6">
-              <span class="text-xs font-bold text-blue-800 dark:text-blue-300">✅ 节点时间提取结果 (左右滑动查看)</span>
+              <span class="text-xs font-bold text-blue-800 dark:text-blue-300 inline-flex items-center"><svg
+                  class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                </svg>节点时间提取结果 (左右滑动查看)</span>
               <!-- 新增：03节点日期展示区域，包含单击复制功能 -->
               <span id="extractedDateDisplay"
-                class="group inline-flex items-center gap-1.5 text-[13px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hidden hover:text-blue-800 dark:hover:text-blue-300 transition-colors select-none"
+                class="group inline-flex items-center gap-1 text-[13px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hidden hover:text-blue-800 dark:hover:text-blue-300 transition-colors select-none"
                 title="单击复制日期">
                 <span class="date-text"></span>
                 <svg class="copy-icon w-3.5 h-3.5 opacity-80 group-hover:opacity-100" viewBox="0 0 24 24" fill="none"
@@ -270,13 +274,12 @@
         <div
           class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
           <div id="pasteToggleBtn"
-            class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            class="bg-gray-50 dark:bg-gray-700/50 px-3 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <div class="flex items-center">
               <span
-                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-2">B</span>
-              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">数据粘贴与原始数据展示区 (当前数据:
-                <span id="filteredTextCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>
-                行)</span>
+                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-1">B</span>
+              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">数据粘贴与数据展示区 (<span
+                  id="filteredTextCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>行)</span>
             </div>
             <span id="pasteToggleIcon"
               class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
@@ -284,9 +287,7 @@
           <!-- 默认折叠内容区 -->
           <div id="pasteContainer" class="hidden flex-col p-3 bg-gray-50/50 dark:bg-gray-800/50">
             <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2 pl-1">
-              点击下方网格区域按
-              <kbd class="bg-gray-200 dark:bg-gray-700 px-1 rounded">Ctrl+V</kbd>
-              粘贴测试数据；或查看数据库提取后的回显结果。
+              点击下方网格区域粘贴测试数据，或查看数据库提取后的回显结果
             </p>
             <textarea id="pasteArea" class="hidden"></textarea>
 
@@ -314,14 +315,11 @@
         <div
           class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
           <div id="rawToggleBtn"
-            class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            class="bg-gray-50 dark:bg-gray-700/50 px-3 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <span class="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center">
-              <svg class="w-3.5 h-3.5 mr-1 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-              </svg>
-              查看原始全量数据明细 (<span id="rawCount" class="text-blue-600 dark:text-blue-400">0</span>
+              <span
+                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-1">C</span>
+              查看原始全量数据明细 (<span id="rawCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>
               条)
             </span>
             <span id="rawToggleIcon"
@@ -540,10 +538,10 @@
         sqlEngine = await initSqlJs(config);
         renderEmptyTable("near");
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-green-600 dark:text-green-400 font-bold">系统引擎已就绪。</span>`;
+          `<span class="text-green-600 dark:text-green-400 font-bold">系统引擎已就绪</span>`;
       } catch (e) {
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-red-500 font-bold">引擎加载失败，请检查网络环境。</span>`;
+          `<span class="text-red-500 font-bold">引擎加载失败，请检查网络环境</span>`;
       }
     }
     init();
@@ -699,13 +697,13 @@
           : text;
 
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-blue-500 dark:text-blue-400">正在渲染数据，请稍候...</span>`;
+          `<span class="text-blue-500 dark:text-blue-400">正在渲染数据，请稍候</span>`;
 
         // 异步释放主线程，防止浏览器卡死
         setTimeout(() => {
           renderPasteTableGrid();
           document.getElementById("queryStatus").innerHTML =
-            `<span class="text-green-600 dark:text-green-400">数据已粘贴至网格，请点击提取按钮。</span>`;
+            `<span class="text-green-600 dark:text-green-400">数据已粘贴至网格，请点击提取按钮</span>`;
         }, 50);
       });
 
@@ -853,7 +851,7 @@
       lastExtractionFilter = { startTime, endTime, aproCode };
 
       document.getElementById("queryStatus").innerHTML =
-        `<span class="text-blue-500 dark:text-blue-400">正在解析并合并数据流，请稍候...</span>`;
+        `<span class="text-blue-500 dark:text-blue-400">正在解析并合并数据流，请稍候</span>`;
 
       // 使用 setTimeout 释放主线程以渲染 loading 状态
       setTimeout(() => {
@@ -1049,10 +1047,10 @@
         if (!hasDataParsed) {
           if (selectedTables.length === 0 && !pasteText) {
             document.getElementById("queryStatus").innerHTML =
-              `<span class="text-red-500 font-bold">请勾选数据表，或在工作网格粘贴数据！</span>`;
+              `<span class="text-red-500 font-bold">请勾选数据表，或在工作网格粘贴数据</span>`;
           } else {
             document.getElementById("queryStatus").innerHTML =
-              `<span class="text-orange-500 font-bold">未在数据中提取到匹配【${label}】的有效节点。</span>`;
+              `<span class="text-orange-500 font-bold">未在数据中提取到匹配【${label}】的有效节点</span>`;
           }
           return;
         }
@@ -1157,7 +1155,7 @@
         }
 
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-${mode === "near" ? "blue" : "sky"}-600 dark:text-${mode === "near" ? "blue" : "sky"}-400 font-bold">[${label}]</span> 解析完毕！提取到 ${hitCount} 个节点。`;
+          `<span class="text-${mode === "near" ? "blue" : "sky"}-600 dark:text-${mode === "near" ? "blue" : "sky"}-400 font-bold">[${label}]</span> 解析完毕，提取到 ${hitCount} 个节点`;
       }, 50); // 让出主线程完毕
     }
 
@@ -1300,7 +1298,7 @@
         const successful = document.execCommand("copy");
         if (successful) {
           document.getElementById("queryStatus").innerHTML =
-            `✅ <span class="text-green-600 dark:text-green-400 font-bold">时间行已成功复制，快去粘贴吧！</span>`;
+            `✅ <span class="text-green-600 dark:text-green-400 font-bold">时间行已成功复制，快去粘贴吧</span>`;
         } else {
           alert("写入失败，请手动框选结果复制。");
         }
@@ -1332,7 +1330,7 @@
       link.click();
       document.body.removeChild(link);
       document.getElementById("queryStatus").innerHTML =
-        `✅ <span class="text-purple-600 dark:text-purple-400 font-bold">CSV数据已成功导出！</span>`;
+        `✅ <span class="text-purple-600 dark:text-purple-400 font-bold">CSV数据已成功导出</span>`;
     });
 
     // 复制镜头编号（一行一个）排序规则：
@@ -1486,7 +1484,7 @@
           const successful = document.execCommand("copy");
           if (successful) {
             document.getElementById("queryStatus").innerHTML =
-              `✅ <span class="text-amber-600 dark:text-amber-400 font-bold">已复制 ${uniqNums.length} 个镜头编号！</span>`;
+              `✅ <span class="text-amber-600 dark:text-amber-400 font-bold">已复制 ${uniqNums.length} 个镜头编号</span>`;
           } else {
             alert("写入失败，请手动复制。");
           }
