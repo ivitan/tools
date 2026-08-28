@@ -326,6 +326,7 @@
               class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
           </div>
           <div id="rawContainer" class="hidden overflow-auto custom-scrollbar max-h-48 sm:max-h-64">
+            <p id="rawTruncNote" class="hidden text-[11px] text-gray-500 dark:text-gray-400 px-3 pt-3 pb-2"></p>
             <table
               class="raw-table min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-[11px] sm:text-xs border-collapse"
               id="rawTable">
@@ -661,6 +662,7 @@
       document.getElementById("rawTableHeader").innerHTML = "";
       document.getElementById("rawTableBody").innerHTML = "";
       document.getElementById("rawCount").innerText = "0";
+      document.getElementById("rawTruncNote").classList.add("hidden");
     }
 
     // 折叠区域事件绑定
@@ -1152,6 +1154,7 @@
           document.getElementById("rawTableHeader").innerHTML = "";
           document.getElementById("rawTableBody").innerHTML = "";
           document.getElementById("rawCount").innerText = "0";
+          document.getElementById("rawTruncNote").classList.add("hidden");
         }
 
         document.getElementById("queryStatus").innerHTML =
@@ -1162,11 +1165,14 @@
     function renderRawTable(data, columns) {
       const isTruncated = data.length > MAX_RENDER_ROWS;
       const displayData = isTruncated ? data.slice(0, MAX_RENDER_ROWS) : data;
-      const truncNote = isTruncated
-        ? ` (为保证性能，仅渲染前${MAX_RENDER_ROWS}条)`
-        : "";
-      document.getElementById("rawCount").innerText =
-        `${data.length}${truncNote}`;
+      document.getElementById("rawCount").innerText = `${data.length}`;
+      const rawTruncNote = document.getElementById("rawTruncNote");
+      if (isTruncated) {
+        rawTruncNote.textContent = `为保证性能，仅渲染前${MAX_RENDER_ROWS}条`;
+        rawTruncNote.classList.remove("hidden");
+      } else {
+        rawTruncNote.classList.add("hidden");
+      }
 
       const thead = document.getElementById("rawTableHeader");
       const tbody = document.getElementById("rawTableBody");
