@@ -1,24 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Markdown">
   <defs>
     <linearGradient id="markdown-bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#4ade80"/>
-      <stop offset="1" stop-color="#16a34a"/>
+      <stop offset="0" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#15803d"/>
     </linearGradient>
     <linearGradient id="markdown-gl" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/>
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".16"/>
       <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="markdown-sh" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#000000" stop-opacity="0"/>
-      <stop offset="1" stop-color="#000000" stop-opacity=".14"/>
+      <stop offset="1" stop-color="#000000" stop-opacity=".10"/>
     </linearGradient>
     <clipPath id="markdown-clip"><rect width="64" height="64" rx="16"/></clipPath>
   </defs>
   <g clip-path="url(#markdown-clip)">
     <rect width="64" height="64" fill="url(#markdown-bg)"/>
-    <rect width="64" height="30" fill="url(#markdown-gl)"/>
-    <rect y="40" width="64" height="24" fill="url(#markdown-sh)"/>
+    <rect width="64" height="22" fill="url(#markdown-gl)"/>
+    <rect y="44" width="64" height="20" fill="url(#markdown-sh)"/>
   </g>
   <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="1.5"/>
-  <g transform="translate(11.0 15.2) scale(0.06563)" fill="#ffffff" fill-rule="evenodd"><path d="M593.8 59.1H46.2C20.7 59.1 0 79.8 0 105.2v301.5c0 25.5 20.7 46.2 46.2 46.2h547.7c25.5 0 46.2-20.7 46.1-46.1V105.2c0-25.4-20.7-46.1-46.2-46.1zM338.5 360.6H277v-120l-61.5 76.9-61.5-76.9v120H92.3V151.4h61.5l61.5 76.9 61.5-76.9h61.5v209.2zm135.3 3.1L381.5 256H443V151.4h61.5V256H566z"/></g>
+  <g transform="translate(11.0 15.2) scale(0.06563)" stroke="#166534" stroke-width="25.9" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M593.8 59.1H46.2C20.7 59.1 0 79.8 0 105.2v301.5c0 25.5 20.7 46.2 46.2 46.2h547.7c25.5 0 46.2-20.7 46.1-46.1V105.2c0-25.4-20.7-46.1-46.2-46.1zM338.5 360.6H277v-120l-61.5 76.9-61.5-76.9v120H92.3V151.4h61.5l61.5 76.9 61.5-76.9h61.5v209.2zm135.3 3.1L381.5 256H443V151.4h61.5V256H566z" fill="none" stroke-opacity=".55"/>
+    <path d="M593.8 59.1H46.2C20.7 59.1 0 79.8 0 105.2v301.5c0 25.5 20.7 46.2 46.2 46.2h547.7c25.5 0 46.2-20.7 46.1-46.1V105.2c0-25.4-20.7-46.1-46.2-46.1zM338.5 360.6H277v-120l-61.5 76.9-61.5-76.9v120H92.3V151.4h61.5l61.5 76.9 61.5-76.9h61.5v209.2zm135.3 3.1L381.5 256H443V151.4h61.5V256H566z" fill="#ffffff" fill-rule="evenodd" stroke="none"/>
+  </g>
 </svg>

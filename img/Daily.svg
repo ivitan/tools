@@ -1,24 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Daily">
   <defs>
     <linearGradient id="daily-bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2dd4bf"/>
-      <stop offset="1" stop-color="#0d9488"/>
+      <stop offset="0" stop-color="#14b8a6"/>
+      <stop offset="1" stop-color="#0f766e"/>
     </linearGradient>
     <linearGradient id="daily-gl" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/>
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".16"/>
       <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="daily-sh" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#000000" stop-opacity="0"/>
-      <stop offset="1" stop-color="#000000" stop-opacity=".14"/>
+      <stop offset="1" stop-color="#000000" stop-opacity=".10"/>
     </linearGradient>
     <clipPath id="daily-clip"><rect width="64" height="64" rx="16"/></clipPath>
   </defs>
   <g clip-path="url(#daily-clip)">
     <rect width="64" height="64" fill="url(#daily-bg)"/>
-    <rect width="64" height="30" fill="url(#daily-gl)"/>
-    <rect y="40" width="64" height="24" fill="url(#daily-sh)"/>
+    <rect width="64" height="22" fill="url(#daily-gl)"/>
+    <rect y="44" width="64" height="20" fill="url(#daily-sh)"/>
   </g>
   <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="1.5"/>
-  <g transform="translate(18.5 13.2) scale(0.07031)" fill="#ffffff" fill-rule="evenodd"><path d="M192 0c-41.8 0-77.4 26.7-90.5 64H64C28.7 64 0 92.7 0 128V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V128c0-35.3-28.7-64-64-64H282.5C269.4 26.7 233.8 0 192 0zm0 64a32 32 0 1 1 0 64 32 32 0 1 1 0-64zM72 272a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm104-16H304c8.8 0 16 7.2 16 16s-7.2 16-16 16H176c-8.8 0-16-7.2-16-16s7.2-16 16-16zM72 368a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm88 0c0-8.8 7.2-16 16-16H304c8.8 0 16 7.2 16 16s-7.2 16-16 16H176c-8.8 0-16-7.2-16-16z"/></g>
+  <g transform="translate(18.5 13.2) scale(0.07031)" stroke="#115e59" stroke-width="24.18" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M192 0c-41.8 0-77.4 26.7-90.5 64H64C28.7 64 0 92.7 0 128V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V128c0-35.3-28.7-64-64-64H282.5C269.4 26.7 233.8 0 192 0zm0 64a32 32 0 1 1 0 64 32 32 0 1 1 0-64zM72 272a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm104-16H304c8.8 0 16 7.2 16 16s-7.2 16-16 16H176c-8.8 0-16-7.2-16-16s7.2-16 16-16zM72 368a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm88 0c0-8.8 7.2-16 16-16H304c8.8 0 16 7.2 16 16s-7.2 16-16 16H176c-8.8 0-16-7.2-16-16z" fill="none" stroke-opacity=".55"/>
+    <path d="M192 0c-41.8 0-77.4 26.7-90.5 64H64C28.7 64 0 92.7 0 128V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V128c0-35.3-28.7-64-64-64H282.5C269.4 26.7 233.8 0 192 0zm0 64a32 32 0 1 1 0 64 32 32 0 1 1 0-64zM72 272a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm104-16H304c8.8 0 16 7.2 16 16s-7.2 16-16 16H176c-8.8 0-16-7.2-16-16s7.2-16 16-16zM72 368a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm88 0c0-8.8 7.2-16 16-16H304c8.8 0 16 7.2 16 16s-7.2 16-16 16H176c-8.8 0-16-7.2-16-16z" fill="#ffffff" fill-rule="evenodd" stroke="none"/>
+  </g>
 </svg>
