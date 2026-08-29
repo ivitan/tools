@@ -15,24 +15,40 @@
     })();
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" type="image/svg+xml" href="/img/Daily.svg" sizes="any" />
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <title>日报生成工具</title>
   <style>
     :root {
-      /* 日间模式变量 - Tailwind 风格鲜亮配色（参考 Airport） */
+      /* ===== 按钮配色体系（参考 Airport 截图） ===== */
+      --btn-blue: #2563eb;         /* 近机位提取 - 主蓝 */
+      --btn-blue-hover: #1d4ed8;
+      --btn-sky: #0ea5e9;          /* 远机位提取 - 天蓝 */
+      --btn-sky-hover: #0284c7;
+      --btn-violet: #8b5cf6;       /* 导出结果表 - 紫 */
+      --btn-violet-hover: #7c3aed;
+      --btn-green: #10b981;        /* 复制时间点 - 绿 */
+      --btn-green-hover: #059669;
+      --btn-orange: #f97316;       /* 复制镜头号/近机位 - 橙 (orange-500) */
+      --btn-orange-hover: #ea580c; /* orange-600 */
+      --btn-gray: #475569;         /* 清空结果集 - 中性灰 */
+      --btn-gray-hover: #334155;
+      --btn-red: #ef4444;          /* 危险操作 - 红 */
+      --btn-red-hover: #dc2626;
+
+      /* 日间模式变量 */
       --primary-color: #2563eb;
       --primary-dark: #1d4ed8;
       --success-color: #10b981;
       --success-dark: #059669;
       --danger-color: #ef4444;
       --danger-dark: #dc2626;
-      --warning-color: #f59e0b;
-      --warning-dark: #d97706;
+      --warning-color: #f97316;
+      --warning-dark: #ea580c;
       --violet-color: #8b5cf6;
       --violet-dark: #7c3aed;
-      --info-color: #2563eb;
+      --info-color: #0ea5e9;
 
       --bg-gradient: #f3f4f6;
       --container-bg: #ffffff;
@@ -51,12 +67,17 @@
       --radius: 12px;
       --radius-sm: 8px;
 
-      /* 统一字体：全局与预览框共用，避免等宽/无衬线混用 */
+      /* 单行控件统一高度：机位号输入框与徽章共用，保证两者等高 */
+      --field-h: 38px;
+
+      /* 徽章 / 输入框 / 删除按钮 统一字号 */
+      --font-ctl: 0.87rem;
+
       --font-main:
         -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
         "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
 
-      /* 机位类型配色：远机位=蓝，近机位=橙 */
+      /* 机位类型配色 */
       --far-accent: #2563eb;
       --far-tint: rgba(37, 99, 235, 0.08);
       --near-accent: #f97316;
@@ -80,6 +101,15 @@
       --hover-bg: rgba(96, 165, 250, 0.14);
       --far-tint: rgba(96, 165, 250, 0.16);
       --near-tint: rgba(251, 146, 60, 0.16);
+
+      /* 暗色模式按钮微调 */
+      --btn-blue: #3b82f6;
+      --btn-sky: #38bdf8;
+      --btn-green: #34d399;
+      --btn-orange: #fb923c;
+      --btn-orange-hover: #f97316;
+      --btn-violet: #a78bfa;
+      --btn-gray: #64748b;
     }
 
     * {
@@ -94,6 +124,9 @@
       color: var(--text-color);
       line-height: 1.6;
       padding: 16px;
+      min-height: 100vh;
+      /* 底部安全区域适配（顶部间距保持 16px 不变） */
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
     }
 
     /* =============== 顶栏 =============== */
@@ -105,12 +138,12 @@
     }
 
     .header-content {
-      max-width: 1300px;
+      max-width: 1180px;
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .header-left {
@@ -153,11 +186,11 @@
 
     /* =============== 布局 =============== */
     .container {
-      max-width: 1300px;
+      max-width: 1180px;
       margin: 0 auto;
       display: grid;
       grid-template-columns: 1.2fr 1fr;
-      gap: 16px;
+      gap: 14px;
       align-items: start;
       padding-bottom: 20px;
     }
@@ -176,14 +209,13 @@
       border: 1px solid var(--border-color);
     }
 
-    /* 首屏上方两个面板紧贴顶栏，整体卡片感 */
     .container>.panel:first-child {
       border-top-left-radius: 0;
       border-top-right-radius: 0;
     }
 
     h2 {
-      font-size: 0.98rem;
+      font-size: 0.95rem;
       margin-bottom: 10px;
       color: var(--text-color);
       display: flex;
@@ -191,9 +223,18 @@
       align-items: center;
       padding-bottom: 8px;
       border-bottom: 1px solid var(--border-color);
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    /* ===== 机位卡片：远/近机位不同配色区分 ===== */
+    /* 标题内图标与文字的间距 */
+    h2 > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    /* ===== 机位卡片 ===== */
     .stand-card {
       background: var(--panel-secondary);
       border: 1px solid var(--border-color);
@@ -203,7 +244,6 @@
       transition: border-color 0.2s;
     }
 
-    /* 远机位：蓝色系 */
     .stand-card[data-type="远机位"] {
       background: var(--far-tint);
       border-left: 4px solid var(--far-accent);
@@ -213,7 +253,6 @@
       border-color: var(--far-accent);
     }
 
-    /* 近机位：绿色系 */
     .stand-card[data-type="近机位"] {
       background: var(--near-tint);
       border-left: 4px solid var(--near-accent);
@@ -223,182 +262,239 @@
       border-color: var(--near-accent);
     }
 
+    /* 卡片头部与明细行共用同一套两列网格，输入框右端严格落在同一竖线 */
     .stand-header {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 32px;
       gap: 8px;
       align-items: center;
       margin-bottom: 8px;
     }
 
+    /* 徽章与机位号同处内容列，badge 宽度的小数不再影响右端定位 */
+    .stand-num-wrap {
+      display: flex;
+      gap: 8px;
+      align-items: stretch; /* 徽章与输入框等高对齐 */
+      min-width: 0;
+    }
+
+    /* 机位号：单行固定高度，不随内容增高 */
+    .stand-num-wrap .stand-num {
+      flex: 1;
+      min-width: 0;
+      height: var(--field-h);
+      padding: 0 11px;
+      line-height: normal;
+      font-weight: 600;
+    }
+
     .badge {
-      padding: 3px 10px;
+      /* 固定整数宽度：避免 auto 列产生小数，导致输入框右端出现 1px 错位 */
+      width: 58px;
+      /* 与机位号输入框等高 */
+      height: var(--field-h);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 6px;
       border-radius: 6px;
-      font-size: 0.76rem;
+      font-size: var(--font-ctl);
       font-weight: 600;
       color: #fff;
       white-space: nowrap;
       letter-spacing: 0.3px;
     }
 
-    .badge-far {
-      background-color: var(--primary-color);
-    }
+    .badge-far { background-color: var(--btn-blue); }
+    .badge-near { background-color: var(--btn-orange); }
 
-    .badge-near {
-      background-color: var(--near-accent);
-    }
-
-    input,
-    textarea {
+    input, textarea {
       width: 100%;
-      padding: 7px 10px;
+      padding: 9px 11px;
       border: 1px solid var(--input-border);
       border-radius: var(--radius-sm);
       background-color: var(--input-bg);
       color: var(--text-color);
-      font-size: 0.85rem;
+      font-size: var(--font-ctl);
       outline: none;
-      transition:
-        border-color 0.2s,
-        box-shadow 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
       font-family: inherit;
     }
 
-    /* 输入框 focus 用新的鲜亮主蓝 */
-    input:focus,
-    textarea:focus {
+    input:focus, textarea:focus {
       border-color: var(--primary-color);
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
     }
 
-    .stand-header input {
-      flex: 1;
-      font-weight: 600;
+    /* 自动增高文本框：随输入内容向下扩展，不出现内部滚动条 */
+    textarea.auto-grow {
+      display: block;
+      resize: none;
+      overflow-y: hidden;
+      min-height: 38px;
+      max-height: 320px;
+      line-height: 1.55;
+      padding: 9px 30px 9px 11px;
     }
 
+    /* 内容超出上限时才允许内部滚动 */
+    textarea.auto-grow.scrollable {
+      overflow-y: auto;
+    }
+
+    /* 节点框与原因框上下堆叠，同占 1fr 内容列；删除按钮跨两行固定在最右 */
     .item-row {
       display: grid;
-      grid-template-columns: 1.2fr 2fr auto;
-      gap: 8px;
-      margin-bottom: 6px;
+      grid-template-columns: 1fr 32px;
+      grid-template-areas:
+        "event del"
+        "reason del";
+      gap: 6px 8px;
       align-items: start;
+      margin-bottom: 8px;
     }
 
-    /* =============== 统一按钮系统（实色填充 + 区分语义色） =============== */
+    .item-row .multi-select-container:nth-of-type(1) {
+      grid-area: event;
+      min-width: 0;
+    }
+
+    .item-row .multi-select-container:nth-of-type(2) {
+      grid-area: reason;
+      min-width: 0;
+    }
+
+    .item-row .btn-icon {
+      grid-area: del;
+      align-self: center;
+    }
+
+    /* =============== 统一按钮系统（参考 Airport 配色） =============== */
     button {
-      padding: 7px 13px;
+      padding: 10px 16px;
       border: none;
       border-radius: var(--radius-sm);
-      font-size: 0.84rem;
+      font-size: 0.86rem;
       cursor: pointer;
       transition: all 0.2s ease;
-      font-weight: 500;
+      font-weight: 600;
       font-family: inherit;
       -webkit-tap-highlight-color: transparent;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 7px;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
     }
 
     button:active {
-      transform: scale(0.98);
+      transform: scale(0.97);
     }
 
-    /* 实色按钮：主操作蓝 / 确认绿 / 警告橙 / 危险红 / 紫 */
+    /* 主蓝按钮 - 近机位提取 / 新增远机位 */
     .btn-primary {
-      background-color: var(--primary-color);
+      background-color: var(--btn-blue);
       color: #fff;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
     }
+    .btn-primary:hover { background-color: var(--btn-blue-hover); }
 
-    .btn-primary:hover {
-      background-color: var(--primary-dark);
-    }
-
-    /* "新增近机位" 实色按钮：使用新的鲜亮橙 */
-    .btn-success {
-      background-color: var(--near-accent);
+    /* 天蓝按钮 - 远机位提取 */
+    .btn-info {
+      background-color: var(--btn-sky);
       color: #fff;
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
     }
+    .btn-info:hover { background-color: var(--btn-sky-hover); }
 
-    .btn-success:hover {
-      background-color: #ea580c;
-    }
-
-    .btn-warning {
-      background-color: var(--warning-color);
-      color: #fff;
-    }
-
-    .btn-warning:hover {
-      background-color: var(--warning-dark);
-    }
-
-    .btn-danger {
-      background-color: var(--danger-color);
-      color: #fff;
-    }
-
-    .btn-danger:hover {
-      background-color: var(--danger-dark);
-    }
-
-    /* 中性灰：用于清空/删除等常规操作，不暗示危险 */
-
+    /* 紫色按钮 - 导出结果表 / 一键复制日报 */
     .btn-violet {
-      background-color: var(--violet-color);
+      background-color: var(--btn-violet);
       color: #fff;
+      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
     }
+    .btn-violet:hover { background-color: var(--btn-violet-hover); }
 
-    .btn-violet:hover {
-      background-color: var(--violet-dark);
+    /* 绿色按钮 - 复制时间点 */
+    .btn-success {
+      background-color: var(--btn-green);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
     }
+    .btn-success:hover { background-color: var(--btn-green-hover); }
 
-    /* 删除图标按钮：中性灰实色，固定 30×30 方形，保留在网格最右 */
+    /* 橙色按钮 - 复制镜头号 / 新增近机位 */
+    .btn-warning {
+      background-color: var(--btn-orange);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+    }
+    .btn-warning:hover { background-color: var(--btn-orange-hover); }
+
+    /* 中性灰按钮 - 清空结果集 */
+    .btn-neutral {
+      background-color: var(--btn-gray);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(71, 85, 105, 0.25);
+    }
+    .btn-neutral:hover { background-color: var(--btn-gray-hover); }
+
+    /* 危险红按钮 - 全部清空 */
+    .btn-danger {
+      background-color: var(--btn-red);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover { background-color: var(--btn-red-hover); }
+
+    /* 删除图标按钮：固定 32×32，始终垂直居中并贴右，保证各行纵向对齐成一条线 */
     .btn-icon {
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      flex: 0 0 32px;
       padding: 0;
-      background: var(--danger-color);
+      background: var(--btn-red);
       color: #fff;
-      font-size: 0.85rem;
+      font-size: var(--font-ctl);
       border: none;
       align-self: center;
+      justify-self: end;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+      line-height: 1;
     }
+    .btn-icon:hover { background: var(--btn-red-hover); }
 
-    .btn-icon:hover {
-      background: var(--danger-dark);
-    }
-
-    /* 新增机位按钮：并排实色，均分两列 */
+    /* 新增机位按钮组：两列均分 */
     .add-stand-group {
       display: flex;
       gap: 10px;
       margin-top: 12px;
     }
-
-    .add-stand-group button {
-      flex: 1;
-    }
+    .add-stand-group button { flex: 1; }
 
     .preview-panel {
       position: sticky;
-      top: 20px;
+      top: 16px;
     }
 
     #preview-box {
       width: 100%;
-      min-height: 120px;
+      min-height: 130px;
       height: auto;
       font-family: var(--font-main);
       white-space: pre-wrap;
       margin-bottom: 12px;
       background: var(--panel-secondary);
-      line-height: 1.6;
+      line-height: 1.65;
       font-size: 0.88rem;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      padding: 10px 12px;
+      padding: 12px 14px;
       color: var(--text-color);
       overflow: visible;
     }
@@ -424,10 +520,7 @@
       z-index: 999;
       font-size: 0.9rem;
     }
-
-    .toast.show {
-      opacity: 1;
-    }
+    .toast.show { opacity: 1; }
 
     /* ======== 多选下拉框样式 ======== */
     .multi-select-container {
@@ -438,7 +531,8 @@
     .input-with-arrow {
       background-image: url('data:image/svg+xml;utf8,<svg fill="%2364748b" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
       background-repeat: no-repeat;
-      background-position: right 8px center;
+      /* 箭头固定在右上角，多行增高时不会跑到中间 */
+      background-position: right 8px top 10px;
       padding-right: 30px;
       cursor: text;
     }
@@ -451,38 +545,34 @@
       background: var(--panel-bg);
       border: 1px solid var(--border-color);
       border-radius: var(--radius);
-      box-shadow: 0 8px 20px var(--shadow-color);
+      box-shadow: 0 8px 24px var(--shadow-color);
       z-index: 100;
-      max-height: 250px;
+      max-height: 240px;
       overflow-y: auto;
       display: none;
     }
-
-    .multi-select-dropdown.show {
-      display: block;
-    }
+    .multi-select-dropdown.show { display: block; }
 
     .multi-select-option {
-      padding: 6px 12px;
+      padding: 7px 12px;
       cursor: pointer;
       font-size: 0.85rem;
-      transition: background 0.2s;
+      transition: background 0.15s;
       color: var(--text-color);
       text-align: left;
     }
-
-    .multi-select-option:hover {
-      background: var(--panel-secondary);
-    }
+    .multi-select-option:hover { background: var(--panel-secondary); }
 
     .multi-select-option.selected {
       color: var(--primary-color);
       background: var(--hover-bg);
       font-weight: 600;
     }
-
+    /* 勾选标记改用 Font Awesome 的 check（f00c），避免依赖系统符号字体 */
     .multi-select-option.selected::after {
-      content: "✔";
+      content: "\f00c";
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
       float: right;
       font-size: 0.85rem;
       margin-left: 8px;
@@ -493,26 +583,123 @@
       font-weight: 700;
     }
 
-    @media (max-width: 480px) {
+    /* ==================== 手机端响应式优化 ==================== */
+    @media (max-width: 768px) {
+      /* 顶部与左右间距保持与桌面端一致，仅底部做安全区适配 */
       body {
-        padding: 8px;
+        padding: 16px 8px;
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
       }
 
       .container {
-        gap: 14px;
+        gap: 10px;
       }
 
       .panel {
         padding: 12px;
+        border-radius: 10px;
       }
 
+      h2 {
+        font-size: 0.88rem;
+        margin-bottom: 8px;
+      }
+
+      /* 手机端沿用同一套网格，仅缩小按钮列宽 */
       .item-row {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 30px;
+        gap: 7px;
+      }
+
+      .stand-header {
+        grid-template-columns: 1fr 30px;
+        gap: 7px;
+      }
+
+      .stand-num-wrap {
+        gap: 6px;
+      }
+
+      .item-row .btn-icon {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+      }
+
+      textarea.auto-grow {
+        min-height: 42px;
+        padding: 10px 30px 10px 11px;
+      }
+
+      .stand-card {
+        padding: 10px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+      }
+
+      /* 手机端控件更高、字号略大，便于触控 */
+      :root {
+        --field-h: 42px;
+        --font-ctl: 0.9rem;
+      }
+
+      .badge {
+        /* 字号统一后文字变宽，相应放宽保证整数宽度且不挤压 */
+        width: 56px;
+        padding: 0 4px;
+      }
+
+      input, textarea {
+        padding: 10px 11px;
+      }
+
+      /* 按钮在手机端加大触控区域 */
+      button {
+        padding: 12px 14px;
+        font-size: 0.84rem;
+        border-radius: 8px;
+      }
+
+      .add-stand-group {
+        gap: 8px;
+        margin-top: 10px;
       }
 
       #preview-box {
-        min-height: 100px;
+        min-height: 110px;
+        font-size: 0.86rem;
+        padding: 10px 12px;
       }
+
+      .preview-panel {
+        position: static;
+      }
+
+      /* 手机端 toast 更靠上，避开刘海 */
+      .toast {
+        top: max(30px, env(safe-area-inset-top, 30px));
+        font-size: 0.84rem;
+        padding: 10px 20px;
+      }
+
+    }
+
+    /* 超小屏适配 (<380px) */
+    @media (max-width: 380px) {
+      body { padding: 16px 6px; }
+
+      button {
+        padding: 11px 12px;
+        font-size: 0.82rem;
+      }
+
+      .add-stand-group {
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .panel { padding: 10px; }
+      .stand-card { padding: 8px 10px; }
     }
   </style>
 </head>
@@ -610,22 +797,22 @@
   <div class="container">
     <div class="panel" id="input-panel">
       <h2>
-        <span>📝 异常数据录入</span>
-        <button class="btn-danger" onclick="clearAllCards()">🗑️ 全部清空</button>
+        <span><i class="fas fa-pen-to-square"></i>异常数据录入</span>
+        <button class="btn-danger" onclick="clearAllCards()"><i class="fas fa-trash-can"></i>全部清空</button>
       </h2>
 
       <div id="stands-container"></div>
 
       <div class="add-stand-group">
-        <button class="btn-primary" onclick="addStandCard('远机位')">+ 新增远机位</button>
-        <button class="btn-success" onclick="addStandCard('近机位')">+ 新增近机位</button>
+        <button class="btn-primary" onclick="addStandCard('远机位')"><i class="fas fa-plus"></i>新增远机位</button>
+        <button class="btn-warning" onclick="addStandCard('近机位')"><i class="fas fa-plus"></i>新增近机位</button>
       </div>
     </div>
 
     <div class="panel preview-panel">
-      <h2>📄 日报实时预览</h2>
+      <h2><span><i class="fas fa-file-lines"></i>日报实时预览</span></h2>
       <pre id="preview-box" data-placeholder="左侧填写数据，此处自动实时排版..."></pre>
-      <button class="btn-violet" style="width: 100%" onclick="copyReport()">📋 一键复制日报</button>
+      <button class="btn-violet" style="width: 100%" onclick="copyReport()"><i class="fas fa-copy"></i>一键复制日报</button>
     </div>
   </div>
 
@@ -650,12 +837,8 @@
       }
 
       const saved = localStorage.getItem("theme");
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
-      applyTheme(
-        saved === "dark" || (!saved && prefersDark) ? "dark" : "light",
-      );
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      applyTheme(saved === "dark" || (!saved && prefersDark) ? "dark" : "light");
 
       themeToggle.addEventListener("click", () => {
         applyTheme(body.classList.contains("dark-mode") ? "light" : "dark");
@@ -663,39 +846,51 @@
     })();
 
     const cnNums = [
-      "",
-      "一",
-      "二",
-      "三",
-      "四",
-      "五",
-      "六",
-      "七",
-      "八",
-      "九",
-      "十",
-      "十一",
-      "十二",
-      "十三",
-      "十四",
-      "十五",
-      "十六",
-      "十七",
-      "十八",
-      "十九",
-      "二十",
+      "", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十",
+      "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
     ];
     let baseOptions = {};
     let activeDropdown = null;
     let activeInput = null;
     let currentSearchQuery = "";
 
+    /* ====== 文本框自动增高：随内容向下扩展，到上限后才内部滚动 ====== */
+    const MAX_TEXTAREA_H = 320;
+
+    function autoResize(el) {
+      if (!el || !el.classList || !el.classList.contains("auto-grow")) return;
+
+      // 测量前临时摘掉 placeholder：窄屏上提示文字会折行并被计入 scrollHeight，
+      // 导致空文本框被撑高到多行的高度
+      const ph = el.placeholder;
+      el.placeholder = "";
+
+      el.style.height = "auto"; // 先归零，才能正确测量收缩后的高度
+      const h = el.scrollHeight;
+
+      el.placeholder = ph; // 立即还原
+
+      if (h >= MAX_TEXTAREA_H) {
+        el.style.height = MAX_TEXTAREA_H + "px";
+        el.classList.add("scrollable");
+      } else {
+        el.style.height = h + "px";
+        el.classList.remove("scrollable");
+      }
+    }
+
+    function autoResizeAll() {
+      document
+        .querySelectorAll("textarea.auto-grow")
+        .forEach((el) => autoResize(el));
+    }
+
+    window.addEventListener("resize", autoResizeAll);
+
     window.onload = () => {
       ["event-list-far", "event-list-near", "reason-list"].forEach((id) => {
         const list = document.getElementById(id);
-        if (list) {
-          baseOptions[id] = Array.from(list.options).map((o) => o.value);
-        }
+        if (list) baseOptions[id] = Array.from(list.options).map((o) => o.value);
       });
 
       addStandCard("远机位");
@@ -703,34 +898,27 @@
 
       const container = document.getElementById("stands-container");
 
-      // 点击输入框展示下拉并处理点击外部关闭
       document.addEventListener("click", (e) => {
         if (e.target.classList.contains("custom-dropdown-input")) {
-          if (
-            activeDropdown &&
-            activeDropdown.parentNode === e.target.parentNode
-          )
-            return;
+          if (activeDropdown && activeDropdown.parentNode === e.target.parentNode) return;
           showDropdown(e.target);
         } else if (!e.target.closest(".multi-select-dropdown")) {
           closeAllDropdowns();
         }
       });
 
-      // 监听实时打字输入
       container.addEventListener("input", (e) => {
+        autoResize(e.target); // 输入/换行时实时增高
         if (
           e.target.classList.contains("custom-dropdown-input") &&
           activeDropdown &&
           activeDropdown.parentNode === e.target.parentNode
         ) {
           const listId = e.target.getAttribute("data-list");
-          const isNode =
-            listId === "event-list-far" || listId === "event-list-near";
+          const isNode = listId === "event-list-far" || listId === "event-list-near";
           const validOptions = baseOptions[listId];
-
           const { query } = parseInput(e.target.value, validOptions, isNode);
-          currentSearchQuery = query; // 更新全局搜索记忆
+          currentSearchQuery = query;
           renderOptions(e.target, activeDropdown, listId);
         }
         generatePreview();
@@ -739,17 +927,13 @@
 
     // ====== 下拉框与智能搜索核心逻辑 ======
 
-    // 解析输入框内容，智能分离出“已选项”和“正在搜索的词”
     function parseInput(val, validOptions, isNode) {
       const rawParts = val.split("、").map((v) => v.trim());
       const selected = [];
       let query = "";
 
       for (let i = 0; i < rawParts.length - 1; i++) {
-        if (rawParts[i]) {
-          // 【核心修改】：无论是节点还是原因，前置内容只要通过“、”分隔过，都视为合法保留内容
-          selected.push(rawParts[i]);
-        }
+        if (rawParts[i]) selected.push(rawParts[i]);
       }
 
       const lastPart = rawParts[rawParts.length - 1];
@@ -775,8 +959,7 @@
       activeDropdown = dropdown;
       activeInput = input;
 
-      const isNode =
-        listId === "event-list-far" || listId === "event-list-near";
+      const isNode = listId === "event-list-far" || listId === "event-list-near";
       const validOptions = baseOptions[listId];
       const { query } = parseInput(input.value, validOptions, isNode);
       currentSearchQuery = query;
@@ -788,11 +971,9 @@
     function renderOptions(input, dropdown, listId) {
       dropdown.innerHTML = "";
       const validOptions = baseOptions[listId];
-      const isNode =
-        listId === "event-list-far" || listId === "event-list-near";
+      const isNode = listId === "event-list-far" || listId === "event-list-near";
       const { selected } = parseInput(input.value, validOptions, isNode);
 
-      // 核心：永远基于全局搜索记忆进行过滤，即便输入框被清理也能保持搜索结果
       const filteredOptions = validOptions.filter((opt) =>
         opt.includes(currentSearchQuery),
       );
@@ -802,7 +983,6 @@
         emptyDiv.className = "multi-select-option";
         emptyDiv.style.color = "var(--text-light)";
         emptyDiv.style.cursor = "not-allowed";
-        // 【核心修改】：提示语变为允许自定义内容保留
         emptyDiv.innerText = isNode
           ? "无匹配节点 (将作为自定义内容保留)"
           : "无匹配项 (将作为自定义原因保留)";
@@ -813,9 +993,7 @@
       filteredOptions.forEach((opt) => {
         const optionDiv = document.createElement("div");
         optionDiv.className = "multi-select-option";
-        if (selected.includes(opt)) {
-          optionDiv.classList.add("selected");
-        }
+        if (selected.includes(opt)) optionDiv.classList.add("selected");
 
         if (currentSearchQuery) {
           const parts = opt.split(currentSearchQuery);
@@ -835,24 +1013,23 @@
     }
 
     function toggleSelection(input, opt, dropdown, listId) {
-      const isNode =
-        listId === "event-list-far" || listId === "event-list-near";
+      const isNode = listId === "event-list-far" || listId === "event-list-near";
       const validOptions = baseOptions[listId];
       let { selected } = parseInput(input.value, validOptions, isNode);
 
       if (selected.includes(opt)) {
-        selected = selected.filter((v) => v !== opt); // 反选
+        selected = selected.filter((v) => v !== opt);
       } else {
-        selected.push(opt); // 勾选
+        selected.push(opt);
       }
 
-      // 如果是原因框，只拼接文字，不加末尾的“、”
       if (listId === "reason-list") {
         input.value = selected.join("、");
       } else {
         input.value = selected.join("、") + (selected.length > 0 ? "、" : "");
       }
 
+      autoResize(input); // 勾选/取消后内容长度变化，重算高度
       generatePreview();
       input.focus();
       renderOptions(input, dropdown, listId);
@@ -861,7 +1038,6 @@
     function closeAllDropdowns() {
       if (activeDropdown) {
         if (activeInput) {
-          // 【核心修改】：无论是节点还是原因，关闭下拉框时都不再粗暴删除未匹配项，仅移除末尾多余的逗号，保留所有自定义文本
           activeInput.value = activeInput.value.replace(/、+$/, "");
           generatePreview();
         }
@@ -878,12 +1054,12 @@
       return `
             <div class="item-row">
                 <div class="multi-select-container">
-                    <input type="text" class="item-event input-with-arrow custom-dropdown-input" data-list="${listId}" placeholder="点击或输入搜索... (支持多选及自定义)" autocomplete="off">
+                    <textarea rows="1" class="item-event auto-grow input-with-arrow custom-dropdown-input" data-list="${listId}" placeholder="异常节点：点击或输入搜索" autocomplete="off"></textarea>
                 </div>
                 <div class="multi-select-container">
-                    <input type="text" class="item-reason input-with-arrow custom-dropdown-input" data-list="reason-list" placeholder="点击或输入搜索... (支持多选及自定义)" autocomplete="off">
+                    <textarea rows="1" class="item-reason auto-grow input-with-arrow custom-dropdown-input" data-list="reason-list" placeholder="异常原因：点击或输入搜索" autocomplete="off"></textarea>
                 </div>
-                <button class="btn-icon" onclick="removeEventRow(this)" title="删除此行">✖</button>
+                <button class="btn-icon" onclick="removeEventRow(this)" title="删除此行"><i class="fas fa-xmark"></i></button>
             </div>
         `;
     }
@@ -898,9 +1074,11 @@
 
       card.innerHTML = `
             <div class="stand-header">
-                <span class="badge ${badgeClass}">${type}</span>
-                <input type="text" class="stand-num" placeholder="机位号 (如: 903)">
-                <button class="btn-icon" onclick="removeStandCard(this)" title="删除该机位">✖</button>
+                <div class="stand-num-wrap">
+                    <span class="badge ${badgeClass}">${type}</span>
+                    <input type="text" class="stand-num" placeholder="机位号" autocomplete="off">
+                </div>
+                <button class="btn-icon" onclick="removeStandCard(this)" title="删除该机位"><i class="fas fa-xmark"></i></button>
             </div>
             <div class="items-container">
                 ${createEventRowHTML(type)}
@@ -908,9 +1086,7 @@
             <button class="btn-warning" onclick="addEventRow(this)">+ 添加异常明细</button>
         `;
 
-      const existingCards = container.querySelectorAll(
-        `.stand-card[data-type="${type}"]`,
-      );
+      const existingCards = container.querySelectorAll(`.stand-card[data-type="${type}"]`);
       if (existingCards.length > 0) {
         const lastCard = existingCards[existingCards.length - 1];
         lastCard.parentNode.insertBefore(card, lastCard.nextSibling);
@@ -919,17 +1095,16 @@
       }
 
       generatePreview();
+      autoResizeAll(); // 新插入的文本框初始化高度
     }
 
     function addEventRow(btnElement) {
       const card = btnElement.closest(".stand-card");
       const type = card.getAttribute("data-type");
       const itemsContainer = btnElement.previousElementSibling;
-      itemsContainer.insertAdjacentHTML(
-        "beforeend",
-        createEventRowHTML(type),
-      );
+      itemsContainer.insertAdjacentHTML("beforeend", createEventRowHTML(type));
       generatePreview();
+      autoResizeAll();
     }
 
     function removeEventRow(btnElement) {
@@ -943,6 +1118,7 @@
         container.insertAdjacentHTML("beforeend", createEventRowHTML(type));
       }
       generatePreview();
+      autoResizeAll();
     }
 
     function removeStandCard(btnElement) {
@@ -956,6 +1132,7 @@
         addStandCard("远机位");
         addStandCard("近机位");
         generatePreview();
+        autoResizeAll();
       }
     }
 
@@ -972,14 +1149,10 @@
         eventRows.forEach((row) => {
           const event = row.querySelector(".item-event").value.trim();
           const reason = row.querySelector(".item-reason").value.trim();
-          if (event && reason) {
-            records.push({ event, reason });
-          }
+          if (event && reason) records.push({ event, reason });
         });
 
-        if (standNum && records.length > 0) {
-          data[type].push({ standNum, records });
-        }
+        if (standNum && records.length > 0) data[type].push({ standNum, records });
       });
 
       let resultText = "";
@@ -1008,8 +1181,7 @@
         });
       }
 
-      const previewBox = document.getElementById("preview-box");
-      previewBox.textContent = resultText.trim();
+      document.getElementById("preview-box").textContent = resultText.trim();
     }
 
     function copyReport() {
@@ -1024,13 +1196,9 @@
         .then(() => {
           const toast = document.getElementById("toast");
           toast.classList.add("show");
-          setTimeout(() => {
-            toast.classList.remove("show");
-          }, 2000);
+          setTimeout(() => toast.classList.remove("show"), 2000);
         })
-        .catch((err) => {
-          alert("复制失败，请手动选择文本复制。");
-        });
+        .catch(() => alert("复制失败，请手动选择文本复制。"));
     }
   </script>
   <!-- 返回主页图标按钮样式 -->
