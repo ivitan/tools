@@ -345,29 +345,27 @@
     }
 
     /* 节点框与原因框上下堆叠，同占 1fr 内容列；删除按钮跨两行固定在最右 */
+    /* PC 端：节点框与原因框并排显示，删除按钮固定在最右列并垂直居中 */
     .item-row {
       display: grid;
-      grid-template-columns: 1fr 32px;
-      grid-template-areas:
-        "event del"
-        "reason del";
+      grid-template-columns: 1.2fr 2fr 32px;
       gap: 6px 8px;
       align-items: start;
       margin-bottom: 8px;
     }
 
     .item-row .multi-select-container:nth-of-type(1) {
-      grid-area: event;
+      grid-column: 1;
       min-width: 0;
     }
 
     .item-row .multi-select-container:nth-of-type(2) {
-      grid-area: reason;
+      grid-column: 2;
       min-width: 0;
     }
 
     .item-row .btn-icon {
-      grid-area: del;
+      grid-column: 3;
       align-self: center;
     }
 
@@ -606,9 +604,25 @@
       }
 
       /* 手机端沿用同一套网格，仅缩小按钮列宽 */
+      /* 手机端空间不足，改为节点框/原因框上下堆叠，删除按钮跨两行置右 */
       .item-row {
         grid-template-columns: 1fr 30px;
+        grid-template-areas:
+          "event del"
+          "reason del";
         gap: 7px;
+      }
+
+      .item-row .multi-select-container:nth-of-type(1) {
+        grid-area: event;
+      }
+
+      .item-row .multi-select-container:nth-of-type(2) {
+        grid-area: reason;
+      }
+
+      .item-row .btn-icon {
+        grid-area: del;
       }
 
       .stand-header {
