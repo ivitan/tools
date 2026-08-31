@@ -626,7 +626,7 @@
         line-height: 1.5;
         margin-top: 12px;
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 10px;
       }
 
@@ -655,13 +655,24 @@
       }
 
       .alert-icon {
+        display: inline-flex;
         font-size: 1.2rem;
         flex-shrink: 0;
-        margin-top: 1px;
+      }
+
+      /* Font Awesome 图标与文本基线对齐（flex 容器内的图标不受影响） */
+      .fas,
+      .far,
+      .fab {
+        vertical-align: -0.125em;
       }
 
       .footer {
-        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
         font-size: 0.75rem;
         color: var(--text-muted);
         padding: 4px 0;
@@ -696,6 +707,12 @@
         align-items: center;
         font-size: 0.85rem;
         font-weight: 600;
+      }
+
+      .log-header > span:first-child {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
       }
 
       .log-content {
@@ -742,10 +759,18 @@
         color: var(--text-secondary);
       }
 
+      .checkbox-group label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+
       .checkbox-group input[type="checkbox"] {
         width: 18px;
         height: 18px;
         accent-color: var(--accent);
+        flex-shrink: 0;
       }
 
       /* =============== 多阶段指示器 =============== */
@@ -796,6 +821,57 @@
       .stage-arrow {
         color: var(--text-muted);
         font-size: 0.75rem;
+      }
+
+      /* =============== 桌面宽屏：两栏布局（≥1024px） =============== */
+      @media (min-width: 1024px) {
+        .container {
+          max-width: 1180px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-template-areas:
+            "topbar topbar"
+            "step1 step3"
+            "step2 step3"
+            "footer footer";
+        }
+
+        .topbar {
+          grid-area: topbar;
+        }
+
+        #cardStep1 {
+          grid-area: step1;
+        }
+
+        #cardStep2 {
+          grid-area: step2;
+        }
+
+        #cardStep3 {
+          grid-area: step3;
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* 进度区/状态区贴向底部，避免右栏大片空白 */
+        #cardStep3 .progress-section {
+          margin-top: auto;
+          padding-top: 16px;
+        }
+
+        #cardStep3 #writeStatusArea:not(:empty) {
+          margin-top: 12px;
+        }
+
+        .footer {
+          grid-area: footer;
+        }
+
+        /* 宽屏下日志区高度略增，减少内部滚动 */
+        .log-content {
+          max-height: 220px;
+        }
       }
 
       @media (max-width: 480px) {
@@ -885,19 +961,19 @@
           >
         </div>
         <div class="btn-group">
-          <button class="btn btn-primary" id="btnConnectUSB">🔌 选择U盘</button>
+          <button class="btn btn-primary" id="btnConnectUSB"><i class="fas fa-plug"></i>选择U盘</button>
           <button
             class="btn btn-outline btn-sm"
             id="btnRefreshDevices"
             style="display: none"
           >
-            🔄 刷新已授权
+            <i class="fas fa-rotate-right"></i>刷新已授权
           </button>
         </div>
         <div class="checkbox-group">
           <input type="checkbox" id="chkWideMode" />
           <label for="chkWideMode"
-            >🔓 搜索所有大容量存储设备（兼容非标准U盘）</label
+            ><i class="fas fa-unlock"></i> 搜索所有大容量存储设备（兼容非标准U盘）</label
           >
         </div>
         <div class="device-info" id="deviceInfo">
@@ -932,7 +1008,7 @@
         </div>
         <div class="log-panel">
           <div class="log-header" id="logHeader">
-            <span>📋 调试日志</span><span id="logToggle">展开</span>
+            <span><i class="fas fa-terminal"></i> 调试日志</span><span id="logToggle">展开</span>
           </div>
           <div class="log-content" id="logContent"></div>
         </div>
@@ -944,7 +1020,7 @@
           <span class="step-badge" id="badgeStep2">2</span> 选择镜像文件
         </div>
         <div class="drop-zone" id="dropZone">
-          <span class="drop-icon">📁</span>
+          <span class="drop-icon"><i class="fas fa-folder-open"></i></span>
           <span class="drop-text">拖放镜像文件到此处</span>
           <span class="drop-hint">支持 .img / .iso / .bin / .raw 等</span>
         </div>
@@ -955,15 +1031,16 @@
           accept=".img,.iso,.bin,.raw,.dmg,.vhd,.vhdx,.vmdk,image/*,application/octet-stream,*/*"
         />
         <div class="file-info-display" id="fileInfoDisplay">
-          <span>📄</span> <span class="file-name" id="fileName">—</span>
+          <span><i class="fas fa-file"></i></span> <span class="file-name" id="fileName">—</span>
           <span class="file-size" id="fileSize">—</span>
           <span class="file-type-badge" id="fileTypeBadge"></span>
           <button class="btn btn-outline btn-sm" id="btnClearFile">
-            ✕ 清除
+            <i class="fas fa-xmark"></i>清除
           </button>
         </div>
         <div class="alert alert-info" id="alertSizeCheck" style="display: none">
-          <span class="alert-icon">ℹ️</span
+          <span class="alert-icon" id="alertSizeCheckIcon"
+            ><i class="fas fa-circle-info"></i></span
           ><span id="alertSizeCheckText"></span>
         </div>
       </div>
@@ -974,13 +1051,14 @@
           <span class="step-badge" id="badgeStep3">3</span> 写入镜像
         </div>
         <div class="alert alert-warning">
-          <span class="alert-icon">⚠️</span
+          <span class="alert-icon"
+            ><i class="fas fa-triangle-exclamation"></i></span
           ><span><strong>警告：</strong>写入将完全覆盖U盘所有数据！</span>
         </div>
         <div class="checkbox-group">
           <input type="checkbox" id="chkVerifyWrite" checked />
           <label for="chkVerifyWrite"
-            >🔍 写入后验证数据（推荐，回读校验确保写入正确）</label
+            ><i class="fas fa-magnifying-glass"></i> 写入后验证数据（推荐，回读校验确保写入正确）</label
           >
         </div>
         <!-- 多阶段指示器 -->
@@ -991,14 +1069,14 @@
         ></div>
         <div class="btn-group">
           <button class="btn btn-danger" id="btnStartWrite" disabled>
-            🚀 开始写入
+            <i class="fas fa-rocket"></i>开始写入
           </button>
           <button
             class="btn btn-outline btn-sm"
             id="btnCancelWrite"
             style="display: none"
           >
-            ⏹ 取消
+            <i class="fas fa-stop"></i>取消
           </button>
         </div>
         <div class="progress-section" id="progressSection">
@@ -1017,8 +1095,8 @@
         <div id="writeStatusArea"></div>
       </div>
       <div class="footer">
-        🔒 纯前端工具 · 数据仅在本地处理 · 支持写入后验证 · 需要 Chrome/Edge +
-        HTTPS/localhost
+        <i class="fas fa-lock"></i> 纯前端工具 · 数据仅在本地处理 · 支持写入后验证 · 需要
+        Chrome/Edge + HTTPS/localhost
       </div>
     </div>
 
@@ -1062,6 +1140,7 @@
         const writeStatusArea = $("#writeStatusArea");
         const alertSizeCheck = $("#alertSizeCheck");
         const alertSizeCheckText = $("#alertSizeCheckText");
+        const alertSizeCheckIcon = $("#alertSizeCheckIcon");
         const themeToggle = $("#themeToggle");
         const themeLabel = $("#themeLabel");
         const badgeStep1 = $("#badgeStep1"),
@@ -1354,7 +1433,7 @@
           showStatus("已连接", "connected");
           badgeStep1.classList.add("done");
           cardStep1.classList.add("highlight");
-          btnConnectUSB.textContent = "🔌 更换U盘";
+          btnConnectUSB.innerHTML = '<i class="fas fa-plug"></i>更换U盘';
           btnRefreshDevices.style.display = "inline-flex";
           addLog(
             `已连接: ${device.productName || "未知"} (${formatBytes(deviceCapacityBytes)}, ${usbSpeed})`,
@@ -1362,7 +1441,7 @@
           );
           if (usbSpeed === "USB 2.0" || usbSpeed === "USB 1.1") {
             addLog(
-              "⚠️ 设备连接速率较慢，写入大镜像可能需要较长时间。建议插入 USB 3.0 接口。",
+              '<i class="fas fa-triangle-exclamation"></i> 设备连接速率较慢，写入大镜像可能需要较长时间。建议插入 USB 3.0 接口。',
               "warn",
             );
             connectionSpeedInfo.style.display = "flex";
@@ -1415,7 +1494,7 @@
           connectionSpeedInfo.style.display = "none";
           badgeStep1.classList.remove("done");
           cardStep1.classList.remove("highlight");
-          btnConnectUSB.textContent = "🔌 选择U盘";
+          btnConnectUSB.innerHTML = '<i class="fas fa-plug"></i>选择U盘';
           btnRefreshDevices.style.display = "none";
           updateWriteButton();
         }
@@ -1449,17 +1528,17 @@
           fileNameEl.textContent = file.name;
           fileSizeEl.textContent = formatBytes(file.size);
           fileTypeBadge.className = `file-type-badge ${fileFormat}`;
-          fileTypeBadge.textContent =
+          fileTypeBadge.innerHTML =
             {
-              img: "💾 IMG",
-              iso: "💿 ISO",
-              bin: "📀 BIN",
-              raw: "🗄️ RAW",
-              dmg: "🍎 DMG",
-              vhd: "💻 VHD",
-              vhdx: "💻 VHDX",
-              vmdk: "💻 VMDK",
-            }[fileFormat] || "📄 镜像";
+              img: '<i class="fas fa-floppy-disk"></i> IMG',
+              iso: '<i class="fas fa-compact-disc"></i> ISO',
+              bin: '<i class="fas fa-disc-drive"></i> BIN',
+              raw: '<i class="fas fa-database"></i> RAW',
+              dmg: '<i class="fab fa-apple"></i> DMG',
+              vhd: '<i class="fas fa-hard-drive"></i> VHD',
+              vhdx: '<i class="fas fa-hard-drive"></i> VHDX',
+              vmdk: '<i class="fas fa-hard-drive"></i> VMDK',
+            }[fileFormat] || '<i class="fas fa-file"></i> 镜像';
           fileTypeBadge.style.display = "inline-flex";
           fileInfoDisplay.classList.add("show");
           dropZone.classList.add("has-file");
@@ -1477,12 +1556,16 @@
           if (selectedFile.size > deviceCapacityBytes) {
             alertSizeCheck.style.display = "flex";
             alertSizeCheck.className = "alert alert-danger";
-            alertSizeCheckText.textContent = `❌ 镜像过大 (${formatBytes(selectedFile.size)} > ${formatBytes(deviceCapacityBytes)})`;
+            alertSizeCheckIcon.innerHTML =
+              '<i class="fas fa-circle-xmark"></i>';
+            alertSizeCheckText.textContent = `镜像过大 (${formatBytes(selectedFile.size)} > ${formatBytes(deviceCapacityBytes)})`;
             btnStartWrite.disabled = true;
           } else {
             alertSizeCheck.style.display = "flex";
             alertSizeCheck.className = "alert alert-info";
-            alertSizeCheckText.textContent = `✅ ${formatBytes(selectedFile.size)} → ${formatBytes(deviceCapacityBytes)}`;
+            alertSizeCheckIcon.innerHTML =
+              '<i class="fas fa-circle-check"></i>';
+            alertSizeCheckText.innerHTML = `${formatBytes(selectedFile.size)} <i class="fas fa-arrow-right"></i> ${formatBytes(deviceCapacityBytes)}`;
             updateWriteButton();
           }
         }
@@ -1512,9 +1595,9 @@
         function setStage(stage) {
           currentStage = stage;
           const stages = [
-            { key: "write", label: "写入", icon: "✍️" },
-            { key: "verify", label: "验证", icon: "🔍" },
-            { key: "done", label: "完成", icon: "✅" },
+            { key: "write", label: "写入", icon: '<i class="fas fa-pen-to-square"></i>' },
+            { key: "verify", label: "验证", icon: '<i class="fas fa-magnifying-glass"></i>' },
+            { key: "done", label: "完成", icon: '<i class="fas fa-circle-check"></i>' },
           ];
           const wantVerify = chkVerifyWrite.checked;
           const activeStages = wantVerify ? stages : [stages[0], stages[2]];
@@ -1532,7 +1615,7 @@
               (s.key === "verify" && stage === "done")
             )
               cls += " done";
-            if (i > 0) html += '<span class="stage-arrow">→</span>';
+            if (i > 0) html += '<i class="fas fa-arrow-right stage-arrow"></i>';
             html += `<span class="${cls}"><span class="stage-icon">${s.icon}</span> ${s.label}</span>`;
           });
           stageIndicator.innerHTML = html;
@@ -1543,7 +1626,7 @@
           if (!usbDevice || !selectedFile || isWriting) return;
           if (
             !confirm(
-              `⚠️ 确定将 ${selectedFile.name} 写入 ${usbDevice.productName || "设备"}？此操作不可逆！${chkVerifyWrite.checked ? "\n\n将执行写入后验证，确保数据完整。" : ""}`,
+              `确定将 ${selectedFile.name} 写入 ${usbDevice.productName || "设备"}？此操作不可逆！${chkVerifyWrite.checked ? "\n\n将执行写入后验证，确保数据完整。" : ""}`,
             )
           )
             return;
@@ -1602,17 +1685,18 @@
             setStage("done");
             progressBar.style.width = "100%";
             progressPercent.textContent = "100%";
-            progressDetail.textContent = "✅ 全部完成！";
+            progressDetail.innerHTML =
+              '<i class="fas fa-circle-check"></i> 全部完成！';
             progressSpeed.textContent = "";
             progressEta.textContent = "";
             writeStatusArea.innerHTML =
-              '<div class="alert alert-success"><span class="alert-icon">🎉</span> 写入成功！数据已验证，可以安全弹出U盘。</div>';
+              '<div class="alert alert-success"><span class="alert-icon"><i class="fas fa-champagne-glasses"></i></span> 写入成功！数据已验证，可以安全弹出U盘。</div>';
             addLog("===== 全部完成 =====", "success");
           } catch (e) {
             if (e.name === "AbortError" || e.message === "用户取消") {
-              progressDetail.textContent = "⏹ 已取消";
+              progressDetail.innerHTML = '<i class="fas fa-stop"></i> 已取消';
               writeStatusArea.innerHTML =
-                '<div class="alert alert-warning"><span class="alert-icon">⚠️</span> 操作已取消，数据不完整。</div>';
+                '<div class="alert alert-warning"><span class="alert-icon"><i class="fas fa-triangle-exclamation"></i></span> 操作已取消，数据不完整。</div>';
               addLog("用户取消操作", "warn");
             } else {
               progressBar.style.width = "0%";
@@ -1823,7 +1907,7 @@
           if (abortController) abortController.abort();
         }
         function showError(msg) {
-          writeStatusArea.innerHTML = `<div class="alert alert-danger"><span class="alert-icon">❌</span> ${msg}</div>`;
+          writeStatusArea.innerHTML = `<div class="alert alert-danger"><span class="alert-icon"><i class="fas fa-circle-xmark"></i></span> ${msg}</div>`;
         }
 
         function formatBytes(b) {
@@ -1928,13 +2012,13 @@
               resetDeviceState();
               showStatus("设备已断开", "disconnected");
               writeStatusArea.innerHTML =
-                '<div class="alert alert-danger"><span class="alert-icon">🔌</span> USB设备已断开！</div>';
+                '<div class="alert alert-danger"><span class="alert-icon"><i class="fas fa-plug-circle-xmark"></i></span> USB设备已断开！</div>';
             }
           });
         }
         if (!navigator.usb) {
           writeStatusArea.innerHTML =
-            '<div class="alert alert-danger"><span class="alert-icon">🚫</span> 浏览器不支持 WebUSB，请使用 Chrome/Edge 并确保 HTTPS/localhost。</div>';
+            '<div class="alert alert-danger"><span class="alert-icon"><i class="fas fa-ban"></i></span> 浏览器不支持 WebUSB，请使用 Chrome/Edge 并确保 HTTPS/localhost。</div>';
           btnConnectUSB.disabled = true;
           btnStartWrite.disabled = true;
         } else {
