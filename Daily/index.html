@@ -1174,10 +1174,10 @@
       if (data["远机位"].length > 0) {
         resultText += "远机位：\n";
         data["远机位"].forEach((item, index) => {
-          const cnIndex = cnNums[index + 1] || index + 1;
-          resultText += `${cnIndex}、${item.standNum}\n`;
+          const cnIndex = cnNums[index + 1];
+          resultText += `${cnIndex ? `${cnIndex}、` : `${index + 1}. `}${item.standNum}\n`;
           item.records.forEach((rec, recIndex) => {
-            resultText += `${recIndex + 1}、${rec.event}：${rec.reason}\n`;
+            resultText += `${recIndex + 1}. ${rec.event}：${rec.reason}\n`;
           });
           resultText += "\n";
         });
@@ -1186,10 +1186,10 @@
       if (data["近机位"].length > 0) {
         resultText += "近机位：\n";
         data["近机位"].forEach((item, index) => {
-          const cnIndex = cnNums[index + 1] || index + 1;
-          resultText += `${cnIndex}、${item.standNum}\n`;
+          const cnIndex = cnNums[index + 1];
+          resultText += `${cnIndex ? `${cnIndex}、` : `${index + 1}. `}${item.standNum}\n`;
           item.records.forEach((rec, recIndex) => {
-            resultText += `${recIndex + 1}、${rec.event}：${rec.reason}\n`;
+            resultText += `${recIndex + 1}. ${rec.event}：${rec.reason}\n`;
           });
           resultText += "\n";
         });
