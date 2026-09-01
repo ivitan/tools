@@ -285,9 +285,9 @@
       .btn {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         gap: 8px;
-        padding: 11px 20px;
+        padding: 11px 20px 11px 4px;
         border-radius: 50px;
         font-size: 0.9rem;
         font-weight: 600;
@@ -298,6 +298,18 @@
         letter-spacing: -0.01em;
         white-space: nowrap;
         user-select: none;
+        line-height: 1;
+      }
+
+      /* 与步骤编号(28px圆形)左对齐：图标占据同宽列并居中 */
+      .btn i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        margin-left: -2px;
       }
 
       .btn:active {
@@ -466,7 +478,16 @@
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
+        justify-content: flex-start;
+      }
+
+      .file-info-display i {
+        display: inline-flex;
+        align-items: center;
         justify-content: center;
+        width: 1em;
+        height: 1em;
+        flex-shrink: 0;
       }
 
       .file-info-display.show {
@@ -495,6 +516,15 @@
         border-radius: 50px;
         font-size: 0.78rem;
         font-weight: 600;
+      }
+
+      .file-type-badge i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1em;
+        height: 1em;
+        flex-shrink: 0;
       }
 
       .file-type-badge.img {
@@ -620,7 +650,7 @@
       }
 
       .alert {
-        padding: 14px 18px;
+        padding: 14px 0;
         border-radius: var(--radius);
         font-size: 0.85rem;
         line-height: 1.5;
@@ -656,7 +686,11 @@
 
       .alert-icon {
         display: inline-flex;
-        font-size: 1.2rem;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        font-size: 1.1rem;
         flex-shrink: 0;
       }
 
@@ -665,6 +699,21 @@
       .far,
       .fab {
         vertical-align: -0.125em;
+      }
+
+      /* 统一行内图标与文本的垂直对齐 */
+      .checkbox-group label i,
+      .alert-icon i,
+      .btn i,
+      .file-info-display i,
+      .file-type-badge i,
+      .log-header > span:first-child i,
+      .stage-item .stage-icon i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        vertical-align: middle;
+        line-height: 1;
       }
 
       .footer {
@@ -688,6 +737,7 @@
         flex-wrap: wrap;
         gap: 8px;
         margin-top: 8px;
+        padding-left: 0;
       }
 
       .log-panel {
@@ -699,7 +749,7 @@
       }
 
       .log-header {
-        padding: 10px 16px;
+        padding: 10px 0;
         background: var(--bg);
         cursor: pointer;
         display: flex;
@@ -713,6 +763,16 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        padding-left: 0;
+      }
+
+      .log-header > span:first-child i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
       }
 
       .log-content {
@@ -751,26 +811,80 @@
       }
 
       .checkbox-group {
+        position: relative;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 8px;
         margin-top: 8px;
+        padding-left: 0;
         font-size: 0.85rem;
         color: var(--text-secondary);
       }
 
-      .checkbox-group label {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
+      .checkbox-group input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
       }
 
-      .checkbox-group input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        accent-color: var(--accent);
+      .checkbox-group label {
+        display: inline-block;
+        cursor: pointer;
+        line-height: 1.4;
+        position: relative;
+        padding-left: 36px; /* 28px对齐列 + 8px间距 */
+        padding-top: 4px;
+        min-height: 28px;
+      }
+
+      /* 自定义勾选框：置于28px对齐列内，与步骤编号"1"左对齐 */
+      .checkbox-group label::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
         flex-shrink: 0;
+        border-radius: 50%;
+        background: var(--accent-light);
+        color: var(--accent);
+        font-size: 0.8rem;
+        transition: all var(--transition);
+      }
+
+      .checkbox-group input[type="checkbox"]:checked + label::before {
+        background: var(--accent);
+        color: #fff;
+        content: "\f00c"; /* fa-check */
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+      }
+
+      .checkbox-group input[type="checkbox"]:checked + label i {
+        opacity: 0;
+      }
+
+      /* 图标列：占28px并居中，与"1"对齐；未选中时显示图标，选中时被勾选覆盖 */
+      .checkbox-group label i {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        pointer-events: none;
+        z-index: 1;
       }
 
       /* =============== 多阶段指示器 =============== */
@@ -803,6 +917,12 @@
 
       .stage-item .stage-icon {
         font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1em;
+        height: 1em;
+        flex-shrink: 0;
       }
 
       .stage-item.active {
