@@ -366,11 +366,11 @@
       opacity: 0.6;
     }
 
-    /* 使用说明卡片 */
+    /* 底部提示卡片 */
     .instructions {
       background: var(--card-bg);
       border-radius: 28px;
-      padding: 24px 28px;
+      padding: 16px 20px;
       border: 1px solid var(--border-color);
       box-shadow: var(--card-shadow);
       margin-top: 20px;
@@ -409,7 +409,7 @@
       border-radius: 16px;
       font-family: "SF Mono", "Fira Code", monospace;
       font-size: 0.85rem;
-      margin-top: 12px;
+      margin-top: 0;
       overflow-x: auto;
     }
 
@@ -493,18 +493,8 @@
     <div class="tools-grid" id="toolsGrid"></div>
 
     <div class="instructions">
-      <h2><i class="fas fa-compass"></i> 使用说明</h2>
-      <ol>
-        <li>🔍 点击任意工具卡片，即刻跳转至对应功能页面。</li>
-        <li>✨ 使用上方搜索栏或分类标签快速筛选所需工具。</li>
-        <li>🌓 点击右上角图标可切换日间/暗色主题，适配不同环境。</li>
-        <li>➕ 新增工具只需在脚本顶部的
-          <span class="highlight">TOOLS</span> 数组中追加一项。
-        </li>
-      </ol>
       <div class="code-example">
-        💡 提示：所有工具无需安装，即开即用。<span class="highlight">收藏本页</span>
-        工作更高效
+        💡 新增工具只需在脚本顶部的 <span class="highlight">TOOLS</span> 数组中追加一项
       </div>
     </div>
     <footer>
