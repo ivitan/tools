@@ -184,7 +184,10 @@
   /* ===== Layout ===== */
   .layout {
     display: flex;
+    /* dvh 随移动端地址栏收起/展开动态变化；100vh 是地址栏收起时的最大值，
+       实际可视高度比它小 60~100px，会导致表格底部最后两行被地址栏遮挡 */
     height: calc(100vh - 52px);
+    height: calc(100dvh - 52px);
     position: relative;
   }
   .sidebar {
@@ -1166,8 +1169,8 @@
     .header-actions .btn span { display: none; }
     .header-actions .btn { padding: 0; width: 32px; justify-content: center; }
 
-    /* 抽屉模式 */
-    .layout { height: calc(100vh - 48px); }
+    /* 抽屉模式（dvh 同上：避免底部被地址栏遮挡） */
+    .layout { height: calc(100vh - 48px); height: calc(100dvh - 48px); }
     .sidebar {
       position: fixed;
       top: 48px;
@@ -1178,6 +1181,8 @@
       z-index: 50;
       transform: translateX(-100%);
       box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      /* 高度也用 dvh：抽屉底部不被地址栏挡住（bottom:0 在 iOS 上会延伸到地址栏后面） */
+      height: calc(100dvh - 48px);
     }
     body.sidebar-open .sidebar { transform: translateX(0); }
     /* 手机端桌面折叠按钮隐藏 */
