@@ -1081,7 +1081,7 @@
     cursor: pointer;
     outline: none;
   }
-
+  .pager-text { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
   /* ===== Toast ===== */
   .toast {
     position: fixed;
@@ -1276,7 +1276,7 @@
       gap: 4px;
     }
     .sql-box { width: 100%; font-size: 10px; order: 1; }
-    .pager { width: 100%; justify-content: center; order: 2; }
+    .pager { width: 100%; justify-content: center; order: 2; flex-wrap: wrap; gap: 4px; }
 
     .dropzone { margin: 12px; }
     .dropzone-icon { width: 44px; height: 44px; margin-bottom: 10px; }
@@ -1407,11 +1407,13 @@
       <div class="footer-bar" id="footerBar">
         <div class="sql-box" id="sqlPreview"></div>
         <div class="pager">
-          <button id="btnPrev">上一页</button>
-          <input type="number" id="pageInput" value="1" min="1">
-          <span>/ <span id="totalPages">1</span> 页</span>
-          <button id="btnNext">下一页</button>
-          <select id="pageSize">
+          <button id="btnFirst" title="首页">首页</button>
+          <button id="btnPrev" title="上一页">上一页</button>
+          <input type="number" id="pageInput" value="1" min="1" title="输入页码后回车或失焦跳转">
+          <span class="pager-text">/ <span id="totalPages">1</span> 页</span>
+          <button id="btnNext" title="下一页">下一页</button>
+          <button id="btnLast" title="末页">末页</button>
+          <select id="pageSize" title="每页行数">
             <option value="50">50 行</option>
             <option value="100" selected>100 行</option>
             <option value="200">200 行</option>
@@ -2004,8 +2006,10 @@ function renderDataGrid(db, tab) {
   $('totalPages').textContent = totalPages;
   $('pageInput').value = tab.page;
   $('pageInput').max = totalPages;
+  $('btnFirst').disabled = tab.page <= 1;
   $('btnPrev').disabled = tab.page <= 1;
   $('btnNext').disabled = tab.page >= totalPages;
+  $('btnLast').disabled = tab.page >= totalPages;
   $('footerBar').classList.remove('hidden');
 
   if (rows.length === 0) {
@@ -2794,22 +2798,58 @@ $('searchInput').oninput = (e) => {
 };
 
 // 分页
+function getActiveTabSafe() {
+  return state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+}
+$('btnFirst').onclick = () => {
+  const tab = getActiveTabSafe();
+  if (tab && tab.page > 1) { tab.page = 1; renderContent(); }
+};
 $('btnPrev').onclick = () => {
-  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  const tab = getActiveTabSafe();
   if (tab && tab.page > 1) { tab.page--; renderContent(); }
 };
 $('btnNext').onclick = () => {
-  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  const tab = getActiveTabSafe();
   if (!tab) return;
   const totalPages = parseInt($('totalPages').textContent);
   if (tab.page < totalPages) { tab.page++; renderContent(); }
 };
-$('pageInput').onchange = (e) => {
-  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+$('btnLast').onclick = () => {
+  const tab = getActiveTabSafe();
   if (!tab) return;
-  const p = parseInt(e.target.value);
   const totalPages = parseInt($('totalPages').textContent);
-  if (p >= 1 && p <= totalPages) { tab.page = p; renderContent(); }
+  if (tab.page < totalPages) { tab.page = totalPages; renderContent(); }
+};
+// 输入页数：失焦/回车均跳转，自动夹取到 [1, 总页数]，非法输入回写为当前页。
+// 内联逻辑（仅依赖全局 getActiveTabSafe / renderContent，避免外部函数作用域问题）。
+function clampPageInput(tab, inputEl) {
+  const totalPages = parseInt($('totalPages').textContent) || 1;
+  let p = parseInt(inputEl.value, 10);
+  if (isNaN(p) || p < 1) p = 1;
+  if (p > totalPages) p = totalPages;
+  tab.page = p;
+  inputEl.value = p;
+  renderContent();
+}
+$('pageInput').onchange = (e) => {
+  const tab = getActiveTabSafe();
+  if (tab) clampPageInput(tab, e.target);
+};
+$('pageInput').onkeydown = (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    // 直接用全局 state（避免 onkeydown 闭包解析 getActiveTabSafe / clampPageInput 时的作用域怪象）
+    const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+    if (!tab) return;
+    const totalPages = parseInt($('totalPages').textContent) || 1;
+    let p = parseInt(e.target.value, 10);
+    if (isNaN(p) || p < 1) p = 1;
+    if (p > totalPages) p = totalPages;
+    tab.page = p;
+    e.target.value = p;
+    renderContent();
+  }
 };
 $('pageSize').onchange = (e) => {
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
