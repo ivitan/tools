@@ -501,7 +501,10 @@
 
   /* ===== Tabs ===== */
   .tabs {
-    height: 34px;
+    /* 不能用固定 height：标签页是「表名 + 数据库名」上下两行，固定高度会让
+       .tab 被 stretch 压缩，row1/row2 各被 flex-shrink 削掉一半，文字被截半且两行重叠。
+       改 min-height：没有标签时保持 34px 占位，有标签时按内容自动撑开。 */
+    min-height: 34px;
     padding: 0 14px;
     border-bottom: 1px solid var(--border);
     background: var(--panel);
@@ -511,18 +514,58 @@
     flex-shrink: 0;
     overflow-x: auto;
   }
+  /* 标签页：上下两行显示——上行表名（突出），下行数据库名（小字灰色）。
+     数据库名宽度上限由 JS 在 renderTabs 里按「不超过表名宽度」规则设置 */
   .tab {
-    padding: 0 10px;
+    padding: 4px 10px;
     display: flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1px;
     font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: all 0.12s;
+    position: relative;
+    min-width: 60px;
+    max-width: 220px;
+  }
+  /* 两行都给右上角关闭按钮（16px 宽 + right:4px）预留空间，
+     否则 width:100% 的文本行会被 absolute 的 .tab-close 盖住右半段。
+     flex: none + 固定 line-height：禁止被压缩，否则文字会被截掉下半截。 */
+  .tab-row1 {
+    flex: none;
+    width: 100%;
+    padding-right: 22px;
+    line-height: 17px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .tab-row2 {
+    flex: none;
+    width: 100%;
+    padding-right: 22px;
+    line-height: 14px;
+    font-size: 11px;
+    opacity: 0.55;
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* max-width 由 renderTabs 用离屏探针按「不超过表名宽度」动态设置 */
+  /* max-width 对 inline 元素无效，必须 inline-block，否则 JS 设的上限不生效 */
+  .tab-db-name {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
   }
   .tab:hover { color: var(--text); background: var(--panel-hover); }
   .tab.active {
@@ -535,21 +578,35 @@
     border-bottom-color: var(--primary-hover);
   }
   .tab-close {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
     border: none;
     background: transparent;
-    color: inherit;
+    color: var(--text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.6;
+    opacity: 0.85;
     font-weight: 700;
+    transition: background 0.12s, color 0.12s, opacity 0.12s;
   }
-  .tab-close:hover { background: rgba(0,0,0,0.08); opacity: 1; }
-  [data-theme="dark"] .tab-close:hover { background: rgba(255,255,255,0.14); }
+  /* 整行 hover 时 × 也提亮，提示可点 */
+  .tab:hover .tab-close { opacity: 1; }
+  .tab-close:hover {
+    background: rgba(239,68,68,0.14);
+    color: #ef4444;
+    opacity: 1;
+  }
+  [data-theme="dark"] .tab-close:hover {
+    background: rgba(248,113,113,0.20);
+    color: #f87171;
+  }
 
   /* ===== Content area ===== */
   .content-area {
@@ -695,12 +752,21 @@
 
   /* ===== 表头列筛选 ===== */
   .col-head { cursor: pointer; }
+  /* 表头列内容改为上下两行：上行字段名 + 筛选按钮，下行数据类型（小字） */
   .col-head-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+  }
+  /* 第一行：字段名 + ⌕ + ×，三者在同一行内 flex 布局 */
+  .col-head-row1 {
     display: flex;
     align-items: center;
     gap: 4px;
+    width: 100%;
   }
-  .col-head .col-name { flex: 1; }
+  .col-head .col-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .col-head .col-type { flex: none; }
   .col-filter-toggle {
     width: 18px;
@@ -1723,13 +1789,38 @@ function renderTabs() {
     const dbShort = db?.name.replace(/\.(db|sqlite.*|s3db)$/i, '') || '';
     return `
       <div class="tab ${isActive ? 'active' : ''}" data-key="${key}" title="${escapeHtml(db?.name || '')} / ${t.table === '__SCHEMA__' ? '表结构' : t.table}">
-        <span>${t.table === '__SCHEMA__' ? '表结构' : escapeHtml(t.table)}</span>
-        <span style="opacity:0.45; font-size:11px;">${escapeHtml(dbShort)}</span>
+        <div class="tab-row1">
+          <span class="tab-table-name">${t.table === '__SCHEMA__' ? '表结构' : escapeHtml(t.table)}</span>
+        </div>
+        <div class="tab-row2" title="${escapeHtml(dbShort)}">
+          <span class="tab-db-name">${escapeHtml(dbShort)}</span>
+        </div>
         <button class="tab-close" data-close="${key}" title="关闭">
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>`;
   }).join('');
+
+  // 数据库名按「不超过表名宽度」截断（比表名长则省略后面文字）。
+  // 注意：不能用 span.scrollWidth —— inline 元素的 scrollWidth 恒为 0，会把数据库名压成 0 宽。
+  // 改用离屏探针（absolute + nowrap）测量两段文本的完整像素宽度。
+  const probe = document.createElement('span');
+  probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:0;pointer-events:none;';
+  tabs.appendChild(probe);
+  tabs.querySelectorAll('.tab').forEach(tabEl => {
+    const tName = tabEl.querySelector('.tab-table-name');
+    const dName = tabEl.querySelector('.tab-db-name');
+    if (!tName || !dName) return;
+    probe.style.font = getComputedStyle(tName).font;
+    probe.textContent = tName.textContent;
+    const tableW = probe.getBoundingClientRect().width;
+    probe.style.font = getComputedStyle(dName).font;
+    probe.textContent = dName.textContent;
+    const dbW = probe.getBoundingClientRect().width;
+    // 上限 = 表名宽度 + 6px 余量；下限 32px 保证短名也能完整显示
+    dName.style.maxWidth = Math.max(32, Math.min(dbW, tableW + 6)) + 'px';
+  });
+  probe.remove();
 
   tabs.querySelectorAll('.tab').forEach(el => {
     el.onclick = (e) => {
@@ -2256,10 +2347,12 @@ function buildHeadHtml(columns, colTypes, tab) {
     return `
       <th class="col-head ${filtered ? 'is-filtered' : ''}" data-col="${escapeHtml(c)}">
         <div class="col-head-main">
-          <span class="col-name">${escapeHtml(c)}</span>
-          <button class="col-filter-toggle ${isOpen ? 'is-open' : ''}" data-col-toggle="${escapeHtml(c)}" title="筛选此列">⌕</button>
+          <div class="col-head-row1">
+            <span class="col-name">${escapeHtml(c)}</span>
+            <button class="col-filter-toggle ${isOpen ? 'is-open' : ''}" data-col-toggle="${escapeHtml(c)}" title="筛选此列">⌕</button>
+            ${filtered ? `<button class="col-filter-clear" data-col-clear="${escapeHtml(c)}" title="清除筛选">×</button>` : ''}
+          </div>
           <span class="col-type">${escapeHtml(colTypes[c] || '')}</span>
-          ${filtered ? `<button class="col-filter-clear" data-col-clear="${escapeHtml(c)}" title="清除筛选">×</button>` : ''}
         </div>
         ${summaryHtml}
         ${isOpen ? buildFilterPanelHtml(tab, c) : ''}
