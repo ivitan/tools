@@ -1869,6 +1869,23 @@ function renderTabs() {
       closeTab(el.dataset.close);
     };
   });
+
+  // 点击/打开/切换 tab 后，把当前激活的 tab 横向滚动到可视区：
+  // 标签多、激活项被挤出右侧时，滚动条自动滑到对应位置（仅在不完全可见时才滚动，避免无谓跳动）。
+  const activeTabEl = tabs.querySelector('.tab.active');
+  if (activeTabEl) {
+    const tRect = activeTabEl.getBoundingClientRect();
+    const cRect = tabs.getBoundingClientRect();
+    const tabLeft = tRect.left - cRect.left + tabs.scrollLeft;
+    const tabRight = tRect.right - cRect.left + tabs.scrollLeft;
+    const viewLeft = tabs.scrollLeft;
+    const viewRight = viewLeft + tabs.clientWidth;
+    if (tabLeft < viewLeft) {
+      tabs.scrollTo({ left: Math.max(0, tabLeft - 8), behavior: 'smooth' });
+    } else if (tabRight > viewRight) {
+      tabs.scrollTo({ left: tabRight - tabs.clientWidth + 8, behavior: 'smooth' });
+    }
+  }
 }
 
 /* ================== 内容渲染 ================== */
