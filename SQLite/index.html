@@ -503,8 +503,10 @@
   .tabs {
     /* 不能用固定 height：标签页是「表名 + 数据库名」上下两行，固定高度会让
        .tab 被 stretch 压缩，row1/row2 各被 flex-shrink 削掉一半，文字被截半且两行重叠。
-       改 min-height：没有标签时保持 34px 占位，有标签时按内容自动撑开。 */
-    min-height: 34px;
+       改 min-height：没有标签时保持 34px 占位，有标签时按内容自动撑开。
+       高度预留 ≈ 两行标签(42px) + 横向滚动条(≈6px)，避免桌面浏览器滚动条占用高度时
+       把两行文字裁掉。 */
+    min-height: 48px;
     padding: 0 14px;
     border-bottom: 1px solid var(--border);
     background: var(--panel);
@@ -513,7 +515,15 @@
     gap: 2px;
     flex-shrink: 0;
     overflow-x: auto;
+    overflow-y: hidden;
+    /* 横向滚动条细一点、颜色淡一点，保持整体简洁 */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
   }
+  .tabs::-webkit-scrollbar { height: 6px; }
+  .tabs::-webkit-scrollbar-track { background: transparent; }
+  .tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .tabs::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   /* 标签页：上下两行显示——上行表名（突出），下行数据库名（小字灰色）。
      数据库名宽度上限由 JS 在 renderTabs 里按「不超过表名宽度」规则设置 */
   .tab {
@@ -532,6 +542,9 @@
     position: relative;
     min-width: 60px;
     max-width: 220px;
+    /* 不收缩：标签多时不挤压每个 tab 的宽度（避免名字被进一步截断），
+       超出部分由 .tabs 横向滚动（左右滑动）切换 */
+    flex-shrink: 0;
   }
   /* 两行都给右上角关闭按钮（16px 宽 + right:4px）预留空间，
      否则 width:100% 的文本行会被 absolute 的 .tab-close 盖住右半段。
@@ -756,7 +769,7 @@
   .col-head-main {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 1px;
   }
   /* 第一行：字段名 + ⌕ + ×，三者在同一行内 flex 布局 */
@@ -765,9 +778,12 @@
     align-items: center;
     gap: 4px;
     width: 100%;
+    /* ⌕/× 按钮已改为绝对定位（不占 flex 空间），
+       这里只需保证 col-name 自身能容纳按钮区域且字段名不会和按钮文字重叠 */
+    position: relative;
   }
-  .col-head .col-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .col-head .col-type { flex: none; }
+  .col-head .col-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+  .col-head .col-type { flex: none; text-align: center; }
   .col-filter-toggle {
     width: 18px;
     height: 18px;
@@ -784,6 +800,12 @@
     line-height: 1;
     opacity: 0;
     transition: all 0.12s;
+    /* 绝对定位浮在右上角，不再占 col-name 的横向空间 */
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
   }
   .col-head:hover .col-filter-toggle { opacity: 0.85; }
   .col-filter-toggle:hover { background: var(--primary-soft); color: var(--primary); opacity: 1; }
@@ -803,6 +825,12 @@
     font-size: 13px;
     font-weight: 700;
     line-height: 1;
+    /* 绝对定位贴在 ⌕ 按钮左侧，与 ⌕ 一起浮在右上角 */
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
   }
   .col-filter-clear:hover { background: var(--danger-light); }
   .col-filter-val {
@@ -813,6 +841,7 @@
     max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: center;
   }
   .col-head.is-filtered {
     background: var(--primary-soft) !important;
@@ -963,6 +992,7 @@
     white-space: nowrap;
     color: var(--text);
     user-select: text;
+    text-align: center;
   }
   /* 数据单元格提示可双击复制（排除行号列与表头） */
   .data-table tbody td:not(.row-num) { cursor: copy; }
@@ -973,7 +1003,7 @@
     font-style: italic;
     font-weight: 500;
   }
-  .data-table td.number { text-align: right; font-variant-numeric: tabular-nums; }
+  .data-table td.number { text-align: center; font-variant-numeric: tabular-nums; }
   .data-table td.bool { text-align: center; }
   .data-table td.json { color: var(--primary); font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 11.5px; }
   .row-num {
