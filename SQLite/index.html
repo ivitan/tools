@@ -750,6 +750,17 @@
     box-shadow: inset 0 -2px 0 var(--primary);
   }
   .col-filter-input-wrap { margin-top: 4px; }
+  /* 悬浮面板：挂到 body、fixed 定位在列头正下方。
+     表头行高度不变（面板不占文档流），面板浮在表格上层，出现在用户点击的位置 */
+  .col-filter-input-wrap.col-filter-float {
+    position: fixed;
+    margin-top: 0;
+    z-index: 400;
+  }
+  .col-filter-float .col-filter-panel {
+    width: 250px;
+    box-sizing: border-box;
+  }
   .col-filter-panel {
     display: flex;
     flex-direction: column;
@@ -1149,7 +1160,8 @@
     body { font-size: 13.5px; }
     [data-theme="dark"] body { font-size: 13.5px; }
     .header { height: 48px; padding: 0 10px; gap: 4px; }
-    .logo span { display: none; }
+    /* 手机端也显示标题：小字号 + 超出截断（窄屏设备兜底） */
+    .logo span { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 44vw; }
     .header-actions { gap: 2px; }
     .header-actions .btn span { display: none; }
     .header-actions .btn { padding: 0; width: 32px; justify-content: center; }
@@ -1732,6 +1744,9 @@ function renderContent() {
     state.infiniteObserver = null;
   }
 
+  // 清理上次挂到 body 的悬浮面板（下面 buildHeadHtml 会按需重新生成并挂载）
+  document.querySelectorAll('body > .col-filter-input-wrap').forEach(el => el.remove());
+
   // 记录筛选面板交互状态：输入框焦点（列名+光标位）、候选列表滚动位置
   // 重渲染后恢复，保证「边输入边筛选」「连续勾选」不被打断
   let focusInfo = null;
@@ -1788,10 +1803,13 @@ function renderContent() {
   if (focusInfo) {
     const inp = document.querySelector(`[data-col-input-field="${cssEscape(focusInfo.col)}"]`);
     if (inp) {
-      inp.focus();
+      inp.focus({ preventScroll: true });
       try { inp.setSelectionRange(focusInfo.start, focusInfo.end); } catch (err) {}
     }
   }
+  // 面板打开时挂载为悬浮面板（表头不下移、出现在列头下方）
+  // 注：preserveGridScroll 场景下这里先按当前滚动定位，滚动恢复后其尾部会再校准一次
+  if (tab._openFilterCol) mountFilterPanelFixed(tab._openFilterCol);
   updateFabEnd();
 }
 
@@ -2472,10 +2490,27 @@ async function jumpToEnd() {
 
   // 等一帧，确保最后一块 DOM 完成布局，scrollHeight 才是最新的
   await new Promise(r => requestAnimationFrame(r));
-  const container = $('infiniteContainer');
-  if (container) {
-    container.scrollTop = container.scrollHeight;
-  }
+  // 结果导向的补滚（平板/手机修复）：固定延迟补滚不可靠——
+  // ① 慢设备大表插入后布局完成时间不可预测（可能超过 1 秒），补滚可能全部
+  //    赶在布局完成前执行，scrollHeight 是旧值，之后布局变高也无人再滚；
+  // ② 触摸惯性滚动可持续 1~2 秒，期间程序化 scrollTop 赋值可能被忽略/覆盖
+  //    （PC 鼠标滚动几乎无惯性，所以 PC 上没暴露）。
+  // 因此轮询检测「真正到底 且 scrollHeight 连续两轮稳定」才停止，上限 5 秒。
+  let tries = 0;
+  let lastSh = -1;
+  const keepBottom = () => {
+    const c = $('infiniteContainer');
+    if (!c || !tab.infiniteFinished) return;
+    const sh = c.scrollHeight;          // 本轮统一用同一个值
+    c.scrollTop = sh;
+    const atBottom = c.scrollTop + c.clientHeight >= sh - 4;
+    const stable = sh === lastSh;       // 连续两轮相同 → 布局已稳定
+    lastSh = sh;
+    if ((!atBottom || !stable) && ++tries < 50) {
+      setTimeout(keepBottom, 100);
+    }
+  };
+  keepBottom();
 
   tab._jumping = false;
   if (tab.infiniteFinished && ok) {
@@ -2577,27 +2612,18 @@ $('btnClear').onclick = async () => {
 
 $('btnTheme').onclick = () => theme.toggle();
 
-/* 返回主页（关闭所有数据库与标签页，回到初始空状态） */
+/* 返回主页：跳转到站点根目录（工具门户页） */
 $('btnHome').onclick = async () => {
   if (state.databases.length === 0) {
-    toast('当前已是初始状态', 'success');
+    location.href = '/';
     return;
   }
   const ok = await confirmDialog({
     title: '返回主页',
-    message: '将关闭所有数据库与标签页，回到初始上传界面。',
-    okText: '返回',
+    message: '将离开本工具，跳转到站点主页（根目录 /）。当前打开的数据库不会被保存。',
+    okText: '返回主页',
   });
-  if (!ok) return;
-  state.databases.forEach(d => { try { d.db.close(); } catch {} });
-  state.databases = [];
-  state.openTabs = [];
-  state.activeDbId = null;
-  state.activeTabKey = null;
-  renderSidebar();
-  renderTabs();
-  showDropzone(true);
-  toast('已返回主页', 'success');
+  if (ok) location.href = '/';
 };
 
 // 桌面端侧栏折叠按钮
@@ -2734,23 +2760,85 @@ $('contentArea').addEventListener('dblclick', async (e) => {
    关闭路径（ESC / 点击外部 / 再次点 ⌕）= 丢弃 pending，保留原筛选。
    × 直接清已提交状态（不打开面板的快捷路径）。 */
 
+// 表格滚动容器位置保持：面板打开/关闭/确认前后视图不窜位
+// （renderContent 重建 innerHTML 会让 .grid-container 滚动重置为 0，
+//   用户点开面板后视图会跳回表格左上角，面板"不知去向"）
+function preserveGridScroll(renderFn) {
+  const c = document.querySelector('.grid-container');
+  const saved = c ? { left: c.scrollLeft, top: c.scrollTop } : null;
+  renderFn();
+  const c2 = document.querySelector('.grid-container');
+  if (saved && c2) {
+    c2.scrollLeft = saved.left;
+    c2.scrollTop = saved.top;
+  }
+  // 滚动恢复后再挂载悬浮面板：此时列头位置是最终值，面板定位才准确
+  const tab = getActiveDataTab();
+  if (tab && tab._openFilterCol) mountFilterPanelFixed(tab._openFilterCol);
+}
+
+/* 悬浮面板挂载：把面板从 th 内移到 body（fixed 定位），出现在列头正下方。
+   - 表头行高度不变（面板不占文档流，不会把表格往下推）
+   - 右侧溢出视口时左移；底部溢出时改为列头上方
+   - 幂等：已挂载则只重新定位（滚动/渲染后可重复调用校准位置） */
+function mountFilterPanelFixed(colName) {
+  const sel = `[data-col-input="${cssEscape(colName)}"]`;
+  let wrap = document.querySelector(`body > .col-filter-input-wrap` + sel);
+  if (!wrap) {
+    wrap = document.querySelector(sel);
+    if (!wrap) return;
+    wrap.classList.add('col-filter-float');
+    document.body.appendChild(wrap);
+  }
+  const th = document.querySelector(`th.col-head[data-col="${cssEscape(colName)}"]`);
+  if (!th) return;   // 列头不在（如切到 schema 视图），面板交给 renderContent 清理
+  const r = th.getBoundingClientRect();
+  const pw = wrap.offsetWidth || 250;
+  const ph = wrap.offsetHeight || 300;
+  let left = r.left;
+  const maxLeft = window.innerWidth - pw - 8;
+  if (left > maxLeft) left = Math.max(8, maxLeft);
+  let top = r.bottom + 4;
+  if (top + ph > window.innerHeight - 8) {
+    top = Math.max(8, r.top - ph - 4);   // 放不下则改列头上方
+  }
+  wrap.style.left = left + 'px';
+  wrap.style.top = top + 'px';
+}
+
 // 打开筛选面板：从已提交值拷一份到 pending 作初始值
 function setFilterPanelOpen(tab, colName) {
   const cur = Array.isArray(tab.columnChecks && tab.columnChecks[colName]) ? tab.columnChecks[colName] : [];
   tab._pendingChecks = { ...(tab._pendingChecks || {}), [colName]: [...cur] };
   tab._pendingLike = { ...(tab._pendingLike || {}), [colName]: (tab.columnFilters && tab.columnFilters[colName]) || '' };
   tab._openFilterCol = colName;
-  renderContent();
+  preserveGridScroll(() => renderContent());
+  // preventScroll：焦点不触发浏览器自动滚动（面板就在点击位置，无需滚动）
   const input = document.querySelector(`[data-col-input-field="${cssEscape(colName)}"]`);
-  if (input) { input.focus(); input.select(); }
+  if (input) { input.focus({ preventScroll: true }); input.select(); }
 }
 
 // 关闭并丢弃 pending（用于 ESC / 点击外部 / 再次点 ⌕）
 function closeFilterPanelDiscard(tab) {
   if (!tab || !tab._openFilterCol) return false;
   tab._openFilterCol = null;
-  renderContent();
+  preserveGridScroll(() => renderContent());
   return true;
+}
+
+// 轻量关闭：只移除悬浮面板节点 + 复位 ⌕ 图标，不重渲染表格。
+// 用于滚动/resize 场景——fixed 面板不跟随列头，位置已错位必须关，
+// 但滚动是高频事件，走全表重渲染（无限模式可能几千行）会卡顿。
+function closeFilterPanelLight() {
+  const tab = getActiveDataTab();
+  const wraps = document.querySelectorAll('body > .col-filter-input-wrap');
+  if (!wraps.length && !(tab && tab._openFilterCol)) return;
+  wraps.forEach(el => el.remove());
+  if (!tab || !tab._openFilterCol) return;
+  const col = tab._openFilterCol;
+  tab._openFilterCol = null;
+  const btn = document.querySelector(`.col-filter-toggle[data-col-toggle="${cssEscape(col)}"]`);
+  if (btn) btn.classList.remove('is-open');
 }
 
 // 读取某列当前 pending 勾选数组（不存在则从已提交值初始化）
@@ -2808,7 +2896,8 @@ function refreshPanelCount(tab, colName) {
 }
 
 // 点击交互：toggle / × / 全选 / 清空勾选 / 确认 / 列头切换
-$('contentArea').addEventListener('click', (e) => {
+// （挂 document：悬浮面板在 body 下，事件不再经过 contentArea）
+document.addEventListener('click', (e) => {
   // 切换按钮（⌕）→ 打开或关闭面板（关闭时丢弃 pending）
   const toggle = e.target.closest('[data-col-toggle]');
   if (toggle) {
@@ -2889,7 +2978,7 @@ $('contentArea').addEventListener('click', (e) => {
       }
       tab._openFilterCol = null;
       resetTabLoading(tab);
-      renderContent();
+      preserveGridScroll(() => renderContent());
     }
     e.stopPropagation();
     return;
@@ -2908,8 +2997,8 @@ $('contentArea').addEventListener('click', (e) => {
   }
 });
 
-// checkbox 变化 → 操作 pending（不重渲染）
-$('contentArea').addEventListener('change', (e) => {
+// checkbox 变化 → 操作 pending（不重渲染；挂 document 以覆盖悬浮面板）
+document.addEventListener('change', (e) => {
   const cb = e.target.closest('[data-col-check]');
   if (!cb) return;
   const colName = cb.dataset.colCheck;
@@ -2926,8 +3015,8 @@ $('contentArea').addEventListener('change', (e) => {
   refreshPanelCount(tab, colName);
 });
 
-// 输入框 → ① 立即过滤候选词 ② 仅写 pending（不触发 SQL）
-$('contentArea').addEventListener('input', (e) => {
+// 输入框 → ① 立即过滤候选词 ② 仅写 pending（不触发 SQL；挂 document 以覆盖悬浮面板）
+document.addEventListener('input', (e) => {
   const input = e.target.closest('.col-filter-input');
   if (!input) return;
   const colName = input.dataset.colInputField;
@@ -2959,8 +3048,33 @@ function cssEscape(s) {
   return String(s).replace(/[^a-zA-Z0-9_-]/g, c => '\\' + c);
 }
 
+// 悬浮筛选面板是 fixed 定位、不跟随列头：滚动导致列头移位后把面板重新对齐到列头当前位置。
+// 不能在错位时直接关闭：手机软键盘弹出会引发 resize + 页面滚动，面板若被关闭，
+// 用户会「还没来得及勾选/输入」就消失。重新对齐后面板持续可用（类似 Excel 筛选体验）。
+// scroll 事件不冒泡，必须用捕获阶段监听；面板内部滚动（候选列表）除外。
+document.addEventListener('scroll', (e) => {
+  const t = e.target;
+  if (t instanceof Element && t.closest('.col-filter-input-wrap')) return;
+  const tab = getActiveDataTab();
+  const wrap = document.querySelector('body > .col-filter-input-wrap');
+  if (!wrap || !tab || !tab._openFilterCol) return;
+  const th = document.querySelector(`th.col-head[data-col="${cssEscape(tab._openFilterCol)}"]`);
+  if (!th) { closeFilterPanelLight(); return; }
+  const wr = wrap.getBoundingClientRect();
+  const tr = th.getBoundingClientRect();
+  // 面板应在列头正下方（常规）或列头上方（视口底部放不下时），横向与列头对齐
+  const okBelow = wr.top >= tr.bottom - 4 && wr.top <= tr.bottom + 8;
+  const okAbove = wr.bottom <= tr.top + 4 && wr.bottom >= tr.top - 8;
+  const alignedX = Math.abs(wr.left - tr.left) <= 6;
+  if (!(alignedX && (okBelow || okAbove))) mountFilterPanelFixed(tab._openFilterCol);
+}, true);
+
 // 响应窗口尺寸变化
 window.addEventListener('resize', () => {
+  // 手机/平板上打开面板会 focus 输入框 → 软键盘弹出 → 视口 resize。
+  // 此时不能关闭面板（用户还没来得及勾选），而是把面板重新对齐到列头当前位置。
+  const tab = getActiveDataTab();
+  if (tab && tab._openFilterCol) mountFilterPanelFixed(tab._openFilterCol);
   const nowMobile = matchMedia('(max-width: 768px)').matches;
   if (nowMobile !== state.isMobile) {
     state.isMobile = nowMobile;
