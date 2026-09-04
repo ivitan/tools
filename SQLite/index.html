@@ -1509,6 +1509,11 @@ async function loadDatabase(file) {
     state.databases.push(dbObj);
     state.activeDbId = dbObj.id;
     renderSidebar();
+    // 导入成功后收起上传区，进入「已就绪，等待选表」状态。
+    // 早期版本靠自动 openTab 顺带触发 showDropzone(false)，需求「导入后不自动打开表」
+    // 改掉后这条路径断了，导致上传区一直显示、表格区一直隐藏。
+    showDropzone(false);
+    renderContent();     // 未打开任何表时，刷新主区为「从左侧选择一张表查看数据」
     if (isMobile()) closeDrawer();
     toast(`已加载 ${file.name}`, 'success');
   } catch (e) {
@@ -1700,7 +1705,9 @@ function closeTab(key) {
   renderSidebar();          // 同步左侧表名高亮
   renderTabs();
   renderContent();
-  if (state.openTabs.length === 0) showDropzone(true);
+  // 上传区只在「一个数据库都没有」时出现：关闭标签但数据库还在时，
+  // 应保持 dataView 的「从左侧选择一张表查看数据」提示，而不是跳回上传区
+  if (state.databases.length === 0) showDropzone(true);
 }
 
 function renderTabs() {
@@ -1766,7 +1773,11 @@ function renderContent() {
   if (!tab) {
     $('contentArea').innerHTML = `<div class="empty-content">从左侧选择一张表查看数据</div>`;
     $('footerBar').classList.add('hidden');
-    $('dataView').style.display = state.openTabs.length === 0 ? 'none' : 'flex';
+    // 按「有没有数据库」判断：只有完全没有任何数据库时（此时由 showDropzone(true)
+    // 负责显示上传区）才隐藏 dataView；否则保持显示，让「选表」提示可见。
+    // 若按 openTabs 判断，未打开任何表时 dataView 会被隐藏，而上传区也已被
+    // showDropzone(false) 隐藏 → 主区域一片空白。
+    $('dataView').style.display = state.databases.length === 0 ? 'none' : 'flex';
     return;
   }
   $('dataView').style.display = 'flex';
