@@ -853,6 +853,17 @@
   .fab-end:active { transform: translateY(0); }
   .fab-end:disabled { opacity: 0.4; cursor: not-allowed; }
   [data-theme="dark"] .fab-end { border-color: var(--border-hover); }
+  /* 加载中：箭头换成转圈 */
+  .fab-end.loading svg { display: none; }
+  .fab-end.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
   @media (max-width: 768px) {
     .fab-end { right: 16px; bottom: 16px; width: 44px; height: 44px; }
   }
@@ -1295,7 +1306,13 @@ function renderSidebar() {
     return;
   }
 
-  list.innerHTML = state.databases.map(d => {
+  // 按数据库名称升序排序（自然排序：db2 在 db10 前；中文按拼音；忽略大小写）
+  const sortedDbs = [...state.databases].sort((a, b) =>
+    a.name.localeCompare(b.name, 'zh-CN', { numeric: true, sensitivity: 'base' })
+    || a.name.localeCompare(b.name, 'zh-CN')
+  );
+
+  list.innerHTML = sortedDbs.map(d => {
     const isActive = d.id === state.activeDbId;
     const tablesHtml = d.tables.map(t => `
       <div class="table-item" data-db="${d.id}" data-table="${t.name}" title="${escapeHtml(t.name)} · ${formatNum(t.count)} 行">
@@ -1778,7 +1795,7 @@ function setupInfiniteObserver(db, tab) {
 
   state.infiniteObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      if (entry.isIntersecting && !tab.infiniteFinished && !tab._loading) {
+      if (entry.isIntersecting && !tab.infiniteFinished && !tab._loading && !tab._jumping) {
         loadInfiniteBatch(db, tab);
       }
     });
@@ -1899,30 +1916,53 @@ function updateFabEnd() {
     return;
   }
   fab.classList.add('show');
-  fab.disabled = !!tab.infiniteFinished;
+  // 已全部加载完、或正在跳转中 → 禁用（避免连点重入）
+  fab.disabled = !!tab.infiniteFinished || !!tab._jumping;
+  fab.classList.toggle('loading', !!tab._jumping);
 }
 
-// 一键到后一行：把剩余数据一次性补拉到全部，再滚动到网格底部
+// 一键到最后一行：把剩余数据一次性补拉到全部，再滚动到网格底部
 async function jumpToEnd() {
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
   if (!tab || tab.table === '__SCHEMA__' || tab.loadMode !== 'infinite') return;
+  if (tab._jumping) return;                 // 防重入
   const db = state.databases.find(d => d.id === tab.dbId);
   if (!db) return;
-
-  fab.disabled = true;
-  // 逐批补拉直到全部完成（每次让出主线程一帧，避免大表一次性卡死）
-  while (!tab.infiniteFinished) {
-    loadInfiniteBatch(db, tab);
-    if (!tab._loading) break;   // 出错或完成
-    await new Promise(r => setTimeout(r, 0));
+  if (tab.infiniteFinished) {               // 已到底，直接滚
+    const c = $('infiniteContainer');
+    if (c) c.scrollTop = c.scrollHeight;
+    return;
   }
-  // 滚动到底部
+
+  tab._jumping = true;
+  updateFabEnd();                            // 立刻切到 loading 态
+
+  // 逐批补拉直到全部完成。
+  // 注意：loadInfiniteBatch 是同步函数，返回时 _loading 已复位，
+  // 因此必须依据 infinitePage 是否推进来判断本批是否真的加载了新数据。
+  const MAX_BATCH = 100000;
+  let batches = 0;
+  while (!tab.infiniteFinished && batches < MAX_BATCH) {
+    const before = tab.infinitePage;
+    loadInfiniteBatch(db, tab);
+    if (tab.infinitePage === before) break;  // 未推进（出错或已结束）→ 停止
+    batches++;
+    // 让出主线程并等一帧：保证 UI 刷新进度、布局完成
+    await new Promise(r => requestAnimationFrame(r));
+  }
+
+  // 再等一帧，确保最后一批 DOM 已完成布局，scrollHeight 才是最新的
+  await new Promise(r => requestAnimationFrame(r));
   const container = $('infiniteContainer');
   if (container) {
     container.scrollTop = container.scrollHeight;
   }
+
+  tab._jumping = false;
   if (tab.infiniteFinished) {
     toast(`已跳到最后一行，共 ${formatNum(tab.infiniteLoaded.length)} 行`, 'success');
+  } else {
+    toast(`已加载 ${formatNum(tab.infiniteLoaded.length)} 行，未到末尾`, 'error');
   }
   updateFabEnd();
 }
