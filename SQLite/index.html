@@ -689,6 +689,190 @@
     font-family: "SF Mono", Monaco, Consolas, monospace;
     letter-spacing: 0.2px;
   }
+
+  /* ===== 表头列筛选 ===== */
+  .col-head { cursor: pointer; }
+  .col-head-main {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .col-head .col-name { flex: 1; }
+  .col-head .col-type { flex: none; }
+  .col-filter-toggle {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    opacity: 0;
+    transition: all 0.12s;
+  }
+  .col-head:hover .col-filter-toggle { opacity: 0.85; }
+  .col-filter-toggle:hover { background: var(--primary-soft); color: var(--primary); opacity: 1; }
+  .col-head.is-filtered .col-filter-toggle { opacity: 1; color: var(--primary); }
+  .col-filter-toggle.is-open { opacity: 1; background: var(--primary-soft); color: var(--primary); }
+  .col-filter-clear {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: var(--danger);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .col-filter-clear:hover { background: var(--danger-light); }
+  .col-filter-val {
+    margin-top: 2px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--primary);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .col-head.is-filtered {
+    background: var(--primary-soft) !important;
+    box-shadow: inset 0 -2px 0 var(--primary);
+  }
+  .col-filter-input-wrap { margin-top: 4px; }
+  .col-filter-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 7px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel);
+    box-shadow: var(--shadow-lg);
+    min-width: 200px;
+    text-align: left;
+  }
+  .col-filter-input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 24px;
+    padding: 0 6px;
+    border: 1px solid var(--border-hover);
+    border-radius: 4px;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 12px;
+    outline: none;
+    user-select: text;
+  }
+  .col-filter-input:focus { border-color: var(--primary); }
+  .col-filter-input::placeholder { color: var(--text-muted); font-size: 11px; }
+  .col-filter-tools {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .col-filter-tool-btn {
+    height: 21px;
+    padding: 0 9px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .col-filter-tool-btn:hover { border-color: var(--primary); color: var(--primary); }
+  /* 确认按钮：主色突出，面板中最重要的操作 */
+  .col-filter-tool-btn.col-filter-confirm {
+    margin-left: auto;
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    font-weight: 600;
+  }
+  .col-filter-tool-btn.col-filter-confirm:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: #fff;
+  }
+  .col-filter-count {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--primary);
+    white-space: nowrap;
+  }
+  .col-filter-options {
+    display: flex;
+    flex-direction: column;
+    max-height: 190px;
+    overflow-y: auto;
+    border: 1px solid var(--table-row-border);
+    border-radius: 4px;
+    padding: 2px;
+  }
+  .col-filter-options:empty { display: none; }
+  .col-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    min-width: 0;
+    color: var(--text);
+  }
+  .col-filter-option:hover { background: var(--row-hover); }
+  .col-filter-option input[type="checkbox"] {
+    flex: none;
+    margin: 0;
+    width: 13px;
+    height: 13px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+  .col-filter-option .opt-val {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 11.5px;
+  }
+  .col-filter-option .opt-count {
+    flex: none;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-soft);
+    border-radius: 9px;
+    padding: 0 7px;
+    line-height: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .col-filter-option .opt-null {
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+  .col-filter-more {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
   .data-table td {
     padding: 6px 10px;
     border-bottom: 1px solid var(--table-row-border);
@@ -1465,6 +1649,10 @@ function openTab(dbId, tableName) {
       page: 1,
       pageSize: 100,
       filter: '',
+      columnFilters: {},          // 按列模糊筛选：{ 列名: '关键词' }，与 filter AND 组合
+      columnChecks: {},           // 按列勾选筛选：{ 列名: [值...] }，IN 精确匹配，与模糊词 AND 组合
+      _pendingChecks: {},         // 面板打开时的勾选副本（点确认才写入 columnChecks）
+      _pendingLike: {},           // 面板打开时的模糊词副本（点确认才写入 columnFilters）
       loadMode: state.loadMode,   // 跟随全局当前模式
       infinitePage: 0,
       infiniteLoaded: [],
@@ -1544,6 +1732,16 @@ function renderContent() {
     state.infiniteObserver = null;
   }
 
+  // 记录筛选面板交互状态：输入框焦点（列名+光标位）、候选列表滚动位置
+  // 重渲染后恢复，保证「边输入边筛选」「连续勾选」不被打断
+  let focusInfo = null;
+  const ae = document.activeElement;
+  if (ae && ae.classList && ae.classList.contains('col-filter-input') && ae.dataset.colInputField) {
+    focusInfo = { col: ae.dataset.colInputField, start: ae.selectionStart, end: ae.selectionEnd };
+  }
+  const prevPanel = document.querySelector('.col-filter-options');
+  const prevPanelScroll = prevPanel ? prevPanel.scrollTop : null;
+
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
   if (!tab) {
     $('contentArea').innerHTML = `<div class="empty-content">从左侧选择一张表查看数据</div>`;
@@ -1579,6 +1777,19 @@ function renderContent() {
       renderInfiniteGrid(db, tab);
     } else {
       renderDataGrid(db, tab);
+    }
+  }
+
+  // 恢复筛选面板：候选列表滚动位置 + 输入框焦点与光标
+  const newPanel = document.querySelector('.col-filter-options');
+  if (newPanel && typeof prevPanelScroll === 'number') {
+    newPanel.scrollTop = prevPanelScroll;
+  }
+  if (focusInfo) {
+    const inp = document.querySelector(`[data-col-input-field="${cssEscape(focusInfo.col)}"]`);
+    if (inp) {
+      inp.focus();
+      try { inp.setSelectionRange(focusInfo.start, focusInfo.end); } catch (err) {}
     }
   }
   updateFabEnd();
@@ -1630,13 +1841,12 @@ function renderDataGrid(db, tab) {
     return;
   }
   const offset = (tab.page - 1) * tab.pageSize;
+  const where = buildWhereClause(tab, t);
   let sql, countSql, params;
-  if (tab.filter) {
-    const whereCols = t.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
-    const likeVal = `%${tab.filter}%`;
-    sql = `SELECT * FROM "${tab.table}" WHERE ${whereCols} LIMIT ${tab.pageSize} OFFSET ${offset}`;
-    countSql = `SELECT COUNT(*) FROM "${tab.table}" WHERE ${whereCols}`;
-    params = t.cols.map(() => likeVal);
+  if (where) {
+    sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql} LIMIT ${tab.pageSize} OFFSET ${offset}`;
+    countSql = `SELECT COUNT(*) FROM "${tab.table}" WHERE ${where.sql}`;
+    params = where.params;
   } else {
     sql = `SELECT * FROM "${tab.table}" LIMIT ${tab.pageSize} OFFSET ${offset}`;
     countSql = `SELECT COUNT(*) FROM "${tab.table}"`;
@@ -1693,16 +1903,7 @@ function renderDataGrid(db, tab) {
   const colTypes = {};
   t.cols.forEach(c => colTypes[c.name] = c.type);
 
-  const headHtml = `
-    <tr>
-      <th class="row-num">#</th>
-      ${columns.map(c => `
-        <th>
-          ${escapeHtml(c)}
-          <span class="col-type">${escapeHtml(colTypes[c] || '')}</span>
-        </th>
-      `).join('')}
-    </tr>`;
+  const headHtml = buildHeadHtml(columns, colTypes, tab);
 
   const bodyHtml = rows.map((row, i) => {
     const cells = columns.map(c => {
@@ -1761,11 +1962,11 @@ function renderInfiniteGrid(db, tab) {
   const columns = t.cols.map(c => c.name);
 
   // 先计算总行数（用于状态条）
+  const where0 = buildWhereClause(tab, t);
   let countSql, countParams;
-  if (tab.filter) {
-    const whereCols = t.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
-    countSql = `SELECT COUNT(*) FROM "${tab.table}" WHERE ${whereCols}`;
-    countParams = t.cols.map(() => `%${tab.filter}%`);
+  if (where0) {
+    countSql = `SELECT COUNT(*) FROM "${tab.table}" WHERE ${where0.sql}`;
+    countParams = where0.params;
   } else {
     countSql = `SELECT COUNT(*) FROM "${tab.table}"`;
     countParams = [];
@@ -1786,16 +1987,7 @@ function renderInfiniteGrid(db, tab) {
   tab._colTypes = colTypes;
 
   // 渲染骨架
-  const headHtml = `
-    <tr>
-      <th class="row-num">#</th>
-      ${columns.map(c => `
-        <th>
-          ${escapeHtml(c)}
-          <span class="col-type">${escapeHtml(colTypes[c] || '')}</span>
-        </th>
-      `).join('')}
-    </tr>`;
+  const headHtml = buildHeadHtml(columns, colTypes, tab);
 
   $('contentArea').innerHTML = `
     <div class="data-wrap">
@@ -1854,6 +2046,196 @@ function setupInfiniteObserver(db, tab) {
 /* 把一批行对象渲染成 <tr> HTML 字符串（分页/无限/快速到底共用）。
    startIndex = 本批第一行对应的「已加载行数」，用于行号。
    escape 结果在 title 与内容间复用，避免每行每列算两次。 */
+
+/* 构建 WHERE 子句：顶部搜索（跨列 OR） + 列筛选（精确列 AND）。
+   列筛选含两种来源，同列 AND 组合：
+   - columnFilters[col] = '关键词'  → LIKE 模糊匹配
+   - columnChecks[col]  = [值...]   → IN 精确匹配（数组元素为 null 表示勾了 NULL）
+   返回 { sql, params }，无任何筛选时返回 null。 */
+function buildWhereClause(tab, table) {
+  const parts = [];
+  const params = [];
+  // 顶部搜索：所有列 OR LIKE
+  if (tab.filter) {
+    const likeVal = `%${tab.filter}%`;
+    const ors = table.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
+    parts.push(`(${ors})`);
+    for (let i = 0; i < table.cols.length; i++) params.push(likeVal);
+  }
+  // 列筛选（模糊 LIKE）：多个 AND
+  const colFilters = tab.columnFilters || {};
+  for (const colName of Object.keys(colFilters)) {
+    const v = (colFilters[colName] || '').trim();
+    if (!v) continue;
+    if (!table.cols.find(c => c.name === colName)) continue;   // 列已被删
+    parts.push(`CAST("${colName}" AS TEXT) LIKE ?`);
+    params.push(`%${v}%`);
+  }
+  // 列筛选（勾选 IN 精确）：多个 AND；勾了 NULL 时追加 IS NULL 分支
+  const colChecks = tab.columnChecks || {};
+  for (const colName of Object.keys(colChecks)) {
+    const vals = colChecks[colName];
+    if (!Array.isArray(vals) || !vals.length) continue;
+    if (!table.cols.find(c => c.name === colName)) continue;   // 列已被删
+    const hasNull = vals.includes(null);
+    const real = vals.filter(v => v !== null);
+    const castCol = `CAST("${colName}" AS TEXT)`;
+    let expr;
+    if (real.length && hasNull) {
+      expr = `(${castCol} IN (${real.map(() => '?').join(',')}) OR ${castCol} IS NULL)`;
+    } else if (real.length) {
+      expr = `${castCol} IN (${real.map(() => '?').join(',')})`;
+    } else {
+      expr = `${castCol} IS NULL`;
+    }
+    parts.push(expr);
+    params.push(...real);
+  }
+  if (!parts.length) return null;
+  return { sql: parts.join(' AND '), params };
+}
+
+/* ================== 列筛选：高频候选词 ================== */
+const COL_STATS_LIMIT = 30;   // 候选词最多展示数（多取 1 条用于探测是否还有更多）
+
+// 当前激活的数据表 tab（schema 视图返回 null）
+function getActiveDataTab() {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab || tab.table === '__SCHEMA__') return null;
+  return tab;
+}
+
+// 筛选条件变化后重置分页/无限加载状态
+function resetTabLoading(tab) {
+  tab.page = 1;
+  tab.infinitePage = 0;
+  tab.infiniteLoaded = [];
+  tab.infiniteCount = 0;
+  tab.infiniteFinished = false;
+}
+
+/* 统计某列高频值：GROUP BY 全表按计数降序取前 N。
+   结果缓存到 tab._columnStats[col]（工具只读数据库，缓存不会过期）。
+   返回 { entries: [{v, c}], more, error }，v 为 null 表示 NULL 组。 */
+function getColumnStats(db, tab, colName) {
+  if (!tab._columnStats) tab._columnStats = {};
+  if (tab._columnStats[colName]) return tab._columnStats[colName];
+  const entries = [];
+  let more = false, error = null;
+  try {
+    const stmt = db.db.prepare(
+      `SELECT CAST("${colName}" AS TEXT) AS v, COUNT(*) AS c ` +
+      `FROM "${tab.table}" GROUP BY v ORDER BY c DESC LIMIT ${COL_STATS_LIMIT + 1}`
+    );
+    while (stmt.step()) {
+      const o = stmt.getAsObject();
+      entries.push({ v: o.v === undefined ? null : o.v, c: o.c });
+    }
+    stmt.free();
+    if (entries.length > COL_STATS_LIMIT) {
+      more = true;
+      entries.length = COL_STATS_LIMIT;
+    }
+  } catch (e) {
+    error = e.message || String(e);
+  }
+  const result = { entries, more, error };
+  tab._columnStats[colName] = result;
+  return result;
+}
+
+/* 构建列筛选面板 HTML。
+   面板内的勾选/输入都操作 pending 副本（tab._pendingChecks/_pendingLike），
+   不直接触发表格重渲染；点「确认」才一次性写回 tab.columnChecks/columnFilters。
+   取消关闭（ESC / 点击外部 / 再次点击 ⌕）则 pending 丢弃，保留原筛选。 */
+function buildFilterPanelHtml(tab, colName) {
+  const pendingChecks = (tab._pendingChecks && tab._pendingChecks[colName]) || [];
+  const pendingLike = (tab._pendingLike && tab._pendingLike[colName]) || '';
+  const db = state.databases.find(d => d.id === tab.dbId);
+  let optionsHtml = '';
+  let footHtml = '';
+  if (db) {
+    const stats = getColumnStats(db, tab, colName);
+    if (stats.error) {
+      footHtml = `<div class="col-filter-more">候选统计失败，可使用上方输入框模糊筛选</div>`;
+    } else if (!stats.entries.length) {
+      footHtml = `<div class="col-filter-more">该列暂无数据</div>`;
+    } else {
+      const s = (pendingLike || '').trim().toLowerCase();
+      optionsHtml = stats.entries.map(en => {
+        const isNull = en.v === null;
+        const raw = isNull ? '' : String(en.v);
+        const checked = isNull ? pendingChecks.includes(null) : pendingChecks.includes(raw);
+        const valAttr = escapeHtml(raw);
+        const isNullAttr = isNull ? ' data-isnull="1"' : '';
+        const hiddenAttr = (s && !raw.toLowerCase().includes(s)) ? ' style="display:none;"' : '';
+        return `
+          <label class="col-filter-option" data-val="${valAttr}"${isNullAttr}${hiddenAttr} title="${isNull ? 'NULL' : valAttr}">
+            <input type="checkbox" data-col-check="${escapeHtml(colName)}" value="${valAttr}"${isNullAttr}${checked ? ' checked' : ''}>
+            <span class="opt-val">${isNull ? '<i class="opt-null">NULL</i>' : escapeHtml(raw)}</span>
+            <span class="opt-count">${formatNum(en.c)}</span>
+          </label>`;
+      }).join('');
+      if (stats.more) {
+        footHtml = `<div class="col-filter-more">仅显示前 ${COL_STATS_LIMIT} 个高频值，其余可用输入框模糊筛选</div>`;
+      }
+    }
+  }
+  const checkedCount = pendingChecks.length;
+  return `
+    <div class="col-filter-input-wrap" data-col-input="${escapeHtml(colName)}">
+      <div class="col-filter-panel">
+        <input type="text" class="col-filter-input" placeholder="模糊筛选 / 过滤候选…" value="${escapeHtml(pendingLike)}" data-col-input-field="${escapeHtml(colName)}">
+        <div class="col-filter-tools">
+          <button type="button" class="col-filter-tool-btn" data-col-selectall="${escapeHtml(colName)}">全选</button>
+          <button type="button" class="col-filter-tool-btn" data-col-clearchecks="${escapeHtml(colName)}">清空勾选</button>
+          ${checkedCount ? `<span class="col-filter-count">已选 ${checkedCount}</span>` : ''}
+          <button type="button" class="col-filter-tool-btn col-filter-confirm" data-col-confirm="${escapeHtml(colName)}">确认</button>
+        </div>
+        <div class="col-filter-options">${optionsHtml}</div>
+        ${footHtml}
+      </div>
+    </div>`;
+}
+
+/* 构建表头 HTML：每列可点击展开筛选面板。
+   tab._openFilterCol 记录当前展开面板的列（重渲染后保持展开）。
+   tab.columnFilters[col]=字符串 → LIKE；tab.columnChecks[col]=数组 → IN。
+   面板打开时使用 tab._pendingChecks/_pendingLike（独立副本），不显示在摘要里。 */
+function buildHeadHtml(columns, colTypes, tab) {
+  const filters = tab.columnFilters || {};
+  const checks = tab.columnChecks || {};
+  const openCol = tab._openFilterCol || null;
+  const cols = columns.map(c => {
+    const likeVal = filters[c] || '';
+    const checkedVals = Array.isArray(checks[c]) ? checks[c] : [];
+    const filtered = !!likeVal || checkedVals.length > 0;
+    // 摘要展示已提交的筛选（pending 不显示，pending 是面板预览态）
+    let summaryHtml = '';
+    if (checkedVals.length) {
+      const list = checkedVals.map(v => v === null ? 'NULL' : String(v)).join('、');
+      summaryHtml = `<div class="col-filter-val" title="已选 ${checkedVals.length} 项：${escapeHtml(list)}">已选 ${checkedVals.length} 项</div>`;
+    } else if (likeVal) {
+      summaryHtml = `<div class="col-filter-val" title="${escapeHtml(likeVal)}">${escapeHtml(likeVal)}</div>`;
+    }
+    const isOpen = openCol === c;
+    return `
+      <th class="col-head ${filtered ? 'is-filtered' : ''}" data-col="${escapeHtml(c)}">
+        <div class="col-head-main">
+          <span class="col-name">${escapeHtml(c)}</span>
+          <button class="col-filter-toggle ${isOpen ? 'is-open' : ''}" data-col-toggle="${escapeHtml(c)}" title="筛选此列">⌕</button>
+          <span class="col-type">${escapeHtml(colTypes[c] || '')}</span>
+          ${filtered ? `<button class="col-filter-clear" data-col-clear="${escapeHtml(c)}" title="清除筛选">×</button>` : ''}
+        </div>
+        ${summaryHtml}
+        ${isOpen ? buildFilterPanelHtml(tab, c) : ''}
+      </th>`;
+  }).join('');
+  return `<tr><th class="row-num">#</th>${cols}</tr>`;
+}
+
+/* 把一批行对象渲染成 <tr> HTML 字符串（分页/无限/快速到底共用）。
+   startIndex = 本批第一行对应的「已加载行数」，用于行号。 */
 function buildRowsHtml(rows, columns, startIndex) {
   const out = [];
   for (let i = 0; i < rows.length; i++) {
@@ -1887,11 +2269,11 @@ function loadInfiniteBatch(db, tab) {
 
   // offset 统一取「已加载行数」，保证与普通分页路径口径一致
   const offset = tab.infiniteCount || 0;
+  const where = buildWhereClause(tab, t);
   let sql, params;
-  if (tab.filter) {
-    const whereCols = t.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
-    sql = `SELECT * FROM "${tab.table}" WHERE ${whereCols} LIMIT ${tab.pageSize} OFFSET ${offset}`;
-    params = t.cols.map(() => `%${tab.filter}%`);
+  if (where) {
+    sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql} LIMIT ${tab.pageSize} OFFSET ${offset}`;
+    params = where.params;
   } else {
     sql = `SELECT * FROM "${tab.table}" LIMIT ${tab.pageSize} OFFSET ${offset}`;
     params = [];
@@ -2009,11 +2391,11 @@ async function loadRemainingToEnd(db, tab) {
 
   while (!tab.infiniteFinished && guard++ < MAX_ROUND) {
     const offset = tab.infiniteCount || 0;
+    const where = buildWhereClause(tab, t);
     let sql, params;
-    if (tab.filter) {
-      const whereCols = t.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
-      sql = `SELECT * FROM "${tab.table}" WHERE ${whereCols} LIMIT ${CHUNK} OFFSET ${offset}`;
-      params = t.cols.map(() => `%${tab.filter}%`);
+    if (where) {
+      sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql} LIMIT ${CHUNK} OFFSET ${offset}`;
+      params = where.params;
     } else {
       sql = `SELECT * FROM "${tab.table}" LIMIT ${CHUNK} OFFSET ${offset}`;
       params = [];
@@ -2114,11 +2496,11 @@ function exportCSV() {
   }
   const db = state.databases.find(d => d.id === tab.dbId);
   const t = db.tables.find(x => x.name === tab.table);
+  const where = buildWhereClause(tab, t);
   let sql, params;
-  if (tab.filter) {
-    const whereCols = t.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
-    sql = `SELECT * FROM "${tab.table}" WHERE ${whereCols}`;
-    params = t.cols.map(() => `%${tab.filter}%`);
+  if (where) {
+    sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql}`;
+    params = where.params;
   } else {
     sql = `SELECT * FROM "${tab.table}"`;
     params = [];
@@ -2268,8 +2650,10 @@ $('searchInput').oninput = (e) => {
     tab.page = 1;
     tab.infinitePage = 0;
     tab.infiniteLoaded = [];
-  tab.infiniteCount = 0;
+    tab.infiniteCount = 0;
     tab.infiniteFinished = false;
+    // 顶部搜索框清空时，一并清空所有列筛选（更符合「重新开始」直觉）
+    if (!tab.filter) tab.columnFilters = {};
     renderContent();
   }, 250);
 };
@@ -2343,6 +2727,237 @@ $('contentArea').addEventListener('dblclick', async (e) => {
     toast('复制失败，请手动选择复制', 'error');
   }
 });
+
+/* ================== 表头列筛选交互 ==================
+   模式：面板内交互全部操作 pending 副本（_pendingChecks/_pendingLike），
+   不触发表格重渲染；点「确认」才一次性写入 columnChecks/columnFilters 并重渲染。
+   关闭路径（ESC / 点击外部 / 再次点 ⌕）= 丢弃 pending，保留原筛选。
+   × 直接清已提交状态（不打开面板的快捷路径）。 */
+
+// 打开筛选面板：从已提交值拷一份到 pending 作初始值
+function setFilterPanelOpen(tab, colName) {
+  const cur = Array.isArray(tab.columnChecks && tab.columnChecks[colName]) ? tab.columnChecks[colName] : [];
+  tab._pendingChecks = { ...(tab._pendingChecks || {}), [colName]: [...cur] };
+  tab._pendingLike = { ...(tab._pendingLike || {}), [colName]: (tab.columnFilters && tab.columnFilters[colName]) || '' };
+  tab._openFilterCol = colName;
+  renderContent();
+  const input = document.querySelector(`[data-col-input-field="${cssEscape(colName)}"]`);
+  if (input) { input.focus(); input.select(); }
+}
+
+// 关闭并丢弃 pending（用于 ESC / 点击外部 / 再次点 ⌕）
+function closeFilterPanelDiscard(tab) {
+  if (!tab || !tab._openFilterCol) return false;
+  tab._openFilterCol = null;
+  renderContent();
+  return true;
+}
+
+// 读取某列当前 pending 勾选数组（不存在则从已提交值初始化）
+function pendingChecksOf(tab, colName) {
+  if (!tab._pendingChecks) tab._pendingChecks = {};
+  if (!Array.isArray(tab._pendingChecks[colName])) {
+    const cur = Array.isArray(tab.columnChecks && tab.columnChecks[colName]) ? tab.columnChecks[colName] : [];
+    tab._pendingChecks[colName] = [...cur];
+  }
+  return tab._pendingChecks[colName];
+}
+
+// 读取某列当前 pending 模糊词（不存在则从已提交值初始化）
+function pendingLikeOf(tab, colName) {
+  if (!tab._pendingLike) tab._pendingLike = {};
+  if (typeof tab._pendingLike[colName] !== 'string') {
+    tab._pendingLike[colName] = (tab.columnFilters && tab.columnFilters[colName]) || '';
+  }
+  return tab._pendingLike[colName];
+}
+
+// 按关键词过滤面板候选词显示（纯 DOM，不触发查询）
+function filterPanelOptions(colName, q) {
+  const wrap = document.querySelector(`[data-col-input="${cssEscape(colName)}"]`);
+  if (!wrap) return;
+  const s = (q || '').trim().toLowerCase();
+  wrap.querySelectorAll('.col-filter-option').forEach(o => {
+    const v = (o.dataset.val || '').toLowerCase();
+    o.style.display = (!s || v.includes(s)) ? '' : 'none';
+  });
+}
+
+// 刷新面板内「已选 N」计数 + 同步 checkbox checked 态（与 pending 数组保持一致）
+function refreshPanelCount(tab, colName) {
+  const wrap = document.querySelector(`[data-col-input="${cssEscape(colName)}"]`);
+  if (!wrap) return;
+  const arr = pendingChecksOf(tab, colName);
+  wrap.querySelectorAll('.col-filter-option').forEach(o => {
+    const val = o.hasAttribute('data-isnull') ? null : o.dataset.val;
+    const cb = o.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = arr.some(v => v === val);
+  });
+  const tools = wrap.querySelector('.col-filter-tools');
+  if (!tools) return;
+  const old = tools.querySelector('.col-filter-count');
+  const html = arr.length ? `<span class="col-filter-count">已选 ${arr.length}</span>` : '';
+  if (old) {
+    if (html) old.outerHTML = html;
+    else old.remove();
+  } else if (html) {
+    const confirmBtn = tools.querySelector('[data-col-confirm]');
+    if (confirmBtn) confirmBtn.insertAdjacentHTML('beforebegin', html);
+    else tools.insertAdjacentHTML('beforeend', html);
+  }
+}
+
+// 点击交互：toggle / × / 全选 / 清空勾选 / 确认 / 列头切换
+$('contentArea').addEventListener('click', (e) => {
+  // 切换按钮（⌕）→ 打开或关闭面板（关闭时丢弃 pending）
+  const toggle = e.target.closest('[data-col-toggle]');
+  if (toggle) {
+    const colName = toggle.dataset.colToggle;
+    const tab = getActiveDataTab();
+    if (tab) {
+      if (tab._openFilterCol === colName) closeFilterPanelDiscard(tab);
+      else setFilterPanelOpen(tab, colName);
+    }
+    e.stopPropagation();
+    return;
+  }
+  // 列头清除按钮（×）→ 直接清已提交筛选（快捷路径，不开面板）
+  const clear = e.target.closest('[data-col-clear]');
+  if (clear) {
+    const colName = clear.dataset.colClear;
+    const tab = getActiveDataTab();
+    if (tab) {
+      const nf = { ...(tab.columnFilters || {}) }; delete nf[colName]; tab.columnFilters = nf;
+      const nc = { ...(tab.columnChecks || {}) }; delete nc[colName]; tab.columnChecks = nc;
+      // 一并清掉 pending，避免下次打开面板残留旧 pending
+      if (tab._pendingChecks) { const pc = { ...tab._pendingChecks }; delete pc[colName]; tab._pendingChecks = pc; }
+      if (tab._pendingLike) { const pl = { ...tab._pendingLike }; delete pl[colName]; tab._pendingLike = pl; }
+      resetTabLoading(tab);
+      renderContent();
+    }
+    e.stopPropagation();
+    return;
+  }
+  // 全选 → 把所有「可见」候选加入 pending（不写入 columnChecks）
+  const selectAll = e.target.closest('[data-col-selectall]');
+  if (selectAll) {
+    const colName = selectAll.dataset.colSelectall;
+    const tab = getActiveDataTab();
+    if (tab) {
+      const wrap = document.querySelector(`[data-col-input="${cssEscape(colName)}"]`);
+      const opts = wrap ? [...wrap.querySelectorAll('.col-filter-option')] : [];
+      const arr = pendingChecksOf(tab, colName);
+      opts.forEach(o => {
+        if (o.style.display === 'none') return;
+        const val = o.hasAttribute('data-isnull') ? null : o.dataset.val;
+        if (!arr.some(v => v === val)) arr.push(val);
+      });
+      refreshPanelCount(tab, colName);
+    }
+    e.stopPropagation();
+    return;
+  }
+  // 清空勾选 → pending 数组清空（不动模糊词）
+  const clearChecks = e.target.closest('[data-col-clearchecks]');
+  if (clearChecks) {
+    const colName = clearChecks.dataset.colClearchecks;
+    const tab = getActiveDataTab();
+    if (tab) {
+      pendingChecksOf(tab, colName).length = 0;
+      refreshPanelCount(tab, colName);
+    }
+    e.stopPropagation();
+    return;
+  }
+  // 确认 → pending 写入 columnChecks/columnFilters，关闭面板，触发筛选
+  const confirm = e.target.closest('[data-col-confirm]');
+  if (confirm) {
+    const colName = confirm.dataset.colConfirm;
+    const tab = getActiveDataTab();
+    if (tab) {
+      const arr = pendingChecksOf(tab, colName);
+      const like = pendingLikeOf(tab, colName).trim();
+      if (arr.length) {
+        tab.columnChecks = { ...(tab.columnChecks || {}), [colName]: [...arr] };
+      } else {
+        const next = { ...(tab.columnChecks || {}) }; delete next[colName]; tab.columnChecks = next;
+      }
+      if (like) {
+        tab.columnFilters = { ...(tab.columnFilters || {}), [colName]: like };
+      } else {
+        const next = { ...(tab.columnFilters || {}) }; delete next[colName]; tab.columnFilters = next;
+      }
+      tab._openFilterCol = null;
+      resetTabLoading(tab);
+      renderContent();
+    }
+    e.stopPropagation();
+    return;
+  }
+  // 面板内部其余点击（label/checkbox 等）不触发表头切换
+  if (e.target.closest('.col-filter-panel')) return;
+  // 点击表头列名（非按钮/输入框）→ 切换面板
+  const head = e.target.closest('th.col-head');
+  if (head) {
+    const colName = head.dataset.col;
+    const tab = getActiveDataTab();
+    if (tab) {
+      if (tab._openFilterCol === colName) closeFilterPanelDiscard(tab);
+      else setFilterPanelOpen(tab, colName);
+    }
+  }
+});
+
+// checkbox 变化 → 操作 pending（不重渲染）
+$('contentArea').addEventListener('change', (e) => {
+  const cb = e.target.closest('[data-col-check]');
+  if (!cb) return;
+  const colName = cb.dataset.colCheck;
+  const tab = getActiveDataTab();
+  if (!tab) return;
+  const val = cb.hasAttribute('data-isnull') ? null : cb.value;
+  const arr = pendingChecksOf(tab, colName);
+  if (cb.checked) {
+    if (!arr.some(v => v === val)) arr.push(val);
+  } else {
+    const idx = arr.findIndex(v => v === val);
+    if (idx >= 0) arr.splice(idx, 1);
+  }
+  refreshPanelCount(tab, colName);
+});
+
+// 输入框 → ① 立即过滤候选词 ② 仅写 pending（不触发 SQL）
+$('contentArea').addEventListener('input', (e) => {
+  const input = e.target.closest('.col-filter-input');
+  if (!input) return;
+  const colName = input.dataset.colInputField;
+  const tab = getActiveDataTab();
+  if (!tab) return;
+  pendingLikeOf(tab, colName);   // 确保 pendingLike 已初始化
+  tab._pendingLike[colName] = input.value;
+  filterPanelOptions(colName, input.value);
+});
+
+// ESC 关闭面板（丢弃 pending）
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const tab = getActiveDataTab();
+  if (closeFilterPanelDiscard(tab)) e.preventDefault();
+});
+
+// 点击面板外部 → 关闭面板（丢弃 pending）
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.col-filter-panel')) return;
+  if (e.target.closest('[data-col-toggle]')) return;
+  if (e.target.closest('th.col-head')) return;
+  closeFilterPanelDiscard(getActiveDataTab());
+});
+
+// CSS.escape polyfill（极少数老浏览器缺失）
+function cssEscape(s) {
+  if (window.CSS && CSS.escape) return CSS.escape(s);
+  return String(s).replace(/[^a-zA-Z0-9_-]/g, c => '\\' + c);
+}
 
 // 响应窗口尺寸变化
 window.addEventListener('resize', () => {
