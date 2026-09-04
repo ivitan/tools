@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQLite 数据库读取工具</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --panel-hover: #f1f5f9;
+    --border: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --primary-light: #eff6ff;
+    --primary-soft: rgba(59,130,246,0.10);
+    --success: #10b981;
+    --success-light: #ecfdf5;
+    --danger: #ef4444;
+    --danger-light: #fef2f2;
+    --warning: #d97706;
+    --warning-light: #fef3c7;
+    --scrollbar-thumb: #cbd5e1;
+    --scrollbar-thumb-hover: #94a3b8;
+    --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+    --header-row: #f8fafc;
+    --row-hover: #f8fafc;
+    --dropzone-bg: #ffffff;
+    --code-bg: #f1f5f9;
+    --table-row-border: #f1f5f9;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0b1220;
+    --panel: #111827;
+    --panel-hover: #1e293b;          /* 提亮一档 */
+    --border: #1f2937;
+    --border-hover: #475569;        /* 提亮两档，用于 hover/focus */
+    --text: #f1f5f9;                /* slate-100，提亮避免刺眼 */
+    --text-secondary: #cbd5e1;      /* slate-300，关键次级文字 */
+    --text-muted: #94a3b8;          /* slate-400，最低仍可读 */
+    --primary: #60a5fa;             /* blue-400，深色下更亮 */
+    --primary-hover: #93c5fd;
+    --primary-light: rgba(96,165,250,0.18);
+    --primary-soft: rgba(96,165,250,0.22);
+    --primary-on: #0b1220;          /* 用于 primary 背景上的文字色 */
+    --success: #34d399;
+    --success-light: rgba(52,211,153,0.18);
+    --danger: #f87171;
+    --danger-light: rgba(248,113,113,0.18);
+    --warning: #fbbf24;
+    --warning-light: rgba(251,191,36,0.20);
+    --scrollbar-thumb: #475569;
+    --scrollbar-thumb-hover: #64748b;
+    --shadow: 0 1px 3px rgba(0,0,0,0.5);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.5);
+    --header-row: #0f172a;
+    --row-hover: #1e293b;
+    --dropzone-bg: #0f172a;
+    --code-bg: #0a1224;
+    --table-row-border: #1e293b;
+    --tab-close-hover: rgba(255,255,255,0.12);
+  }
+
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow: hidden;
+    transition: background-color 0.15s, color 0.15s;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    height: 52px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    box-shadow: var(--shadow);
+    z-index: 20;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+  }
+  .header-spacer { flex: 1; }
+  .header-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover {
+    background: var(--panel-hover);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .btn {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--border-hover); background: var(--panel-hover); }
+  .btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+
+  /* ===== Layout ===== */
+  .layout {
+    display: flex;
+    height: calc(100vh - 52px);
+    position: relative;
+  }
+  .sidebar {
+    width: 240px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transition: width 0.2s ease, border-color 0.2s ease, transform 0.22s ease;
+    overflow: hidden;
+    min-width: 0;
+  }
+  body.sidebar-collapsed .sidebar { width: 0; border-right: 0; }
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 40;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  body.sidebar-open .sidebar-overlay {
+    display: block;
+    opacity: 1;
+  }
+  .sidebar-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 38px;
+  }
+  .sidebar-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .sidebar-count {
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .db-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+  }
+  .db-item {
+    margin-bottom: 2px;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .db-item.active > .db-header {
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+  [data-theme="dark"] .db-item.active > .db-header {
+    background: var(--primary-soft);
+    color: var(--primary-hover);
+  }
+  .db-header {
+    padding: 6px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 4px;
+    transition: background-color 0.12s;
+    min-height: 28px;
+  }
+  .db-header:hover { background: var(--panel-hover); }
+  .db-item.active > .db-header:hover { background: var(--primary-soft); }
+  .db-chevron {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    transition: transform 0.15s;
+  }
+  .db-item.expanded .db-chevron { transform: rotate(90deg); }
+  .db-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--primary);
+  }
+  .db-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .db-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .db-remove {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .db-header:hover .db-remove { opacity: 1; }
+  .db-remove:hover { background: var(--danger-light); color: var(--danger); }
+  .table-list {
+    padding: 2px 4px 6px 22px;
+    display: none;
+  }
+  .db-item.expanded .table-list { display: block; }
+  .table-item {
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.12s;
+    min-height: 26px;
+  }
+  .table-item:hover { background: var(--panel-hover); color: var(--text); }
+  .table-item.active { background: var(--primary); color: #fff; }
+  .table-item.active .table-count { color: rgba(255,255,255,0.85); }
+  .table-icon {
+    width: 12px;
+    height: 12px;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+  .table-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .table-count {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+  .table-item.active .table-count { color: rgba(255,255,255,0.95); font-weight: 600; }
+
+  /* ===== Main ===== */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  /* ===== Dropzone ===== */
+  .dropzone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 20px;
+    border: 2px dashed var(--border-hover);
+    border-radius: 12px;
+    background: var(--dropzone-bg);
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .dropzone-icon {
+    width: 56px;
+    height: 56px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  .dropzone.drag-over .dropzone-icon { color: var(--primary); }
+  .dropzone-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .dropzone-desc {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 14px;
+  }
+  .dropzone button {
+    height: 34px;
+    padding: 0 18px;
+    border-radius: 6px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .dropzone button:hover { background: var(--primary-hover); }
+
+  /* ===== Toolbar ===== */
+  .toolbar {
+    height: 44px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .breadcrumb-item {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .breadcrumb-item.current {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .breadcrumb-sep {
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .toolbar-input {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.15s;
+    background: var(--panel);
+    color: var(--text);
+  }
+  .toolbar-input:focus { border-color: var(--primary); }
+  .toolbar-input::placeholder { color: var(--text-muted); font-weight: 400; }
+
+  /* ===== Mode Toggle ===== */
+  .mode-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--panel);
+    flex-shrink: 0;
+  }
+  .mode-toggle button {
+    height: 30px;
+    padding: 0 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.12s;
+    border-right: 1px solid var(--border);
+  }
+  .mode-toggle button:last-child { border-right: none; }
+  .mode-toggle button:hover { background: var(--panel-hover); color: var(--text); }
+  .mode-toggle button.active {
+    background: var(--primary);
+    color: #fff;
+  }
+  .mode-toggle button svg { flex-shrink: 0; }
+
+  /* ===== Tabs ===== */
+  .tabs {
+    height: 34px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    flex-shrink: 0;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); background: var(--panel-hover); }
+  .tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+  }
+  [data-theme="dark"] .tab.active {
+    color: var(--primary-hover);
+    border-bottom-color: var(--primary-hover);
+  }
+  .tab-close {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    font-weight: 700;
+  }
+  .tab-close:hover { background: rgba(0,0,0,0.08); opacity: 1; }
+  [data-theme="dark"] .tab-close:hover { background: rgba(255,255,255,0.14); }
+
+  /* ===== Content area ===== */
+  .content-area {
+    flex: 1;
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+  }
+  .empty-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  /* ===== Schema view ===== */
+  .schema-view {
+    flex: 1;
+    overflow: auto;
+    padding: 16px;
+  }
+  .schema-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .schema-card-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .schema-card-title {
+    font-weight: 600;
+    font-size: 13.5px;
+  }
+  .schema-card-meta {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .schema-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .schema-table th {
+    text-align: left;
+    padding: 8px 14px;
+    background: var(--header-row);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 11.5px;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .schema-table td {
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--table-row-border);
+  }
+  .schema-table tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+  .badge-pk { background: var(--warning-light); color: var(--warning); }
+  .badge-nn { background: var(--success-light); color: var(--success); }
+
+  /* ===== 数据网格 ===== */
+  .data-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .status-bar {
+    height: 30px;
+    padding: 0 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .status-bar .stat { display: inline-flex; align-items: center; gap: 5px; }
+  .status-bar .stat strong { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .status-bar .stat-sep { color: var(--border-hover); font-weight: 400; }
+
+  .grid-container {
+    flex: 1;
+    overflow: auto;
+    background: var(--panel);
+    position: relative;
+  }
+  .data-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+    width: max-content;
+    min-width: 100%;
+  }
+  .data-table th {
+    background: var(--header-row);
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    user-select: none;
+  }
+  .data-table th .col-type {
+    display: block;
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    letter-spacing: 0.2px;
+  }
+  .data-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--table-row-border);
+    border-right: 1px solid var(--table-row-border);
+    max-width: 360px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+  }
+  .data-table tbody tr:hover td { background: var(--row-hover); }
+  [data-theme="dark"] .data-table tbody tr:hover td { background: #243044; }
+  .data-table td.null {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-weight: 500;
+  }
+  .data-table td.number { text-align: right; font-variant-numeric: tabular-nums; }
+  .data-table td.bool { text-align: center; }
+  .data-table td.json { color: var(--primary); font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 11.5px; }
+  .row-num {
+    background: var(--header-row) !important;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    width: 50px;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+  }
+  .data-table thead th.row-num { z-index: 3; }
+
+  /* ===== 无限滚动 Sentinel ===== */
+  .infinite-sentinel {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  .infinite-sentinel .end-mark {
+    color: var(--success);
+    font-weight: 600;
+  }
+
+  /* ===== Footer ===== */
+  .footer-bar {
+    height: 34px;
+    padding: 0 14px;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    gap: 12px;
+  }
+  .footer-bar.hidden { display: none !important; }
+  .sql-box {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    flex: 1;
+    overflow-x: auto;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  [data-theme="dark"] .sql-box {
+    background: #050b18;
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .pager {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .pager button {
+    height: 22px;
+    min-width: 22px;
+    padding: 0 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.12s;
+  }
+  .pager button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+  .pager button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .pager input {
+    width: 40px;
+    height: 22px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 11px;
+    outline: none;
+    background: var(--panel);
+    color: var(--text);
+  }
+  .pager input:focus { border-color: var(--primary); }
+  .pager select {
+    height: 22px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0 4px;
+    font-size: 11px;
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+  }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: var(--text);
+    color: var(--panel);
+    padding: 9px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    box-shadow: var(--shadow-lg);
+    z-index: 200;
+    animation: slideIn 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: calc(100vw - 32px);
+  }
+  .toast.success { background: var(--success); color: #052e1a; }
+  .toast.error { background: var(--danger); color: #450a0a; }
+  [data-theme="dark"] .toast.success { color: #02261a; }
+  [data-theme="dark"] .toast.error { color: #3b0808; }
+  @keyframes slideIn {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ===== Dialog 弹窗（替代原生浏览器 dialog，深色友好） ===== */
+  .dialog-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.15s ease;
+  }
+  [data-theme="dark"] .dialog-mask { background: rgba(0,0,0,0.7); }
+  .dialog {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 20px 22px;
+    width: min(420px, calc(100vw - 32px));
+    animation: dialogIn 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .dialog-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .dialog-message {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .dialog-actions .btn { font-weight: 500; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes dialogIn {
+    from { transform: translateY(-8px) scale(0.96); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  /* ===== Loading spinner ===== */
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+  /* ===== Responsive: 平板 ===== */
+  @media (max-width: 1024px) {
+    .sidebar { width: 200px; }
+  }
+
+  /* ===== Responsive: 手机 ===== */
+  @media (max-width: 768px) {
+    body { font-size: 13.5px; }
+    [data-theme="dark"] body { font-size: 13.5px; }
+    .header { height: 48px; padding: 0 10px; gap: 4px; }
+    .logo span { display: none; }
+    .header-actions { gap: 2px; }
+    .header-actions .btn span { display: none; }
+    .header-actions .btn { padding: 0; width: 32px; justify-content: center; }
+
+    /* 抽屉模式 */
+    .layout { height: calc(100vh - 48px); }
+    .sidebar {
+      position: fixed;
+      top: 48px;
+      left: 0;
+      bottom: 0;
+      width: 84vw;
+      max-width: 320px;
+      z-index: 50;
+      transform: translateX(-100%);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+    body.sidebar-open .sidebar { transform: translateX(0); }
+    /* 手机端桌面折叠按钮隐藏 */
+    #btnToggleSidebar { display: none; }
+    /* 抽屉打开按钮显示 */
+    #btnOpenDrawer { display: inline-flex !important; }
+
+    .toolbar {
+      height: auto;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+      gap: 6px;
+    }
+    .breadcrumb { width: 100%; order: 1; font-size: 12px; }
+    .toolbar-input { flex: 1; order: 2; width: auto; min-width: 0; }
+    .mode-toggle { order: 3; }
+    #btnExport { order: 4; }
+
+    .tabs { padding: 0 10px; }
+
+    .footer-bar {
+      flex-wrap: wrap;
+      height: auto;
+      padding: 6px 10px;
+      gap: 4px;
+    }
+    .sql-box { width: 100%; font-size: 10px; order: 1; }
+    .pager { width: 100%; justify-content: center; order: 2; }
+
+    .dropzone { margin: 12px; }
+    .dropzone-icon { width: 44px; height: 44px; margin-bottom: 10px; }
+    .dropzone-title { font-size: 14px; }
+    .dropzone-desc { font-size: 12px; margin-bottom: 12px; }
+    .dropzone button { height: 32px; padding: 0 16px; font-size: 12px; }
+
+    .data-table th, .data-table td { padding: 5px 8px; font-size: 11.5px; }
+    .data-table th .col-type { font-size: 10px; }
+    .row-num { width: 40px; }
+
+    .status-bar { padding: 0 10px; gap: 8px; font-size: 11px; }
+
+    .mode-toggle button { padding: 0 8px; }
+    .mode-toggle button .mode-label { display: none; }
+
+    .toast { top: 56px; right: 10px; left: 10px; max-width: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="icon-btn" id="btnToggleSidebar" title="折叠/展开侧栏">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <button class="icon-btn" id="btnOpenDrawer" style="display:none;" title="打开数据库列表">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/>
+      <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+      <path d="M3 12a9 3 0 0 0 18 0"/>
+      <line x1="11" y1="11" x2="17" y2="11"/>
+      <polyline points="14 8 17 11 14 14"/>
+    </svg>
+  </button>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+        <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+        <path d="M3 12a9 3 0 0 0 18 0"/>
+      </svg>
+    </div>
+    <span>SQLite 数据库读取工具</span>
+  </div>
+  <div class="header-spacer"></div>
+  <div class="header-actions">
+    <button class="icon-btn" id="btnTheme" title="切换主题">
+      <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+    <button class="btn" id="btnAddDb">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      <span>添加数据库</span>
+    </button>
+    <button class="icon-btn" id="btnClear" title="清空所有数据库" style="display:none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </button>
+  </div>
+  <input type="file" id="fileInput" accept=".db,.sqlite,.sqlite3,.s3db" multiple style="display:none;">
+</div>
+
+<div class="layout">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">数据库</div>
+      <div class="sidebar-count" id="dbCount">0</div>
+    </div>
+    <div class="db-list" id="dbList">
+      <div style="padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
+        还未添加数据库<br>点击右上角或拖拽 .db 文件
+      </div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="dropzone" id="dropzone">
+      <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <div class="dropzone-title">拖拽 SQLite 数据库文件到此处</div>
+      <div class="dropzone-desc">支持 .db / .sqlite / .sqlite3 / .s3db · 可同时上传多个</div>
+      <button id="btnDropzoneSelect">选择文件</button>
+    </div>
+
+    <div id="dataView" style="display:none; flex-direction: column; height: 100%; min-height:0;">
+      <div class="toolbar">
+        <div class="breadcrumb" id="breadcrumb"></div>
+        <input type="text" class="toolbar-input" id="searchInput" placeholder="筛选所有列…">
+        <div class="mode-toggle" id="modeToggle">
+          <button data-mode="page" title="分页模式">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="16" rx="2"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span class="mode-label">分页</span>
+          </button>
+          <button data-mode="infinite" title="无限滚动">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <polyline points="19 12 12 19 5 12"/>
+            </svg>
+            <span class="mode-label">无限</span>
+          </button>
+        </div>
+        <button class="icon-btn" id="btnExport" title="导出当前数据为 CSV">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div class="content-area" id="contentArea">
+        <div class="empty-content" id="emptyHint">从左侧选择一张表查看数据</div>
+      </div>
+      <div class="footer-bar" id="footerBar">
+        <div class="sql-box" id="sqlPreview"></div>
+        <div class="pager">
+          <button id="btnPrev">上一页</button>
+          <input type="number" id="pageInput" value="1" min="1">
+          <span>/ <span id="totalPages">1</span> 页</span>
+          <button id="btnNext">下一页</button>
+          <select id="pageSize">
+            <option value="50">50 行</option>
+            <option value="100" selected>100 行</option>
+            <option value="200">200 行</option>
+            <option value="500">500 行</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ================== 全局状态 ================== */
+const state = {
+  databases: [],
+  activeDbId: null,
+  openTabs: [],
+  activeTabKey: null,
+  SQL: null,
+  loadMode: localStorage.getItem('sqlite-load-mode') || 'infinite', // 默认无限滚动
+  isMobile: matchMedia('(max-width: 768px)').matches,
+  infiniteObserver: null,
+};
+
+/* ================== 工具函数 ================== */
+const $ = (id) => document.getElementById(id);
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.2s'; }, 1800);
+  setTimeout(() => el.remove(), 2200);
+}
+
+/* 自定义确认弹窗（替代浏览器原生 confirm，深色友好） */
+function confirmDialog({ title = '确认', message = '', okText = '确定', cancelText = '取消', danger = false } = {}) {
+  return new Promise(resolve => {
+    const mask = document.createElement('div');
+    mask.className = 'dialog-mask';
+    mask.innerHTML = `
+      <div class="dialog" role="dialog" aria-modal="true">
+        <div class="dialog-title">${escapeHtml(title)}</div>
+        <div class="dialog-message">${escapeHtml(message)}</div>
+        <div class="dialog-actions">
+          <button class="btn" data-act="cancel">${escapeHtml(cancelText)}</button>
+          <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-act="ok" style="${danger ? 'background:var(--danger);border-color:var(--danger);color:#fff;' : ''}">${escapeHtml(okText)}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(mask);
+    const close = (v) => { mask.remove(); resolve(v); };
+    mask.querySelector('[data-act="ok"]').onclick = () => close(true);
+    mask.querySelector('[data-act="cancel"]').onclick = () => close(false);
+    mask.addEventListener('click', (e) => { if (e.target === mask) close(false); });
+    document.addEventListener('keydown', function onEsc(e) {
+      if (e.key === 'Escape') { document.removeEventListener('keydown', onEsc); close(false); }
+      if (e.key === 'Enter') { document.removeEventListener('keydown', onEsc); close(true); }
+    });
+    setTimeout(() => mask.querySelector('[data-act="ok"]').focus(), 0);
+  });
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+}
+
+function formatNum(n) {
+  return new Intl.NumberFormat('zh-CN').format(n);
+}
+
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function isMobile() { return state.isMobile; }
+
+/* ================== 主题管理 ================== */
+const theme = {
+  get current() { return document.documentElement.dataset.theme || 'light'; },
+  set(t, manual = true) {
+    document.documentElement.dataset.theme = t;
+    if (manual) localStorage.setItem('sqlite-theme', t);
+    this._updateIcon();
+  },
+  toggle() { this.set(this.current === 'dark' ? 'light' : 'dark'); },
+  init() {
+    const saved = localStorage.getItem('sqlite-theme');
+    const initial = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    this.set(initial, false);
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (!localStorage.getItem('sqlite-theme')) {
+        this.set(e.matches ? 'dark' : 'light', false);
+      }
+    });
+  },
+  _updateIcon() {
+    const dark = this.current === 'dark';
+    $('iconSun').style.display = dark ? 'block' : 'none';
+    $('iconMoon').style.display = dark ? 'none' : 'block';
+    $('btnTheme').title = dark ? '切换到浅色模式' : '切换到深色模式';
+  },
+};
+
+/* ================== sql.js 初始化 ================== */
+async function initSQL() {
+  state.SQL = await initSqlJs({
+    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
+  });
+}
+
+/* ================== 加载数据库 ================== */
+async function loadDatabase(file) {
+  try {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    const db = new state.SQL.Database(buf);
+    const tables = [];
+    const res = db.exec("SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name");
+    if (res[0]) {
+      for (const row of res[0].values) {
+        const name = row[0];
+        const countRes = db.exec(`SELECT COUNT(*) FROM "${name}"`);
+        const count = countRes[0] ? countRes[0].values[0][0] : 0;
+        const colsRes = db.exec(`PRAGMA table_info("${name}")`);
+        const cols = colsRes[0] ? colsRes[0].values.map(r => ({
+          cid: r[0], name: r[1], type: r[2], notnull: r[3], dflt: r[4], pk: r[5]
+        })) : [];
+        tables.push({ name, count, cols });
+      }
+    }
+    const dbObj = {
+      id: uid(),
+      file,
+      name: file.name,
+      size: file.size,
+      db,
+      tables,
+      expanded: false,
+    };
+    state.databases.forEach(d => d.expanded = false);
+    dbObj.expanded = true;
+    state.databases.push(dbObj);
+    state.activeDbId = dbObj.id;
+    renderSidebar();
+    if (isMobile()) closeDrawer();
+    toast(`已加载 ${file.name}`, 'success');
+  } catch (e) {
+    console.error(e);
+    toast(`加载失败: ${file.name}`, 'error');
+  }
+}
+
+/* ================== 抽屉控制 ================== */
+function openDrawer() {
+  document.body.classList.add('sidebar-open');
+}
+function closeDrawer() {
+  document.body.classList.remove('sidebar-open');
+}
+function toggleDrawer() {
+  document.body.classList.toggle('sidebar-open');
+}
+
+/* ================== 侧栏渲染 ================== */
+function renderSidebar() {
+  const list = $('dbList');
+  const count = $('dbCount');
+  count.textContent = state.databases.length;
+
+  if (state.databases.length === 0) {
+    list.innerHTML = `
+      <div style="padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
+        还未添加数据库<br>点击右上角或拖拽 .db 文件
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = state.databases.map(d => {
+    const isActive = d.id === state.activeDbId;
+    const tablesHtml = d.tables.map(t => `
+      <div class="table-item" data-db="${d.id}" data-table="${t.name}" title="${escapeHtml(t.name)} · ${formatNum(t.count)} 行">
+        <svg class="table-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+        <span class="table-name">${escapeHtml(t.name)}</span>
+        <span class="table-count">${formatNum(t.count)}</span>
+      </div>
+    `).join('');
+
+    return `
+      <div class="db-item ${isActive ? 'active' : ''} ${d.expanded ? 'expanded' : ''}" data-db="${d.id}">
+        <div class="db-header" data-toggle="${d.id}" title="${escapeHtml(d.name)} · ${d.tables.length} 张表">
+          <svg class="db-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          <svg class="db-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+            <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+            <path d="M3 12a9 3 0 0 0 18 0"/>
+          </svg>
+          <span class="db-name">${escapeHtml(d.name)}</span>
+          <span class="db-meta">${d.tables.length}</span>
+          <button class="db-remove" data-remove="${d.id}" title="移除">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="table-list">
+          <div class="table-item" data-db="${d.id}" data-table="__SCHEMA__" title="查看 ${escapeHtml(d.name)} 所有表结构">
+            <svg class="table-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <span class="table-name">表结构</span>
+            <span class="table-count">${d.tables.length}</span>
+          </div>
+          ${tablesHtml}
+        </div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-toggle]').forEach(el => {
+    el.onclick = (e) => {
+      if (e.target.closest('[data-remove]')) return;
+      toggleDb(el.dataset.toggle);
+    };
+  });
+  list.querySelectorAll('[data-remove]').forEach(el => {
+    el.onclick = async (e) => {
+      e.stopPropagation();
+      const id = el.dataset.remove;
+      const db = state.databases.find(d => d.id === id);
+      const ok = await confirmDialog({
+        title: '移除数据库',
+        message: `确定要移除「${db?.name || ''}」吗？相关标签页也会关闭。`,
+        okText: '移除',
+        danger: true,
+      });
+      if (!ok) return;
+      removeDatabase(id);
+    };
+  });
+  list.querySelectorAll('.table-item').forEach(el => {
+    el.onclick = () => {
+      openTab(el.dataset.db, el.dataset.table);
+    };
+  });
+}
+
+function toggleDb(id) {
+  const target = state.databases.find(d => d.id === id);
+  if (!target) return;
+  const wasExpanded = target.expanded;
+  state.databases.forEach(d => d.expanded = false);
+  target.expanded = !wasExpanded;
+  state.activeDbId = id;
+  renderSidebar();
+}
+
+function removeDatabase(id) {
+  const idx = state.databases.findIndex(d => d.id === id);
+  if (idx === -1) return;
+  const db = state.databases[idx];
+  try { db.db.close(); } catch {}
+  state.databases.splice(idx, 1);
+  state.openTabs = state.openTabs.filter(t => t.dbId !== id);
+  if (state.activeDbId === id) state.activeDbId = state.databases[0]?.id || null;
+  if (state.activeTabKey && state.activeTabKey.startsWith(id)) {
+    state.activeTabKey = state.openTabs[0] ? tabKey(state.openTabs[0]) : null;
+  }
+  renderSidebar();
+  renderTabs();
+  renderContent();
+  if (state.databases.length === 0) showDropzone(true);
+}
+
+function tabKey(t) { return `${t.dbId}::${t.table}::${t.view}`; }
+
+/* ================== Tab 管理 ================== */
+function openTab(dbId, tableName) {
+  const existing = state.openTabs.find(t => t.dbId === dbId && t.table === tableName);
+  if (existing) {
+    state.activeTabKey = tabKey(existing);
+  } else {
+    const tab = {
+      dbId, table: tableName,
+      view: 'data',
+      page: 1,
+      pageSize: 100,
+      filter: '',
+      loadMode: state.loadMode,   // 跟随全局当前模式
+      infinitePage: 0,
+      infiniteLoaded: [],
+      infiniteTotal: 0,
+      infiniteFinished: false,
+    };
+    state.openTabs.push(tab);
+    state.activeTabKey = tabKey(tab);
+  }
+  state.activeDbId = dbId;
+  showDropzone(false);
+  renderTabs();
+  renderContent();
+  // 移动端：选完表关闭抽屉
+  if (isMobile()) closeDrawer();
+}
+
+function closeTab(key) {
+  const idx = state.openTabs.findIndex(t => tabKey(t) === key);
+  if (idx === -1) return;
+  state.openTabs.splice(idx, 1);
+  if (state.activeTabKey === key) {
+    state.activeTabKey = state.openTabs[idx] ? tabKey(state.openTabs[idx]) :
+                         state.openTabs[idx-1] ? tabKey(state.openTabs[idx-1]) : null;
+  }
+  renderTabs();
+  renderContent();
+  if (state.openTabs.length === 0) showDropzone(true);
+}
+
+function renderTabs() {
+  const tabs = $('tabs');
+  if (state.openTabs.length === 0) {
+    tabs.innerHTML = '';
+    return;
+  }
+  tabs.innerHTML = state.openTabs.map(t => {
+    const key = tabKey(t);
+    const db = state.databases.find(d => d.id === t.dbId);
+    const isActive = key === state.activeTabKey;
+    const dbShort = db?.name.replace(/\.(db|sqlite.*|s3db)$/i, '') || '';
+    return `
+      <div class="tab ${isActive ? 'active' : ''}" data-key="${key}" title="${escapeHtml(db?.name || '')} / ${t.table === '__SCHEMA__' ? '表结构' : t.table}">
+        <span>${t.table === '__SCHEMA__' ? '表结构' : escapeHtml(t.table)}</span>
+        <span style="opacity:0.45; font-size:11px;">${escapeHtml(dbShort)}</span>
+        <button class="tab-close" data-close="${key}" title="关闭">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
+  }).join('');
+
+  tabs.querySelectorAll('.tab').forEach(el => {
+    el.onclick = (e) => {
+      if (e.target.closest('[data-close]')) return;
+      state.activeTabKey = el.dataset.key;
+      renderTabs();
+      renderContent();
+    };
+  });
+  tabs.querySelectorAll('[data-close]').forEach(el => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      closeTab(el.dataset.close);
+    };
+  });
+}
+
+/* ================== 内容渲染 ================== */
+function renderContent() {
+  // 清理旧的 IntersectionObserver
+  if (state.infiniteObserver) {
+    state.infiniteObserver.disconnect();
+    state.infiniteObserver = null;
+  }
+
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab) {
+    $('contentArea').innerHTML = `<div class="empty-content">从左侧选择一张表查看数据</div>`;
+    $('footerBar').classList.add('hidden');
+    $('dataView').style.display = state.openTabs.length === 0 ? 'none' : 'flex';
+    return;
+  }
+  $('dataView').style.display = 'flex';
+
+  const db = state.databases.find(d => d.id === tab.dbId);
+  if (!db) return;
+
+  $('breadcrumb').innerHTML = `
+    <div class="breadcrumb-item" title="${escapeHtml(db.name)}">${escapeHtml(db.name)}</div>
+    <div class="breadcrumb-sep">/</div>
+    <div class="breadcrumb-item current">${tab.table === '__SCHEMA__' ? '表结构总览' : escapeHtml(tab.table)}</div>
+  `;
+
+  if ($('searchInput').value !== (tab.filter || '')) {
+    $('searchInput').value = tab.filter || '';
+  }
+
+  // 同步 mode-toggle
+  document.querySelectorAll('#modeToggle button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === tab.loadMode);
+  });
+
+  if (tab.table === '__SCHEMA__') {
+    renderSchemaView(db);
+    $('footerBar').classList.add('hidden');
+  } else {
+    if (tab.loadMode === 'infinite') {
+      renderInfiniteGrid(db, tab);
+    } else {
+      renderDataGrid(db, tab);
+    }
+  }
+}
+
+function renderSchemaView(db) {
+  const area = $('contentArea');
+  if (db.tables.length === 0) {
+    area.innerHTML = `<div class="empty-content">该数据库没有表</div>`;
+    return;
+  }
+  const cards = db.tables.map(t => {
+    const colsHtml = t.cols.map(c => `
+      <tr>
+        <td>
+          ${c.pk ? '<span class="badge badge-pk" style="margin-right:4px;">PK</span>' : ''}
+          ${c.notnull ? '<span class="badge badge-nn" style="margin-right:4px;">NN</span>' : ''}
+          <span style="font-weight:500;">${escapeHtml(c.name)}</span>
+        </td>
+        <td><span style="color:var(--text-secondary); font-family:'SF Mono',monospace; font-size:11.5px;">${escapeHtml(c.type || 'ANY')}</span></td>
+        <td><span style="color:var(--text-muted); font-size:11.5px;">${c.dflt !== null ? escapeHtml(c.dflt) : '—'}</span></td>
+      </tr>
+    `).join('');
+    return `
+      <div class="schema-card">
+        <div class="schema-card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--primary);">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+          </svg>
+          <span class="schema-card-title">${escapeHtml(t.name)}</span>
+          <span class="schema-card-meta">· ${t.cols.length} 列 · ${formatNum(t.count)} 行</span>
+        </div>
+        <table class="schema-table">
+          <thead><tr><th style="width:50%;">列名</th><th style="width:25%;">类型</th><th>默认值</th></tr></thead>
+          <tbody>${colsHtml}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+  area.innerHTML = `<div class="schema-view">${cards}</div>`;
+}
+
+/* ================== 分页模式 ================== */
+function renderDataGrid(db, tab) {
+  const t = db.tables.find(x => x.name === tab.table);
+  if (!t) {
+    $('contentArea').innerHTML = `<div class="empty-content">表不存在</div>`;
+    return;
+  }
+  const offset = (tab.page - 1) * tab.pageSize;
+  let sql, countSql, params;
+  if (tab.filter) {
+    const whereCols = t.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
+    const likeVal = `%${tab.filter}%`;
+    sql = `SELECT * FROM "${tab.table}" WHERE ${whereCols} LIMIT ${tab.pageSize} OFFSET ${offset}`;
+    countSql = `SELECT COUNT(*) FROM "${tab.table}" WHERE ${whereCols}`;
+    params = t.cols.map(() => likeVal);
+  } else {
+    sql = `SELECT * FROM "${tab.table}" LIMIT ${tab.pageSize} OFFSET ${offset}`;
+    countSql = `SELECT COUNT(*) FROM "${tab.table}"`;
+    params = [];
+  }
+
+  const t0 = performance.now();
+  let rows = [], columns = [], total = 0;
+  try {
+    const stmt = db.db.prepare(sql);
+    while (stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+    if (rows.length) columns = Object.keys(rows[0]);
+    const cntStmt = db.db.prepare(countSql);
+    cntStmt.bind(params);
+    if (cntStmt.step()) total = cntStmt.get()[0];
+    cntStmt.free();
+  } catch (e) {
+    $('contentArea').innerHTML = `<div class="empty-content">查询失败: ${escapeHtml(e.message)}</div>`;
+    $('sqlPreview').textContent = sql;
+    return;
+  }
+  const elapsed = Math.round(performance.now() - t0);
+
+  $('sqlPreview').textContent = sql;
+
+  const totalPages = Math.max(1, Math.ceil(total / tab.pageSize));
+  if (tab.page > totalPages) tab.page = totalPages;
+  $('totalPages').textContent = totalPages;
+  $('pageInput').value = tab.page;
+  $('pageInput').max = totalPages;
+  $('btnPrev').disabled = tab.page <= 1;
+  $('btnNext').disabled = tab.page >= totalPages;
+  $('footerBar').classList.remove('hidden');
+
+  if (rows.length === 0) {
+    $('contentArea').innerHTML = `
+      <div class="data-wrap">
+        <div class="status-bar">
+          <span class="stat">表 <strong>${escapeHtml(tab.table)}</strong></span>
+          <span class="stat-sep">·</span>
+          <span class="stat">当前 <strong>0</strong> 行</span>
+          <span class="stat-sep">·</span>
+          <span class="stat">共 <strong>${formatNum(total)}</strong> 行</span>
+          <span class="stat-sep">·</span>
+          <span class="stat">用时 <strong>${elapsed}ms</strong></span>
+        </div>
+        <div class="empty-content">${tab.filter ? '没有匹配的记录' : '表为空'}</div>
+      </div>`;
+    return;
+  }
+
+  const colTypes = {};
+  t.cols.forEach(c => colTypes[c.name] = c.type);
+
+  const headHtml = `
+    <tr>
+      <th class="row-num">#</th>
+      ${columns.map(c => `
+        <th>
+          ${escapeHtml(c)}
+          <span class="col-type">${escapeHtml(colTypes[c] || '')}</span>
+        </th>
+      `).join('')}
+    </tr>`;
+
+  const bodyHtml = rows.map((row, i) => {
+    const cells = columns.map(c => {
+      const v = row[c];
+      if (v === null || v === undefined) return `<td class="null">NULL</td>`;
+      if (typeof v === 'number') return `<td class="number">${v}</td>`;
+      if (typeof v === 'boolean') return `<td class="bool">${v ? 'true' : 'false'}</td>`;
+      if (typeof v === 'object' && v !== null) {
+        const j = JSON.stringify(v);
+        return `<td class="json" title="${escapeHtml(j)}">${escapeHtml(j)}</td>`;
+      }
+      const text = String(v);
+      return `<td title="${escapeHtml(text)}">${escapeHtml(text)}</td>`;
+    }).join('');
+    return `<tr><td class="row-num">${offset + i + 1}</td>${cells}</tr>`;
+  }).join('');
+
+  $('contentArea').innerHTML = `
+    <div class="data-wrap">
+      <div class="status-bar">
+        <span class="stat">表 <strong>${escapeHtml(tab.table)}</strong></span>
+        <span class="stat-sep">·</span>
+        <span class="stat">当前页 <strong>${formatNum(rows.length)}</strong> 行</span>
+        <span class="stat-sep">·</span>
+        <span class="stat">${tab.filter ? '筛选命中' : '总计'} <strong>${formatNum(total)}</strong> 行</span>
+        <span class="stat-sep">·</span>
+        <span class="stat">用时 <strong>${elapsed}ms</strong></span>
+        <span class="stat-sep">·</span>
+        <span class="stat">列数 <strong>${columns.length}</strong></span>
+      </div>
+      <div class="grid-container">
+        <table class="data-table">
+          <thead>${headHtml}</thead>
+          <tbody>${bodyHtml}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+/* ================== 无限滚动模式 ================== */
+function renderInfiniteGrid(db, tab) {
+  // 重置累积状态
+  tab.infinitePage = 0;
+  tab.infiniteLoaded = [];
+  tab.infiniteFinished = false;
+
+  const t = db.tables.find(x => x.name === tab.table);
+  if (!t) {
+    $('contentArea').innerHTML = `<div class="empty-content">表不存在</div>`;
+    return;
+  }
+
+  const colTypes = {};
+  t.cols.forEach(c => colTypes[c.name] = c.type);
+  const columns = t.cols.map(c => c.name);
+
+  // 先计算总行数（用于状态条）
+  let countSql, countParams;
+  if (tab.filter) {
+    const whereCols = t.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
+    countSql = `SELECT COUNT(*) FROM "${tab.table}" WHERE ${whereCols}`;
+    countParams = t.cols.map(() => `%${tab.filter}%`);
+  } else {
+    countSql = `SELECT COUNT(*) FROM "${tab.table}"`;
+    countParams = [];
+  }
+  let total = 0;
+  try {
+    const cntStmt = db.db.prepare(countSql);
+    cntStmt.bind(countParams);
+    if (cntStmt.step()) total = cntStmt.get()[0];
+    cntStmt.free();
+  } catch (e) {
+    $('contentArea').innerHTML = `<div class="empty-content">查询失败: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+
+  tab.infiniteTotal = total;
+  tab._columns = columns;
+  tab._colTypes = colTypes;
+
+  // 渲染骨架
+  const headHtml = `
+    <tr>
+      <th class="row-num">#</th>
+      ${columns.map(c => `
+        <th>
+          ${escapeHtml(c)}
+          <span class="col-type">${escapeHtml(colTypes[c] || '')}</span>
+        </th>
+      `).join('')}
+    </tr>`;
+
+  $('contentArea').innerHTML = `
+    <div class="data-wrap">
+      <div class="status-bar" id="infiniteStatus">
+        <span class="stat">表 <strong>${escapeHtml(tab.table)}</strong></span>
+        <span class="stat-sep">·</span>
+        <span class="stat">已加载 <strong id="loadedCount">0</strong> / <strong>${formatNum(total)}</strong> 行</span>
+        <span class="stat-sep">·</span>
+        <span class="stat">用时 <strong id="elapsedTime">0ms</strong></span>
+        <span class="stat-sep">·</span>
+        <span class="stat">列数 <strong>${columns.length}</strong></span>
+        <span class="stat-sep">·</span>
+        <span class="stat" style="color:var(--primary);">∞ 无限模式</span>
+      </div>
+      <div class="grid-container" id="infiniteContainer">
+        <table class="data-table">
+          <thead>${headHtml}</thead>
+          <tbody id="infiniteTbody"></tbody>
+        </table>
+        <div class="infinite-sentinel" id="infiniteSentinel">
+          <span class="spinner"></span>
+          <span>正在加载…</span>
+        </div>
+      </div>
+    </div>`;
+
+  // SQL 预览用首条
+  $('sqlPreview').textContent = `SELECT * FROM "${tab.table}"${tab.filter ? ` WHERE … LIKE '%${tab.filter}%'` : ''} LIMIT ${tab.pageSize} OFFSET …`;
+  $('footerBar').classList.add('hidden');
+
+  // 启动 observer
+  setupInfiniteObserver(db, tab);
+
+  // 立即加载第一批
+  loadInfiniteBatch(db, tab);
+}
+
+function setupInfiniteObserver(db, tab) {
+  if (state.infiniteObserver) state.infiniteObserver.disconnect();
+
+  const sentinel = $('infiniteSentinel');
+  if (!sentinel) return;
+  const container = $('infiniteContainer');
+
+  state.infiniteObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !tab.infiniteFinished && !tab._loading) {
+        loadInfiniteBatch(db, tab);
+      }
+    });
+  }, { root: container, rootMargin: '200px 0px' });
+
+  state.infiniteObserver.observe(sentinel);
+}
+
+function loadInfiniteBatch(db, tab) {
+  if (tab._loading || tab.infiniteFinished) return;
+  tab._loading = true;
+
+  const t = db.tables.find(x => x.name === tab.table);
+  if (!t) { tab._loading = false; return; }
+
+  const offset = tab.infinitePage * tab.pageSize;
+  let sql, params;
+  if (tab.filter) {
+    const whereCols = t.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
+    sql = `SELECT * FROM "${tab.table}" WHERE ${whereCols} LIMIT ${tab.pageSize} OFFSET ${offset}`;
+    params = t.cols.map(() => `%${tab.filter}%`);
+  } else {
+    sql = `SELECT * FROM "${tab.table}" LIMIT ${tab.pageSize} OFFSET ${offset}`;
+    params = [];
+  }
+
+  const t0 = performance.now();
+  let rows = [];
+  try {
+    const stmt = db.db.prepare(sql);
+    while (stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+  } catch (e) {
+    console.error(e);
+    tab._loading = false;
+    const sentinel = $('infiniteSentinel');
+    if (sentinel) sentinel.innerHTML = `<span style="color:var(--danger);">加载失败，点击重试</span>`;
+    if (sentinel) sentinel.onclick = () => {
+      sentinel.innerHTML = `<span class="spinner"></span><span>正在加载…</span>`;
+      sentinel.onclick = null;
+      tab._loading = false;
+      loadInfiniteBatch(db, tab);
+    };
+    return;
+  }
+  const elapsed = Math.round(performance.now() - t0);
+
+  tab.infiniteLoaded.push(...rows);
+  tab.infinitePage++;
+  tab._totalElapsed = (tab._totalElapsed || 0) + elapsed;
+
+  // 追加到 tbody
+  const tbody = $('infiniteTbody');
+  if (tbody) {
+    const fragment = rows.map((row, i) => {
+      const cells = tab._columns.map(c => {
+        const v = row[c];
+        if (v === null || v === undefined) return `<td class="null">NULL</td>`;
+        if (typeof v === 'number') return `<td class="number">${v}</td>`;
+        if (typeof v === 'boolean') return `<td class="bool">${v ? 'true' : 'false'}</td>`;
+        if (typeof v === 'object' && v !== null) {
+          const j = JSON.stringify(v);
+          return `<td class="json" title="${escapeHtml(j)}">${escapeHtml(j)}</td>`;
+        }
+        const text = String(v);
+        return `<td title="${escapeHtml(text)}">${escapeHtml(text)}</td>`;
+      }).join('');
+      return `<tr><td class="row-num">${offset + i + 1}</td>${cells}</tr>`;
+    }).join('');
+    tbody.insertAdjacentHTML('beforeend', fragment);
+  }
+
+  // 更新状态条
+  const loadedEl = $('loadedCount');
+  if (loadedEl) loadedEl.textContent = formatNum(tab.infiniteLoaded.length);
+  const elapsedEl = $('elapsedTime');
+  if (elapsedEl) elapsedEl.textContent = tab._totalElapsed + 'ms';
+
+  // 判断是否加载完
+  if (rows.length < tab.pageSize || tab.infiniteLoaded.length >= tab.infiniteTotal) {
+    tab.infiniteFinished = true;
+    const sentinel = $('infiniteSentinel');
+    if (sentinel) {
+      sentinel.innerHTML = `<span class="end-mark">✓</span><span>已加载全部 ${formatNum(tab.infiniteLoaded.length)} 行</span>`;
+      sentinel.onclick = null;
+    }
+    if (state.infiniteObserver) state.infiniteObserver.disconnect();
+  } else {
+    // 还有更多，恢复 sentinel 文案
+    const sentinel = $('infiniteSentinel');
+    if (sentinel) sentinel.innerHTML = `<span class="spinner"></span><span>继续加载…</span>`;
+  }
+
+  tab._loading = false;
+}
+
+/* ================== Dropzone 控制 ================== */
+function showDropzone(show) {
+  $('dropzone').style.display = show ? 'flex' : 'none';
+  $('dataView').style.display = show ? 'none' : 'flex';
+  $('btnClear').style.display = (!show && state.databases.length) ? 'inline-flex' : 'none';
+}
+
+/* ================== 导出 CSV ================== */
+function exportCSV() {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab || tab.table === '__SCHEMA__') {
+    toast('请选择数据表后再导出', 'error');
+    return;
+  }
+  const db = state.databases.find(d => d.id === tab.dbId);
+  const t = db.tables.find(x => x.name === tab.table);
+  let sql, params;
+  if (tab.filter) {
+    const whereCols = t.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
+    sql = `SELECT * FROM "${tab.table}" WHERE ${whereCols}`;
+    params = t.cols.map(() => `%${tab.filter}%`);
+  } else {
+    sql = `SELECT * FROM "${tab.table}"`;
+    params = [];
+  }
+  const stmt = db.db.prepare(sql);
+  stmt.bind(params);
+  const rows = [];
+  const cols = t.cols.map(c => c.name);
+  while (stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+
+  const csv = [
+    cols.join(','),
+    ...rows.map(r => cols.map(c => {
+      const v = r[c];
+      if (v === null || v === undefined) return '';
+      const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(','))
+  ].join('\n');
+
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${tab.table}.csv`;
+  a.click();
+  toast(`已导出 ${formatNum(rows.length)} 行`, 'success');
+}
+
+/* ================== 切换加载模式 ================== */
+function switchLoadMode(tab, mode) {
+  if (tab.loadMode === mode) return;
+  tab.loadMode = mode;
+  tab.infiniteLoaded = [];
+  tab.infinitePage = 0;
+  tab.infiniteFinished = false;
+  tab._loading = false;
+  tab._totalElapsed = 0;
+  if (mode === 'page') {
+    tab.page = 1;
+  }
+  renderContent();
+}
+
+/* ================== 事件绑定 ================== */
+async function handleFiles(files) {
+  for (const f of files) {
+    await loadDatabase(f);
+  }
+}
+
+$('btnAddDb').onclick = () => $('fileInput').click();
+$('btnDropzoneSelect').onclick = () => $('fileInput').click();
+$('fileInput').onchange = (e) => handleFiles([...e.target.files]);
+
+$('btnClear').onclick = async () => {
+  const ok = await confirmDialog({
+    title: '清空所有数据库',
+    message: '此操作将关闭并移除所有已加载的数据库，已打开的标签页也会关闭。',
+    okText: '清空',
+    danger: true,
+  });
+  if (!ok) return;
+  state.databases.forEach(d => { try { d.db.close(); } catch {} });
+  state.databases = [];
+  state.openTabs = [];
+  state.activeDbId = null;
+  state.activeTabKey = null;
+  renderSidebar();
+  renderTabs();
+  showDropzone(true);
+};
+
+$('btnTheme').onclick = () => theme.toggle();
+
+// 桌面端侧栏折叠按钮
+$('btnToggleSidebar').onclick = () => {
+  document.body.classList.toggle('sidebar-collapsed');
+  localStorage.setItem('sqlite-sidebar-collapsed',
+    document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
+};
+
+// 移动端抽屉按钮
+$('btnOpenDrawer').onclick = toggleDrawer;
+$('sidebarOverlay').onclick = closeDrawer;
+
+// mode toggle
+document.querySelectorAll('#modeToggle button').forEach(btn => {
+  btn.onclick = () => {
+    const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+    if (!tab || tab.table === '__SCHEMA__') return;
+    state.loadMode = btn.dataset.mode;
+    localStorage.setItem('sqlite-load-mode', state.loadMode);
+    switchLoadMode(tab, btn.dataset.mode);
+  };
+});
+
+// 拖拽
+const dz = $('dropzone');
+['dragenter','dragover'].forEach(ev => {
+  dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drag-over'); });
+});
+['dragleave','drop'].forEach(ev => {
+  dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('drag-over'); });
+});
+dz.addEventListener('drop', e => handleFiles([...e.dataTransfer.files]));
+
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.target.closest('.dropzone')) return;
+  handleFiles([...e.dataTransfer.files]);
+});
+
+// 搜索
+let searchTimer;
+$('searchInput').oninput = (e) => {
+  clearTimeout(searchTimer);
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab || tab.table === '__SCHEMA__') return;
+  searchTimer = setTimeout(() => {
+    tab.filter = e.target.value;
+    tab.page = 1;
+    tab.infinitePage = 0;
+    tab.infiniteLoaded = [];
+    tab.infiniteFinished = false;
+    renderContent();
+  }, 250);
+};
+
+// 分页
+$('btnPrev').onclick = () => {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (tab && tab.page > 1) { tab.page--; renderContent(); }
+};
+$('btnNext').onclick = () => {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab) return;
+  const totalPages = parseInt($('totalPages').textContent);
+  if (tab.page < totalPages) { tab.page++; renderContent(); }
+};
+$('pageInput').onchange = (e) => {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab) return;
+  const p = parseInt(e.target.value);
+  const totalPages = parseInt($('totalPages').textContent);
+  if (p >= 1 && p <= totalPages) { tab.page = p; renderContent(); }
+};
+$('pageSize').onchange = (e) => {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab) return;
+  tab.pageSize = parseInt(e.target.value);
+  tab.page = 1;
+  renderContent();
+};
+
+// 导出
+$('btnExport').onclick = exportCSV;
+
+// 响应窗口尺寸变化
+window.addEventListener('resize', () => {
+  const nowMobile = matchMedia('(max-width: 768px)').matches;
+  if (nowMobile !== state.isMobile) {
+    state.isMobile = nowMobile;
+    renderContent();
+  }
+});
+
+/* ================== 启动 ================== */
+if (localStorage.getItem('sqlite-sidebar-collapsed') === '1' && !state.isMobile) {
+  document.body.classList.add('sidebar-collapsed');
+}
+
+theme.init();
+
+(async () => {
+  try {
+    await initSQL();
+    toast('SQLite 引擎已就绪', 'success');
+  } catch (e) {
+    toast('引擎加载失败，请检查网络', 'error');
+    console.error(e);
+  }
+})();
+</script>
+</body>
+</html>
