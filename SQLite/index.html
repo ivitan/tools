@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/svg+xml" href="/img/SQLite.svg" />
 <title>SQLite 读取工具</title>
+<link rel="icon" type="image/svg+xml" href="/img/SQLite.svg" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -824,6 +824,39 @@
     to { transform: translateX(0); opacity: 1; }
   }
 
+  /* ===== 悬浮到底按钮 ===== */
+  .fab-end {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--primary);
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 45;
+    transition: transform 0.15s, background-color 0.15s, color 0.15s;
+  }
+  .fab-end.show { display: flex; }
+  .fab-end:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: translateY(-2px);
+    border-color: var(--primary);
+  }
+  .fab-end:active { transform: translateY(0); }
+  .fab-end:disabled { opacity: 0.4; cursor: not-allowed; }
+  [data-theme="dark"] .fab-end { border-color: var(--border-hover); }
+  @media (max-width: 768px) {
+    .fab-end { right: 16px; bottom: 16px; width: 44px; height: 44px; }
+  }
+
   /* ===== Dialog 弹窗（替代原生浏览器 dialog，深色友好） ===== */
   .dialog-mask {
     position: fixed;
@@ -1082,6 +1115,14 @@
     </div>
   </main>
 </div>
+
+<!-- 悬浮到底按钮（仅无限模式） -->
+<button class="fab-end" id="fabEnd" title="一键跳到最后一行" disabled>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="3" x2="12" y2="21"/>
+    <polyline points="5 14 12 21 19 14"/>
+  </svg>
+</button>
 
 <script>
 /* ================== 全局状态 ================== */
@@ -1478,6 +1519,7 @@ function renderContent() {
       renderDataGrid(db, tab);
     }
   }
+  updateFabEnd();
 }
 
 function renderSchemaView(db) {
@@ -1831,6 +1873,7 @@ function loadInfiniteBatch(db, tab) {
   }
 
   tab._loading = false;
+  updateFabEnd();
 }
 
 /* ================== Dropzone 控制 ================== */
@@ -1838,7 +1881,52 @@ function showDropzone(show) {
   $('dropzone').style.display = show ? 'flex' : 'none';
   $('dataView').style.display = show ? 'none' : 'flex';
   $('btnClear').style.display = (!show && state.databases.length) ? 'inline-flex' : 'none';
+  updateFabEnd();
 }
+
+/* ================== 悬浮到底按钮 ================== */
+const fab = $('fabEnd');
+
+// 显隐控制：仅「无限模式数据表」显示；已全部加载完毕时置灰
+function updateFabEnd() {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  const active = tab && tab.table !== '__SCHEMA__' && tab.loadMode === 'infinite'
+                 && $('dataView').style.display !== 'none'
+                 && document.getElementById('infiniteContainer');
+  if (!active) {
+    fab.classList.remove('show');
+    fab.disabled = true;
+    return;
+  }
+  fab.classList.add('show');
+  fab.disabled = !!tab.infiniteFinished;
+}
+
+// 一键到后一行：把剩余数据一次性补拉到全部，再滚动到网格底部
+async function jumpToEnd() {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab || tab.table === '__SCHEMA__' || tab.loadMode !== 'infinite') return;
+  const db = state.databases.find(d => d.id === tab.dbId);
+  if (!db) return;
+
+  fab.disabled = true;
+  // 逐批补拉直到全部完成（每次让出主线程一帧，避免大表一次性卡死）
+  while (!tab.infiniteFinished) {
+    loadInfiniteBatch(db, tab);
+    if (!tab._loading) break;   // 出错或完成
+    await new Promise(r => setTimeout(r, 0));
+  }
+  // 滚动到底部
+  const container = $('infiniteContainer');
+  if (container) {
+    container.scrollTop = container.scrollHeight;
+  }
+  if (tab.infiniteFinished) {
+    toast(`已跳到最后一行，共 ${formatNum(tab.infiniteLoaded.length)} 行`, 'success');
+  }
+  updateFabEnd();
+}
+fab.addEventListener('click', jumpToEnd);
 
 /* ================== 导出 CSV ================== */
 function exportCSV() {
