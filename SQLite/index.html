@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SQLite 数据库读取工具</title>
+<title>SQLite 读取工具</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -674,7 +674,10 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--text);
+    user-select: text;
   }
+  /* 数据单元格提示可双击复制（排除行号列与表头） */
+  .data-table tbody td:not(.row-num) { cursor: copy; }
   .data-table tbody tr:hover td { background: var(--row-hover); }
   [data-theme="dark"] .data-table tbody tr:hover td { background: #243044; }
   .data-table td.null {
@@ -982,7 +985,7 @@
         <path d="M3 12a9 3 0 0 0 18 0"/>
       </svg>
     </div>
-    <span>SQLite 数据库读取工具</span>
+    <span>SQLite 读取工具</span>
   </div>
   <div class="header-spacer"></div>
   <div class="header-actions">
@@ -2008,6 +2011,47 @@ $('pageSize').onchange = (e) => {
 
 // 导出
 $('btnExport').onclick = exportCSV;
+
+/* ================== 双击单元格复制 ================== */
+// 复制文本到剪贴板（兼容旧浏览器回退）
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      return true;
+    } catch (e2) { return false; }
+  }
+}
+
+// 内容区事件委托：双击任一数据单元格即复制其内容
+$('contentArea').addEventListener('dblclick', async (e) => {
+  // 找被双击的元素所在的 td
+  const td = e.target.closest('td');
+  if (!td) return;
+  // 跳过行号列
+  if (td.classList.contains('row-num')) return;
+  // 保证是数据表格单元格（表头用 th，天然被跳过；schema 表格由 schema-table 渲染）
+  if (!td.closest('.data-table')) return;
+
+  // 取原始文本（json 单元格也是纯文本）
+  const text = td.textContent;
+  const ok = await copyToClipboard(text);
+  if (ok) {
+    toast(`已复制${text.length > 20 ? '（前 20 字）' : ''}：「${text.slice(0, 20)}${text.length > 20 ? '…' : ''}」`, 'success');
+  } else {
+    toast('复制失败，请手动选择复制', 'error');
+  }
+});
 
 // 响应窗口尺寸变化
 window.addEventListener('resize', () => {
