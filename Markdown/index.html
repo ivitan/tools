@@ -21,11 +21,14 @@
           var saved = localStorage.getItem("md-editor-theme");
           if (saved === "dark") return true;
           if (saved === "light") return false;
+          saved = localStorage.getItem("theme");
+          if (saved === "dark") return true;
+          if (saved === "light") return false;
         } catch (e) { }
         return window.matchMedia("(prefers-color-scheme: dark)").matches;
       }
       var dark = isDark();
-      if (dark) document.documentElement.classList.add("dark-mode");
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
       var hl = document.getElementById("hljs-theme");
       if (hl) {
         hl.href = dark
@@ -37,72 +40,89 @@
 
   <style>
     :root {
-      --bg-primary: #f5f5f0;
-      --bg-secondary: #ffffff;
-      --bg-tertiary: #fafaf8;
-      --bg-hover: #f0f0eb;
-      --bg-code: #f4f4f0;
-      --bg-code-block: #f8f8f5;
-      --bg-toolbar: #ffffff;
-      --bg-input: #fdfdfc;
-      --bg-scrollbar-thumb: #c8c8c0;
-      --bg-scrollbar-track: transparent;
-      --text-primary: #2c2c28;
-      --text-secondary: #555550;
-      --text-tertiary: #888880;
-      --text-code: #3a3a35;
-      --text-placeholder: #b0b0a8;
-      --border-primary: #e0e0d8;
-      --border-secondary: #e8e8e0;
-      --border-focus: #a0a098;
-      --accent: #5b7b5a;
-      --accent-hover: #4a6a49;
-      --accent-light: #e8f0e8;
-      --accent-subtle: #f0f5f0;
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-      --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
-      --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.08);
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 16px;
-      --transition-fast: 0.15s ease;
-      --transition-normal: 0.25s ease;
-      --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      --font-mono:
-        "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", "Consolas",
-        monospace;
-      --font-sans:
-        "Inter", "SF Pro Display", "PingFang SC", "Microsoft YaHei",
-        system-ui, sans-serif;
-    }
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --panel-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border-hover: #cbd5e1;
+      --text: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-on: #ffffff;
+      --primary-light: #eff6ff;
+      --primary-soft: rgba(37, 99, 235, 0.10);
+      --success: #059669;
+      --success-light: #ecfdf5;
+      --danger: #dc2626;
+      --code-bg: #f6f8fa;
+      --shadow: 0 1px 3px rgba(0, 0, 0, .05), 0 1px 2px rgba(0, 0, 0, .03);
+      --font-sans: "Inter", "SF Pro Display", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", "Consolas", monospace;
 
-    .dark-mode {
-      --bg-primary: #1c1c22;
-      --bg-secondary: #24242d;
-      --bg-tertiary: #282832;
-      --bg-hover: #2e2e38;
-      --bg-code: #2a2a35;
-      --bg-code-block: #1f1f28;
-      --bg-toolbar: #24242d;
-      --bg-input: #262630;
-      --bg-scrollbar-thumb: #4a4a58;
-      --bg-scrollbar-track: transparent;
-      --text-primary: #e0e0e6;
-      --text-secondary: #b5b5c0;
-      --text-tertiary: #808090;
-      --text-code: #d0d0da;
-      --text-placeholder: #606070;
-      --border-primary: #353545;
-      --border-secondary: #3a3a4a;
-      --border-focus: #6a6a7a;
-      --accent: #8ab88a;
-      --accent-hover: #9cc89c;
-      --accent-light: #2a3a2f;
-      --accent-subtle: #252e28;
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
-      --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.35);
-      --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
-    }
+      /* 旧变量别名（兼容历史命名） */
+      --bg-primary: var(--bg);
+      --bg-secondary: var(--panel);
+      --bg-tertiary: var(--panel-hover);
+      --bg-hover: var(--panel-hover);
+      --bg-code: var(--code-bg);
+      --bg-code-block: var(--code-bg);
+      --bg-toolbar: var(--panel);
+      --bg-input: var(--panel);
+      --text-primary: var(--text);
+      --text-color: var(--text);
+      --text-code: var(--text);
+      --text-tertiary: var(--text-muted);
+      --text-placeholder: var(--text-muted);
+      --border-primary: var(--border);
+      --border-secondary: var(--border);
+      --border-color: var(--border);
+      --border-focus: var(--primary);
+      --accent: var(--primary);
+      --accent-hover: var(--primary-hover);
+      --accent-light: var(--primary-light);
+      --accent-subtle: var(--primary-soft);
+      --primary-color: var(--primary);
+      --success-color: var(--success);
+      --danger-color: var(--danger);
+      --panel-bg: var(--panel);
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: var(--shadow);
+      --shadow-md: var(--shadow);
+      --transition-fast: .18s ease;
+      --transition-normal: .18s ease;
+      --success-ink: #047857;
+      --danger-ink: #b91c1c;
+      --danger-on: #ffffff;
+    --primary-ink: #1d4ed8;
+}
+
+    [data-theme="dark"] {
+      --bg: #0b1220;
+      --panel: #111827;
+      --panel-hover: #1e293b;
+      --border: #1f2937;
+      --border-hover: #475569;
+      --text: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --primary: #60a5fa;
+      --primary-hover: #93c5fd;
+      --primary-light: rgba(96, 165, 250, .12);
+      --primary-soft: rgba(96, 165, 250, .14);
+      --success: #34d399;
+      --success-light: rgba(52, 211, 153, .12);
+      --danger: #f87171;
+      --code-bg: #0d1117;
+      --shadow: 0 1px 3px rgba(0, 0, 0, .30), 0 1px 2px rgba(0, 0, 0, .20);
+      --success-ink: #6ee7b7;
+      --danger-ink: #fca5a5;
+      --danger-on: #0b1220;
+    --primary-ink: #93c5fd;
+}
 
     *,
     *::before,
@@ -119,150 +139,235 @@
 
     body {
       font-family: var(--font-sans);
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      background: var(--bg);
+      color: var(--text);
       height: 100%;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      transition:
-        background var(--transition-slow),
-        color var(--transition-slow);
+      font-size: 14px;
+      transition: background var(--transition-normal), color var(--transition-normal);
     }
 
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 8px;
+      height: 8px;
     }
 
     ::-webkit-scrollbar-track {
-      background: var(--bg-scrollbar-track);
+      background: transparent;
     }
 
     ::-webkit-scrollbar-thumb {
-      background: var(--bg-scrollbar-thumb);
-      border-radius: 3px;
+      background: var(--border-hover);
+      border-radius: 4px;
     }
 
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* ============ Header ============ */
     .header {
+      height: 52px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 20px;
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-primary);
+      gap: 12px;
+      padding: 0 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
       flex-shrink: 0;
-      transition:
-        background var(--transition-slow),
-        border-color var(--transition-slow);
-      box-shadow: var(--shadow-sm);
+      z-index: 20;
     }
 
     .header-brand {
       display: flex;
       align-items: center;
       gap: 10px;
+      min-width: 0;
     }
 
-    .header-logo {
-      width: 34px;
-      height: 34px;
-      border-radius: var(--radius-sm);
-      background: var(--accent);
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--primary);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
+      flex-shrink: 0;
     }
 
-    .theme-toggle {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
+    [data-theme="dark"] .logo-icon {
+      color: #0b1220;
+    }
+
+    .header-text {
       display: flex;
+      align-items: baseline;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .header-title {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: .2px;
+      white-space: nowrap;
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .home-btn,
+    .icon-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border-secondary);
-      color: var(--text-color);
-      transition: all var(--transition-normal);
-      flex-shrink: 0;
-    }
-
-    .theme-toggle:hover {
-      border-color: var(--primary-color);
-      color: var(--primary-color);
-    }
-
-    .theme-toggle i {
-      font-size: 1.05rem;
-    }
-
-    .toolbar {
-      display: flex;
-      gap: 2px;
-      padding: 6px 14px;
-      background: var(--bg-toolbar);
-      border-bottom: 1px solid var(--border-secondary);
-      flex-shrink: 0;
-      overflow-x: auto;
-    }
-
-    .toolbar-btn {
-      width: 32px;
-      height: 32px;
-      border: 1.5px solid transparent;
       background: transparent;
-      cursor: pointer;
-      font-size: 15px;
+      border: 1px solid var(--border);
       color: var(--text-secondary);
-      border-radius: var(--radius-sm);
+      text-decoration: none;
+      flex-shrink: 0;
       transition: all var(--transition-fast);
     }
 
-    .toolbar-btn:hover {
-      background: var(--bg-hover);
-      color: var(--text-primary);
+    .home-btn:hover,
+    .icon-btn:hover {
+      background: var(--panel-hover);
+      border-color: var(--border-hover);
+      color: var(--primary);
     }
 
+    .home-btn svg {
+      width: 15px;
+      height: 15px;
+      display: block;
+    }
+
+    .icon-btn svg {
+      width: 15px;
+      height: 15px;
+      display: block;
+    }
+
+    /* ============ Toolbar ============ */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 12px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+      z-index: 15;
+    }
+
+    .toolbar::-webkit-scrollbar {
+      height: 0;
+    }
+
+    .toolbar-btn {
+      min-width: 30px;
+      height: 30px;
+      padding: 0 7px;
+      border: 1px solid transparent;
+      background: var(--primary-soft);
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      color: var(--primary-ink);
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-sans);
+      transition: all var(--transition-fast);
+      flex-shrink: 0;
+    }
+
+    .toolbar-btn:hover {
+      background: var(--primary-light);
+      border-color: transparent;
+      color: var(--primary-ink);
+    }
+
+    .toolbar-btn:active {
+      transform: scale(.94);
+    }
+
+    .toolbar-btn i {
+      font-size: 13px;
+    }
+
+    .toolbar-divider {
+      width: 1px;
+      height: 16px;
+      background: var(--border);
+      margin: 0 6px;
+      flex-shrink: 0;
+    }
+
+    /* ============ Mobile tabs ============ */
     .mobile-tabs {
       display: none;
       gap: 4px;
-      padding: 4px 12px;
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-primary);
+      padding: 8px 12px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     .mobile-tab-btn {
       flex: 1;
-      padding: 10px;
-      border: 1.5px solid transparent;
+      height: 32px;
+      border: 1px solid transparent;
       background: transparent;
       cursor: pointer;
-      font-weight: 550;
-      color: var(--text-tertiary);
-      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border-radius: 6px;
+      transition: all var(--transition-fast);
     }
 
     .mobile-tab-btn.active {
-      background: var(--accent-light);
-      color: var(--accent);
-      border-color: var(--accent);
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 600;
     }
 
+    /* ============ Main ============ */
     .main-container {
       display: flex;
       flex: 1;
       min-height: 0;
-    }
-
-    .divider-bar {
-      width: 6px;
-      background: var(--border-primary);
-      cursor: col-resize;
-      flex-shrink: 0;
+      gap: 8px;
+      padding: 12px;
+      background: var(--bg);
     }
 
     .panel {
@@ -271,15 +376,47 @@
       flex-direction: column;
       min-width: 0;
       overflow: hidden;
-      background: var(--bg-input);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow);
     }
 
     .panel-header {
-      padding: 8px 16px;
-      background: var(--bg-tertiary);
-      border-bottom: 1px solid var(--border-secondary);
-      font-size: 0.78rem;
-      color: var(--text-tertiary);
+      height: 34px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 12px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .panel-header .count {
+      margin-left: auto;
+      font-size: 11.5px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-edit {
+      background: var(--primary);
+    }
+
+    .dot-preview {
+      background: var(--success);
     }
 
     .editor-textarea {
@@ -288,77 +425,249 @@
       border: none;
       outline: none;
       resize: none;
-      padding: 18px 20px;
+      padding: 14px 16px;
       font-family: var(--font-mono);
-      font-size: 0.9rem;
-      line-height: 1.7;
-      background: var(--bg-input);
-      color: var(--text-primary);
+      font-size: 13px;
+      line-height: 1.75;
+      background: var(--panel);
+      color: var(--text);
+      tab-size: 4;
+    }
+
+    .editor-textarea::placeholder {
+      color: var(--text-muted);
     }
 
     .preview-wrapper {
       flex: 1;
       overflow-y: auto;
-      padding: 18px 24px;
-      background: var(--bg-input);
+      padding: 16px 20px;
+      background: var(--panel);
       word-wrap: break-word;
     }
 
+    /* ============ Divider ============ */
+    .divider-bar {
+      width: 9px;
+      background: transparent;
+      cursor: col-resize;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 -3px;
+      position: relative;
+      z-index: 5;
+    }
+
+    .divider-bar::before {
+      content: "";
+      width: 3px;
+      height: 42px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background var(--transition-fast), height var(--transition-fast);
+    }
+
+    .divider-bar:hover::before {
+      background: var(--primary);
+      height: 72px;
+    }
+
+    /* ============ Markdown body ============ */
     .markdown-body {
       font-family: var(--font-sans);
-      color: var(--text-primary);
+      color: var(--text);
       line-height: 1.75;
-      max-width: 780px;
+      font-size: 14px;
+      max-width: 820px;
+    }
+
+    .markdown-body>*:first-child {
+      margin-top: 0 !important;
+    }
+
+    .markdown-body h1,
+    .markdown-body h2,
+    .markdown-body h3,
+    .markdown-body h4,
+    .markdown-body h5,
+    .markdown-body h6 {
+      font-weight: 650;
+      line-height: 1.35;
+      margin: 1.6em 0 .7em;
+      color: var(--text);
+      letter-spacing: -.2px;
     }
 
     .markdown-body h1 {
-      border-bottom: 2px solid var(--border-primary);
+      font-size: 1.65em;
+      padding-bottom: .35em;
+      border-bottom: 1px solid var(--border);
     }
 
     .markdown-body h2 {
-      border-bottom: 1.5px solid var(--border-secondary);
+      font-size: 1.35em;
+      padding-bottom: .3em;
+      border-bottom: 1px solid var(--border);
     }
 
-    .markdown-body pre {
-      background: var(--bg-code-block);
-      border: 1px solid var(--border-primary);
-      border-radius: var(--radius-md);
-      padding: 16px;
-      overflow-x: auto;
+    .markdown-body h3 {
+      font-size: 1.15em;
     }
 
-    .markdown-body code {
-      font-family: var(--font-mono);
-      background: var(--bg-code);
-      padding: 2px 6px;
-      border-radius: 3px;
+    .markdown-body h4 {
+      font-size: 1em;
+    }
+
+    .markdown-body h5,
+    .markdown-body h6 {
+      font-size: .9em;
+      color: var(--text-secondary);
+    }
+
+    .markdown-body p {
+      margin: .85em 0;
+    }
+
+    .markdown-body a {
+      color: var(--primary);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+
+    .markdown-body a:hover {
+      border-bottom-color: var(--primary);
+    }
+
+    .markdown-body strong {
+      font-weight: 650;
+      color: var(--text);
+    }
+
+    .markdown-body ul,
+    .markdown-body ol {
+      margin: .8em 0;
+      padding-left: 1.6em;
+    }
+
+    .markdown-body li {
+      margin: .3em 0;
+    }
+
+    .markdown-body li::marker {
+      color: var(--text-muted);
+    }
+
+    .markdown-body li input[type="checkbox"] {
+      margin-right: .45em;
+      accent-color: var(--primary);
+    }
+
+    .markdown-body ul:has(input[type="checkbox"]) {
+      list-style: none;
+      padding-left: .2em;
+    }
+
+    .markdown-body hr {
+      height: 1px;
+      border: none;
+      background: var(--border);
+      margin: 1.8em 0;
     }
 
     .markdown-body blockquote {
-      border-left: 3.5px solid var(--accent);
-      margin: 1em 0;
-      padding: 0.6em 1em;
-      background: var(--accent-subtle);
+      border-left: 3px solid var(--primary);
+      margin: 1.1em 0;
+      padding: .5em 1em;
+      background: var(--primary-soft);
+      border-radius: 0 6px 6px 0;
+      color: var(--text-secondary);
+    }
+
+    .markdown-body blockquote p {
+      margin: .3em 0;
+    }
+
+    .markdown-body pre {
+      background: var(--code-bg) !important;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      margin: 1.1em 0;
+      line-height: 1.6;
+    }
+
+    .markdown-body pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 12.5px;
+      color: inherit;
+    }
+
+    /* 仅日间模式提升代码块内语法高亮 token 对比度（github.min.css 默认橙红在白底偏浅）
+       以 .markdown-body 前缀提高优先级；深色模式沿用 github-dark.min.css 原配色（已达标） */
+    :root:not([data-theme="dark"]) .markdown-body .hljs-keyword,
+    :root:not([data-theme="dark"]) .markdown-body .hljs-variable.language_ { color: #b91c1c; }
+    :root:not([data-theme="dark"]) .markdown-body .hljs-built_in { color: #b45309; }
+
+    .markdown-body code {
+      font-family: var(--font-mono);
+      background: var(--panel-hover);
+      padding: .15em .4em;
+      border-radius: 4px;
+      font-size: .875em;
+      color: var(--text);
     }
 
     .markdown-body table {
       border-collapse: collapse;
       width: 100%;
+      margin: 1.1em 0;
+      font-size: 13.5px;
+      display: block;
+      overflow-x: auto;
     }
 
     .markdown-body th,
     .markdown-body td {
-      border: 1px solid var(--border-primary);
-      padding: 10px 14px;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
     }
 
+    .markdown-body th {
+      background: var(--panel-hover);
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .markdown-body img {
+      max-width: 100%;
+      border-radius: 6px;
+    }
+
+    /* ============ Responsive ============ */
     @media (max-width: 768px) {
+      .header {
+        height: 48px;
+        padding: 0 12px;
+      }
+
+      .header-subtitle {
+        display: none;
+      }
+
       .mobile-tabs {
         display: flex;
       }
 
       .main-container {
         flex-direction: column;
+        gap: 0;
+        padding: 10px;
       }
 
       .divider-bar {
@@ -378,6 +687,10 @@
       }
 
       .editor-textarea {
+        padding: 12px 14px;
+      }
+
+      .preview-wrapper {
         padding: 14px 16px;
       }
     }
@@ -387,49 +700,72 @@
 <body>
   <header class="header">
     <div class="header-brand">
-      <div class="header-logo"><i class="fab fa-markdown"></i></div>
-      <span class="header-title">Markdown 编辑器</span>
-      <span class="header-subtitle">· 双向跟随</span>
-      <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <div class="logo-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2.5"></rect>
+          <path d="M6.5 15.5V9l3 3.5 3-3.5v6.5"></path>
+          <path d="M16 15.5l2.5-3 2.5 3"></path>
+          <path d="M18.5 12.5v3"></path>
+        </svg>
+      </div>
+      <div class="header-text">
+        <span class="header-title">Markdown 编辑器</span>
+        <span class="header-subtitle">· 双向实时跟随</span>
+      </div>
+      <a href="../" class="home-btn" title="返回主页" aria-label="返回主页">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
           <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
           <path d="M9 22V12h6v10"></path>
-        </svg></a>
+        </svg>
+      </a>
     </div>
-    <button class="theme-toggle" id="themeToggle" title="切换主题">
-      <i class="fas fa-moon"></i>
-    </button>
+    <div class="header-actions">
+      <button class="icon-btn" id="themeToggle" title="切换主题">
+        <svg id="iconSun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+        <svg id="iconMoon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
   </header>
 
   <div class="toolbar" id="toolbar">
-    <button class="toolbar-btn" data-action="heading">H</button>
-    <button class="toolbar-btn" data-action="bold"><strong>B</strong></button>
-    <button class="toolbar-btn" data-action="italic"><em>I</em></button>
+    <button class="toolbar-btn" data-action="heading" title="标题"><i class="fas fa-heading"></i></button>
+    <button class="toolbar-btn" data-action="bold" title="加粗"><i class="fas fa-bold"></i></button>
+    <button class="toolbar-btn" data-action="italic" title="斜体"><i class="fas fa-italic"></i></button>
     <span class="toolbar-divider"></span>
-    <button class="toolbar-btn" data-action="link">🔗</button>
-    <button class="toolbar-btn" data-action="image">🖼</button>
+    <button class="toolbar-btn" data-action="link" title="链接"><i class="fas fa-link"></i></button>
+    <button class="toolbar-btn" data-action="image" title="图片"><i class="fas fa-image"></i></button>
     <span class="toolbar-divider"></span>
-    <button class="toolbar-btn" data-action="codeblock">&lt;/&gt;</button>
-    <button class="toolbar-btn" data-action="inlinecode">`</button>
+    <button class="toolbar-btn" data-action="codeblock" title="代码块"><i class="fas fa-code"></i></button>
+    <button class="toolbar-btn" data-action="inlinecode" title="行内代码"
+      style="font-family:var(--font-mono);font-weight:600;">`</button>
     <span class="toolbar-divider"></span>
-    <button class="toolbar-btn" data-action="quote">❝</button>
-    <button class="toolbar-btn" data-action="ul">•</button>
-    <button class="toolbar-btn" data-action="ol">1.</button>
+    <button class="toolbar-btn" data-action="quote" title="引用"><i class="fas fa-quote-left"></i></button>
+    <button class="toolbar-btn" data-action="ul" title="无序列表"><i class="fas fa-list-ul"></i></button>
+    <button class="toolbar-btn" data-action="ol" title="有序列表"><i class="fas fa-list-ol"></i></button>
     <span class="toolbar-divider"></span>
-    <button class="toolbar-btn" data-action="table">⊞</button>
-    <button class="toolbar-btn" data-action="hr">—</button>
+    <button class="toolbar-btn" data-action="table" title="表格"><i class="fas fa-table"></i></button>
+    <button class="toolbar-btn" data-action="hr" title="分割线"><i class="fas fa-minus"></i></button>
   </div>
 
   <div class="mobile-tabs" id="mobileTabs">
-    <button class="mobile-tab-btn active" id="tabEditor">✏️ 编辑</button>
-    <button class="mobile-tab-btn" id="tabPreview">👁 预览</button>
+    <button class="mobile-tab-btn active" id="tabEditor"><i class="fas fa-pen"></i> 编辑</button>
+    <button class="mobile-tab-btn" id="tabPreview"><i class="fas fa-eye"></i> 预览</button>
   </div>
 
   <div class="main-container" id="mainContainer">
     <div class="panel panel-editor" id="panelEditor">
       <div class="panel-header">
         <span class="dot dot-edit"></span>编辑器
-        <span id="charCount">0 字符</span>
+        <span class="count" id="charCount">0 字符</span>
       </div>
       <textarea class="editor-textarea" id="editor" placeholder="在此编写 Markdown…" spellcheck="false"></textarea>
     </div>
@@ -437,7 +773,7 @@
     <div class="panel panel-preview" id="panelPreview">
       <div class="panel-header">
         <span class="dot dot-preview"></span>预览
-        <span id="wordCount">0 字</span>
+        <span class="count" id="wordCount">0 字</span>
       </div>
       <div class="preview-wrapper" id="preview">
         <div class="markdown-body"></div>
@@ -620,7 +956,7 @@ print(fibonacci(10))  # 55
             previewContent.innerHTML = marked.parse(editor.value);
           } catch (e) {
             previewContent.innerHTML =
-              '<p style="color:#e06060;">⚠️ 解析错误</p>';
+              '<p style="color:var(--danger);">⚠️ 解析错误</p>';
           }
           updateStats();
           saveContent();
@@ -639,10 +975,12 @@ print(fibonacci(10))  # 55
       // 暗色模式
       function applyTheme(dark) {
         isDarkMode = dark;
-        document.documentElement.classList.toggle("dark-mode", dark);
-        themeToggle.innerHTML = dark
-          ? '<i class="fas fa-sun"></i>'
-          : '<i class="fas fa-moon"></i>';
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        var iSun = document.getElementById("iconSun");
+        var iMoon = document.getElementById("iconMoon");
+        if (iSun) iSun.style.display = dark ? "block" : "none";
+        if (iMoon) iMoon.style.display = dark ? "none" : "block";
+        themeToggle.title = dark ? "切换到浅色模式" : "切换到深色模式";
         hljsThemeLink.href = dark
           ? "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
           : "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
@@ -906,50 +1244,8 @@ print(fibonacci(10))  # 55
       editor.focus();
       editor.setSelectionRange(editor.value.length, editor.value.length);
     })();
+  
   </script>
-  <!-- 返回主页图标按钮样式 -->
-  <style>
-    .home-back-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      color: inherit;
-      background: rgba(135, 135, 135, 0.16);
-      border: 1px solid transparent;
-      text-decoration: none;
-      flex-shrink: 0;
-      transition:
-        background 0.2s ease,
-        transform 0.2s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .home-back-icon:hover {
-      background: rgba(135, 135, 135, 0.3);
-      transform: translateY(-1px);
-    }
-
-    .home-back-icon svg {
-      width: 18px;
-      height: 18px;
-      display: block;
-    }
-
-    .title-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 5px;
-    }
-
-    .title-row h1 {
-      margin-bottom: 0;
-    }
-  </style>
 </body>
 
 </html>
