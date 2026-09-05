@@ -1,1205 +1,727 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-  <script>
-    (function () {
-      try {
-        var saved = localStorage.getItem("theme");
-        var dark =
-          saved === "dark" ||
-          (!saved &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches);
-        if (dark) document.documentElement.classList.add("dark-mode");
-      } catch (e) { }
-    })();
-  </script>
-  <link rel="icon" type="image/svg+xml" href="/img/TypeSearch.svg" />
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Type工具套件</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    :root {
-      /* 日间模式变量 - 简洁中性灰蓝色调 */
-      --primary-color: #2563eb;
-      --primary-dark: #1d4ed8;
-      --secondary-color: #475569;
-      --success-color: #10b981;
-      --success-dark: #059669;
-      --danger-color: #ef4444;
-      --danger-dark: #dc2626;
-      --warning-color: #f59e0b;
-      --warning-dark: #d97706;
-      --info-color: #0ea5e9;
-
-      --bg-gradient: #f3f4f6;
-      --container-bg: #ffffff;
-      --header-bg: #2563eb;
-      --tab-bg: #f8fafc;
-      --tab-active-bg: #2563eb;
-      --panel-bg: #ffffff;
-      --panel-secondary: #f8fafc;
-      --text-color: #1e293b;
-      --text-light: #64748b;
-      --text-inverse: #ffffff;
-      --border-color: #e2e8f0;
-      --shadow-color: rgba(15, 23, 42, 0.08);
-      --hover-bg: rgba(37, 99, 235, 0.08);
-      --table-header-bg: #f8fafc;
-      --table-row-even: #f8fafc;
-      --table-row-hover: #eff6ff;
-      --placeholder-bg: rgba(100, 116, 139, 0.08);
-      --radius: 12px;
-      --radius-sm: 8px;
-    }
-
-    .dark-mode {
-      /* 夜间模式变量 - 深色层次分明 */
-      --bg-gradient: #111827;
-      --container-bg: #1e293b;
-      --header-bg: #1e40af;
-      --tab-bg: #1e293b;
-      --tab-active-bg: #3b82f6;
-      --panel-bg: #1e293b;
-      --panel-secondary: #0f172a;
-      --text-color: #e2e8f0;
-      --text-light: #94a3b8;
-      --text-inverse: #f1f5f9;
-      --border-color: #334155;
-      --shadow-color: rgba(0, 0, 0, 0.3);
-      --hover-bg: rgba(96, 165, 250, 0.14);
-      --table-header-bg: #0f172a;
-      --table-row-even: #0f172a;
-      --table-row-hover: #1e3a5f;
-      --placeholder-bg: rgba(148, 163, 184, 0.08);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-        "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-      transition:
-        background-color 0.25s ease,
-        color 0.25s ease,
-        border-color 0.25s ease;
-    }
-
-    body {
-      background: var(--bg-gradient);
-      min-height: 100vh;
-      padding: 16px;
-      color: var(--text-color);
-      line-height: 1.6;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      background: var(--container-bg);
-      border-radius: 16px;
-      box-shadow: 0 4px 24px var(--shadow-color);
-      overflow: hidden;
-      animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* =============== 顶栏 =============== */
-    header {
-      background: var(--header-bg);
-      color: var(--text-inverse);
-      padding: 16px 24px;
-    }
-
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-
-    header h3 {
-      font-size: 1.15rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--text-inverse);
-    }
-
-    header h3 i {
-      color: #fff;
-      font-size: 1.1rem;
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .theme-toggle {
-      background: rgba(255, 255, 255, 0.1);
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      border: none;
-      flex-shrink: 0;
-    }
-
-    .theme-toggle:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .theme-toggle i {
-      font-size: 1.05rem;
-      color: #fff;
-    }
-
-    /* =============== 选项卡 =============== */
-    .tabs {
-      display: flex;
-      background: var(--tab-bg);
-      padding: 0;
-      margin: 0;
-      border-bottom: 1px solid var(--border-color);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-
-    .tabs::-webkit-scrollbar {
-      display: none;
-    }
-
-    .tab {
-      padding: 14px 24px;
-      cursor: pointer;
-      color: var(--text-light);
-      font-weight: 500;
-      font-size: 0.95rem;
-      transition: all 0.2s ease;
-      border-bottom: 2px solid transparent;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .tab:hover {
-      color: var(--primary-color);
-      background: var(--hover-bg);
-    }
-
-    .tab.active {
-      color: var(--primary-color);
-      border-bottom: 2px solid var(--primary-color);
-      font-weight: 600;
-    }
-
-    /* 暗色模式下 tab 文字优化 */
-    .dark-mode .tab {
-      color: #cbd5e1;
-    }
-
-    .dark-mode .tab.active {
-      color: #60a5fa;
-      border-bottom-color: #60a5fa;
-    }
-
-    .dark-mode .tab:hover {
-      color: #93c5fd;
-    }
-
-    .tab-content {
-      display: none;
-      padding: 24px;
-      gap: 24px;
-      animation: fadeInContent 0.3s ease;
-    }
-
-    @keyframes fadeInContent {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
-    }
-
-    .tab-content.active {
-      display: flex;
-    }
-
-    @media (max-width: 768px) {
-      .tab-content.active {
-        flex-direction: column;
-      }
-
-      .tab {
-        padding: 12px 18px;
-        font-size: 0.9rem;
-      }
-    }
-
-    /* =============== 通用面板 =============== */
-    .section-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-color);
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    .section-title i {
-      color: var(--primary-color);
-      font-size: 0.9rem;
-    }
-
-    /* =============== Excel 查询工具 =============== */
-    .upload-section {
-      flex: 1;
-      background: var(--panel-bg);
-      border-radius: var(--radius);
-      padding: 20px;
-      border: 1px solid var(--border-color);
-    }
-
-    .query-section {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .upload-area {
-      border: 2px dashed var(--border-color);
-      border-radius: var(--radius-sm);
-      padding: 32px 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      background: var(--panel-secondary);
-      margin-bottom: 16px;
-    }
-
-    .upload-area:hover {
-      border-color: var(--primary-color);
-      background: var(--hover-bg);
-    }
-
-    .upload-area i {
-      font-size: 2.5rem;
-      color: var(--primary-color);
-      margin-bottom: 12px;
-      opacity: 0.8;
-    }
-
-    .upload-area h4 {
-      color: var(--text-color);
-      margin-bottom: 6px;
-      font-size: 0.95rem;
-      font-weight: 600;
-    }
-
-    .upload-area p {
-      color: var(--text-light);
-      font-size: 0.82rem;
-    }
-
-    #fileInput {
-      display: none;
-    }
-
-    .file-info {
-      background: var(--hover-bg);
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
-      margin-top: 12px;
-      display: none;
-      color: var(--text-color);
-      font-size: 0.85rem;
-      border: 1px solid var(--border-color);
-    }
-
-    .file-info p {
-      margin: 2px 0;
-    }
-
-    .file-info.active {
-      display: block;
-      animation: slideUp 0.3s ease;
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .input-group {
-      margin-bottom: 16px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 500;
-      color: var(--text-color);
-      font-size: 0.85rem;
-    }
-
-    textarea {
-      width: 100%;
-      height: 100px;
-      padding: 12px 14px;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      resize: vertical;
-      transition:
-        border 0.2s ease,
-        box-shadow 0.2s ease;
-      background: var(--panel-bg);
-      color: var(--text-color);
-      font-family: inherit;
-      line-height: 1.5;
-    }
-
-    textarea::placeholder {
-      color: var(--text-light);
-      opacity: 0.7;
-    }
-
-    textarea:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-    }
-
-    /* =============== 统一按钮系统 =============== */
-    /* 语义色变量：主操作(蓝) / 确认(绿) / 危险(红) / 次要(中性灰) */
-    :root {
-      --btn-primary: var(--primary-color);
-      --btn-primary-hover: var(--primary-dark);
-      --btn-success: var(--success-color);
-      --btn-success-hover: #15803d;
-      --btn-danger: var(--danger-color);
-      --btn-danger-hover: #b91c1c;
-      --btn-neutral: #64748b;
-      --btn-neutral-hover: #475569;
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 8px;
-    }
-
-    /* 所有 button / .btn / .copy-option / .action-btn 共用基础样式 */
-    button,
-    #type-tool .btn,
-    .copy-option,
-    #type-tool .action-btn {
-      padding: 10px 18px;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      flex: 1;
-      font-family: inherit;
-      line-height: 1.4;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    button:hover,
-    #type-tool .btn:hover,
-    .copy-option:hover,
-    #type-tool .action-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px var(--shadow-color);
-    }
-
-    button:active,
-    #type-tool .btn:active,
-    .copy-option:active,
-    #type-tool .action-btn:active {
-      transform: translateY(0);
-    }
-
-    button:disabled {
-      background: #94a3b8 !important;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    /* 语义色：主操作 */
-    .btn-query,
-    .btn-copy-all,
-    #type-tool .btn-query-all {
-      background: var(--btn-primary);
-      color: var(--text-inverse);
-    }
-
-    .btn-query:hover,
-    .btn-copy-all:hover,
-    #type-tool .btn-query-all:hover {
-      background: var(--btn-primary-hover);
-    }
-
-    /* 语义色：确认/复制 */
-    .btn-copy-name,
-    #type-tool .btn-copy {
-      background: var(--btn-success);
-      color: var(--text-inverse);
-    }
-
-    .btn-copy-name:hover,
-    #type-tool .btn-copy:hover {
-      background: var(--btn-success-hover);
-    }
-
-    /* 语义色：危险/清空 */
-    .btn-clear,
-    #type-tool .btn-clear {
-      background: var(--btn-danger);
-      color: var(--text-inverse);
-    }
-
-    .btn-clear:hover,
-    #type-tool .btn-clear:hover {
-      background: var(--btn-danger-hover);
-    }
-
-    /* 语义色：次要/导出 */
-    #type-tool .btn-secondary {
-      background: var(--btn-neutral);
-      color: var(--text-inverse);
-    }
-
-    #type-tool .btn-secondary:hover {
-      background: var(--btn-neutral-hover);
-    }
-
-    /* 复制Type列 — 用主色保持一致，去除原紫色 */
-    .btn-copy-type {
-      background: var(--btn-primary);
-      color: var(--text-inverse);
-    }
-
-    .btn-copy-type:hover {
-      background: var(--btn-primary-hover);
-    }
-
-    /* =============== 复制选项卡（与其他按钮统一） =============== */
-    .copy-options {
-      display: flex;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .copy-option {
-      flex: 1;
-      background: var(--btn-primary);
-      color: var(--text-inverse);
-      text-align: center;
-    }
-
-    .copy-option:hover {
-      background: var(--btn-primary-hover);
-    }
-
-    .copy-option.active {
-      background: var(--btn-primary-hover);
-    }
-
-    .copy-option i {
-      font-size: 0.95rem;
-      color: var(--text-inverse);
-    }
-
-    .copy-option h4 {
-      color: var(--text-inverse);
-      margin-bottom: 0;
-      font-size: 0.88rem;
-      font-weight: 500;
-    }
-
-    .result-section {
-      background: var(--panel-bg);
-      border-radius: var(--radius);
-      padding: 20px;
-      border: 1px solid var(--border-color);
-      min-height: 280px;
-      max-height: auto;
-      overflow-y: auto;
-      position: relative;
-    }
-
-    .result-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 200px;
-      color: var(--text-light);
-      text-align: center;
-      gap: 8px;
-    }
-
-    .result-placeholder i {
-      font-size: 1.8rem;
-      opacity: 0.4;
-    }
-
-    .result-placeholder p {
-      font-size: 0.85rem;
-      margin: 0;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      font-size: 0.85rem;
-    }
-
-    th {
-      background: var(--table-header-bg);
-      color: var(--text-color);
-      text-align: left;
-      padding: 10px 12px;
-      position: sticky;
-      top: 0;
-      font-weight: 600;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border-color);
-      color: var(--text-color);
-    }
-
-    tr:nth-child(even) {
-      background: var(--table-row-even);
-    }
-
-    tr:hover {
-      background: var(--table-row-hover);
-    }
-
-    .error {
-      color: var(--danger-color);
-      background: rgba(220, 38, 38, 0.08);
-      padding: 12px 14px;
-      border-radius: var(--radius-sm);
-      margin-top: 12px;
-      display: none;
-      border-left: 3px solid var(--danger-color);
-      font-size: 0.82rem;
-    }
-
-    .error.active {
-      display: block;
-    }
-
-    footer {
-      text-align: center;
-      padding: 16px;
-      background: var(--panel-secondary);
-      color: var(--text-light);
-      font-size: 0.8rem;
-      border-top: 1px solid var(--border-color);
-    }
-
-    .highlight {
-      background-color: rgba(217, 119, 7, 0.12);
-      padding: 1px 5px;
-      border-radius: 3px;
-      color: var(--warning-color);
-      font-weight: 600;
-    }
-
-    .not-found {
-      color: var(--danger-color);
-      font-weight: 600;
-    }
-
-    .empty-result {
-      color: var(--warning-color);
-      font-weight: 600;
-    }
-
-    .stats-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 16px;
-      padding: 12px;
-      background: var(--panel-secondary);
-      border-radius: var(--radius-sm);
-      font-size: 0.82rem;
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .stat-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex: 1;
-      min-width: 70px;
-    }
-
-    .stat-value {
-      font-weight: 700;
-      font-size: 1.25rem;
-      color: var(--text-color);
-    }
-
-    .stat-label {
-      font-size: 0.75rem;
-      color: var(--text-light);
-      margin-top: 2px;
-    }
-
-    .found {
-      color: var(--success-color);
-    }
-
-    .missing {
-      color: var(--danger-color);
-    }
-
-    .empty {
-      color: var(--warning-color);
-    }
-
-    /* =============== Type数字提取工具 =============== */
-    #type-tool .main-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      width: 100%;
-      flex: 1;
-      min-width: 0;
-    }
-
-    @media (max-width: 768px) {
-      #type-tool .main-content {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    #type-tool .panel {
-      background: var(--panel-bg);
-      border-radius: var(--radius);
-      padding: 20px;
-      border: 1px solid var(--border-color);
-    }
-
-    #type-tool .panel-title {
-      font-size: 0.85rem;
-      color: var(--text-color);
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    #type-tool .panel-title i {
-      background: var(--primary-color);
-      color: var(--text-inverse);
-      width: 30px;
-      height: 30px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-    }
-
-    #type-tool textarea {
-      width: 100%;
-      min-height: 180px;
-      padding: 12px 14px;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
-      resize: vertical;
-      transition: all 0.2s ease;
-      line-height: 1.5;
-      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
-      background: var(--panel-bg);
-      color: var(--text-color);
-    }
-
-    #type-tool textarea:focus {
-      border-color: var(--primary-color);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-    }
-
-    /* 文本域自定义滚动条 - 匹配深色主题 */
-    #type-tool textarea::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    #type-tool textarea::-webkit-scrollbar-track {
-      background: transparent;
-      border-radius: 4px;
-    }
-
-    #type-tool textarea::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.35);
-      border-radius: 4px;
-      border: 2px solid transparent;
-      background-clip: padding-box;
-    }
-
-    #type-tool textarea::-webkit-scrollbar-thumb:hover {
-      background: rgba(148, 163, 184, 0.55);
-    }
-
-    #type-tool textarea::-webkit-scrollbar-corner {
-      background: transparent;
-    }
-
-    #type-tool textarea {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
-    }
-
-    #type-tool .controls {
-      display: flex;
-      gap: 10px;
-      margin: 16px 0;
-      flex-wrap: wrap;
-    }
-
-    /* .btn / .action-btn 基础样式已在统一按钮系统中定义，此处仅保留尺寸覆盖 */
-
-    #type-tool .btn {
-      min-width: 120px;
-    }
-
-    /* 图标小按钮：方形尺寸，沿用统一圆角与过渡 */
-    #type-tool .action-btn {
-      width: 40px;
-      height: 40px;
-      padding: 0;
-      flex: none;
-      font-size: 0.9rem;
-      background: var(--btn-neutral);
-      color: var(--text-inverse);
-    }
-
-    #type-tool .action-btn:hover {
-      background: var(--btn-primary);
-    }
-
-    #type-tool .action-btn-query {
-      background: var(--btn-primary);
-    }
-
-    #type-tool .action-btn-query:hover {
-      background: var(--btn-primary-hover);
-    }
-
-    #type-tool .stats {
-      display: flex;
-      justify-content: space-between;
-      background: var(--panel-secondary);
-      padding: 12px;
-      border-radius: var(--radius-sm);
-      margin: 14px 0;
-      font-weight: 500;
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    #type-tool .stat-box {
-      text-align: center;
-      flex: 1;
-      min-width: 90px;
-    }
-
-    #type-tool .stat-label {
-      font-size: 0.75rem;
-      color: var(--text-light);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    #type-tool .stat-value {
-      font-size: 1.5rem;
-      color: var(--primary-color);
-      margin-top: 4px;
-      font-weight: 700;
-    }
-
-    #type-tool .results-container {
-      min-height: 240px;
-      height: auto;
-      max-height: none;
-      overflow-y: visible;
-      padding: 8px;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      background: var(--panel-secondary);
-    }
-
-    #type-tool .match-item {
-      padding: 12px;
-      margin: 6px 0;
-      background: var(--panel-bg);
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border-color);
-      border-left: 3px solid var(--primary-color);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: all 0.2s ease;
-      color: var(--text-color);
-    }
-
-    #type-tool .match-item:hover {
-      border-left-color: var(--success-color);
-      background: var(--hover-bg);
-    }
-
-    #type-tool .match-text {
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--text-color);
-      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
-    }
-
-    #type-tool .match-digits {
-      background: var(--hover-bg);
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: 700;
-      color: var(--primary-color);
-      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
-      font-size: 0.85rem;
-    }
-
-    #type-tool .no-results {
-      text-align: center;
-      padding: 24px;
-      color: var(--text-light);
-      font-size: 0.85rem;
-    }
-
-    #type-tool .action-buttons {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* action-btn 样式已在统一按钮系统中定义 */
-
-    #type-tool .highlight {
-      background-color: rgba(217, 119, 7, 0.12);
-      padding: 1px 5px;
-      border-radius: 3px;
-      font-weight: 700;
-      color: var(--warning-color);
-    }
-
-    #type-tool .instructions {
-      background: var(--panel-secondary);
-      border-radius: var(--radius-sm);
-      padding: 14px 16px;
-      margin-top: 16px;
-      border: 1px solid var(--border-color);
-      border-left: 3px solid var(--primary-color);
-    }
-
-    #type-tool .instructions h3 {
-      margin-bottom: 10px;
-      color: var(--text-color);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.88rem;
-      font-weight: 600;
-    }
-
-    #type-tool .instructions h3 i {
-      color: var(--warning-color);
-    }
-
-    #type-tool .instructions ul {
-      padding-left: 18px;
-      color: var(--text-color);
-    }
-
-    #type-tool .instructions li {
-      margin-bottom: 6px;
-      font-size: 0.82rem;
-      line-height: 1.5;
-    }
-
-    #type-tool .example-text {
-      font-size: 0.78rem;
-      color: var(--text-light);
-      margin-top: 4px;
-    }
-
-    #type-tool .digit-preview {
-      font-size: 0.8rem;
-      text-align: center;
-      margin: 12px 0;
-      padding: 10px;
-      background: var(--panel-secondary);
-      border-radius: var(--radius-sm);
-      border: 1px dashed var(--border-color);
-      color: var(--text-color);
-    }
-
-    #type-tool .digit-preview span {
-      font-weight: 700;
-      color: var(--primary-color);
-      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
-    }
-
-    .tab-content-type {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    .copy-guide {
-      background: var(--panel-secondary);
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      margin-top: 12px;
-      font-size: 0.8rem;
-      color: var(--text-light);
-      text-align: center;
-      border: 1px solid var(--border-color);
-    }
-
-    .copy-guide i {
-      color: var(--primary-color);
-    }
-
-    .workflow-btn {
-      display: flex;
-      justify-content: center;
-      margin-top: 16px;
-    }
-
-    /* =============== 响应式微调 =============== */
-    @media (max-width: 480px) {
-      body {
-        padding: 8px;
-      }
-
-      .tab-content {
-        padding: 16px;
-      }
-
-      .container {
-        border-radius: 12px;
-      }
-
-      header {
-        padding: 12px 16px;
-      }
-
-      header h3 {
-        font-size: 1rem;
-      }
-
-      .btn-group,
-      #type-tool .controls {
-        flex-direction: column;
-      }
-
-      .copy-options {
-        flex-direction: column;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/img/TypeSearch.svg">
+<title>Type工具套件</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+  /* 提前应用主题，避免刷新时闪白（沿用 SQLite 工具的 data-theme 方案，
+     同时兼容旧版 localStorage 键名 "theme"） */
+  (function () {
+    try {
+      var saved = localStorage.getItem('type-theme') || localStorage.getItem('theme');
+      var dark = saved ? saved === 'dark'
+        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    } catch (e) {}
+  })();
+</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --panel-hover: #f1f5f9;
+    --border: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-light: #eff6ff;
+    --primary-soft: rgba(37, 99, 235, 0.10);
+    --primary-on: #ffffff;
+
+    --success: #059669;
+    --success-light: #ecfdf5;
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --warn: #f59e0b;
+    --warn-ink: #b45309;
+    --warn-light: #fef3c7;
+    --warn-soft: rgba(245,158,11,0.12);
+
+    --scrollbar-thumb: #cbd5e1;
+    --scrollbar-thumb-hover: #94a3b8;
+    --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+    --header-row: #f8fafc;
+    --row-hover: #f8fafc;
+    --table-row-border: #f1f5f9;
+    --dropzone-bg: #ffffff;
+
+    --r: 8px;
+    --r-sm: 6px;
+
+    /* 兼容旧变量名的别名（JS 内联样式与历史模板仍在引用） */
+    --primary-color: var(--primary);
+    --primary-dark: var(--primary-hover);
+    --success-color: var(--success);
+    --danger-color: var(--danger);
+    --warning-color: var(--warn);
+    --text-color: var(--text);
+    --text-light: var(--text-secondary);
+    --text-inverse: #ffffff;
+    --border-color: var(--border);
+    --panel-bg: var(--panel);
+    --panel-secondary: var(--panel-hover);
+    --hover-bg: var(--primary-soft);
+    --shadow-color: rgba(0,0,0,0.08);
+    --radius: 8px;
+    --radius-sm: 6px;
+    --table-header-bg: var(--header-row);
+    --table-row-even: transparent;
+    --table-row-hover: var(--row-hover);
+    --success-ink: #047857;
+    --danger-ink: #b91c1c;
+    --danger-on: #ffffff;
+}
+
+  [data-theme="dark"] {
+    --bg: #0b1220;
+    --panel: #111827;
+    --panel-hover: #1e293b;
+    --border: #1f2937;
+    --border-hover: #475569;
+    --text: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --primary: #60a5fa;
+    --primary-hover: #93c5fd;
+    --primary-light: rgba(96,165,250,0.18);
+    --primary-soft: rgba(96,165,250,0.22);
+    --primary-on: #0b1220;
+    --success: #34d399;
+    --success-light: rgba(52,211,153,0.18);
+    --danger: #f87171;
+    --danger-light: rgba(248,113,113,0.18);
+    --warn: #fbbf24;
+    --warn-ink: #fbbf24;
+    --warn-light: rgba(251,191,36,0.18);
+    --warn-soft: rgba(251,191,36,0.22);
+    --scrollbar-thumb: #475569;
+    --scrollbar-thumb-hover: #64748b;
+    --shadow: 0 1px 3px rgba(0,0,0,0.5);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.5);
+    --header-row: #0f172a;
+    --row-hover: #1e293b;
+    --table-row-border: #1e293b;
+    --dropzone-bg: #0f172a;
+    --success-ink: #6ee7b7;
+    --danger-ink: #fca5a5;
+    --danger-on: #0b1220;
+}
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.15s, color 0.15s;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    height: 52px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    gap: 8px;
+  }
+  .header-inner {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: var(--primary);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary-on);
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .logo span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .home-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: var(--panel-hover);
+    color: var(--primary);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background-color 0.15s, transform 0.15s, color 0.15s;
+  }
+  .home-btn:hover { background: var(--primary); color: #fff; transform: translateY(-1px); }
+  .home-btn:active { transform: translateY(0); }
+  .header-spacer { flex: 1; }
+  .header-actions { display: flex; gap: 6px; align-items: center; }
+  .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border); }
+
+  /* ===== Tabs ===== */
+  .tabs {
+    min-height: 44px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: sticky;
+    top: 52px;
+    z-index: 15;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs-inner { display: flex; align-items: stretch; gap: 2px; width: 100%; max-width: 1180px; margin: 0 auto; }
+  .tab {
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.12s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tab:hover { color: var(--text); background: var(--panel-hover); }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+  [data-theme="dark"] .tab.active { color: var(--primary-hover); border-bottom-color: var(--primary-hover); }
+  .tab i { font-size: 13px; }
+
+  /* ===== Layout ===== */
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 16px;
+    padding-bottom: max(32px, env(safe-area-inset-bottom));
+  }
+  .tab-content { display: none; animation: fadeInContent 0.2s ease; }
+  .tab-content.active { display: block; }
+  @keyframes fadeInContent { from { opacity: 0; } to { opacity: 1; } }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+  }
+  .panel + .panel { margin-top: 14px; }
+  .panel-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .panel-title {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 13.5px; font-weight: 600; color: var(--text);
+  }
+  .panel-title i { color: var(--primary); font-size: 13px; }
+  .panel-body { padding: 14px; }
+
+  /* ===== 上传区 ===== */
+  .dropzone {
+    border: 2px dashed var(--border-hover);
+    border-radius: var(--r);
+    background: var(--dropzone-bg);
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .dropzone i.fa-cloud-upload-alt, .dropzone > i {
+    font-size: 26px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .dropzone:hover > i { color: var(--primary); }
+  .dropzone-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .dropzone-desc { color: var(--text-secondary); font-size: 12.5px; }
+  #fileInput { display: none; }
+
+  .file-info {
+    display: none;
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--panel-hover);
+    color: var(--text);
+    font-size: 12.5px;
+  }
+  .file-info.active { display: block; }
+  .file-info p { margin: 2px 0; }
+  .file-info strong { color: var(--text-secondary); font-weight: 600; }
+
+  /* ===== 输入控件 ===== */
+  .input-group { margin-bottom: 14px; }
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  textarea, input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  textarea::placeholder, input::placeholder { color: var(--text-muted); font-weight: 400; }
+  textarea:focus, input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  #numberInput { min-height: 88px; }
+
+  /* ===== 按钮 ===== */
+  .btn {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: var(--panel-hover);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    white-space: nowrap;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:hover { border-color: var(--border-hover); background: var(--border-hover); }
+  .btn i { font-size: 12px; }
+  .btn-primary { background: var(--primary); border-color: var(--primary); color: var(--primary-on); font-weight: 600; }
+  .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: var(--primary-on); }
+  .btn-danger-ghost { background: var(--danger-light); border-color: var(--border); color: var(--danger-ink); }
+  .btn-danger-ghost:hover { background: var(--danger); border-color: var(--danger); color: var(--danger-on); }
+  .btn-group { display: flex; gap: 8px; }
+  .btn-group .btn { flex: 1; }
+
+  /* ===== 结果区 ===== */
+  .empty-content, .result-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 150px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .empty-content i, .result-placeholder i { font-size: 22px; opacity: 0.5; }
+  .empty-content p, .result-placeholder p { font-size: 12.5px; margin: 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  th {
+    background: var(--header-row);
+    color: var(--text);
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: 600;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--table-row-border);
+    color: var(--text);
+  }
+  tbody tr:hover { background: var(--row-hover); }
+  .found { color: var(--success); font-weight: 600; }
+  .missing, .not-found { color: var(--danger); font-weight: 600; }
+  .empty, .empty-result { color: var(--warn-ink); font-weight: 600; }
+
+  .error {
+    display: none;
+    margin-top: 12px;
+    padding: 9px 12px;
+    border-radius: var(--r-sm);
+    background: var(--danger-light);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--danger);
+    color: var(--danger);
+    font-size: 12.5px;
+  }
+  .error.active { display: block; }
+
+  .copy-options { display: flex; gap: 8px; margin-top: 14px; }
+  .copy-option {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    background: var(--panel);
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .copy-option i { font-size: 14px; color: var(--primary); }
+  .copy-option h4 { font-size: 12.5px; font-weight: 500; color: var(--text); margin: 0; }
+  .copy-option:hover { border-color: var(--primary); background: var(--primary-light); }
+  .copy-option.active { border-color: var(--primary); background: var(--primary-soft); }
+  .copy-guide {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: var(--r-sm);
+    background: var(--panel-hover);
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+  .copy-guide i { color: var(--primary); }
+
+  /* ===== Type 提取工具 ===== */
+  #type-tool textarea { min-height: 200px; font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace; font-size: 12.5px; }
+  #type-tool .stats {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--panel);
+    flex-wrap: wrap;
+  }
+  #type-tool .stat-box { flex: 1; min-width: 80px; text-align: center; }
+  #type-tool .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  #type-tool .stat-value { font-size: 18px; font-weight: 700; color: var(--text); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  #type-tool .controls { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  #type-tool .controls .btn { flex: 1; min-width: 120px; }
+  .workflow-btn { margin-top: 12px; }
+  .workflow-btn .btn { width: 100%; height: 34px; }
+
+  #type-tool .results-container {
+    min-height: 220px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--panel-hover);
+  }
+  #type-tool .match-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 11px;
+    margin: 5px 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--r-sm);
+    transition: all 0.15s;
+  }
+  #type-tool .match-item:hover { border-color: var(--border-hover); background: var(--panel-hover); }
+  #type-tool .match-text {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace;
+  }
+  #type-tool .match-digits {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 1px 7px;
+    border-radius: 4px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 12px;
+    font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace;
+  }
+  #type-tool .example-text { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  #type-tool .no-results { text-align: center; padding: 40px 16px; color: var(--text-muted); font-size: 12.5px; }
+  #type-tool .action-buttons { display: flex; align-items: center; gap: 4px; flex: none; }
+  #type-tool .action-btn {
+    width: 28px; height: 28px;
+    border-radius: var(--r-sm);
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  #type-tool .action-btn:hover { background: var(--panel-hover); color: var(--primary); border-color: var(--border); }
+  #type-tool .action-btn-query:hover { background: var(--primary-soft); color: var(--primary); }
+  #type-tool .digit-preview {
+    padding: 8px 10px;
+    border: 1px dashed var(--border-hover);
+    border-radius: var(--r-sm);
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+  #type-tool .digit-preview span {
+    font-weight: 700; color: var(--primary);
+    font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace;
+  }
+  #type-tool .instructions {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--r-sm);
+    background: var(--panel-hover);
+  }
+  #type-tool .instructions h3 {
+    display: flex; align-items: center; gap: 7px;
+    margin-bottom: 8px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+  }
+  #type-tool .instructions h3 i { color: var(--warn); }
+  #type-tool .instructions ul { padding-left: 18px; color: var(--text-secondary); }
+  #type-tool .instructions li { margin-bottom: 5px; font-size: 12.5px; line-height: 1.6; }
+  .highlight {
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--warn-light);
+    color: var(--warn-ink);
+    font-weight: 700;
+  }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: var(--text);
+    color: var(--panel);
+    padding: 9px 16px;
+    border-radius: var(--r-sm);
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    z-index: 200;
+    animation: slideIn 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: calc(100vw - 32px);
+  }
+  .toast.success { background: var(--success); color: #052e1a; }
+  .toast.error { background: var(--danger); color: #450a0a; }
+  [data-theme="dark"] .toast.success { color: #02261a; }
+  [data-theme="dark"] .toast.error { color: #3b0808; }
+  @keyframes slideIn {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ===== Footer ===== */
+  footer {
+    margin-top: 18px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-muted);
+    font-size: 12px;
+    text-align: center;
+    border-radius: var(--r);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+  textarea::-webkit-scrollbar { width: 8px; }
+  textarea::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+  textarea { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    body { font-size: 13.5px; }
+    .header { height: 48px; padding: 0 10px; gap: 4px; }
+    .logo { font-size: 13.5px; }
+    .logo span { max-width: 44vw; }
+    .tabs { top: 48px; padding: 0 10px; }
+    .tab { padding: 0 10px; font-size: 12.5px; }
+    .page { padding: 12px 10px; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+    .panel-body { padding: 12px; }
+    .panel-header { padding: 9px 12px; }
+    .btn-group { flex-direction: column; }
+    .copy-options { flex-direction: column; }
+    .toast { top: 100px; right: 10px; left: 10px; max-width: none; }
+  }
+</style>
 </head>
-
 <body>
-  <div class="container">
-    <header>
-      <div class="header-content">
-        <div class="header-left">
-          <h3><i class="fas fa-search" style="font-size: 22px"></i>
-            Type工具套件</h3><a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-              aria-hidden="true">
-              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <path d="M9 22V12h6v10"></path>
-            </svg></a>
-        </div>
-        <div class="theme-toggle" id="themeToggle">
-          <i class="fas fa-moon"></i>
-        </div>
-      </div>
-    </header>
 
-    <!-- 选项卡导航 -->
-    <div class="tabs">
-      <div class="tab" data-tab="type-tool">
-        <i class="fas fa-filter"></i> Type值提取
-      </div>
-      <div class="tab active" data-tab="excel-tool">
-        <i class="fas fa-file-excel"></i> Type名称查询
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon"><i class="fas fa-search"></i></div>
+      <span>Type 工具套件</span>
+      <a href="../" class="home-btn" title="返回主页" aria-label="返回主页">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 11.5 12 4l9 7.5"/>
+          <path d="M5 10.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9.5"/>
+        </svg>
+      </a>
+    </div>
+    <div class="header-spacer"></div>
+    <div class="header-actions">
+      <button class="icon-btn" id="themeToggle" title="切换主题">
+        <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tabs-inner">
+    <div class="tab" data-tab="type-tool"><i class="fas fa-filter"></i>Type 值提取</div>
+    <div class="tab active" data-tab="excel-tool"><i class="fas fa-file-excel"></i>Type 名称查询</div>
+  </div>
+</div>
+
+<main class="page">
+
+  <!-- ============ Excel 数据查询工具 ============ -->
+  <div id="excel-tool" class="tab-content active">
+    <div class="grid-2">
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fas fa-upload"></i>上传 Excel 文件</div>
+        </div>
+        <div class="panel-body">
+          <div class="dropzone" id="dropArea">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <div class="dropzone-title">点击或拖拽文件到此处上传</div>
+            <div class="dropzone-desc">支持 .xlsx / .xls，文件需包含 type 与名称两列</div>
+            <input type="file" id="fileInput" accept=".xlsx, .xls">
+          </div>
+          <div class="file-info" id="fileInfo">
+            <p><strong>文件名：</strong><span id="fileName"></span></p>
+            <p><strong>文件大小：</strong><span id="fileSize"></span></p>
+            <p><strong>数据行数：</strong><span id="rowCount"></span></p>
+          </div>
+        </div>
+      </section>
+
+      <div>
+        <section class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fas fa-search"></i>数据查询</div>
+          </div>
+          <div class="panel-body">
+            <div class="input-group">
+              <label for="numberInput">要查询的 type 数字（多个用逗号分隔）</label>
+              <textarea id="numberInput" placeholder="例如：110747, 42277, 112579, 40215, 40332, 99999"></textarea>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-danger-ghost" id="clearInputBtn"><i class="fas fa-eraser"></i>清空搜索</button>
+              <button class="btn btn-primary" id="queryBtn"><i class="fas fa-search"></i>查询数据</button>
+            </div>
+            <div class="error" id="errorMsg">
+              <i class="fas fa-exclamation-circle"></i>
+              <span id="errorText"></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fas fa-list"></i>查询结果</div>
+          </div>
+          <div class="panel-body">
+            <div id="results">
+              <div class="result-placeholder">
+                <i class="fas fa-database"></i>
+                <p>查询结果将显示在这里</p>
+                <p>请先上传 Excel 文件并输入要查询的数字</p>
+              </div>
+            </div>
+            <div class="copy-options">
+              <div class="copy-option" id="copyTypeOption"><i class="fas fa-hashtag"></i><h4>复制 Type 列</h4></div>
+              <div class="copy-option" id="copyNameOption"><i class="fas fa-font"></i><h4>复制名称列</h4></div>
+              <div class="copy-option" id="copyAllOption"><i class="fas fa-copy"></i><h4>复制全部</h4></div>
+            </div>
+            <div class="copy-guide"><i class="fas fa-info-circle"></i>点击上方选项复制结果，内容将自动保存到剪贴板</div>
+          </div>
+        </section>
       </div>
     </div>
+  </div>
 
-    <!-- Excel数据查询工具 -->
-    <div id="excel-tool" class="tab-content active">
-      <div class="upload-section">
-        <h4 class="section-title">
-          <i class="fas fa-upload"></i> 上传Excel文件
-        </h4>
-
-        <div class="upload-area" id="dropArea">
-          <i class="fas fa-cloud-upload-alt"></i>
-          <h4>点击或拖拽文件到此处上传</h4>
-          <p>支持.xlsx格式文件，文件应包含"type"和"名称"两列</p>
-          <input type="file" id="fileInput" accept=".xlsx, .xls" />
+  <!-- ============ Type 数字提取工具 ============ -->
+  <div id="type-tool" class="tab-content">
+    <div class="grid-2">
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fas fa-edit"></i>输入文本</div>
         </div>
-
-        <div class="file-info" id="fileInfo">
-          <p><strong>文件名：</strong><span id="fileName"></span></p>
-          <p><strong>文件大小：</strong><span id="fileSize"></span></p>
-          <p><strong>数据行数：</strong><span id="rowCount"></span></p>
-        </div>
-      </div>
-
-      <div class="query-section">
-        <div class="input-section">
-          <h4 class="section-title">
-            <i class="fas fa-search"></i> 数据查询
-          </h4>
-
-          <div class="input-group">
-            <label for="numberInput">输入要查询的type数字（多个用逗号分隔）：</label>
-            <textarea id="numberInput" placeholder="例如：110747, 42277, 112579, 40215, 40332, 99999"></textarea>
-          </div>
-
-          <div class="btn-group">
-            <button id="clearInputBtn" class="btn-clear">
-              <i class="fas fa-eraser"></i> 清空搜索
-            </button>
-            <button id="queryBtn" class="btn-query">
-              <i class="fas fa-search"></i> 查询数据
-            </button>
-          </div>
-
-          <div class="error" id="errorMsg">
-            <i class="fas fa-exclamation-circle"></i>
-            <span id="errorText"></span>
-          </div>
-        </div>
-
-        <div class="result-section">
-          <h4 class="section-title"><i class="fas fa-list"></i> 查询结果</h4>
-
-          <div id="results">
-            <div class="result-placeholder">
-              <i class="fas fa-database"></i>
-              <p>查询结果将显示在这里</p>
-              <p>请先上传Excel文件并输入要查询的数字</p>
-            </div>
-          </div>
-
-          <div class="copy-options">
-            <div class="copy-option" id="copyTypeOption">
-              <i class="fas fa-hashtag"></i>
-              <h4>复制Type列</h4>
-            </div>
-            <div class="copy-option" id="copyNameOption">
-              <i class="fas fa-font"></i>
-              <h4>复制名称列</h4>
-            </div>
-            <div class="copy-option" id="copyAllOption">
-              <i class="fas fa-copy"></i>
-              <h4>复制全部</h4>
-            </div>
-          </div>
-
-          <div class="copy-guide">
-            <i class="fas fa-info-circle"></i>
-            点击上方选项复制结果，复制内容将自动保存到剪贴板
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Type数字提取工具 -->
-    <div id="type-tool" class="tab-content">
-      <div class="main-content">
-        <div class="panel">
-          <div class="panel-title">
-            <i class="fas fa-edit"></i>
-            <span>输入文本</span>
-          </div>
-
+        <div class="panel-body">
           <textarea id="inputText" placeholder="请在此粘贴包含 type:数字 的文本...">
 示例文本：
 这里有一些测试数据：
@@ -1230,115 +752,90 @@ type: 1000 - 有效（空格不影响）
           </div>
 
           <div class="controls">
-            <button class="btn btn-clear" id="clearBtn">
-              <i class="fas fa-trash-alt"></i> 清空内容
-            </button>
-            <button class="btn btn-copy" id="extractBtn">
-              <i class="fas fa-cogs"></i> 提取数字
-            </button>
+            <button class="btn btn-danger-ghost" id="clearBtn"><i class="fas fa-trash-can"></i>清空内容</button>
+            <button class="btn btn-primary" id="extractBtn"><i class="fas fa-cogs"></i>提取数字</button>
           </div>
 
           <div class="instructions">
-            <h3><i class="fas fa-lightbulb"></i> 使用说明</h3>
+            <h3><i class="fas fa-lightbulb"></i>使用说明</h3>
             <ul>
-              <li>
-                自动提取文本中所有
-                <span class="highlight">type:数字</span> 格式的内容
-              </li>
-              <li>
-                数字部分必须至少4位（如
-                <span class="highlight">type:1234</span>）
-              </li>
+              <li>自动提取文本中所有 <span class="highlight">type:数字</span> 格式的内容</li>
+              <li>数字部分必须至少 4 位（如 <span class="highlight">type:1234</span>）</li>
               <li>不区分大小写（可识别 Type、TYPE 等格式）</li>
               <li>自动去除重复项，保留原始格式</li>
               <li>复制结果时仅复制数字部分（如 1234）</li>
-              <li>
-                点击右侧
-                <i class="fas fa-search" style="color: var(--primary-color)"></i>
-                按钮可直接查询该数字
-              </li>
+              <li>点击右侧 <i class="fas fa-search" style="color: var(--primary-color)"></i> 按钮可直接查询该数字</li>
             </ul>
           </div>
         </div>
+      </section>
 
-        <div class="panel">
-          <div class="panel-title">
-            <i class="fas fa-list"></i>
-            <span>提取结果</span>
-          </div>
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fas fa-list"></i>提取结果</div>
+        </div>
+        <div class="panel-body">
+          <div class="digit-preview">复制结果示例：<span>56789, 9876, 9999, 2023, 1234567890</span></div>
 
-          <div class="digit-preview">
-            复制结果示例：<span>56789, 9876, 9999, 2023, 1234567890</span>
-          </div>
-
-          <div class="results-container" id="result">
-            <div class="no-results">
-              <i class="fas fa-info-circle"></i> 提取结果将显示在这里
-            </div>
+          <div class="results-container" id="result" style="margin-top: 10px;">
+            <div class="no-results"><i class="fas fa-info-circle"></i> 提取结果将显示在这里</div>
           </div>
 
           <div class="workflow-btn">
-            <button class="btn btn-query-all" id="queryAllBtn">
-              <i class="fas fa-bolt"></i> 一键查询所有提取的Type的指标名称
-            </button>
+            <button class="btn btn-primary" id="queryAllBtn"><i class="fas fa-bolt"></i>一键查询所有提取的 Type 指标名称</button>
           </div>
 
           <div class="controls">
-            <button class="btn btn-copy" id="copyBtn">
-              <i class="fas fa-copy"></i> 复制所有数字
-            </button>
-            <button class="btn btn-secondary" id="exportBtn">
-              <i class="fas fa-file-csv"></i> 导出为CSV
-            </button>
+            <button class="btn" id="copyBtn"><i class="fas fa-copy"></i>复制所有数字</button>
+            <button class="btn" id="exportBtn"><i class="fas fa-file-csv"></i>导出为 CSV</button>
           </div>
         </div>
-      </div>
+      </section>
     </div>
-
-    <footer>
-      <p>© 2025 工具套件 | 本地处理，不上传任何数据</p>
-    </footer>
   </div>
 
-  <script>
-    // =============== 通用功能 ===============
-    // 初始化主题
-    function initTheme() {
-      const savedTheme = localStorage.getItem("theme");
-      const themeToggle = document.getElementById("themeToggle");
-      const body = document.documentElement;
+  <footer>
+    <p>© 2025 工具套件 · 本地处理，不上传任何数据</p>
+  </footer>
+</main>
 
-      // 检查系统偏好
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
-
-      // 应用主题
-      if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-        body.classList.add("dark-mode");
-        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-      } else {
-        body.classList.remove("dark-mode");
-        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+<script>
+    /* ================== 主题管理 ================== */
+    const theme = {
+      get current() { return document.documentElement.dataset.theme || 'light'; },
+      set(t, manual = true) {
+        document.documentElement.dataset.theme = t;
+        if (manual) localStorage.setItem('type-theme', t);
+        this._updateIcon();
+      },
+      toggle() { this.set(this.current === 'dark' ? 'light' : 'dark'); },
+      init() {
+        const saved = localStorage.getItem('type-theme') || localStorage.getItem('theme');
+        const initial = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        this.set(initial, false);
+        matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+          const s = localStorage.getItem('type-theme') || localStorage.getItem('theme');
+          if (!s) this.set(e.matches ? 'dark' : 'light', false);
+        });
+      },
+      _updateIcon() {
+        const dark = this.current === 'dark';
+        document.getElementById('iconSun').style.display = dark ? 'block' : 'none';
+        document.getElementById('iconMoon').style.display = dark ? 'none' : 'block';
+        document.getElementById('themeToggle').title = dark ? '切换到浅色模式' : '切换到深色模式';
       }
+    };
+
+    // =============== 通用功能 ===============
+    // 初始化主题（data-theme 方案，与工具套件其他页面一致）
+    function initTheme() {
+      theme.init();
     }
 
     // 切换主题
     function toggleTheme() {
-      const body = document.documentElement;
-      const themeToggle = document.getElementById("themeToggle");
-
-      if (body.classList.contains("dark-mode")) {
-        body.classList.remove("dark-mode");
-        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-        localStorage.setItem("theme", "light");
-        showNotification("已切换至日间模式");
-      } else {
-        body.classList.add("dark-mode");
-        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-        localStorage.setItem("theme", "dark");
-        showNotification("已切换至夜间模式");
-      }
+      theme.toggle();
+      showNotification(theme.current === "dark" ? "已切换至夜间模式" : "已切换至日间模式");
     }
 
     // 选项卡切换
@@ -1359,62 +856,18 @@ type: 1000 - 有效（空格不影响）
       });
     });
 
-    // 显示通知
+    // 显示通知（沿用工具套件统一的 toast 样式）
     function showNotification(message, type = "success") {
-      // 移除现有的通知
-      const existing = document.querySelector(".notification");
+      const existing = document.querySelector(".toast");
       if (existing) existing.remove();
 
-      const notification = document.createElement("div");
-      notification.className = `notification ${type}`;
-      notification.innerHTML = `
-                <i class="fas ${type === "success" ? "fa-check-circle" : "fa-exclamation-circle"}"></i>
-                ${message}
-            `;
-
-      const bgColor = type === "success" ? "#16a34a" : "#dc2626";
-      notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 12px 20px;
-                background: ${bgColor};
-                color: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-                z-index: 1000;
-                animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 0.88rem;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            `;
-
-      document.body.appendChild(notification);
-
-      // 3秒后移除通知
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      }, 3000);
+      const el = document.createElement("div");
+      el.className = "toast " + type;
+      el.innerHTML = `<i class="fas ${type === "success" ? "fa-check-circle" : "fa-exclamation-circle"}"></i> ${message}`;
+      document.body.appendChild(el);
+      setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity 0.2s"; }, 2200);
+      setTimeout(() => el.remove(), 2600);
     }
-
-    // 添加CSS动画
-    const style = document.createElement("style");
-    style.textContent = `
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(-20px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            
-            @keyframes fadeOut {
-                from { opacity: 1; transform: translateY(0); }
-                to { opacity: 0; transform: translateY(-20px); }
-            }
-        `;
-    document.head.appendChild(style);
 
     // =============== Excel数据查询工具功能 ===============
     // 全局变量
@@ -1446,8 +899,8 @@ type: 1000 - 有效（空格不影响）
 
     dropArea.addEventListener("dragover", (e) => {
       e.preventDefault();
-      dropArea.style.borderColor = "var(--success-color)";
-      dropArea.style.backgroundColor = "rgba(22, 163, 74, 0.08)";
+      dropArea.style.borderColor = "var(--primary-color)";
+      dropArea.style.backgroundColor = "var(--primary-light)";
     });
 
     dropArea.addEventListener("dragleave", () => {
@@ -2165,50 +1618,7 @@ type: 1000 - 有效（空格不影响）
         setTimeout(extractTypes, 500);
       }, 1000);
     });
-  </script>
-  <!-- 返回主页图标按钮样式 -->
-  <style>
-    .home-back-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      color: inherit;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid transparent;
-      text-decoration: none;
-      flex-shrink: 0;
-      transition:
-        background 0.2s ease,
-        transform 0.2s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .home-back-icon:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateY(-1px);
-    }
-
-    .home-back-icon svg {
-      width: 18px;
-      height: 18px;
-      display: block;
-    }
-
-    .title-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 5px;
-    }
-
-    .title-row h1 {
-      margin-bottom: 0;
-    }
-  </style>
+  
+</script>
 </body>
-
 </html>
