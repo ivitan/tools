@@ -311,12 +311,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
+    /* 常显：默认给一个较低透明度，不抢眼但始终可见，hover 时变清晰 */
+    opacity: 0.55;
     transition: all 0.15s;
     flex-shrink: 0;
   }
-  .db-header:hover .db-remove { opacity: 1; }
-  .db-remove:hover { background: var(--danger-light); color: var(--danger); }
+  .db-header:hover .db-remove { opacity: 0.9; }
+  .db-remove:hover { background: var(--danger-light); color: var(--danger); opacity: 1; }
   .table-list {
     padding: 2px 4px 6px 22px;
     display: none;
