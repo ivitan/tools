@@ -324,6 +324,7 @@
 
   /* ===== 按钮 ===== */
   .btn {
+    min-height: 32px;
     height: 32px;
     padding: 0 12px;
     border-radius: var(--r-sm);
@@ -346,7 +347,7 @@
   .btn-danger-ghost { background: var(--danger-light); border-color: var(--border); color: var(--danger-ink); }
   .btn-danger-ghost:hover { background: var(--danger); border-color: var(--danger); color: var(--danger-on); }
   .btn-group { display: flex; gap: 8px; }
-  .btn-group .btn { flex: 1; }
+  .btn-group .btn { flex: 1 1 auto; min-height: 32px; }
 
   /* ===== 结果区 ===== */
   .empty-content, .result-placeholder {
@@ -401,25 +402,30 @@
   }
   .error.active { display: block; }
 
-  .copy-options { display: flex; gap: 8px; margin-top: 14px; }
+  .copy-options { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
   .copy-option {
-    flex: 1;
-    padding: 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 32px;
+    height: 32px;
+    padding: 0 12px;
     border: 1px solid var(--border);
-    border-radius: var(--r);
+    border-radius: var(--r-sm);
     background: var(--panel);
     color: var(--text-secondary);
     cursor: pointer;
     text-align: center;
-    display: flex;
-    flex-direction: column;
+    display: inline-flex;
+    flex-direction: row;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
     transition: all 0.15s;
     -webkit-tap-highlight-color: transparent;
   }
-  .copy-option i { font-size: 14px; color: var(--primary); }
-  .copy-option h4 { font-size: 12.5px; font-weight: 500; color: var(--text); margin: 0; }
+  .copy-option i { font-size: 12px; color: var(--primary); }
+  .copy-option h4 { font-size: 13px; font-weight: 500; color: var(--text); margin: 0; }
   .copy-option:hover { border-color: var(--primary); background: var(--primary-light); }
   .copy-option.active { border-color: var(--primary); background: var(--primary-soft); }
   .copy-guide {
@@ -605,7 +611,9 @@
     .panel-body { padding: 12px; }
     .panel-header { padding: 9px 12px; }
     .btn-group { flex-direction: column; }
+    .btn-group .btn { width: 100%; }
     .copy-options { flex-direction: column; }
+    .copy-option { width: 100%; }
     .toast { top: 100px; right: 10px; left: 10px; max-width: none; }
   }
 </style>

@@ -279,6 +279,7 @@
   .btn-outline:hover { border-color: var(--primary); color: var(--primary-on); background: var(--primary); }
   .btn-sm { height: 28px; padding: 0 10px; font-size: 12.5px; }
   .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  #cardStep3 .btn-group { margin-top: 14px; }
 
   /* ===== 设备信息 ===== */
   .device-info {
@@ -415,7 +416,7 @@
   /* ===== 提示条 ===== */
   .alert {
     display: flex;
-    align-items: flex-start;
+    align-items: baseline;
     gap: 8px;
     padding: 9px 12px;
     border-radius: var(--r-sm);
@@ -545,9 +546,11 @@
     gap: 6px;
     font-size: 12px;
     color: var(--text-muted);
-    padding: 4px 0;
-    line-height: 1.6;
+    padding: 6px 0;
+    line-height: 1.5;
   }
+  .footer i { font-size: 11px; }
+  .footer-text { text-align: center; }
   .hidden-input { display: none; }
 
   /* Scrollbar */
@@ -718,7 +721,8 @@
   </div>
 
   <div class="footer">
-    <i class="fas fa-lock"></i> 纯前端工具 · 数据仅在本地处理 · 支持写入后验证 · 需要 Chrome/Edge + HTTPS/localhost
+    <i class="fas fa-lock"></i>
+    <span class="footer-text">纯前端工具 · 数据仅在本地处理 · 需要 Chrome/Edge</span>
   </div>
 </div>
 
