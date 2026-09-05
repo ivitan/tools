@@ -3,14 +3,14 @@
 
 <head>
   <script>
+    /* 提前应用主题，避免刷新闪白（统一采用 data-theme 方案，兼容旧键 "theme"） */
     (function () {
       try {
-        var dark =
-          localStorage.theme === "dark" ||
-          (!("theme" in localStorage) &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches);
-        if (dark) document.documentElement.classList.add("dark");
-      } catch (e) { }
+        var saved = localStorage.getItem('airport-theme') || localStorage.getItem('theme');
+        var dark = saved ? saved === 'dark'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      } catch (e) {}
     })();
   </script>
   <meta charset="UTF-8" />
@@ -21,7 +21,18 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: "class",
+      darkMode: ["selector", '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          colors: {
+            blue: {
+              50: "#eff6ff", 100: "#dbeafe", 200: "#bfdbfe", 300: "#93c5fd",
+              400: "#60a5fa", 500: "#3b82f6", 600: "#3b82f6", 700: "#2563eb",
+              800: "#1d4ed8", 900: "#1e40af"
+            }
+          }
+        }
+      }
     };
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
@@ -37,7 +48,7 @@
       border-radius: 3px;
     }
 
-    .dark .custom-scrollbar::-webkit-scrollbar-track {
+    [data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-track {
       background: #1e293b;
     }
 
@@ -46,7 +57,7 @@
       border-radius: 3px;
     }
 
-    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    [data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
       background: #475569;
     }
 
@@ -74,8 +85,132 @@
       background-color: #eff6ff !important;
     }
 
-    .dark .drag-active {
+    [data-theme="dark"] .drag-active {
       background-color: #1e3a8a !important;
+    }
+
+    /* ===== 统一设计系统（以 SQLite 工具为蓝本） ===== */
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --panel-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border-hover: #cbd5e1;
+      --text: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-light: #eff6ff;
+      --primary-soft: rgba(59,130,246,0.10);
+      --success: #10b981;
+      --danger: #ef4444;
+      --shadow: 0 1px 3px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.03);
+    }
+    [data-theme="dark"] {
+      --bg: #0b1220;
+      --panel: #111827;
+      --panel-hover: #1e293b;
+      --border: #1f2937;
+      --border-hover: #475569;
+      --text: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --primary: #60a5fa;
+      --primary-hover: #93c5fd;
+      --primary-light: #172554;
+      --primary-soft: rgba(96,165,250,0.12);
+      --success: #34d399;
+      --danger: #f87171;
+    }
+    body {
+      background: var(--bg) !important;
+      color: var(--text) !important;
+    }
+    .header {
+      height: 52px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+      transition: background .2s, border-color .2s;
+    }
+    .header-inner {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      min-width: 0;
+    }
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .home-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      background: var(--panel);
+      transition: all .15s;
+      flex-shrink: 0;
+    }
+    .home-btn:hover { background: var(--panel-hover); color: var(--primary); border-color: var(--border-hover); }
+    .home-btn svg { width: 15px; height: 15px; }
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .icon-btn:hover { background: var(--panel-hover); color: var(--primary); border-color: var(--border); }
+    .icon-btn svg { width: 18px; height: 18px; }
+    #iconMoon { display: none; }
+    .page {
+      max-width: 1180px;
+      width: 100%;
+      min-width: 0;
+      margin: 0 auto;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    @media (max-width: 768px) {
+      .header { height: 48px; padding: 0 12px; }
+      .page { padding: 12px 10px; }
     }
 
     summary::-webkit-details-marker {
@@ -84,33 +219,34 @@
   </style>
 </head>
 
-<body
-  class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans min-h-screen flex flex-col md:p-4 p-2 transition-colors duration-300">
-  <div
-    class="w-full max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-colors duration-300">
-    <!-- 头部 -->
-    <div
-      class="bg-blue-600 dark:bg-blue-800 px-5 py-3 flex flex-row justify-between items-center shrink-0 transition-colors duration-300">
-      <div class="flex items-center gap-2">
-        <i class="fas fa-plane text-white" style="font-size: 22px"></i>
-        <h1 class="text-base sm:text-lg font-bold text-white tracking-wide">
-          节点信息提取
-        </h1>
-        <a href="../" class="home-back-icon" title="返回主页" aria-label="返回主页"><svg viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<body class="font-sans min-h-screen flex flex-col transition-colors duration-300">
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon"><i class="fas fa-plane"></i></div>
+        <span>节点信息提取</span>
+        <a href="../" class="home-btn" title="返回主页" aria-label="返回主页">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             <path d="M9 22V12h6v10"></path>
-          </svg></a>
+          </svg>
+        </a>
       </div>
-      <!-- 暗色模式切换开关 -->
-      <button id="themeToggle"
-        class="text-white hover:text-blue-200 focus:outline-none p-1 rounded-full transition-colors">
-        <i id="themeIcon" class="fas fa-moon text-2xl"></i>
+      <button class="icon-btn" id="themeToggle" title="切换主题" type="button">
+        <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+        </svg>
+        <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+        </svg>
       </button>
     </div>
+  </header>
+  <main class="page">
 
     <!-- 主体区 -->
-    <div class="p-3 sm:p-5 flex flex-col gap-3">
+    <div class="flex flex-col gap-3">
       <!-- 通道 A：数据库源输入区 -->
       <div
         class="border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 sm:p-4 shadow-sm flex flex-col transition-colors duration-300">
@@ -338,7 +474,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <script>
     // ==========================================
@@ -352,34 +488,23 @@
     // 暗色模式切换逻辑
     // ==========================================
     const themeToggleBtn = document.getElementById("themeToggle");
-    const themeIcon = document.getElementById("themeIcon");
     const htmlElement = document.documentElement;
 
-    function renderThemeIcon() {
-      themeIcon.className = htmlElement.classList.contains("dark")
-        ? "fas fa-sun text-2xl"
-        : "fas fa-moon text-2xl";
+    function syncThemeIcon() {
+      const dark = htmlElement.dataset.theme === "dark";
+      const sun = document.getElementById("iconSun");
+      const moon = document.getElementById("iconMoon");
+      if (sun) sun.style.display = dark ? "block" : "none";
+      if (moon) moon.style.display = dark ? "none" : "block";
+      themeToggleBtn.title = dark ? "切换到浅色模式" : "切换到深色模式";
     }
-
-    if (
-      localStorage.theme === "dark" ||
-      (!("theme" in localStorage) &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches)
-    ) {
-      htmlElement.classList.add("dark");
-    } else {
-      htmlElement.classList.remove("dark");
-    }
-    renderThemeIcon();
+    syncThemeIcon();
 
     themeToggleBtn.addEventListener("click", () => {
-      htmlElement.classList.toggle("dark");
-      if (htmlElement.classList.contains("dark")) {
-        localStorage.theme = "dark";
-      } else {
-        localStorage.theme = "light";
-      }
-      renderThemeIcon();
+      const next = htmlElement.dataset.theme === "dark" ? "light" : "dark";
+      htmlElement.dataset.theme = next;
+      localStorage.setItem("airport-theme", next);
+      syncThemeIcon();
     });
 
     // ==========================================
