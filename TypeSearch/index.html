@@ -459,6 +459,42 @@
   .workflow-btn { margin-top: 12px; }
   .workflow-btn .btn { width: 100%; height: 34px; }
 
+  /* ===== 查询结果统计条（Type 提取工具底部） ===== */
+  #results .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 12px 0;
+    padding: 22px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--panel);
+  }
+  #results .stats-bar .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+  }
+  #results .stats-bar .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  #results .stats-bar .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+  @media (max-width: 480px) {
+    #results .stats-bar { gap: 8px; padding: 16px 10px; }
+    #results .stats-bar .stat-value { font-size: 20px; }
+    #results .stats-bar .stat-label { font-size: 11px; }
+  }
+
   #type-tool .results-container {
     min-height: 220px;
     padding: 6px;

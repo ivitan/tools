@@ -272,9 +272,10 @@
   /* 暗色模式：实心按钮保持饱和底色 + 白字（字色反转），用更深底色保证白字≥4.5:1 */
   [data-theme="dark"] .btn-primary { background: #2563eb; border-color: #2563eb; color: #ffffff; }
   [data-theme="dark"] .btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; color: #ffffff; }
+  [data-theme="dark"] .btn-primary:disabled { background: #2563eb; border-color: #2563eb; color: #ffffff; opacity: 1; }
   [data-theme="dark"] .btn-danger { background: #dc2626; border-color: #dc2626; color: #ffffff; }
   [data-theme="dark"] .btn-danger:hover { background: #b91c1c; border-color: #b91c1c; color: #ffffff; }
-  [data-theme="dark"] .btn-danger:disabled { background: #dc2626; border-color: #dc2626; color: #ffffff; }
+  [data-theme="dark"] .btn-danger:disabled { background: #dc2626; border-color: #dc2626; color: #ffffff; opacity: 1; }
   .btn-outline { background: var(--primary-light); color: var(--primary-ink); }
   .btn-outline:hover { border-color: var(--primary); color: var(--primary-on); background: var(--primary); }
   .btn-sm { height: 28px; padding: 0 10px; font-size: 12.5px; }
