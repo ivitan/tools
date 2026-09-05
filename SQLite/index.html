@@ -877,19 +877,32 @@
     flex-direction: column;
     gap: 6px;
     padding: 8px 10px 8px 8px;
-    border: 1px solid var(--primary);
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background: var(--bg);
+    /* 面板背景与字段名一致（--header-row），保持视觉同一层级、不抢眼 */
+    background: var(--header-row);
     box-shadow: 0 12px 32px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.18);
     min-width: 200px;
     text-align: left;
   }
-  /* 面板关闭按钮：绝对定位到面板右上角（与输入框同行），不占流空间，
-     像 tab 删除按钮那样浮在右边缘、垂直居中对齐输入框，避免压住字段名/内容 */
+  /* 输入框容器：负责容纳输入框 + 内嵌的 × 关闭按钮，
+     让 × 真正落在输入框内部右边缘，跟输入框边框齐平、不再压在边框线上 */
+  .col-filter-input-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .col-filter-input-row .col-filter-input {
+    width: 100%;
+  }
+  /* 面板关闭按钮：嵌入到输入框内右侧，跟输入框同高、垂直居中。
+     默认透明、有内容时才显示，避免长期压在字段名上 */
   .col-filter-close {
     position: absolute;
-    top: 8px;
-    right: 4px;
+    /* 紧贴输入框内右边缘，左右各留 2px 让 × 不贴死在边框上 */
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 18px;
     height: 18px;
     border-radius: 4px;
@@ -900,23 +913,28 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1;
     font-weight: 700;
-    opacity: 0.7;
-    transition: all 0.12s;
+    opacity: 0;
+    transition: opacity 0.12s, background 0.12s, color 0.12s;
     z-index: 2;
+    /* 按钮在输入框内：把点击事件拦在自身，不让 input 失焦 */
+    pointer-events: auto;
   }
+  /* 输入框内有内容时才显示 ×（不再默认压在输入框线上） */
+  .col-filter-input-row.has-value .col-filter-close { opacity: 0.7; }
   .col-filter-close:hover {
     background: var(--danger-light);
     color: var(--danger);
     opacity: 1;
   }
+  /* 输入框自身：右侧给 × 留出 22px 内边距，避免文字压到按钮 */
   .col-filter-input {
     width: 100%;
     box-sizing: border-box;
-    height: 24px;
-    padding: 0 24px 0 6px;
+    height: 26px;
+    padding: 0 26px 0 8px;
     border: 1px solid var(--border-hover);
     border-radius: 4px;
     background: var(--panel);
@@ -925,6 +943,7 @@
     outline: none;
     user-select: text;
   }
+  .col-filter-input:hover { border-color: var(--primary); }
   .col-filter-input:focus { border-color: var(--primary); }
   .col-filter-input::placeholder { color: var(--text-muted); font-size: 11px; }
   .col-filter-tools {
@@ -2414,8 +2433,10 @@ function buildFilterPanelHtml(tab, colName) {
   return `
     <div class="col-filter-input-wrap" data-col-input="${escapeHtml(colName)}">
       <div class="col-filter-panel">
-        <button type="button" class="col-filter-close" data-col-close-panel="${escapeHtml(colName)}" title="关闭筛选">×</button>
-        <input type="text" class="col-filter-input" placeholder="模糊筛选 / 过滤候选…" value="${escapeHtml(pendingLike)}" data-col-input-field="${escapeHtml(colName)}">
+        <div class="col-filter-input-row${pendingLike ? ' has-value' : ''}">
+          <input type="text" class="col-filter-input" placeholder="模糊筛选 / 过滤候选…" value="${escapeHtml(pendingLike)}" data-col-input-field="${escapeHtml(colName)}">
+          <button type="button" class="col-filter-close" data-col-clear-input="${escapeHtml(colName)}" title="清空输入">×</button>
+        </div>
         <div class="col-filter-tools">
           <button type="button" class="col-filter-tool-btn" data-col-selectall="${escapeHtml(colName)}">全选</button>
           <button type="button" class="col-filter-tool-btn" data-col-clearchecks="${escapeHtml(colName)}">清空勾选</button>
@@ -3235,11 +3256,21 @@ document.addEventListener('click', (e) => {
     e.stopPropagation();
     return;
   }
-  // 面板关闭按钮（×）→ 关闭面板、丢弃 pending（等同 ESC）
-  const closePanel = e.target.closest('[data-col-close-panel]');
-  if (closePanel) {
+  // 输入框内清空按钮（×）→ 清空输入框、保留面板打开、不触发筛选
+  const clearInputBtn = e.target.closest('[data-col-clear-input]');
+  if (clearInputBtn) {
+    const colName = clearInputBtn.dataset.colClearInput;
     const tab = getActiveDataTab();
-    if (tab) closeFilterPanelDiscard(tab);
+    if (tab) {
+      const input = document.querySelector(`.col-filter-input[data-col-input-field="${cssEscape(colName)}"]`);
+      if (input) {
+        input.value = '';
+        tab._pendingLike[colName] = '';
+        const row = clearInputBtn.closest('.col-filter-input-row');
+        if (row) row.classList.remove('has-value');
+        filterPanelOptions(colName, '');
+      }
+    }
     e.stopPropagation();
     return;
   }
@@ -3284,6 +3315,9 @@ document.addEventListener('input', (e) => {
   if (!tab) return;
   pendingLikeOf(tab, colName);   // 确保 pendingLike 已初始化
   tab._pendingLike[colName] = input.value;
+  // 输入框有内容时才显示右侧 × 清空按钮；空内容时隐藏，避免压在边框线上
+  const row = input.closest('.col-filter-input-row');
+  if (row) row.classList.toggle('has-value', !!input.value);
   filterPanelOptions(colName, input.value);
 });
 
