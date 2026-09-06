@@ -2637,83 +2637,10 @@ function updateFabEnd() {
    相比逐页调用 loadInfiniteBatch（每页 1 次查询 + 1 次 DOM 插入 + 1 次 rAF），
    这里把每页 100 行放大到每次 5000 行，并把 DOM 插入按阈值合并，
    10 万行的批次数从 1000 降到 20，rAF 等待从 ~16 秒降到 ~0.3 秒。 */
-async function loadRemainingToEnd(db, tab) {
-  const t = db.tables.find(x => x.name === tab.table);
-  if (!t) return;
-  const columns = tab._columns;
-  const tbody = $('infiniteTbody');
+// 一键到底统一路径：仅取最后一页（pageSize 行）渲染，等价于分页「末页」。
+// 不论表大小都走这条快速路径，避免小表也把全部行全量塞进 DOM 导致加载变慢；
+// 点击后 DOM 恒为 ~pageSize 行，向上回溯仍可逐页加载前面的行。
 
-  const CHUNK = 5000;        // 每次 SQL 查询的行数
-  const FLUSH_ROWS = 20000;  // 累积多少行后合并插入一次 DOM
-
-  let buf = [];
-  let bufRows = 0;
-  let guard = 0;
-  const MAX_ROUND = 100000;
-
-  const flush = () => {
-    if (!bufRows || !tbody) { buf = []; bufRows = 0; return; }
-    tbody.insertAdjacentHTML('beforeend', buf.join(''));
-    buf = [];
-    bufRows = 0;
-  };
-
-  while (!tab.infiniteFinished && guard++ < MAX_ROUND) {
-    const offset = tab.infiniteCount || 0;
-    const where = buildWhereClause(tab, t);
-    let sql, params;
-    if (where) {
-      sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql} LIMIT ${CHUNK} OFFSET ${offset}`;
-      params = where.params;
-    } else {
-      sql = `SELECT * FROM "${tab.table}" LIMIT ${CHUNK} OFFSET ${offset}`;
-      params = [];
-    }
-
-    const t0 = performance.now();
-    let rows = [];
-    try {
-      const stmt = db.db.prepare(sql);
-      if (params.length) stmt.bind(params);
-      while (stmt.step()) rows.push(stmt.getAsObject());
-      stmt.free();
-    } catch (e) {
-      console.error(e);
-      flush();
-      return false;
-    }
-    tab._totalElapsed = (tab._totalElapsed || 0) + Math.round(performance.now() - t0);
-
-    if (rows.length) {
-      buf.push(buildRowsHtml(rows, columns, offset));
-      bufRows += rows.length;
-      tab.infiniteCount = (tab.infiniteCount || 0) + rows.length;
-      tab.infinitePage++;
-    }
-
-    // 收尾判定：本块不满、或已达总行数、或查不到新行
-    if (rows.length < CHUNK || (tab.infiniteCount || 0) >= tab.infiniteTotal || rows.length === 0) {
-      tab.infiniteFinished = true;
-    }
-
-    if (bufRows >= FLUSH_ROWS) flush();
-
-    // 块级别刷新进度（块数很少，开销可忽略）
-    const loadedEl = $('loadedCount');
-    if (loadedEl) loadedEl.textContent = formatNum(tab.infiniteCount || 0);
-    const elapsedEl = $('elapsedTime');
-    if (elapsedEl) elapsedEl.textContent = tab._totalElapsed + 'ms';
-
-    await new Promise(r => requestAnimationFrame(r));
-  }
-
-  flush();
-  return true;
-}
-
-// 大数据表快速到底：仅取最后一页（pageSize 行）渲染，等价于分页「末页」。
-// 目的：避免把几十万行全量塞进 DOM 导致卡死/浏览器崩溃。仅当剩余行数超过阈值
-// 才走这条路径；小表仍走 loadRemainingToEnd 逐批加载，保留向上回滚浏览已加载行的能力。
 async function jumpToEndViaLastPage(db, tab) {
   const t = db.tables.find(x => x.name === tab.table);
   if (!t) return false;
@@ -2840,13 +2767,9 @@ async function jumpToEnd() {
   tab._jumping = true;
   updateFabEnd();                            // 立刻切到 loading 态
 
-  // 剩余行数很大（大数据表）时，改用「末页」式只渲染末页 ~pageSize 行，
-  // 避免把几十万行全量塞进 DOM 导致卡死/崩溃；小表仍逐批加载以保留向上回滚浏览。
-  const remaining = (tab.infiniteTotal || 0) - (tab.infiniteCount || 0);
-  const BIG_TABLE_REMAIN = 20000;
-  const ok = remaining > BIG_TABLE_REMAIN
-    ? await jumpToEndViaLastPage(db, tab)
-    : await loadRemainingToEnd(db, tab);
+  // 统一走「巨量行数表」快速路径：不论表大小，仅渲染末页 ~pageSize 行，
+  // 避免小表也把全部行全量塞进 DOM 导致加载变慢；向上回溯仍可逐页加载前面的行。
+  const ok = await jumpToEndViaLastPage(db, tab);
 
   // 加载完成后收尾：更新 sentinel 文案、断开 observer
   if (tab.infiniteFinished) {
