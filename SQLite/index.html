@@ -107,15 +107,7 @@
     gap: 10px;
     font-weight: 600;
     font-size: 15px;
-    cursor: pointer;
-    user-select: none;
-    border-radius: 8px;
-    padding: 2px 4px;
-    transition: color 0.15s;
   }
-  .logo:hover { color: var(--primary); }
-  [data-theme="dark"] .logo:hover { color: var(--primary-hover); }
-  .logo:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   .logo-icon {
     width: 28px;
     height: 28px;
@@ -126,9 +118,12 @@
     justify-content: center;
     color: #fff;
     flex-shrink: 0;
+    cursor: pointer;
+    user-select: none;
     transition: background-color 0.15s;
   }
-  .logo:hover .logo-icon { background: var(--primary-hover); }
+  .logo-icon:hover { background: var(--primary-hover); }
+  .logo-icon:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   /* 标题旁的「返回主页」圆形按钮（参照参考图的样式） */
   .home-btn {
     margin-left: 4px;
@@ -1431,8 +1426,8 @@
 <body>
 
 <div class="header">
-  <div class="logo" id="logoToggle" title="展开数据库列表" role="button" tabindex="0">
-    <div class="logo-icon">
+  <div class="logo">
+    <div class="logo-icon" id="logoToggle" title="展开数据库列表" role="button" tabindex="0">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <ellipse cx="12" cy="5" rx="9" ry="3"/>
         <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
@@ -3016,9 +3011,8 @@ $('btnHome').onclick = async () => {
   if (ok) location.href = '/';
 };
 
-// 点击 Logo（图标+标题整体）展开/收起侧栏：桌面切换折叠，手机切换抽屉
+// 点击最前的 Logo 图标展开/收起侧栏：桌面切换折叠，手机切换抽屉
 function toggleSidebarByLogo(e) {
-  if (e && e.target && e.target.closest('#btnHome')) return; // 点「返回主页」不触发展开
   if (isMobile()) {
     toggleDrawer();
   } else {
