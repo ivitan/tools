@@ -107,7 +107,15 @@
     gap: 10px;
     font-weight: 600;
     font-size: 15px;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 8px;
+    padding: 2px 4px;
+    transition: color 0.15s;
   }
+  .logo:hover { color: var(--primary); }
+  [data-theme="dark"] .logo:hover { color: var(--primary-hover); }
+  .logo:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   .logo-icon {
     width: 28px;
     height: 28px;
@@ -117,7 +125,10 @@
     align-items: center;
     justify-content: center;
     color: #fff;
+    flex-shrink: 0;
+    transition: background-color 0.15s;
   }
+  .logo:hover .logo-icon { background: var(--primary-hover); }
   /* 标题旁的「返回主页」圆形按钮（参照参考图的样式） */
   .home-btn {
     margin-left: 4px;
@@ -1375,10 +1386,6 @@
       height: calc(100dvh - 48px);
     }
     body.sidebar-open .sidebar { transform: translateX(0); }
-    /* 手机端桌面折叠按钮隐藏 */
-    #btnToggleSidebar { display: none; }
-    /* 抽屉打开按钮显示 */
-    #btnOpenDrawer { display: inline-flex !important; }
 
     .toolbar {
       height: auto;
@@ -1424,19 +1431,7 @@
 <body>
 
 <div class="header">
-  <button class="icon-btn" id="btnToggleSidebar" title="折叠/展开侧栏">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
-  <button class="icon-btn" id="btnOpenDrawer" style="display:none;" title="打开数据库列表">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <ellipse cx="12" cy="5" rx="9" ry="3"/>
-      <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
-      <path d="M3 12a9 3 0 0 0 18 0"/>
-      <line x1="11" y1="11" x2="17" y2="11"/>
-      <polyline points="14 8 17 11 14 14"/>
-    </svg>
-  </button>
-  <div class="logo">
+  <div class="logo" id="logoToggle" title="展开数据库列表" role="button" tabindex="0">
     <div class="logo-icon">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <ellipse cx="12" cy="5" rx="9" ry="3"/>
@@ -3021,15 +3016,24 @@ $('btnHome').onclick = async () => {
   if (ok) location.href = '/';
 };
 
-// 桌面端侧栏折叠按钮
-$('btnToggleSidebar').onclick = () => {
-  document.body.classList.toggle('sidebar-collapsed');
-  localStorage.setItem('sqlite-sidebar-collapsed',
-    document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
-};
-
-// 移动端抽屉按钮
-$('btnOpenDrawer').onclick = toggleDrawer;
+// 点击 Logo（图标+标题整体）展开/收起侧栏：桌面切换折叠，手机切换抽屉
+function toggleSidebarByLogo(e) {
+  if (e && e.target && e.target.closest('#btnHome')) return; // 点「返回主页」不触发展开
+  if (isMobile()) {
+    toggleDrawer();
+  } else {
+    document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('sqlite-sidebar-collapsed',
+      document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
+  }
+}
+const logoToggle = $('logoToggle');
+if (logoToggle) {
+  logoToggle.onclick = toggleSidebarByLogo;
+  logoToggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSidebarByLogo(e); }
+  });
+}
 $('sidebarOverlay').onclick = closeDrawer;
 
 // mode toggle
