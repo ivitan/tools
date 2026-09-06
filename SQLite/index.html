@@ -2637,8 +2637,9 @@ function updateFabEnd() {
     return;
   }
   fab.classList.add('show');
-  // 已全部加载完、或正在跳转中 → 禁用（避免连点重入）
-  fab.disabled = !!tab.infiniteFinished || !!tab._jumping;
+  // 仅「正在跳转中」禁用（防连点重入）；底到了也允许再次点击直达底部
+  // （例如向上回溯翻阅前面行后，再一键跳回末尾）。
+  fab.disabled = !!tab._jumping;
   fab.classList.toggle('loading', !!tab._jumping);
 }
 
@@ -2829,9 +2830,20 @@ async function jumpToEnd() {
   if (tab._jumping) return;                 // 防重入
   const db = state.databases.find(d => d.id === tab.dbId);
   if (!db) return;
-  if (tab.infiniteFinished) {               // 已到底，直接滚
+  if (tab.infiniteFinished) {               // 已到底：直接滚到底部（可能已向上回溯翻阅过）
     const c = $('infiniteContainer');
-    if (c) c.scrollTop = c.scrollHeight;
+    if (!c) return;
+    // 用与首次一致的轮询补滚，兼容触摸惯性，稳健落到底部
+    let tries = 0, lastSh = -1;
+    const keepBottom = () => {
+      const sh = c.scrollHeight;            // 本轮统一用同一个值
+      c.scrollTop = sh;
+      const atBottom = c.scrollTop + c.clientHeight >= sh - 4;
+      const stable = sh === lastSh;         // 连续两轮相同 → 布局已稳定
+      lastSh = sh;
+      if ((!atBottom || !stable) && ++tries < 50) setTimeout(keepBottom, 100);
+    };
+    keepBottom();
     return;
   }
 
