@@ -2846,7 +2846,8 @@ async function handleFiles(files) {
 }
 
 $('btnAddDb').onclick = () => $('fileInput').click();
-$('btnDropzoneSelect').onclick = () => $('fileInput').click();
+// 点击虚线区域任意位置均可触发选择文件（按钮自身由冒泡统一处理，避免重复触发）
+$('dropzone').addEventListener('click', () => $('fileInput').click());
 $('fileInput').onchange = (e) => handleFiles([...e.target.files]);
 
 $('btnClear').onclick = async () => {
