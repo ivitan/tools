@@ -3,17 +3,17 @@
 
 <head>
   <script>
+    // 早期注入主题，避免浅/深色闪烁（与 SQLite 一致：用 data-theme 控制）
     (function () {
       try {
-        var saved = localStorage.getItem("theme");
+        var saved = localStorage.getItem("toolbox-theme");
         var dark =
           saved === "dark" ||
           (!saved &&
             window.matchMedia("(prefers-color-scheme: dark)").matches);
-        if (dark) document.documentElement.classList.add("dark-mode");
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
       } catch (e) { }
     })();
-	se Nerdtree
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -21,40 +21,54 @@
   <title>实用工具箱</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    /* ----- 变量与重置 ----- */
+    /* ============================================================
+       设计系统：对齐 SQLite 读取工具的视觉规范
+       - 双主题用 [data-theme="dark"] 控制
+       - token 取自 SQLite 蓝本
+       ============================================================ */
     :root {
-      /* 日间模式 */
-      --bg-gradient: linear-gradient(145deg, #f6f9fc 0%, #eef2f7 100%);
-      --container-bg: #ffffff;
-      --text-color: #1e293b;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --panel-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border-hover: #cbd5e1;
+      --text: #0f172a;
       --text-secondary: #475569;
-      --text-muted: #94a3b8;
-      --primary-color: #3b82f6;
-      --primary-hover: #2563eb;
-      --border-color: #e2e8f0;
-      --card-bg: #ffffff;
-      --card-shadow:
-        0 8px 20px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
-      --card-shadow-hover: 0 20px 30px -12px rgba(0, 0, 0, 0.12);
-      --header-color: #0f172a;
-      --tool-icon-bg: rgba(59, 130, 246, 0.1);
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --primary-soft: rgba(37, 99, 235, 0.10);
+      --primary-on: #ffffff;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+      --scrollbar-thumb: #cbd5e1;
+      --scrollbar-thumb-hover: #94a3b8;
+      --header-h: 52px;
     }
 
-    .dark-mode {
-      /* 暗色模式优雅深邃 */
-      --bg-gradient: linear-gradient(135deg, #0b1120 0%, #111827 100%);
-      --container-bg: #0f172a;
-      --text-color: #e2e8f0;
+    [data-theme="dark"] {
+      --bg: #0b1220;
+      --panel: #111827;
+      --panel-hover: #1e293b;
+      --border: #1f2937;
+      --border-hover: #475569;
+      --text: #f1f5f9;
       --text-secondary: #cbd5e1;
-      --text-muted: #64748b;
-      --primary-color: #60a5fa;
-      --primary-hover: #3b82f6;
-      --border-color: #1e293b;
-      --card-bg: #1e293b;
-      --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-      --card-shadow-hover: 0 20px 30px -12px rgba(0, 0, 0, 0.5);
-      --header-color: #f1f5f9;
-      --tool-icon-bg: rgba(96, 165, 250, 0.12);
+      --text-muted: #94a3b8;
+      --primary: #60a5fa;
+      --primary-hover: #93c5fd;
+      --primary-light: rgba(96, 165, 250, 0.18);
+      --primary-soft: rgba(96, 165, 250, 0.22);
+      --primary-on: #0b1220;
+      --danger: #f87171;
+      --danger-light: rgba(248, 113, 113, 0.18);
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+      --scrollbar-thumb: #475569;
+      --scrollbar-thumb-hover: #64748b;
     }
 
     * {
@@ -64,446 +78,416 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    html { scroll-behavior: smooth; }
+
     body {
-      background: var(--bg-gradient);
-      color: var(--text-color);
-      font-family:
-        system-ui,
-        -apple-system,
-        "Segoe UI",
-        "PingFang SC",
-        "Microsoft YaHei",
-        "Roboto",
-        sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
       line-height: 1.5;
-      padding: 20px 16px 40px;
       min-height: 100vh;
-      transition:
-        background 0.25s ease,
-        color 0.2s;
+      transition: background-color 0.15s, color 0.15s;
     }
 
-    .container {
-      max-width: 1280px;
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+    * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+    /* ===== 顶部 Header（对齐 SQLite） ===== */
+    .header {
+      max-width: 1180px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      height: var(--header-h);
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 12px;
+      z-index: 30;
+    }
+    .header-inner {
+      max-width: 1180px;
       margin: 0 auto;
       width: 100%;
-    }
-
-    /* ----- 头部区域 (flex居中+按钮右侧，无绝对定位) ----- */
-    header {
-      margin-bottom: 24px;
-    }
-
-    .header-content {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .header-placeholder {
-      width: 48px;
-      height: 48px;
-      visibility: hidden;
-    }
-
-    .header-title {
-      flex: 1;
-      text-align: center;
-    }
-
-    .header-title h1 {
-      font-size: 1.9rem;
-      font-weight: 700;
-      background: linear-gradient(120deg, var(--primary-color), #8b5cf6);
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-      letter-spacing: -0.3px;
-      margin-bottom: 6px;
-    }
-
-    .header-title p {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      font-weight: 450;
-    }
-
-    .theme-toggle {
-      width: 48px;
-      height: 48px;
-      background: var(--card-bg);
-      border-radius: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border: 1px solid var(--border-color);
-      box-shadow: var(--card-shadow);
-      transition: all 0.2s ease;
-      flex-shrink: 0;
-    }
-
-    .theme-toggle:hover {
-      transform: scale(1.02);
-      background: var(--primary-color);
-      border-color: var(--primary-color);
-    }
-
-    .theme-toggle i {
-      font-size: 1.4rem;
-      color: var(--primary-color);
-      transition: color 0.2s;
-    }
-
-    .theme-toggle:hover i {
-      color: white;
-    }
-
-    /* 搜索框 */
-    .search-box {
-      max-width: 560px;
-      margin: 0 auto 16px auto;
-      position: relative;
-    }
-
-    .search-box input {
-      width: 100%;
-      padding: 14px 48px 14px 20px;
-      background: var(--card-bg);
-      border: 1.5px solid var(--border-color);
-      border-radius: 56px;
-      font-size: 1rem;
-      color: var(--text-color);
-      outline: none;
-      transition: all 0.2s;
-      font-weight: 450;
-      backdrop-filter: blur(2px);
-    }
-
-    .search-box input:focus {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    }
-
-    .search-box input::placeholder {
-      color: var(--text-muted);
-      font-weight: 400;
-    }
-
-    .search-box i {
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      font-size: 1.2rem;
-      pointer-events: none;
-    }
-
-    /* 分类筛选条 */
-    .category-bar {
-      max-width: 880px;
-      margin: 0 auto 32px auto;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
       gap: 10px;
     }
+    /* Logo 现在是按钮：点击展开/收起分类，底色始终与顶栏一致（透明） */
+    .logo {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 15px;
+      border: none; background: transparent; color: var(--text);
+      cursor: pointer; font-family: inherit;
+      padding: 4px 6px;
+      transition: color 0.15s;
+    }
+    .logo:hover { color: var(--primary); }
+    .logo.active { color: var(--primary); }
+    [data-theme="dark"] .logo.active { color: var(--primary-hover); }
+    .logo-icon {
+      width: 28px; height: 28px;
+      background: var(--primary);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--primary-on);
+      flex-shrink: 0;
+    }
+    .header-spacer { flex: 1; }
+    .header-actions { display: flex; gap: 6px; align-items: center; }
 
-    .category-chip {
-      padding: 8px 18px;
-      border-radius: 40px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
+    .icon-btn {
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
       color: var(--text-secondary);
-      font-size: 0.85rem;
-      font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: var(--card-shadow);
-      user-select: none;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .icon-btn:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border); }
+    [data-theme="dark"] .icon-btn:hover { color: #fff; }
+
+    /* ===== 主体布局：左风琴栏 + 右网格 ===== */
+    .layout {
+      max-width: 1180px;
+      margin: 16px auto 0;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 0 16px;
     }
 
-    .category-chip:hover {
-      border-color: var(--primary-color);
-      color: var(--primary-color);
+    /* 左侧分类风琴栏：默认收起（宽度 0），展开后定宽 */
+    .sidebar {
+      width: 0;
+      flex-shrink: 0;
+      overflow: hidden;
+      background: var(--panel);
+      border: 0 solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      transition: width 0.22s ease, opacity 0.15s ease, border-width 0.15s ease;
+      opacity: 0;
+    }
+    body.cat-open .sidebar {
+      width: 220px;
+      opacity: 1;
+      border-width: 1px;
+    }
+    .sidebar-inner { width: 220px; padding: 10px; }
+
+    .sidebar-title {
+      font-size: 12px; font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 4px 8px 10px;
     }
 
-    .category-chip.active {
-      background: var(--primary-color);
-      border-color: var(--primary-color);
-      color: #fff;
+    /* 分类项（风琴条目）：点击即筛选；整体默认收起指侧栏自身，分类列表展开后直接可点 */
+    .cat-item {
+      width: 100%;
+      padding: 8px 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-family: inherit; font-weight: 500;
+      text-align: left;
+      transition: background-color 0.12s, color 0.12s;
+    }
+    .cat-item:hover { background: var(--panel-hover); color: var(--text); }
+    .cat-item.active {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    [data-theme="dark"] .cat-item.active { color: var(--primary-hover); }
+    .cat-item .cat-count {
+      margin-left: auto;
+      background: var(--panel-hover);
+      color: var(--text-muted);
+      padding: 1px 8px;
+      border-radius: 10px;
+      font-size: 11px; font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .cat-item.active .cat-count { background: var(--primary); color: var(--primary-on); }
+
+    /* ===== 右侧主区 ===== */
+    .main {
+      flex: 1;
+      min-width: 0;
     }
 
-    /* 工具网格 - 核心响应式一行两个 */
+    /* 搜索框（顶栏内，宽度略大于分类按钮） */
+    .search-box { position: relative; width: 200px; flex-shrink: 0; }
+    .search-box input {
+      width: 100%;
+      height: 32px;
+      padding: 0 34px 0 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+    .search-box input::placeholder { color: var(--text-muted); }
+    .search-box i {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); font-size: 0.85rem; pointer-events: none;
+    }
+
+    /* 当前筛选提示条 */
+    .filter-bar {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .filter-bar.show { display: flex; }
+    .filter-bar .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    [data-theme="dark"] .filter-bar .chip { color: var(--primary-hover); }
+    .filter-bar .clear {
+      border: none; background: transparent; cursor: pointer;
+      color: var(--text-muted); font-size: 12px;
+      text-decoration: underline; font-family: inherit;
+    }
+    .filter-bar .clear:hover { color: var(--text); }
+
+    /* 工具网格（保持原布局：卡片平铺） */
     .tools-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
     }
-
-    /* 手机端强制两列 (≥360px 保持两列优雅) */
     @media (max-width: 680px) {
-      .tools-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 14px;
-      }
+      .tools-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    }
+    @media (max-width: 420px) {
+      .tools-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     }
 
-    /* 极小设备确保两列不过于拥挤 */
-    @media (max-width: 480px) {
-      body {
-        padding: 16px 12px 32px;
-      }
-
-      .tools-grid {
-        gap: 12px;
-      }
-    }
-
-    /* 卡片设计 */
     .tool-card {
-      background: var(--card-bg);
-      border-radius: 24px;
-      padding: 20px 14px 18px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 12px 18px;
       text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      border: 1px solid var(--border-color);
-      transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
-      box-shadow: var(--card-shadow);
+      display: flex; flex-direction: column; align-items: center; text-align: center;
       position: relative;
-      backdrop-filter: blur(2px);
+      color: inherit;
       cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s, background-color 0.15s;
     }
-
-    .tool-card:active {
-      transform: scale(0.97);
-      transition: transform 0.1s;
-    }
-
-    @media (hover: hover) {
-      .tool-card:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--card-shadow-hover);
-        border-color: var(--primary-color);
-      }
-    }
-
+    .tool-card:hover { border-color: var(--primary); box-shadow: var(--shadow-lg); background: var(--primary-light); transform: translateY(-2px); }
+    .tool-card:active { transform: translateY(0); }
     .tool-card i.tool-icon {
-      font-size: 2.5rem;
-      margin-bottom: 14px;
-      background: var(--tool-icon-bg);
-      width: 64px;
-      height: 64px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 32px;
-      color: var(--primary-color);
-      transition: all 0.2s;
+      font-size: 2rem;
+      margin-bottom: 12px;
+      background: var(--primary-soft);
+      width: 56px; height: 56px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 12px;
+      color: var(--primary);
+      transition: all 0.15s;
     }
-
-    .tool-card:hover i.tool-icon {
-      transform: scale(1.05);
-      background: rgba(59, 130, 246, 0.2);
-    }
-
-    .tool-card h3 {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: var(--header-color);
-      letter-spacing: -0.2px;
-    }
-
-    .tool-card p {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      line-height: 1.4;
-      max-width: 100%;
-    }
-
-    /* 卡片右上角徽标 (可选: badge) */
+    .tool-card:hover i.tool-icon { background: var(--primary); color: #fff; }
+    .tool-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: var(--text); letter-spacing: -0.2px; }
+    .tool-card p { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
     .tool-card .card-badge {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: #ef4444;
-      color: #fff;
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      padding: 2px 8px;
-      border-radius: 20px;
-      box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+      position: absolute; top: 10px; right: 10px;
+      background: var(--danger); color: #fff;
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.5px;
+      padding: 2px 7px; border-radius: 20px;
     }
+    [data-theme="dark"] .tool-card .card-badge { color: var(--primary-on); }
 
-    /* 无结果提示 */
     .no-result {
       grid-column: 1 / -1;
       text-align: center;
       padding: 48px 20px;
-      background: var(--card-bg);
-      border-radius: 40px;
+      background: var(--panel);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
       color: var(--text-secondary);
-      border: 1px dashed var(--border-color);
-      font-size: 1rem;
+      font-size: 0.95rem;
     }
-
-    .no-result i {
-      font-size: 3rem;
-      margin-bottom: 12px;
-      opacity: 0.6;
-    }
+    .no-result i { font-size: 2.4rem; margin-bottom: 10px; opacity: 0.6; display: block; }
 
     footer {
-      margin-top: 32px;
+      max-width: 1180px;
+      margin: 24px auto 0;
       text-align: center;
       font-size: 0.75rem;
       color: var(--text-muted);
-      border-top: 1px solid var(--border-color);
-      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      padding: 20px 16px 0;
+    }
+
+    /* 移动端：左侧栏变抽屉覆盖 */
+    @media (max-width: 768px) {
+      .header { top: 8px; }
+      .layout { padding: 0 12px; }
+      .sidebar {
+        position: fixed;
+        top: calc(var(--header-h) + 20px);
+        left: 12px;
+        bottom: 12px;
+        z-index: 40;
+        box-shadow: var(--shadow-lg);
+        width: 0;
+        border-width: 0;
+      }
+      body.cat-open .sidebar { width: min(80vw, 260px); border-width: 1px; }
+      .sidebar-inner { width: min(80vw, 260px); }
     }
 
     @media (max-width: 500px) {
-      .header-title h1 {
-        font-size: 1.6rem;
-      }
-
-      .tool-card {
-        padding: 16px 10px 14px;
-      }
-
-      .tool-card i.tool-icon {
-        width: 52px;
-        height: 52px;
-        font-size: 2rem;
-        margin-bottom: 10px;
-      }
-
-      .tool-card h3 {
-        font-size: 1rem;
-      }
-
-      .tool-card p {
-        font-size: 0.75rem;
-      }
-    }
-
-    /* 平滑滚动 */
-    html {
-      scroll-behavior: smooth;
+      .header { height: 48px; padding: 0 10px; gap: 6px; }
+      .logo span { font-size: 13px; }
+      .tool-card i.tool-icon { width: 48px; height: 48px; font-size: 1.7rem; }
+      .tool-card h3 { font-size: 0.9rem; }
+      .tool-card p { font-size: 0.72rem; }
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <header>
-      <div class="header-content">
-        <div class="header-placeholder" aria-hidden="true"></div>
-        <div class="header-title">
-          <h1>⚙️ 实用工具箱</h1>
+  <header class="header">
+    <div class="header-inner">
+      <button class="logo" id="logoToggle" title="展开/收起分类" aria-label="展开/收起分类">
+        <div class="logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
         </div>
-        <div class="theme-toggle" id="themeToggle" aria-label="切换深色/浅色模式" title="切换主题">
-          <i class="fas fa-moon"></i>
-        </div>
+        <span>实用工具箱</span>
+      </button>
+
+      <div class="header-spacer"></div>
+
+      <!-- 搜索框：置于主题切换按钮左侧（所有端一致） -->
+      <div class="search-box">
+        <input type="text" id="toolSearch" placeholder="搜索工具..." />
+        <i class="fas fa-search"></i>
       </div>
-    </header>
 
-    <div class="search-box">
-      <input type="text" id="toolSearch" placeholder="搜索工具名称、分类或描述..." />
-      <i class="fas fa-search"></i>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeToggle" title="切换主题" aria-label="切换深色/浅色模式">
+          <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+            <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+          <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
+      </div>
     </div>
+  </header>
 
-    <!-- 分类筛选条 (由 JS 根据工具列表自动生成) -->
-    <div class="category-bar" id="categoryBar"></div>
+  <div class="layout">
+    <!-- 左侧分类风琴栏：默认收起 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-title">分类</div>
+        <div id="catList"></div>
+      </div>
+    </aside>
 
-    <div class="tools-grid" id="toolsGrid"></div>
+    <!-- 右侧主区：原图标网格布局 -->
+    <main class="main">
+      <div class="filter-bar" id="filterBar">
+        <span>当前分类：</span>
+        <span class="chip" id="filterChip"></span>
+        <button class="clear" id="clearFilter">返回全部</button>
+      </div>
 
-    <footer>
-      <span>💡 新增工具只需在脚本顶部的 TOOLS 数组中追加一项</span>
-    </footer>
+      <div class="tools-grid" id="toolsGrid"></div>
+    </main>
   </div>
+
+  <footer>
+    <span>💡 新增工具只需在脚本顶部的 TOOLS 数组中追加一项</span>
+  </footer>
 
   <script>
     (function () {
       // ============================================================
       //  工具配置区 —— 后续新增功能卡片只需在此数组追加一项即可
-      //  字段说明：
-      //    name     工具名称（必填）
-      //    icon     Font Awesome 图标类名，如 "fas fa-search"
-      //             （品牌图标用 "fab ..."，常规图标用 "fas ..."）
-      //    href     点击跳转地址（必填）
-      //    category 所属分类（用于自动生成筛选标签，必填）
-      //    desc     卡片描述文字（必填）
-      //    badge    可选，右上角徽标文字，如 "NEW"
+      //  字段：name / icon / href / category / desc / badge(可选)
       // ============================================================
       const TOOLS = [
-        {
-          name: "Type 搜索",
-          icon: "fas fa-search",
-          href: "/TypeSearch",
-          category: "搜索工具",
-          desc: "智能类型检索 & 快速定位",
-        },
-        {
-          name: "单位换算",
-          icon: "fas fa-calculator",
-          href: "/Exchange",
-          category: "计算工具",
-          desc: "百分数 · 小数 · 单位互换",
-        },
-        {
-          name: "Markdown Editor",
-          icon: "fab fa-markdown",
-          href: "/Markdown",
-          category: "编辑器",
-          desc: "即时预览 · 优雅写作",
-        },
-        {
-          name: "WebUSB Imager",
-          icon: "fas fa-compact-disc",
-          href: "/WebUSB",
-          category: "系统工具",
-          desc: "Web制作USB启动盘",
-        },
-        {
-          name: "Airport Information",
-          icon: "fas fa-plane",
-          href: "/Airport",
-          category: "航班工具",
-          desc: "航班节点信息提取",
-        },
-        {
-          name: "Daily Report",
-          icon: "fas fa-clipboard-list",
-          href: "/Daily",
-          category: "办公工具",
-          desc: "日报生成工具",
-        },
-            {
-          name: "SQLite",
-          icon: "fas fa-database",
-          href: "/SQLite",
-          category: "数据库工具",
-          desc: "SQLite 数据库工具",
-          badge: "NEW",
-        },
+        { name: "Type 搜索", icon: "fas fa-search", href: "/TypeSearch", category: "搜索工具", desc: "智能类型检索 & 快速定位" },
+        { name: "单位换算", icon: "fas fa-calculator", href: "/Exchange", category: "计算工具", desc: "百分数 · 小数 · 单位互换" },
+        { name: "Markdown Editor", icon: "fab fa-markdown", href: "/Markdown", category: "编辑器", desc: "即时预览 · 优雅写作" },
+        { name: "WebUSB Imager", icon: "fas fa-compact-disc", href: "/WebUSB", category: "系统工具", desc: "Web制作USB启动盘" },
+        { name: "Airport Information", icon: "fas fa-plane", href: "/Airport", category: "航班工具", desc: "航班节点信息提取" },
+        { name: "Daily Report", icon: "fas fa-clipboard-list", href: "/Daily", category: "办公工具", desc: "日报生成工具" },
+        { name: "SQLite", icon: "fas fa-database", href: "/SQLite", category: "数据库工具", desc: "SQLite 数据库工具", badge: "NEW" },
       ];
 
-      // 当前激活的分类筛选（"全部" 表示不筛选）
-      let activeCategory = "全部";
-
       const toolsGrid = document.getElementById("toolsGrid");
-      const categoryBar = document.getElementById("categoryBar");
+      const catList = document.getElementById("catList");
       const searchInput = document.getElementById("toolSearch");
+      const filterBar = document.getElementById("filterBar");
+      const filterChip = document.getElementById("filterChip");
 
-      // -------------------- 渲染卡片 --------------------
+      // 当前筛选状态
+      let activeCategory = "全部";   // 左侧分类选中项
+      let searchTerm = "";           // 搜索关键词
+
+      // 分类列表（保持 TOOLS 出现顺序去重）
+      const CATEGORIES = [];
+      TOOLS.forEach((t) => { if (!CATEGORIES.includes(t.category)) CATEGORIES.push(t.category); });
+      const catCount = (cat) => TOOLS.filter((t) => t.category === cat).length;
+
+      // -------------------- 渲染左侧分类 --------------------
+      function renderCategories() {
+        catList.innerHTML = "";
+        const mk = (label, value, count) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "cat-item" + (value === activeCategory ? " active" : "");
+          btn.dataset.value = value;
+          btn.innerHTML = `<span>${label}</span>` +
+            (count != null ? `<span class="cat-count">${count}</span>` : "");
+          btn.addEventListener("click", () => {
+            activeCategory = value;
+            renderCategories();
+            applyFilter();
+          });
+          return btn;
+        };
+        catList.appendChild(mk("全部", "全部", TOOLS.length));
+        CATEGORIES.forEach((c) => catList.appendChild(mk(c, c, catCount(c))));
+      }
+
+      // -------------------- 渲染右侧卡片 --------------------
       function renderTools() {
         toolsGrid.innerHTML = "";
         TOOLS.forEach((t) => {
@@ -513,42 +497,20 @@
           card.dataset.name = t.name;
           card.dataset.category = t.category;
           card.dataset.desc = t.desc;
-
-          const badge = t.badge
-            ? `<span class="card-badge">${t.badge}</span>`
-            : "";
+          const badge = t.badge ? `<span class="card-badge">${t.badge}</span>` : "";
           card.innerHTML = `
-              ${badge}
-              <i class="tool-icon ${t.icon}"></i>
-              <h3>${t.name}</h3>
-              <p>${t.desc}</p>
-            `;
+            ${badge}
+            <i class="tool-icon ${t.icon}"></i>
+            <h3>${t.name}</h3>
+            <p>${t.desc}</p>
+          `;
           toolsGrid.appendChild(card);
         });
       }
 
-      // -------------------- 渲染分类标签 --------------------
-      function renderCategories() {
-        const cats = ["全部", ...new Set(TOOLS.map((t) => t.category))];
-        categoryBar.innerHTML = "";
-        cats.forEach((cat) => {
-          const chip = document.createElement("button");
-          chip.type = "button";
-          chip.className =
-            "category-chip" + (cat === activeCategory ? " active" : "");
-          chip.textContent = cat;
-          chip.addEventListener("click", () => {
-            activeCategory = cat;
-            renderCategories();
-            filterTools();
-          });
-          categoryBar.appendChild(chip);
-        });
-      }
-
-      // -------------------- 筛选（搜索 + 分类） --------------------
-      function filterTools() {
-        const term = searchInput.value.trim().toLowerCase();
+      // -------------------- 筛选（分类 + 搜索） --------------------
+      function applyFilter() {
+        const term = searchTerm.trim().toLowerCase();
         const cards = Array.from(toolsGrid.querySelectorAll(".tool-card"));
         let hasVisible = false;
 
@@ -558,96 +520,90 @@
           const desc = (card.dataset.desc || "").toLowerCase();
 
           const matchCategory =
-            activeCategory === "全部" ||
-            category === activeCategory.toLowerCase();
+            activeCategory === "全部" || category === activeCategory.toLowerCase();
           const matchSearch =
-            term === "" ||
-            name.includes(term) ||
-            category.includes(term) ||
-            desc.includes(term);
+            term === "" || name.includes(term) || category.includes(term) || desc.includes(term);
 
           const show = matchCategory && matchSearch;
-          card.style.display = show ? "flex" : "none";
+          card.style.display = show ? "" : "none";
           if (show) hasVisible = true;
         });
 
-        // 清理/插入无结果提示
-        const existing = toolsGrid.querySelector(".no-result");
-        if (existing) existing.remove();
-        if (!hasVisible && cards.length > 0) {
-          const noResult = document.createElement("div");
-          noResult.className = "no-result";
-          noResult.innerHTML = `
-              <i class="fas fa-tools"></i>
-              <p>✨ 没有找到相关工具 ✨</p>
-              <small style="opacity:0.7;">试试其他关键词或分类~</small>
-            `;
-          toolsGrid.appendChild(noResult);
-        }
-      }
-
-      // -------------------- 主题切换 --------------------
-      const themeToggle = document.getElementById("themeToggle");
-      const body = document.documentElement;
-      const toggleIcon = themeToggle.querySelector("i");
-
-      function setTheme(theme) {
-        if (theme === "dark") {
-          body.classList.add("dark-mode");
-          toggleIcon.className = "fas fa-sun";
-          localStorage.setItem("theme", "dark");
+        // 筛选提示条
+        if (activeCategory === "全部") {
+          filterBar.classList.remove("show");
         } else {
-          body.classList.remove("dark-mode");
-          toggleIcon.className = "fas fa-moon";
-          localStorage.setItem("theme", "light");
+          filterBar.classList.add("show");
+          filterChip.textContent = activeCategory;
+        }
+
+        // 无结果提示
+        let tip = toolsGrid.querySelector(".no-result");
+        if (!hasVisible && cards.length > 0) {
+          if (!tip) {
+            tip = document.createElement("div");
+            tip.className = "no-result";
+            tip.innerHTML = `<i class="fas fa-tools"></i><p>✨ 没有找到相关工具 ✨</p><small style="opacity:0.7;">试试其他关键词或分类~</small>`;
+            toolsGrid.appendChild(tip);
+          }
+        } else if (tip) {
+          tip.remove();
         }
       }
 
-      function initTheme() {
-        const saved = localStorage.getItem("theme");
-        const prefersDark = window.matchMedia(
-          "(prefers-color-scheme: dark)",
-        ).matches;
-        setTheme(
-          saved === "dark" || (!saved && prefersDark) ? "dark" : "light",
-        );
-      }
-
-      themeToggle.addEventListener("click", () => {
-        setTheme(body.classList.contains("dark-mode") ? "light" : "dark");
+      // -------------------- 左侧分类栏展开/收起（点 Logo） --------------------
+      const logoToggle = document.getElementById("logoToggle");
+      const sidebar = document.getElementById("sidebar");
+      logoToggle.addEventListener("click", () => {
+        const open = document.body.classList.toggle("cat-open");
+        logoToggle.classList.toggle("active", open);
+        logoToggle.title = open ? "收起分类" : "展开分类";
       });
-      initTheme();
 
-      window
-        .matchMedia("(prefers-color-scheme: dark)")
-        .addEventListener("change", (e) => {
-          if (!localStorage.getItem("theme")) {
-            setTheme(e.matches ? "dark" : "light");
-          }
-        });
+      // -------------------- 返回全部 --------------------
+      document.getElementById("clearFilter").addEventListener("click", () => {
+        activeCategory = "全部";
+        renderCategories();
+        applyFilter();
+      });
+
+      // -------------------- 主题切换（对齐 SQLite 机制） --------------------
+      const themeToggle = document.getElementById("themeToggle");
+      const root = document.documentElement;
+      const iconSun = document.getElementById("iconSun");
+      const iconMoon = document.getElementById("iconMoon");
+      function updateThemeIcon() {
+        const dark = root.dataset.theme === "dark";
+        iconSun.style.display = dark ? "block" : "none";
+        iconMoon.style.display = dark ? "none" : "block";
+        themeToggle.title = dark ? "切换到浅色模式" : "切换到深色模式";
+      }
+      themeToggle.addEventListener("click", () => {
+        const next = root.dataset.theme === "dark" ? "light" : "dark";
+        root.dataset.theme = next;
+        localStorage.setItem("toolbox-theme", next);
+        updateThemeIcon();
+      });
+      updateThemeIcon();
 
       // -------------------- 搜索（防抖） --------------------
       let debounceTimer;
       searchInput.addEventListener("input", () => {
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(filterTools, 180);
+        debounceTimer = setTimeout(() => { searchTerm = searchInput.value; applyFilter(); }, 180);
       });
 
       // -------------------- 初始化 --------------------
-      renderTools();
-      renderCategories();
-      filterTools();
+      renderTools();          // 右侧默认显示全部工具（原布局）
+      renderCategories();     // 左侧分类（默认收起，未展开）
+      applyFilter();
 
       // 移动端触感优化
       if ("ontouchstart" in window) {
-        toolsGrid.addEventListener(
-          "touchstart",
-          (e) => {
-            const card = e.target.closest(".tool-card");
-            if (card) card.style.transform = "scale(0.97)";
-          },
-          { passive: true },
-        );
+        toolsGrid.addEventListener("touchstart", (e) => {
+          const card = e.target.closest(".tool-card");
+          if (card) card.style.transform = "scale(0.97)";
+        }, { passive: true });
         toolsGrid.addEventListener("touchend", (e) => {
           const card = e.target.closest(".tool-card");
           if (card) card.style.transform = "";
