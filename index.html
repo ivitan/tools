@@ -121,18 +121,12 @@
       align-items: center;
       gap: 10px;
     }
-    /* Logo 现在是按钮：点击展开/收起分类，底色始终与顶栏一致（透明） */
+    /* Logo：仅最前的图标可点击展开/收起分类，标题保持原样 */
     .logo {
       display: inline-flex; align-items: center; gap: 10px;
       font-weight: 600; font-size: 15px;
-      border: none; background: transparent; color: var(--text);
-      cursor: pointer; font-family: inherit;
-      padding: 4px 6px;
-      transition: color 0.15s;
+      color: var(--text);
     }
-    .logo:hover { color: var(--primary); }
-    .logo.active { color: var(--primary); }
-    [data-theme="dark"] .logo.active { color: var(--primary-hover); }
     .logo-icon {
       width: 28px; height: 28px;
       background: var(--primary);
@@ -140,7 +134,12 @@
       display: flex; align-items: center; justify-content: center;
       color: var(--primary-on);
       flex-shrink: 0;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s;
     }
+    .logo-icon:hover { background: var(--primary-hover); }
+    .logo-icon:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .header-spacer { flex: 1; }
     .header-actions { display: flex; gap: 6px; align-items: center; }
 
@@ -380,14 +379,14 @@
 <body>
   <header class="header">
     <div class="header-inner">
-      <button class="logo" id="logoToggle" title="展开/收起分类" aria-label="展开/收起分类">
-        <div class="logo-icon">
+      <div class="logo">
+        <div class="logo-icon" id="logoToggle" title="展开/收起分类" role="button" tabindex="0" aria-label="展开/收起分类">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </div>
         <span>实用工具箱</span>
-      </button>
+      </div>
 
       <div class="header-spacer"></div>
 
@@ -551,13 +550,16 @@
         }
       }
 
-      // -------------------- 左侧分类栏展开/收起（点 Logo） --------------------
+      // -------------------- 左侧分类栏展开/收起（点最前 Logo 图标） --------------------
       const logoToggle = document.getElementById("logoToggle");
       const sidebar = document.getElementById("sidebar");
-      logoToggle.addEventListener("click", () => {
+      function toggleCat() {
         const open = document.body.classList.toggle("cat-open");
-        logoToggle.classList.toggle("active", open);
         logoToggle.title = open ? "收起分类" : "展开分类";
+      }
+      logoToggle.addEventListener("click", toggleCat);
+      logoToggle.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCat(); }
       });
 
       // -------------------- 返回全部 --------------------
