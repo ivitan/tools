@@ -2220,6 +2220,9 @@ function renderInfiniteGrid(db, tab) {
   tab.infiniteLoaded = [];
   tab.infiniteCount = 0;
   tab.infiniteFinished = false;
+  tab._topOffset = undefined;     // 反向无限滚动：当前首行在整表中的偏移（undefined=未启用）
+  tab._topFinished = false;       // 已翻到表头
+  tab._loadingUp = false;
 
   const t = db.tables.find(x => x.name === tab.table);
   if (!t) {
@@ -2717,6 +2720,108 @@ async function loadRemainingToEnd(db, tab) {
   return true;
 }
 
+// 大数据表快速到底：仅取最后一页（pageSize 行）渲染，等价于分页「末页」。
+// 目的：避免把几十万行全量塞进 DOM 导致卡死/浏览器崩溃。仅当剩余行数超过阈值
+// 才走这条路径；小表仍走 loadRemainingToEnd 逐批加载，保留向上回滚浏览已加载行的能力。
+async function jumpToEndViaLastPage(db, tab) {
+  const t = db.tables.find(x => x.name === tab.table);
+  if (!t) return false;
+  const total = tab.infiniteTotal || 0;
+  if (total === 0) { tab.infiniteFinished = true; return true; }
+
+  const pageSize = tab.pageSize;
+  const offset = Math.max(0, total - pageSize);
+  const where = buildWhereClause(tab, t);
+  let sql, params;
+  if (where) {
+    sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql} LIMIT ${pageSize} OFFSET ${offset}`;
+    params = where.params;
+  } else {
+    sql = `SELECT * FROM "${tab.table}" LIMIT ${pageSize} OFFSET ${offset}`;
+    params = [];
+  }
+
+  let rows = [];
+  try {
+    const stmt = db.db.prepare(sql);
+    if (params.length) stmt.bind(params);
+    while (stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+
+  // 只渲染末页：一次性替换 tbody（而非追加），DOM 节点量恒为 ~pageSize，不会膨胀
+  const tbody = $('infiniteTbody');
+  if (tbody) tbody.innerHTML = buildRowsHtml(rows, tab._columns, offset);
+  tab.infiniteCount = total;        // 标记已到底
+  tab.infiniteFinished = true;
+  const loadedEl = $('loadedCount');
+  if (loadedEl) loadedEl.textContent = formatNum(total);
+  const sentinel = $('infiniteSentinel');
+  if (sentinel) {
+    sentinel.innerHTML = `<span class="end-mark">✓</span><span>已加载全部 ${formatNum(total)} 行</span>`;
+    sentinel.onclick = null;
+  }
+  if (state.infiniteObserver) state.infiniteObserver.disconnect();
+  // 启用「向上回溯」：当前已渲染的首行在整表中的偏移；翻到表头后置 _topFinished
+  tab._topOffset = Math.max(0, total - pageSize);
+  tab._topFinished = total <= pageSize;
+  tab._loadingUp = false;
+  return true;
+}
+
+// 反向无限滚动：在「一键到底（末页）」状态下，向上翻到顶时补加载上一页
+// （倒数 101-200 行…），如此既保持 DOM 体量可控（每次仅 ~pageSize 行），又能逐级向上回溯。
+// 关键：prepend 后用 scrollTop 补偿新增高度，使原视图内容不发生跳动。
+function loadPreviousBatch(db, tab) {
+  if (tab._loadingUp || tab._topFinished) return;
+  const t = db.tables.find(x => x.name === tab.table);
+  if (!t) return;
+  const pageSize = tab.pageSize;
+  const prevOffset = Math.max(0, (tab._topOffset || 0) - pageSize);
+  const where = buildWhereClause(tab, t);
+  let sql, params;
+  if (where) {
+    sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql} LIMIT ${pageSize} OFFSET ${prevOffset}`;
+    params = where.params;
+  } else {
+    sql = `SELECT * FROM "${tab.table}" LIMIT ${pageSize} OFFSET ${prevOffset}`;
+    params = [];
+  }
+
+  let rows = [];
+  try {
+    const stmt = db.db.prepare(sql);
+    if (params.length) stmt.bind(params);
+    while (stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+  } catch (e) {
+    console.error(e);
+    return;
+  }
+  if (!rows.length) { tab._topFinished = true; return; }
+
+  const c = $('infiniteContainer');
+  const tbody = $('infiniteTbody');
+  if (!c || !tbody) return;
+
+  tab._loadingUp = true;
+  const beforeH = c.scrollHeight;
+  const beforeTop = c.scrollTop;
+  tbody.insertAdjacentHTML('afterbegin', buildRowsHtml(rows, tab._columns, prevOffset));
+  // 保持视图稳定：内容整体下移新增高度
+  c.scrollTop = beforeTop + (c.scrollHeight - beforeH);
+
+  tab._topOffset = prevOffset;
+  if (prevOffset === 0) {
+    tab._topFinished = true;
+    toast('已到表头，无更早数据');
+  }
+  tab._loadingUp = false;
+}
+
 // 一键到最后一行：把剩余数据一次性补拉到全部，再滚动到网格底部
 async function jumpToEnd() {
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
@@ -2733,7 +2838,13 @@ async function jumpToEnd() {
   tab._jumping = true;
   updateFabEnd();                            // 立刻切到 loading 态
 
-  const ok = await loadRemainingToEnd(db, tab);
+  // 剩余行数很大（大数据表）时，改用「末页」式只渲染末页 ~pageSize 行，
+  // 避免把几十万行全量塞进 DOM 导致卡死/崩溃；小表仍逐批加载以保留向上回滚浏览。
+  const remaining = (tab.infiniteTotal || 0) - (tab.infiniteCount || 0);
+  const BIG_TABLE_REMAIN = 20000;
+  const ok = remaining > BIG_TABLE_REMAIN
+    ? await jumpToEndViaLastPage(db, tab)
+    : await loadRemainingToEnd(db, tab);
 
   // 加载完成后收尾：更新 sentinel 文案、断开 observer
   if (tab.infiniteFinished) {
@@ -2778,6 +2889,20 @@ async function jumpToEnd() {
   updateFabEnd();
 }
 fab.addEventListener('click', jumpToEnd);
+
+// 反向无限滚动：#infiniteContainer 向上翻到顶（scrollTop 接近 0）时，
+// 若处于「一键到底（末页）」状态，自动补加载上一页（捕获阶段，#infiniteContainer 重建也不丢失）。
+document.addEventListener('scroll', (e) => {
+  const c = e.target;
+  if (!(c instanceof Element) || c.id !== 'infiniteContainer') return;
+  const tab = getActiveDataTab();
+  if (!tab || tab.table === '__SCHEMA__' || tab.loadMode !== 'infinite') return;
+  if (tab._topOffset === undefined || tab._topFinished || tab._loadingUp) return;
+  if (c.scrollTop < 250) {
+    const db = state.databases.find(d => d.id === tab.dbId);
+    if (db) loadPreviousBatch(db, tab);
+  }
+}, true);
 
 /* ================== 导出 CSV ================== */
 function exportCSV() {

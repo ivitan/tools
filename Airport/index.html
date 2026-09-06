@@ -101,6 +101,7 @@
       --text-muted: #64748b;
       --primary: #3b82f6;
       --primary-hover: #2563eb;
+      --primary-on: #ffffff;
       --primary-light: #eff6ff;
       --primary-soft: rgba(59,130,246,0.10);
       --success: #10b981;
@@ -118,6 +119,7 @@
       --text-muted: #94a3b8;
       --primary: #60a5fa;
       --primary-hover: #93c5fd;
+      --primary-on: #0b1220;
       --primary-light: #172554;
       --primary-soft: rgba(96,165,250,0.12);
       --success: #34d399;
@@ -987,6 +989,7 @@
         let allRawResults = [];
         let allColumns = new Set();
         let hasDataParsed = false;
+        let appidExcluded = 0; // 因 appid 与当前提取模式矛盾而被排除的行数
         let dbFilteredRawDataForTextarea = [];
         let dbFilteredColumns = new Set();
 
@@ -1082,6 +1085,10 @@
           const headers = lines[0].split("\t").map((h) => h.trim());
           let globalCodeIdx = headers.indexOf("nodeCode");
           let globalTimeIdx = headers.indexOf("report_time");
+          // appid 列：remote=远机位，near=近机位（权威判定依据）
+          // 数据特性：数据库导入时 appid 必为 near/remote（不会为空）→ 等同于严格过滤；
+          // 仅下方粘贴区手工粘贴的数据 appid 可能为空 → 空值时回退原字典匹配，避免提取不到
+          let globalAppidIdx = headers.indexOf("appid");
 
           let inferredCodeIdx = -1;
           let inferredTimeIdx = -1;
@@ -1124,6 +1131,21 @@
             if (globalCodeIdx !== -1 && globalTimeIdx !== -1 && i > 0) {
               const cols = line.split("\t");
               if (cols.length > Math.max(globalCodeIdx, globalTimeIdx)) {
+                // 先用 appid 做近/远机位权威判定：仅当该字段明确为 near/remote 时才参与过滤，
+                // 为空或无法识别时保持原有字典匹配行为，避免旧数据提取不到
+                if (globalAppidIdx !== -1) {
+                  const appidVal = String(
+                    cols[globalAppidIdx] ?? "",
+                  )
+                    .trim()
+                    .toLowerCase();
+                  if (appidVal === "near" || appidVal === "remote") {
+                    if (appidVal !== mode) {
+                      appidExcluded++;
+                      continue;
+                    }
+                  }
+                }
                 let code = cols[globalCodeIdx].trim();
                 let rTime = cols[globalTimeIdx].trim();
                 if (dict[code] && rTime) {
@@ -1283,8 +1305,12 @@
           document.getElementById("rawTruncNote").classList.add("hidden");
         }
 
+        const appidNote =
+          appidExcluded > 0
+            ? ` <span class="text-gray-500 dark:text-gray-400">（已按 appid=${mode} 过滤掉 ${appidExcluded} 行异类数据）</span>`
+            : "";
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-${mode === "near" ? "blue" : "sky"}-600 dark:text-${mode === "near" ? "blue" : "sky"}-400 font-bold">[${label}]</span> 解析完毕，提取到 <span class="text-red-600 dark:text-red-400 font-bold">${hitCount}</span> 个节点`;
+          `<span class="text-${mode === "near" ? "blue" : "sky"}-600 dark:text-${mode === "near" ? "blue" : "sky"}-400 font-bold">[${label}]</span> 解析完毕，提取到 <span class="text-red-600 dark:text-red-400 font-bold">${hitCount}</span> 个节点${appidNote}`;
       }, 50); // 让出主线程完毕
     }
 
