@@ -837,8 +837,15 @@
         }, 50);
       });
 
-    function renderPasteTableGrid() {
-      const text = document.getElementById("pasteArea").value.trim();
+    function renderPasteTableGrid(extraText) {
+      const base = document.getElementById("pasteArea").value.trim();
+      let extra = extraText || "";
+      // 用户已粘贴时，去掉 DB TSV 首行表头避免与粘贴表头重复
+      if (base && extra) {
+        const idx = extra.indexOf("\n");
+        extra = idx >= 0 ? extra.slice(idx + 1) : "";
+      }
+      const text = (base ? base + "\n" : "") + extra;
       const table = document.getElementById("pasteVisualTable");
       const thead = document.getElementById("pasteVisualThead");
       const tbody = document.getElementById("pasteVisualTbody");
@@ -976,6 +983,14 @@
       const aproCode = document.getElementById("aproCode").value.trim();
       let pasteText = document.getElementById("pasteArea").value.trim();
 
+      // 查询条件必填：开始时间 / 结束时间 / 机位号 三者都需填写，缺一不可
+      if (!startTime || !endTime || !aproCode) {
+        document.getElementById("queryStatus").innerHTML =
+          `<span class="text-red-500 font-bold">请完整填写查询条件（开始时间、结束时间、机位号 均需填写）</span>`;
+        renderEmptyTable(currentMode);
+        return;
+      }
+
       // 记录本次提取实际用到的数据表名与过滤条件（供"复制镜头编号"按钮使用）
       lastUsedTables = selectedTables.slice();
       lastExtractionFilter = { startTime, endTime, aproCode };
@@ -1044,6 +1059,9 @@
           });
         }
 
+        // 把 DB 命中数据拼成 TSV：仅用于本次解析，绝不写回粘贴区，
+        // 否则取消勾选/未手动粘贴时粘贴区会残留旧数据，被误判为“有输入”而重复出内容。
+        let dbTsvString = "";
         if (dbFilteredRawDataForTextarea.length > 0) {
           const colsArr = Array.from(dbFilteredColumns);
           const priorityCols = ["nodeCode", "report_time", "aproCode"];
@@ -1066,22 +1084,16 @@
             dbTsvLines.push(lineVals.join("\t"));
           }
 
-          const dbTsvString = dbTsvLines.join("\n") + "\n";
-          if (
-            pasteText &&
-            !pasteText.includes(dbTsvString.substring(0, 30))
-          ) {
-            document.getElementById("pasteArea").value =
-              dbTsvString + "\n" + pasteText;
-          } else {
-            document.getElementById("pasteArea").value = dbTsvString;
-          }
-          pasteText = document.getElementById("pasteArea").value.trim();
-          renderPasteTableGrid();
+          dbTsvString = dbTsvLines.join("\n") + "\n";
+          // 把 DB 命中数据一并回显到“数据粘贴与展示区”（仅展示，不写回 pasteArea）
+          renderPasteTableGrid(dbTsvString);
         }
 
-        if (pasteText) {
-          const lines = pasteText.split("\n");
+        // 解析文本 = 用户粘贴内容 + DB 命中数据；DB 数据只在内存参与本次解析，不污染粘贴区
+        const parseText = (pasteText ? pasteText + "\n" : "") + dbTsvString;
+
+        if (parseText) {
+          const lines = parseText.split("\n");
           const headers = lines[0].split("\t").map((h) => h.trim());
           let globalCodeIdx = headers.indexOf("nodeCode");
           let globalTimeIdx = headers.indexOf("report_time");
@@ -1202,6 +1214,8 @@
             document.getElementById("queryStatus").innerHTML =
               `<span class="text-orange-500 font-bold">未在数据中提取到匹配【${label}】的有效节点</span>`;
           }
+          // 无数据时清空结果表，避免“未输入却仍显示上一次内容”的观感
+          renderEmptyTable(currentMode);
           return;
         }
 
