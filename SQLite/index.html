@@ -1996,6 +1996,7 @@ function renderContent() {
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
   if (!tab) {
     $('contentArea').innerHTML = `<div class="empty-content">从左侧选择一张表查看数据</div>`;
+    $('breadcrumb').innerHTML = '';   // 关闭最后一个 Tab 后清空顶部面包屑，避免残留旧表名
     $('footerBar').classList.add('hidden');
     // 按「有没有数据库」判断：只有完全没有任何数据库时（此时由 showDropzone(true)
     // 负责显示上传区）才隐藏 dataView；否则保持显示，让「选表」提示可见。
