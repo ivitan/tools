@@ -264,13 +264,16 @@
     overflow: hidden;
   }
   .db-item.active > .db-header {
-    background: var(--primary-soft);
+    background: color-mix(in srgb, var(--primary) 14%, transparent);
     color: var(--primary);
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 var(--primary);
   }
   [data-theme="dark"] .db-item.active > .db-header {
-    background: var(--primary-soft);
+    background: color-mix(in srgb, var(--primary) 26%, transparent);
     color: var(--primary-hover);
   }
+  .db-item.active .db-meta { color: color-mix(in srgb, var(--primary) 78%, transparent); }
   .db-header {
     padding: 6px 8px;
     cursor: pointer;
@@ -282,7 +285,8 @@
     min-height: 28px;
   }
   .db-header:hover { background: var(--panel-hover); }
-  .db-item.active > .db-header:hover { background: var(--primary-soft); }
+  .db-item.active > .db-header:hover { background: color-mix(in srgb, var(--primary) 22%, transparent); }
+  [data-theme="dark"] .db-item.active > .db-header:hover { background: color-mix(in srgb, var(--primary) 34%, transparent); }
   .db-chevron {
     width: 12px;
     height: 12px;
