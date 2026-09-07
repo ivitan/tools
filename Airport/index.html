@@ -986,7 +986,7 @@
       // 第一道门：无数据来源（未勾选数据表 且 未手动粘贴）时，直接提示，不再继续
       if (selectedTables.length === 0 && !pasteText) {
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-red-500 font-bold">请勾选数据表，或在工作网格粘贴数据</span>`;
+          `<span class="text-red-500 font-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
         renderEmptyTable(currentMode);
         return;
       }
@@ -1217,7 +1217,7 @@
         if (!hasDataParsed) {
           if (selectedTables.length === 0 && !pasteText) {
             document.getElementById("queryStatus").innerHTML =
-              `<span class="text-red-500 font-bold">请勾选数据表，或在工作网格粘贴数据</span>`;
+              `<span class="text-red-500 font-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
           } else {
             document.getElementById("queryStatus").innerHTML =
               `<span class="text-orange-500 font-bold">未在数据中提取到匹配【${label}】的有效节点</span>`;
