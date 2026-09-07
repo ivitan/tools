@@ -335,7 +335,9 @@
   .db-header:hover .db-remove { opacity: 0.9; }
   .db-remove:hover { background: var(--danger-light); color: var(--danger); opacity: 1; }
   .table-list {
-    padding: 2px 4px 6px 22px;
+    /* 左缩进 20px（原 22px）：使表名文字起点与数据库名文字起点精确对齐（同为 52px）。
+       原来差 2px，数据库名加粗后这个错位更明显，看起来像表名「往后挪」、侧栏变窄。 */
+    padding: 2px 4px 6px 20px;
     display: none;
   }
   .db-item.expanded .table-list { display: block; }
