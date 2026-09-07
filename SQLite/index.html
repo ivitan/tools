@@ -1238,6 +1238,15 @@
   }
   .toast.success { background: var(--success); color: #052e1a; }
   .toast.error { background: var(--danger); color: #450a0a; }
+  /* 重复导入提示：绿底会把「够亮的红」压到 1.0:1 隐形、把「够深的红」压成黑色，
+     所以改用面板底色 + 主题危险红，让红色真正显示出来，并配红色描边强化警示感。
+     用 var(--danger) 自动适配：日间 #dc2626、暗色 #f87171，无需额外 dark 覆盖。 */
+  .toast.warn {
+    background: var(--panel);
+    color: var(--danger);
+    border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+    font-weight: 600;
+  }
   [data-theme="dark"] .toast.success { color: #02261a; }
   [data-theme="dark"] .toast.error { color: #3b0808; }
   @keyframes slideIn {
@@ -1663,10 +1672,40 @@ async function initSQL() {
   });
 }
 
+/* ================== 文件指纹（用于重复上传去重） ================== */
+// 优先 SHA-256（准确）；非安全上下文等不可用时回退到「体积 + 均匀采样 FNV-1a」，保证导入不被阻塞
+async function computeFingerprint(buf) {
+  try {
+    if (globalThis.crypto?.subtle?.digest) {
+      const d = await globalThis.crypto.subtle.digest('SHA-256', buf);
+      return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch (e) { /* 落到下面的回退实现 */ }
+  let h = 2166136261;
+  const step = Math.max(1, Math.floor(buf.length / 4096));
+  for (let i = 0; i < buf.length; i += step) {
+    h ^= buf[i];
+    h = Math.imul(h, 16777619);
+  }
+  return `fb-${buf.length.toString(16)}-${(h >>> 0).toString(16)}`;
+}
+
 /* ================== 加载数据库 ================== */
 async function loadDatabase(file) {
   try {
     const buf = new Uint8Array(await file.arrayBuffer());
+    const hash = await computeFingerprint(buf);
+
+    // ① 内容完全一致 → 已加载过，直接跳过，保证同一个数据库只显示一个
+    const dup = state.databases.find(d => d.hash === hash);
+    if (dup) {
+      state.activeDbId = dup.id;
+      dup.expanded = true;        // 展开已存在的库，方便确认它还在列表里
+      renderSidebar();
+      toast(`「${file.name}」已加载，已跳过重复导入`, 'warn');
+      return;
+    }
+
     const db = new state.SQL.Database(buf);
     const tables = [];
     const res = db.exec("SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name");
@@ -1689,19 +1728,37 @@ async function loadDatabase(file) {
       size: file.size,
       db,
       tables,
+      hash,
       expanded: false,    // 导入后默认收拢，不自动展开
     };
-    // 不再展开任何库：导入后全部保持收拢（active 高亮与展开是两个独立概念）
-    state.databases.push(dbObj);
+
+    // ② 同名但内容不同 → 视为新版本，原位替换旧库（同样只显示一个）
+    const sameIdx = state.databases.findIndex(d => d.name === file.name);
+    let replaced = false;
+    if (sameIdx !== -1) {
+      const old = state.databases[sameIdx];
+      // 旧库已打开的表先关掉，避免指向失效的 dbId
+      state.openTabs = state.openTabs.filter(t => t.dbId !== old.id);
+      if (!state.openTabs.some(t => tabKey(t) === state.activeTabKey)) {
+        state.activeTabKey = state.openTabs[0] ? tabKey(state.openTabs[0]) : null;
+      }
+      try { old.db.close(); } catch (e) {}
+      state.databases[sameIdx] = dbObj;
+      replaced = true;
+    } else {
+      // 不再展开任何库：导入后全部保持收拢（active 高亮与展开是两个独立概念）
+      state.databases.push(dbObj);
+    }
     state.activeDbId = dbObj.id;
     renderSidebar();
+    renderTabs();
     // 导入成功后收起上传区，进入「已就绪，等待选表」状态。
     // 早期版本靠自动 openTab 顺带触发 showDropzone(false)，需求「导入后不自动打开表」
     // 改掉后这条路径断了，导致上传区一直显示、表格区一直隐藏。
     showDropzone(false);
     renderContent();     // 未打开任何表时，刷新主区为「从左侧选择一张表查看数据」
     if (isMobile()) closeDrawer();
-    toast(`已加载 ${file.name}`, 'success');
+    toast(replaced ? `「${file.name}」已更新为新版本` : `已加载 ${file.name}`, 'success');
   } catch (e) {
     console.error(e);
     toast(`加载失败: ${file.name}`, 'error');
