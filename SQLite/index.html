@@ -1435,6 +1435,22 @@
     .toast { top: 56px; right: 10px; left: 10px; max-width: none; }
   }
 </style>
+
+<!-- 首屏防闪白：在首次绘制前同步应用已保存的主题。
+     原先主题只在 body 末尾的脚本里初始化，浏览器已按默认日间样式画过一帧才切成深色，
+     于是深色模式下启动会闪一下白。这里提前到 </head> 前执行，首绘即为正确主题。 -->
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('sqlite-theme');
+      var t = saved ||
+        (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.dataset.theme = t;
+      document.documentElement.style.colorScheme = t;      // 同步滚动条/原生控件配色
+      if (t === 'dark') document.documentElement.style.background = '#0b1220';  // 兜底，防 CSS 解析前露白
+    } catch (e) {}
+  })();
+</script>
 </head>
 <body>
 
