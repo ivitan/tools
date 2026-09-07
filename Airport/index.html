@@ -1,1723 +1,3479 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-  <script>
-    /* 提前应用主题，避免刷新闪白（统一采用 data-theme 方案，兼容旧键 "theme"） */
-    (function () {
-      try {
-        var saved = localStorage.getItem('airport-theme') || localStorage.getItem('theme');
-        var dark = saved ? saved === 'dark'
-          : window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-      } catch (e) {}
-    })();
-  </script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>节点信息提取</title>
-  <link rel="icon" type="image/svg+xml" href="/img/Airport.svg" />
-  <!-- 开启 Tailwind 暗色模式支持 -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: ["selector", '[data-theme="dark"]'],
-      theme: {
-        extend: {
-          colors: {
-            blue: {
-              50: "#eff6ff", 100: "#dbeafe", 200: "#bfdbfe", 300: "#93c5fd",
-              400: "#60a5fa", 500: "#3b82f6", 600: "#3b82f6", 700: "#2563eb",
-              800: "#1d4ed8", 900: "#1e40af"
-            }
-          }
-        }
-      }
-    };
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    .custom-scrollbar::-webkit-scrollbar {
-      height: 6px;
-      width: 6px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQLite 读取工具</title>
+<link rel="icon" type="image/svg+xml" href="/img/SQLite.svg" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --panel-hover: #f1f5f9;
+    --border: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-light: #eff6ff;
+    --primary-soft: rgba(37, 99, 235, 0.10);
+    --success: #059669;
+    --success-light: #ecfdf5;
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --warning: #d97706;
+    --warning-light: #fef3c7;
+    --scrollbar-thumb: #cbd5e1;
+    --scrollbar-thumb-hover: #94a3b8;
+    --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+    --header-row: #f8fafc;
+    --row-hover: #f8fafc;
+    --dropzone-bg: #ffffff;
+    --code-bg: #f1f5f9;
+    --table-row-border: #f1f5f9;
+    --success-ink: #047857;
+    --danger-ink: #b91c1c;
+    --danger-on: #ffffff;
+    --primary-on: #ffffff;}
 
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f1f5f9;
-      border-radius: 3px;
-    }
+  [data-theme="dark"] {
+    --bg: #0b1220;
+    --panel: #111827;
+    --panel-hover: #1e293b;          /* 提亮一档 */
+    --border: #1f2937;
+    --border-hover: #475569;        /* 提亮两档，用于 hover/focus */
+    --text: #f1f5f9;                /* slate-100，提亮避免刺眼 */
+    --text-secondary: #cbd5e1;      /* slate-300，关键次级文字 */
+    --text-muted: #94a3b8;          /* slate-400，最低仍可读 */
+    --primary: #60a5fa;             /* blue-400，深色下更亮 */
+    --primary-hover: #93c5fd;
+    --primary-light: rgba(96,165,250,0.18);
+    --primary-soft: rgba(96,165,250,0.22);
+    --primary-on: #0b1220;          /* 用于 primary 背景上的文字色 */
+    --success: #34d399;
+    --success-light: rgba(52,211,153,0.18);
+    --danger: #f87171;
+    --danger-light: rgba(248,113,113,0.18);
+    --warning: #fbbf24;
+    --warning-light: rgba(251,191,36,0.20);
+    --scrollbar-thumb: #475569;
+    --scrollbar-thumb-hover: #64748b;
+    --shadow: 0 1px 3px rgba(0,0,0,0.5);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.5);
+    --header-row: #0f172a;
+    --row-hover: #1e293b;
+    --dropzone-bg: #0f172a;
+    --code-bg: #0a1224;
+    --table-row-border: #1e293b;
+    --tab-close-hover: rgba(255,255,255,0.12);
+    --success-ink: #6ee7b7;
+    --danger-ink: #fca5a5;
+    --danger-on: #0b1220;
+}
 
-    [data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-track {
-      background: #1e293b;
-    }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow: hidden;
+    transition: background-color 0.15s, color 0.15s;
+  }
 
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 3px;
-    }
+  /* ===== Header ===== */
+  .header {
+    height: 52px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    box-shadow: var(--shadow);
+    z-index: 20;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s;
+  }
+  .logo-icon:hover { background: var(--primary-hover); }
+  .logo-icon:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  /* 标题旁的「返回主页」圆形按钮（参照参考图的样式） */
+  .home-btn {
+    margin-left: 4px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: var(--panel-hover);
+    color: var(--primary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, transform 0.15s, color 0.15s;
+  }
+  .home-btn:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+  .home-btn:active { transform: translateY(0); }
+  [data-theme="dark"] .home-btn { background: var(--panel-hover); }
+  [data-theme="dark"] .home-btn:hover { color: #fff; }
+  .header-spacer { flex: 1; }
+  .header-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover {
+    background: var(--panel-hover);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .btn {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--border-hover); background: var(--panel-hover); }
+  .btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-on);
+  }
+  .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
 
-    [data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #475569;
-    }
+  /* ===== Layout ===== */
+  .layout {
+    display: flex;
+    /* dvh 随移动端地址栏收起/展开动态变化；100vh 是地址栏收起时的最大值，
+       实际可视高度比它小 60~100px，会导致表格底部最后两行被地址栏遮挡 */
+    height: calc(100vh - 52px);
+    height: calc(100dvh - 52px);
+    position: relative;
+  }
+  .sidebar {
+    width: 240px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transition: width 0.2s ease, border-color 0.2s ease, transform 0.22s ease;
+    overflow: hidden;
+    min-width: 0;
+  }
+  body.sidebar-collapsed .sidebar { width: 0; border-right: 0; }
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 40;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  body.sidebar-open .sidebar-overlay {
+    display: block;
+    opacity: 1;
+  }
+  .sidebar-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 38px;
+  }
+  .sidebar-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .sidebar-count {
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .db-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+  }
+  .db-item {
+    margin-bottom: 2px;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .db-item.active > .db-header {
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+  [data-theme="dark"] .db-item.active > .db-header {
+    background: var(--primary-soft);
+    color: var(--primary-hover);
+  }
+  .db-header {
+    padding: 6px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 4px;
+    transition: background-color 0.12s;
+    min-height: 28px;
+  }
+  .db-header:hover { background: var(--panel-hover); }
+  .db-item.active > .db-header:hover { background: var(--primary-soft); }
+  .db-chevron {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    transition: transform 0.15s;
+  }
+  .db-item.expanded .db-chevron { transform: rotate(90deg); }
+  .db-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--primary);
+  }
+  .db-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .db-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .db-remove {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 常显：默认给一个较低透明度，不抢眼但始终可见，hover 时变清晰 */
+    opacity: 0.55;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .db-header:hover .db-remove { opacity: 0.9; }
+  .db-remove:hover { background: var(--danger-light); color: var(--danger); opacity: 1; }
+  .table-list {
+    padding: 2px 4px 6px 22px;
+    display: none;
+  }
+  .db-item.expanded .table-list { display: block; }
+  .table-item {
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.12s;
+    min-height: 26px;
+  }
+  .table-item:hover { background: var(--panel-hover); color: var(--text); }
+  .table-item.active { background: var(--primary); color: #fff; }
+  .table-item.active .table-count { color: rgba(255,255,255,0.85); }
+  .table-icon {
+    width: 12px;
+    height: 12px;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+  .table-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .table-count {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+  .table-item.active .table-count { color: rgba(255,255,255,0.95); font-weight: 600; }
 
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
+  /* ===== Main ===== */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
 
-    .node-table th,
-    .node-table td,
-    .raw-table th,
-    .raw-table td,
-    .paste-table th,
-    .paste-table td {
-      white-space: nowrap;
-    }
+  /* ===== Dropzone ===== */
+  .dropzone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 20px;
+    border: 2px dashed var(--border-hover);
+    border-radius: 12px;
+    background: var(--dropzone-bg);
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .dropzone-icon {
+    width: 38px;
+    height: 38px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .dropzone.drag-over .dropzone-icon { color: var(--primary); }
+  .dropzone-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .dropzone-desc {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 14px;
+  }
+  .dropzone button {
+    height: 30px;
+    padding: 0 16px;
+    border-radius: 6px;
+    border: none;
+    background: var(--primary);
+    color: var(--primary-on);
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .dropzone button:hover { background: var(--primary-hover); }
 
-    #pasteGridWrapper:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 1px #3b82f6;
-    }
+  /* ===== Toolbar ===== */
+  .toolbar {
+    height: 44px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .breadcrumb-item {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .breadcrumb-item.current {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .breadcrumb-sep {
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .toolbar-input {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.15s;
+    background: var(--panel);
+    color: var(--text);
+  }
+  .toolbar-input:focus { border-color: var(--primary); }
+  .toolbar-input::placeholder { color: var(--text-muted); font-weight: 400; }
 
-    .drag-active {
-      border-color: #3b82f6 !important;
-      background-color: #eff6ff !important;
-    }
+  /* ===== Mode Toggle ===== */
+  .mode-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--panel);
+    flex-shrink: 0;
+  }
+  .mode-toggle button {
+    height: 30px;
+    padding: 0 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.12s;
+    border-right: 1px solid var(--border);
+  }
+  .mode-toggle button:last-child { border-right: none; }
+  .mode-toggle button:hover { background: var(--panel-hover); color: var(--text); }
+  .mode-toggle button.active {
+    background: var(--primary);
+    color: #fff;
+  }
+  .mode-toggle button svg { flex-shrink: 0; }
 
-    [data-theme="dark"] .drag-active {
-      background-color: #1e3a8a !important;
-    }
+  /* ===== Tabs ===== */
+  .tabs {
+    /* 不能用固定 height：标签页是「表名 + 数据库名」上下两行，固定高度会让
+       .tab 被 stretch 压缩，row1/row2 各被 flex-shrink 削掉一半，文字被截半且两行重叠。
+       改 min-height：没有标签时保持 34px 占位，有标签时按内容自动撑开。
+       高度预留 ≈ 两行标签(42px) + 横向滚动条(≈6px)，避免桌面浏览器滚动条占用高度时
+       把两行文字裁掉。 */
+    min-height: 48px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* 横向滚动条细一点、颜色淡一点，保持整体简洁 */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .tabs::-webkit-scrollbar { height: 6px; }
+  .tabs::-webkit-scrollbar-track { background: transparent; }
+  .tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .tabs::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  /* 标签页：上下两行显示——上行表名（突出），下行数据库名（小字灰色）。
+     数据库名宽度上限由 JS 在 renderTabs 里按「不超过表名宽度」规则设置 */
+  .tab {
+    padding: 4px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.12s;
+    position: relative;
+    min-width: 60px;
+    max-width: 220px;
+    /* 不收缩：标签多时不挤压每个 tab 的宽度（避免名字被进一步截断），
+       超出部分由 .tabs 横向滚动（左右滑动）切换 */
+    flex-shrink: 0;
+  }
+  /* 两行都给右上角关闭按钮（16px 宽 + right:4px）预留空间，
+     否则 width:100% 的文本行会被 absolute 的 .tab-close 盖住右半段。
+     flex: none + 固定 line-height：禁止被压缩，否则文字会被截掉下半截。 */
+  .tab-row1 {
+    flex: none;
+    width: 100%;
+    padding-right: 22px;
+    line-height: 17px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tab-row2 {
+    flex: none;
+    width: 100%;
+    padding-right: 22px;
+    line-height: 14px;
+    font-size: 11px;
+    opacity: 0.55;
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* max-width 由 renderTabs 用离屏探针按「不超过表名宽度」动态设置 */
+  /* max-width 对 inline 元素无效，必须 inline-block，否则 JS 设的上限不生效 */
+  .tab-db-name {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+  }
+  .tab:hover { color: var(--text); background: var(--panel-hover); }
+  .tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+  }
+  [data-theme="dark"] .tab.active {
+    color: var(--primary-hover);
+    border-bottom-color: var(--primary-hover);
+  }
+  .tab-close {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+    font-weight: 700;
+    transition: background 0.12s, color 0.12s, opacity 0.12s;
+  }
+  /* 整行 hover 时 × 也提亮，提示可点 */
+  .tab:hover .tab-close { opacity: 1; }
+  .tab-close:hover {
+    background: rgba(239,68,68,0.14);
+    color: #ef4444;
+    opacity: 1;
+  }
+  [data-theme="dark"] .tab-close:hover {
+    background: rgba(248,113,113,0.20);
+    color: #f87171;
+  }
 
-    /* ===== 统一设计系统（以 SQLite 工具为蓝本） ===== */
-    :root {
-      --bg: #f8fafc;
-      --panel: #ffffff;
-      --panel-hover: #f1f5f9;
-      --border: #e2e8f0;
-      --border-hover: #cbd5e1;
-      --text: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #64748b;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --primary-on: #ffffff;
-      --primary-light: #eff6ff;
-      --primary-soft: rgba(59,130,246,0.10);
-      --success: #10b981;
-      --danger: #ef4444;
-      --shadow: 0 1px 3px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.03);
-    }
-    [data-theme="dark"] {
-      --bg: #0b1220;
-      --panel: #111827;
-      --panel-hover: #1e293b;
-      --border: #1f2937;
-      --border-hover: #475569;
-      --text: #f1f5f9;
-      --text-secondary: #cbd5e1;
-      --text-muted: #94a3b8;
-      --primary: #60a5fa;
-      --primary-hover: #93c5fd;
-      --primary-on: #0b1220;
-      --primary-light: #172554;
-      --primary-soft: rgba(96,165,250,0.12);
-      --success: #34d399;
-      --danger: #f87171;
-    }
-    body {
-      background: var(--bg) !important;
-      color: var(--text) !important;
-    }
-    .header {
-      height: 52px;
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: var(--shadow);
-      transition: background .2s, border-color .2s;
-    }
-    .header-inner {
-      width: 100%;
-      max-width: 1180px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text);
-      min-width: 0;
-    }
-    .logo-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: var(--primary);
-      color: #fff;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      flex-shrink: 0;
-    }
-    .home-btn {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--primary);
-      border: 1px solid transparent;
-      background: var(--panel-hover);
-      transition: all .15s;
-      flex-shrink: 0;
-      margin-left: 4px;
-    }
-    .home-btn:hover { background: var(--primary); color: var(--primary-on); border-color: var(--primary); }
-    .home-btn svg { width: 15px; height: 15px; }
-    .icon-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-secondary);
-      border: 1px solid transparent;
-      background: transparent;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .icon-btn:hover { background: var(--panel-hover); color: var(--primary); border-color: var(--border); }
-    .icon-btn svg { width: 18px; height: 18px; }
-    #iconMoon { display: none; }
-    .page {
-      max-width: 1180px;
-      width: 100%;
-      min-width: 0;
-      margin: 0 auto;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-    @media (max-width: 768px) {
-      .header { height: 48px; padding: 0 12px; }
-      .page { padding: 12px 10px; }
-    }
+  /* ===== Content area ===== */
+  .content-area {
+    flex: 1;
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+  }
+  .empty-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+  }
 
-    summary::-webkit-details-marker {
-      display: none;
+  /* ===== Schema view ===== */
+  .schema-view {
+    flex: 1;
+    overflow: auto;
+    padding: 16px;
+  }
+  .schema-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .schema-card-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .schema-card-title {
+    font-weight: 600;
+    font-size: 13.5px;
+  }
+  .schema-card-meta {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .schema-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .schema-table th {
+    text-align: left;
+    padding: 8px 14px;
+    background: var(--header-row);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 11.5px;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .schema-table td {
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--table-row-border);
+  }
+  .schema-table tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+  .badge-pk { background: var(--warning-light); color: var(--warning); }
+  .badge-nn { background: var(--success-light); color: var(--success); }
+
+  /* ===== 数据网格 ===== */
+  .data-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .status-bar {
+    height: 30px;
+    padding: 0 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .status-bar .stat { display: inline-flex; align-items: center; gap: 5px; }
+  .status-bar .stat strong { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .status-bar .stat-sep { color: var(--border-hover); font-weight: 400; }
+
+  .grid-container {
+    flex: 1;
+    overflow: auto;
+    background: var(--panel);
+    position: relative;
+  }
+  .data-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+    width: max-content;
+    min-width: 100%;
+  }
+  .data-table th {
+    background: var(--header-row);
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    user-select: none;
+  }
+  .data-table th .col-type {
+    display: block;
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    letter-spacing: 0.2px;
+  }
+
+  /* ===== 表头列筛选 ===== */
+  .col-head { cursor: pointer; }
+  /* 表头列内容改为上下两行：上行字段名 + 筛选按钮，下行数据类型（小字） */
+  .col-head-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  /* 第一行：字段名 + ⌕ + ×，三者在同一行内 flex 布局 */
+  .col-head-row1 {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    /* ⌕/× 按钮已改为绝对定位（不占 flex 空间），
+       这里只需保证 col-name 自身能容纳按钮区域且字段名不会和按钮文字重叠 */
+    position: relative;
+  }
+  .col-head .col-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; padding: 0 24px; }
+  .col-head .col-type { flex: none; text-align: center; }
+  .col-filter-toggle {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    opacity: 0.6;
+    transition: all 0.12s;
+    /* 绝对定位浮在右上角，不再占 col-name 的横向空间 */
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+  .col-head:hover .col-filter-toggle { opacity: 0.9; }
+  .col-filter-toggle:hover { background: var(--primary-soft); color: var(--primary); opacity: 1; }
+  /* 已筛选：隐藏 ⌕，仅显示同位置的 ×（视觉上"放大镜变 X"） */
+  .col-head.is-filtered .col-filter-toggle { opacity: 0; pointer-events: none; }
+  .col-filter-toggle.is-open { opacity: 1; background: var(--primary-soft); color: var(--primary); }
+  .col-filter-clear {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: var(--danger);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    /* 绝对定位，与 ⌕ 同一位置（已筛选时 ⌕ 隐藏，仅显示 ×） */
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    /* 默认透明，避免长期叠加在居中字段名上；
+       只有该列已筛选或 hover 才显示 */
+    opacity: 0;
+    transition: all 0.12s;
+  }
+  .col-filter-clear:hover { background: var(--danger-light); opacity: 1; }
+  /* 已筛选状态：× 可见、垂直居中、紧贴右侧 ⌕ 按钮左边 */
+  .col-head.is-filtered .col-filter-clear { opacity: 1; }
+  .col-head.is-filtered:hover .col-filter-clear { background: var(--danger-light); }
+  /* hover 列头时也显示，让用户能看到清除入口 */
+  .col-head:hover .col-filter-clear { opacity: 0.85; }
+  .col-filter-val {
+    margin-top: 2px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--primary);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+  .col-head.is-filtered {
+    /* 实色背景：用主色与字段名背景混合生成不透明实色（保留蓝调"已筛选"提示），
+       绝不能用半透明的 --primary-soft，否则滚动时下方数据行会透过表头显示 */
+    background: var(--header-row) !important; /* 兼容 fallback */
+    background: color-mix(in srgb, var(--primary) 14%, var(--header-row)) !important;
+    box-shadow: inset 0 -2px 0 var(--primary);
+  }
+  .col-filter-input-wrap { margin-top: 4px; }
+  /* 悬浮面板：挂到 body、fixed 定位在列头正下方。
+     表头行高度不变（面板不占文档流），面板浮在表格上层，出现在用户点击的位置 */
+  .col-filter-input-wrap.col-filter-float {
+    position: fixed;
+    margin-top: 0;
+    z-index: 99999;
+    /* 面板与表头之间留 6px 间距，让"漂浮"感更强，避免与表头列名紧贴 */
+    transform: translateY(6px);
+  }
+  .col-filter-float .col-filter-panel {
+    width: 250px;
+    box-sizing: border-box;
+  }
+  .col-filter-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px 8px 8px;
+    /* 背景与字段名一致（浅灰 --header-row），与白色数据行形成明显对比，
+       浮在表格上时能清楚看出是一块独立卡片，不会和下方白底数据行"融"成一片 */
+    border: 1.5px solid var(--border-hover);
+    border-radius: 8px;
+    background: var(--header-row) !important;
+    /* 加强阴影：浮在浅灰页面或白色数据行上都有清晰浮起边界 */
+    box-shadow: 0 16px 40px rgba(0,0,0,0.40), 0 4px 10px rgba(0,0,0,0.22);
+    min-width: 200px;
+    text-align: left;
+    /* 独立堆叠上下文：保证面板及其子元素始终绘制在网格之上，
+       不受祖先 transform/overflow 影响，避免下方数据行透出 */
+    isolation: isolate;
+    z-index: 1;
+  }
+  /* 输入框容器：负责容纳输入框 + 内嵌的 × 关闭按钮，
+     让 × 真正落在输入框内部右边缘，跟输入框边框齐平、不再压在边框线上 */
+  .col-filter-input-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .col-filter-input-row .col-filter-input {
+    width: 100%;
+  }
+  /* 面板关闭按钮：嵌入到输入框内右侧，跟输入框同高、垂直居中。
+     默认透明、有内容时才显示，避免长期压在字段名上 */
+  .col-filter-close {
+    position: absolute;
+    /* 紧贴输入框内右边缘，左右各留 2px 让 × 不贴死在边框上 */
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.12s, background 0.12s, color 0.12s;
+    z-index: 2;
+    /* 按钮在输入框内：把点击事件拦在自身，不让 input 失焦 */
+    pointer-events: auto;
+  }
+  /* 输入框内有内容时才显示 ×（不再默认压在输入框线上） */
+  .col-filter-input-row.has-value .col-filter-close { opacity: 0.7; }
+  .col-filter-close:hover {
+    background: var(--danger-light);
+    color: var(--danger);
+    opacity: 1;
+  }
+  /* 输入框自身：右侧给 × 留出 22px 内边距，避免文字压到按钮 */
+  .col-filter-input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 26px;
+    padding: 0 26px 0 8px;
+    border: 1px solid var(--border-hover);
+    border-radius: 4px;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 12px;
+    outline: none;
+    user-select: text;
+  }
+  .col-filter-input:hover { border-color: var(--primary); }
+  .col-filter-input:focus { border-color: var(--primary); }
+  .col-filter-input::placeholder { color: var(--text-muted); font-size: 11px; }
+  .col-filter-tools {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .col-filter-tool-btn {
+    height: 21px;
+    padding: 0 9px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .col-filter-tool-btn:hover { border-color: var(--primary); color: var(--primary); }
+  /* 确认按钮：主色突出，面板中最重要的操作 */
+  .col-filter-tool-btn.col-filter-confirm {
+    margin-left: auto;
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    font-weight: 600;
+  }
+  .col-filter-tool-btn.col-filter-confirm:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: #fff;
+  }
+  .col-filter-count {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--primary);
+    white-space: nowrap;
+  }
+  .col-filter-options {
+    display: flex;
+    flex-direction: column;
+    max-height: 190px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px;
+    /* 选项区实色背景，彻底遮挡下方数据行，不再透出 */
+    background: var(--panel) !important;
+    isolation: isolate;
+    position: relative;
+    z-index: 1;
+  }
+  .col-filter-options:empty { display: none; }
+  .col-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    min-width: 0;
+    color: var(--text);
+    /* 候选行与数据行的字号、字体明显不同，避免视觉混淆；
+       加粗+略大字号让它看起来像"按钮行"而非"数据行" */
+    font-weight: 500;
+    line-height: 1.35;
+    /* 每个候选行都要有明确背景，否则面板里会出现和下方数据行重叠的透明小条；
+       奇偶交替色让面板内部层次更清晰，整体仍是一个完全不透明的实体卡片 */
+    background: var(--panel) !important;
+  }
+  .col-filter-option:nth-child(even) { background: var(--bg) !important; }
+  .col-filter-option:hover { background: var(--primary-soft); color: var(--primary); }
+  .col-filter-option:has(input:checked) {
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+  .col-filter-option input[type="checkbox"] {
+    flex: none;
+    margin: 0;
+    width: 14px;
+    height: 14px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+  .col-filter-option .opt-val {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .col-filter-option .opt-count {
+    flex: none;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-soft);
+    border-radius: 9px;
+    padding: 0 7px;
+    line-height: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .col-filter-option .opt-null {
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+  .col-filter-more {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .data-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--table-row-border);
+    border-right: 1px solid var(--table-row-border);
+    max-width: 360px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+    user-select: text;
+    text-align: center;
+  }
+  /* 数据单元格提示可双击复制（排除行号列与表头） */
+  .data-table tbody td:not(.row-num) { cursor: copy; }
+  .data-table tbody tr:hover td { background: var(--row-hover); }
+  [data-theme="dark"] .data-table tbody tr:hover td { background: #243044; }
+  .data-table td.null {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-weight: 500;
+  }
+  .data-table td.number { text-align: center; font-variant-numeric: tabular-nums; }
+  .data-table td.bool { text-align: center; }
+  .data-table td.json { color: var(--primary); font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 11.5px; }
+  .row-num {
+    background: var(--header-row) !important;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    width: 50px;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+  }
+  .data-table thead th.row-num { z-index: 3; }
+
+  /* ===== 无限滚动 Sentinel ===== */
+  .infinite-sentinel {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  .infinite-sentinel .end-mark {
+    color: var(--success);
+    font-weight: 600;
+  }
+
+  /* ===== Footer ===== */
+  .footer-bar {
+    height: 34px;
+    padding: 0 14px;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    gap: 12px;
+  }
+  .footer-bar.hidden { display: none !important; }
+  .sql-box {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    flex: 1;
+    overflow-x: auto;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  [data-theme="dark"] .sql-box {
+    background: #050b18;
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .pager {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .pager button {
+    height: 22px;
+    min-width: 22px;
+    padding: 0 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.12s;
+  }
+  .pager button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+  .pager button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .pager input {
+    width: 40px;
+    height: 22px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 11px;
+    outline: none;
+    background: var(--panel);
+    color: var(--text);
+  }
+  .pager input:focus { border-color: var(--primary); }
+  .pager select {
+    height: 22px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0 4px;
+    font-size: 11px;
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+  }
+  .pager-text { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: var(--text);
+    color: var(--panel);
+    padding: 9px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    box-shadow: var(--shadow-lg);
+    z-index: 200;
+    animation: slideIn 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: calc(100vw - 32px);
+  }
+  .toast.success { background: var(--success); color: #052e1a; }
+  .toast.error { background: var(--danger); color: #450a0a; }
+  [data-theme="dark"] .toast.success { color: #02261a; }
+  [data-theme="dark"] .toast.error { color: #3b0808; }
+  @keyframes slideIn {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ===== 悬浮到底按钮 ===== */
+  .fab-end {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--primary);
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 45;
+    transition: transform 0.15s, background-color 0.15s, color 0.15s;
+  }
+  .fab-end.show { display: flex; }
+  .fab-end:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: translateY(-2px);
+    border-color: var(--primary);
+  }
+  .fab-end:active { transform: translateY(0); }
+  .fab-end:disabled { opacity: 0.4; cursor: not-allowed; }
+  [data-theme="dark"] .fab-end { border-color: var(--border-hover); }
+  /* 加载中：箭头换成转圈 */
+  .fab-end.loading svg { display: none; }
+  .fab-end.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @media (max-width: 768px) {
+    .fab-end { right: 16px; bottom: 16px; width: 44px; height: 44px; }
+  }
+
+  /* ===== Dialog 弹窗（替代原生浏览器 dialog，深色友好） ===== */
+  .dialog-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.15s ease;
+  }
+  [data-theme="dark"] .dialog-mask { background: rgba(0,0,0,0.7); }
+  .dialog {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 20px 22px;
+    width: min(420px, calc(100vw - 32px));
+    animation: dialogIn 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .dialog-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .dialog-message {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .dialog-actions .btn { font-weight: 500; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes dialogIn {
+    from { transform: translateY(-8px) scale(0.96); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  /* ===== Loading spinner ===== */
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+  /* ===== Responsive: 平板 ===== */
+  @media (max-width: 1024px) {
+    .sidebar { width: 200px; }
+  }
+
+  /* ===== Responsive: 手机 ===== */
+  @media (max-width: 768px) {
+    body { font-size: 13.5px; }
+    [data-theme="dark"] body { font-size: 13.5px; }
+    .header { height: 48px; padding: 0 10px; gap: 4px; }
+    /* 手机端也显示标题：小字号 + 超出截断（窄屏设备兜底） */
+    .logo span { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 44vw; }
+    .header-actions { gap: 2px; }
+    .header-actions .btn span { display: none; }
+    .header-actions .btn { padding: 0; width: 32px; justify-content: center; }
+
+    /* 抽屉模式（dvh 同上：避免底部被地址栏遮挡） */
+    .layout { height: calc(100vh - 48px); height: calc(100dvh - 48px); }
+    .sidebar {
+      position: fixed;
+      top: 48px;
+      left: 0;
+      bottom: 0;
+      width: 84vw;
+      max-width: 320px;
+      z-index: 50;
+      transform: translateX(-100%);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      /* 高度也用 dvh：抽屉底部不被地址栏挡住（bottom:0 在 iOS 上会延伸到地址栏后面） */
+      height: calc(100dvh - 48px);
     }
-  </style>
+    body.sidebar-open .sidebar { transform: translateX(0); }
+
+    .toolbar {
+      height: auto;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+      gap: 6px;
+    }
+    .breadcrumb { width: 100%; order: 1; font-size: 12px; }
+    .toolbar-input { flex: 1; order: 2; width: auto; min-width: 0; }
+    .mode-toggle { order: 3; }
+    #btnExport { order: 4; }
+
+    .tabs { padding: 0 10px; }
+
+    .footer-bar {
+      flex-wrap: wrap;
+      height: auto;
+      padding: 6px 10px;
+      gap: 4px;
+    }
+    .sql-box { width: 100%; font-size: 10px; order: 1; }
+    .pager { width: 100%; justify-content: center; order: 2; flex-wrap: wrap; gap: 4px; }
+
+    .dropzone { margin: 12px; }
+    .dropzone-icon { width: 38px; height: 38px; margin-bottom: 10px; }
+    .dropzone-title { font-size: 14px; }
+    .dropzone-desc { font-size: 12px; margin-bottom: 12px; }
+    .dropzone button { height: 30px; padding: 0 16px; font-size: 12.5px; }
+
+    .data-table th, .data-table td { padding: 5px 8px; font-size: 11.5px; }
+    .data-table th .col-type { font-size: 10px; }
+    .row-num { width: 40px; }
+
+    .status-bar { padding: 0 10px; gap: 8px; font-size: 11px; }
+
+    .mode-toggle button { padding: 0 8px; }
+    .mode-toggle button .mode-label { display: none; }
+
+    .toast { top: 56px; right: 10px; left: 10px; max-width: none; }
+  }
+</style>
 </head>
+<body>
 
-<body class="font-sans min-h-screen flex flex-col transition-colors duration-300">
-  <header class="header">
-    <div class="header-inner">
-      <div class="logo">
-        <div class="logo-icon"><i class="fas fa-plane"></i></div>
-        <span>节点信息提取</span>
-        <a href="../" class="home-btn" title="返回主页" aria-label="返回主页">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <path d="M9 22V12h6v10"></path>
-          </svg>
-        </a>
-      </div>
-      <button class="icon-btn" id="themeToggle" title="切换主题" type="button">
-        <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
-        </svg>
-        <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
-        </svg>
-      </button>
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon" id="logoToggle" title="展开数据库列表" role="button" tabindex="0">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+        <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+        <path d="M3 12a9 3 0 0 0 18 0"/>
+      </svg>
     </div>
-  </header>
-  <main class="page">
+    <span>SQLite 读取工具</span>
+    <button class="home-btn" id="btnHome" title="返回主页">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11.5 12 4l9 7.5"/>
+        <path d="M5 10.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9.5"/>
+      </svg>
+    </button>
+  </div>
+  <div class="header-spacer"></div>
+  <div class="header-actions">
+    <button class="icon-btn" id="btnTheme" title="切换主题">
+      <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+    <button class="btn" id="btnAddDb">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      <span>添加数据库</span>
+    </button>
+    <button class="icon-btn" id="btnClear" title="清空所有数据库" style="display:none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </button>
+  </div>
+  <input type="file" id="fileInput" accept=".db,.sqlite,.sqlite3,.s3db" multiple style="display:none;">
+</div>
 
-    <!-- 主体区 -->
-    <div class="flex flex-col gap-3">
-      <!-- 通道 A：数据库源输入区 -->
-      <div
-        class="border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 sm:p-4 shadow-sm flex flex-col transition-colors duration-300">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 items-stretch">
-          <div class="flex flex-col h-full">
-            <div class="flex items-center gap-1 mb-2">
-              <span
-                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold shrink-0">A</span>
-              <span class="text-sm font-bold text-gray-700 dark:text-gray-200 leading-5">导入数据库 (可选)</span>
-              <div id="dropZoneSmall"
-                class="hidden relative h-7 w-7 border border-dashed border-gray-400 dark:border-gray-500 rounded flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 shrink-0"
-                title="点击选择 .db 文件，或将文件拖拽至此导入">
-                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 pointer-events-none" fill="none"
-                  stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <input type="file" id="dbFilesSmall" multiple accept=".db,.sqlite"
-                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-              </div>
-              <span id="fileInfo" class="ml-auto text-xs text-blue-600 dark:text-blue-400 font-bold hidden"></span>
-            </div>
-            <div id="dropZoneLarge"
-              class="relative h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded px-2 py-3 flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 mb-2">
-              <span class="text-xs text-gray-600 dark:text-gray-400 font-medium inline-flex items-center gap-1">
-                <svg class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor"
-                  viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                  aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                点击选择 .db 文件，或将文件拖拽至此导入</span>
-              <input type="file" id="dbFilesLarge" multiple accept=".db,.sqlite"
-                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-            </div>
-            <div id="tableSelectionSection"
-              class="hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded p-2 overflow-y-auto max-h-48 custom-scrollbar">
-              <p class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">
-                勾选要提取的表:
-              </p>
-              <div id="tableList" class="grid grid-cols-3 gap-1.5"></div>
-            </div>
-          </div>
-          <div class="flex flex-col h-full">
-            <p class="text-sm font-bold text-gray-600 dark:text-gray-300 mb-2 leading-5 flex items-center"><svg
-                class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>节点时间提取条件</p>
-            <div class="flex-1 flex flex-col justify-between gap-3">
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <input type="text" id="startTime" placeholder="开始:2026-06-08 08:08:08"
-                  title="开始时间格式:2026-06-08 08:08:08"
-                  class="w-full h-8 sm:h-9 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
-                <input type="text" id="endTime" placeholder="结束:2026-09-09 09:09:09" title="结束时间格式:2026-09-09 09:09:09"
-                  class="w-full h-8 sm:h-9 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
-                <input type="text" id="aproCode" placeholder="机位号:933" title="输入 aproCode"
-                  class="w-full h-8 sm:h-9 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
-              </div>
-              <!-- 核心操作按钮组：每行 3 个，排成两行 -->
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <button id="btnParseNear"
-                  class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                    </path>
-                  </svg>近机位提取
-                </button>
-                <button id="btnParseRemote"
-                  class="bg-sky-500 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                    </path>
-                  </svg>远机位提取
-                </button>
-                <button id="btnExport"
-                  class="bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                  </svg>导出结果表
-                </button>
-                <button id="btnCopy"
-                  class="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-                    </path>
-                  </svg>复制时间点
-                </button>
-                <button id="btnCopyTableNums"
-                  class="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
-                  title="复制镜头号">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                    </path>
-                  </svg>复制镜头号
-                </button>
-                <button id="btnClear"
-                  class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                    </path>
-                  </svg>清空结果集
-                </button>
-              </div>
-              <div id="queryStatus" class="mb-2 text-xs text-gray-500 dark:text-gray-400 font-medium text-center">
-                请配置数据并选择提取模式
-              </div>
-            </div>
-          </div>
-        </div>
+<div class="layout">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">数据库</div>
+      <div class="sidebar-count" id="dbCount">0</div>
+    </div>
+    <div class="db-list" id="dbList">
+      <div style="padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
+        还未添加数据库<br>点击右上角或拖拽 .db 文件
       </div>
+    </div>
+  </aside>
 
-      <!-- 结果与数据展示大区 -->
-      <div class="flex flex-col gap-3">
-        <!-- 解析节点提取表 (固定展开) -->
-        <div
-          class="border border-blue-200 dark:border-blue-800/50 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
-          <div
-            class="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 border-b border-blue-100 dark:border-blue-800/50 flex justify-between items-center">
-            <div class="flex items-center space-x-6">
-              <span class="text-xs font-bold text-blue-800 dark:text-blue-300 inline-flex items-center"><svg
-                  class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                </svg>节点时间提取结果 (左右滑动查看)</span>
-              <!-- 新增：03节点日期展示区域，包含单击复制功能 -->
-              <span id="extractedDateDisplay"
-                class="group inline-flex items-center gap-1 text-[13px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hidden hover:text-blue-800 dark:hover:text-blue-300 transition-colors select-none"
-                title="单击复制日期">
-                <span class="date-text"></span>
-                <svg class="copy-icon w-3.5 h-3.5 opacity-80 group-hover:opacity-100" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <svg class="check-icon hidden w-3.5 h-3.5 text-green-500 dark:text-green-400" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </span>
-            </div>
-          </div>
-          <div class="overflow-x-auto custom-scrollbar p-2">
-            <table class="node-table min-w-full border-collapse text-center text-xs sm:text-[13px]">
-              <thead id="exactTableHeader"></thead>
-              <tbody id="exactTableBody"></tbody>
-            </table>
-          </div>
+  <main class="main" id="main">
+    <div class="dropzone" id="dropzone">
+      <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <div class="dropzone-title">拖拽 SQLite 数据库文件到此处</div>
+      <div class="dropzone-desc">支持 .db / .sqlite / .sqlite3 / .s3db · 可同时上传多个</div>
+      <button id="btnDropzoneSelect">选择文件</button>
+    </div>
+
+    <div id="dataView" style="display:none; flex-direction: column; height: 100%; min-height:0;">
+      <div class="toolbar">
+        <div class="breadcrumb" id="breadcrumb"></div>
+        <input type="text" class="toolbar-input" id="searchInput" placeholder="筛选所有列…">
+        <div class="mode-toggle" id="modeToggle">
+          <button data-mode="page" title="分页模式">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="16" rx="2"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span class="mode-label">分页</span>
+          </button>
+          <button data-mode="infinite" title="无限滚动">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <polyline points="19 12 12 19 5 12"/>
+            </svg>
+            <span class="mode-label">无限</span>
+          </button>
         </div>
-
-        <!-- 通道 B：折叠式数据粘贴与表格回显区 -->
-        <div
-          class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
-          <div id="pasteToggleBtn"
-            class="bg-gray-50 dark:bg-gray-700/50 px-3 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            <div class="flex items-center">
-              <span
-                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-1">B</span>
-              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">数据粘贴与数据展示区 (<span
-                  id="filteredTextCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>行)</span>
-            </div>
-            <span id="pasteToggleIcon"
-              class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
-          </div>
-          <!-- 默认折叠内容区 -->
-          <div id="pasteContainer" class="hidden flex-col p-3 bg-gray-50/50 dark:bg-gray-800/50">
-            <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2 pl-1">
-              点击下方网格区域粘贴测试数据，或查看数据库提取后的回显结果
-            </p>
-            <textarea id="pasteArea" class="hidden"></textarea>
-
-            <div id="pasteGridWrapper" tabindex="0"
-              class="flex-1 w-full min-h-[140px] max-h-[30vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
-              <div id="pastePlaceholder"
-                class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 text-xs text-center p-4 pointer-events-none select-none">
-                <svg class="w-6 h-6 mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                  </path>
-                </svg>
-                点击此处激活<br />按 Ctrl+V 粘贴数据
-              </div>
-              <table id="pasteVisualTable" class="paste-table min-w-full text-[12px] border-collapse hidden">
-                <thead id="pasteVisualThead" class="bg-gray-50 dark:bg-gray-700 sticky top-0 shadow-sm z-10"></thead>
-                <tbody id="pasteVisualTbody" class="divide-y divide-gray-100 dark:divide-gray-700"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- 原始查询数据明细 (默认折叠) -->
-        <div
-          class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
-          <div id="rawToggleBtn"
-            class="bg-gray-50 dark:bg-gray-700/50 px-3 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            <span class="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center">
-              <span
-                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-1">C</span>
-              查看原始全量数据明细 (<span id="rawCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>
-              条)
-            </span>
-            <span id="rawToggleIcon"
-              class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
-          </div>
-          <div id="rawContainer" class="hidden overflow-auto custom-scrollbar max-h-48 sm:max-h-64">
-            <p id="rawTruncNote" class="hidden text-[11px] text-gray-500 dark:text-gray-400 px-3 pt-3 pb-2"></p>
-            <table
-              class="raw-table min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-[11px] sm:text-xs border-collapse"
-              id="rawTable">
-              <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10 shadow-sm" id="rawTableHeader"></thead>
-              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700" id="rawTableBody">
-              </tbody>
-            </table>
-          </div>
+        <button class="icon-btn" id="btnExport" title="导出当前数据为 CSV">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div class="content-area" id="contentArea">
+        <div class="empty-content" id="emptyHint">从左侧选择一张表查看数据</div>
+      </div>
+      <div class="footer-bar" id="footerBar">
+        <div class="sql-box" id="sqlPreview"></div>
+        <div class="pager">
+          <button id="btnFirst" title="首页">首页</button>
+          <button id="btnPrev" title="上一页">上一页</button>
+          <input type="number" id="pageInput" value="1" min="1" title="输入页码后回车或失焦跳转">
+          <span class="pager-text">/ <span id="totalPages">1</span> 页</span>
+          <button id="btnNext" title="下一页">下一页</button>
+          <button id="btnLast" title="末页">末页</button>
+          <select id="pageSize" title="每页行数">
+            <option value="50">50 行</option>
+            <option value="100" selected>100 行</option>
+            <option value="200">200 行</option>
+            <option value="500">500 行</option>
+          </select>
         </div>
       </div>
     </div>
   </main>
+</div>
 
-  <script>
-    // ==========================================
-    // 常量与正则预编译优化
-    // ==========================================
-    const TIME_REGEX = /(?:\d{4}-\d{2}-\d{2}\s)?\d{2}:\d{2}:\d{2}/;
-    const SPLIT_REGEX = /[\t, |，]/;
-    const MAX_RENDER_ROWS = 5000;
+<!-- 悬浮到底按钮（仅无限模式） -->
+<button class="fab-end" id="fabEnd" title="一键跳到最后一行" disabled>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="3" x2="12" y2="21"/>
+    <polyline points="5 14 12 21 19 14"/>
+  </svg>
+</button>
 
-    // ==========================================
-    // 暗色模式切换逻辑
-    // ==========================================
-    const themeToggleBtn = document.getElementById("themeToggle");
-    const htmlElement = document.documentElement;
+<script>
+/* ================== 全局状态 ================== */
+const state = {
+  databases: [],
+  activeDbId: null,
+  openTabs: [],
+  activeTabKey: null,
+  SQL: null,
+  loadMode: localStorage.getItem('sqlite-load-mode') || 'infinite', // 默认无限滚动
+  isMobile: matchMedia('(max-width: 768px)').matches,
+  infiniteObserver: null,
+};
 
-    function syncThemeIcon() {
-      const dark = htmlElement.dataset.theme === "dark";
-      const sun = document.getElementById("iconSun");
-      const moon = document.getElementById("iconMoon");
-      if (sun) sun.style.display = dark ? "block" : "none";
-      if (moon) moon.style.display = dark ? "none" : "block";
-      themeToggleBtn.title = dark ? "切换到浅色模式" : "切换到深色模式";
-    }
-    syncThemeIcon();
+/* ================== 工具函数 ================== */
+const $ = (id) => document.getElementById(id);
+const uid = () => Math.random().toString(36).slice(2, 9);
 
-    themeToggleBtn.addEventListener("click", () => {
-      const next = htmlElement.dataset.theme === "dark" ? "light" : "dark";
-      htmlElement.dataset.theme = next;
-      localStorage.setItem("airport-theme", next);
-      syncThemeIcon();
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.2s'; }, 1800);
+  setTimeout(() => el.remove(), 2200);
+}
+
+/* 自定义确认弹窗（替代浏览器原生 confirm，深色友好） */
+function confirmDialog({ title = '确认', message = '', okText = '确定', cancelText = '取消', danger = false } = {}) {
+  return new Promise(resolve => {
+    const mask = document.createElement('div');
+    mask.className = 'dialog-mask';
+    mask.innerHTML = `
+      <div class="dialog" role="dialog" aria-modal="true">
+        <div class="dialog-title">${escapeHtml(title)}</div>
+        <div class="dialog-message">${escapeHtml(message)}</div>
+        <div class="dialog-actions">
+          <button class="btn" data-act="cancel">${escapeHtml(cancelText)}</button>
+          <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-act="ok" style="${danger ? 'background:var(--danger);border-color:var(--danger);color:#fff;' : ''}">${escapeHtml(okText)}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(mask);
+    const close = (v) => { mask.remove(); resolve(v); };
+    mask.querySelector('[data-act="ok"]').onclick = () => close(true);
+    mask.querySelector('[data-act="cancel"]').onclick = () => close(false);
+    mask.addEventListener('click', (e) => { if (e.target === mask) close(false); });
+    document.addEventListener('keydown', function onEsc(e) {
+      if (e.key === 'Escape') { document.removeEventListener('keydown', onEsc); close(false); }
+      if (e.key === 'Enter') { document.removeEventListener('keydown', onEsc); close(true); }
     });
+    setTimeout(() => mask.querySelector('[data-act="ok"]').focus(), 0);
+  });
+}
 
-    // ==========================================
-    // 字典配置区
-    // ==========================================
-    const DICT_NEAR = {
-      "03": "引导车进入",
-      followme_end: "引导车离开",
-      airplane_in_start: "飞机入位开始",
-      airplane_in_end: "飞机入位结束",
-      "04": "上轮档",
-      bridge_close_start: "靠桥开始",
-      bridge_close_end: "靠桥结束",
-      bridge_far_start: "撤桥开始",
-      bridge_far_end: "撤桥结束",
-      garbage_start: "垃圾车到位",
-      garbage_end: "垃圾车离位",
-      14: "配餐开始",
-      15: "配餐结束",
-      16: "加油开始",
-      17: "加油结束",
-      "06": "开客舱门",
-      29: "关客舱门",
-      "09": "开货舱门",
-      28: "关货舱门",
-      121: "开始加清水",
-      13: "完成加清水",
-      112: "开始排污",
-      12: "完成排污",
-      baggage_start: "行李拖车入位",
-      baggage_end: "行李拖车离开",
-      32: "撤轮挡",
-      33: "牵引车对接",
-      airplane_out_start: "飞机离位开始",
-      airplane_out_end: "飞机离位结束",
-      79: "飞机推出",
-    };
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+}
 
-    const ORDER_NEAR = [
-      "03",
-      "followme_end",
-      "airplane_in_start",
-      "airplane_in_end",
-      "04",
-      "bridge_close_start",
-      "bridge_close_end",
-      "bridge_far_start",
-      "bridge_far_end",
-      "garbage_start",
-      "garbage_end",
-      "14",
-      "15",
-      "16",
-      "17",
-      "06",
-      "29",
-      "09",
-      "28",
-      "121",
-      "13",
-      "112",
-      "12",
-      "baggage_start",
-      "baggage_end",
-      "32",
-      "33",
-      "airplane_out_start",
-      "airplane_out_end",
-      "79",
-    ];
+function formatNum(n) {
+  return new Intl.NumberFormat('zh-CN').format(n);
+}
 
-    const DICT_REMOTE = {
-      "03": "引导车进入",
-      followme_end: "引导车离开",
-      airplane_in_start: "飞机入位开始",
-      airplane_in_end: "飞机入位结束",
-      "04": "上轮档",
-      "052": "到港摆渡车到位",
-      27: "离港摆渡车到位",
-      "051": "客梯车对接",
-      272: "客梯车撤离",
-      garbage_start: "垃圾车到位",
-      garbage_end: "垃圾车离位",
-      14: "配餐开始",
-      15: "配餐结束",
-      16: "加油开始",
-      17: "加油结束",
-      "06": "开客舱门",
-      29: "关客舱门",
-      "09": "开货舱门",
-      28: "关货舱门",
-      121: "开始加清水",
-      13: "完成加清水",
-      112: "开始排污",
-      12: "完成排污",
-      baggage_start: "行李拖车入位",
-      baggage_end: "行李拖车离开",
-      32: "撤轮挡",
-      33: "牵引车对接",
-      airplane_out_start: "飞机离位开始",
-      airplane_out_end: "飞机离位结束",
-      79: "飞机推出",
-    };
+// 只在确实含特殊字符时才做替换；纯文本走快速路径，避免每条数据都跑正则
+const ESC_RE = /[&<>"']/g;
+const ESC_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  const str = typeof s === 'string' ? s : String(s);
+  ESC_RE.lastIndex = 0;
+  if (!ESC_RE.test(str)) return str;            // 快速路径：无需转义
+  ESC_RE.lastIndex = 0;
+  return str.replace(ESC_RE, c => ESC_MAP[c]);
+}
 
-    const ORDER_REMOTE = [
-      "03",
-      "followme_end",
-      "airplane_in_start",
-      "airplane_in_end",
-      "04",
-      "052",
-      "27",
-      "051",
-      "272",
-      "garbage_start",
-      "garbage_end",
-      "14",
-      "15",
-      "16",
-      "17",
-      "06",
-      "29",
-      "09",
-      "28",
-      "121",
-      "13",
-      "112",
-      "12",
-      "baggage_start",
-      "baggage_end",
-      "32",
-      "33",
-      "airplane_out_start",
-      "airplane_out_end",
-      "79",
-    ];
+function isMobile() { return state.isMobile; }
 
-    const CONFIG = {
-      near: { dict: DICT_NEAR, order: ORDER_NEAR, label: "近机位" },
-      remote: { dict: DICT_REMOTE, order: ORDER_REMOTE, label: "远机位" },
-    };
-
-    let currentMode = "near";
-    let sqlEngine;
-    let databases = [];
-    let finalCleanedTimes = {};
-    let lastUsedTables = []; // 记录本次提取实际用到的数据表名（供"复制镜头编号"使用）
-    let lastExtractionFilter = null; // 记录本次提取时的过滤条件快照（startTime/endTime/aproCode）
-
-    // 初始化 SQL 引擎
-    async function init() {
-      try {
-        const config = {
-          locateFile: (filename) =>
-            `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}`,
-        };
-        sqlEngine = await initSqlJs(config);
-        renderEmptyTable("near");
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="text-green-600 dark:text-green-400 font-bold">系统引擎已就绪</span>`;
-      } catch (e) {
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="text-red-500 font-bold">引擎加载失败，请检查网络环境</span>`;
+/* ================== 主题管理 ================== */
+const theme = {
+  get current() { return document.documentElement.dataset.theme || 'light'; },
+  set(t, manual = true) {
+    document.documentElement.dataset.theme = t;
+    if (manual) localStorage.setItem('sqlite-theme', t);
+    this._updateIcon();
+  },
+  toggle() { this.set(this.current === 'dark' ? 'light' : 'dark'); },
+  init() {
+    const saved = localStorage.getItem('sqlite-theme');
+    const initial = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    this.set(initial, false);
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (!localStorage.getItem('sqlite-theme')) {
+        this.set(e.matches ? 'dark' : 'light', false);
       }
-    }
-    init();
-
-    // 拖拽与文件上传
-    const dropZoneLarge = document.getElementById("dropZoneLarge");
-    const dropZoneSmall = document.getElementById("dropZoneSmall");
-    const fileInputLarge = document.getElementById("dbFilesLarge");
-    const fileInputSmall = document.getElementById("dbFilesSmall");
-
-    function setupDropZone(zone, input) {
-      ["dragenter", "dragover"].forEach((e) =>
-        zone.addEventListener(e, (ev) => {
-          ev.preventDefault();
-          zone.classList.add("drag-active");
-        }),
-      );
-      ["dragleave", "drop"].forEach((e) =>
-        zone.addEventListener(e, (ev) => {
-          ev.preventDefault();
-          zone.classList.remove("drag-active");
-        }),
-      );
-
-      zone.addEventListener("drop", (e) => {
-        if (e.dataTransfer.files.length > 0) {
-          input.files = e.dataTransfer.files;
-          handleFiles(e.dataTransfer.files);
-        }
-      });
-
-      input.addEventListener("change", (e) => {
-        if (e.target.files.length > 0) {
-          handleFiles(e.target.files);
-        }
-      });
-    }
-
-    setupDropZone(dropZoneLarge, fileInputLarge);
-    setupDropZone(dropZoneSmall, fileInputSmall);
-
-    async function handleFiles(files) {
-      document.getElementById("fileInfo").innerText =
-        `已载入 ${files.length} 个库`;
-      document.getElementById("fileInfo").classList.remove("hidden");
-
-      // 导入后切换布局：大上传框隐藏，小上传框与表选择区显示
-      dropZoneLarge.classList.add("hidden");
-      dropZoneSmall.classList.remove("hidden");
-
-      databases = [];
-      const tableMap = new Map();
-
-      for (let file of files) {
-        const arrayBuffer = await file.arrayBuffer();
-        const db = new sqlEngine.Database(new Uint8Array(arrayBuffer));
-        databases.push({ name: file.name, db: db });
-
-        const res = db.exec(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
-        );
-        if (res.length > 0) {
-          res[0].values.forEach((row) => {
-            const tableName = row[0];
-            if (!tableMap.has(tableName)) {
-              tableMap.set(tableName, []);
-            }
-            tableMap.get(tableName).push(file.name);
-          });
-        }
-      }
-
-      const tableListDiv = document.getElementById("tableList");
-      tableListDiv.innerHTML = "";
-      tableMap.forEach((files, tableName) => {
-        const isChecked = "checked";
-        const div = document.createElement("div");
-        div.className = "flex items-center space-x-1";
-        div.innerHTML = `
-        <input type="checkbox" value="${tableName}" class="table-checkbox w-3.5 h-3.5 text-blue-600 rounded" ${isChecked}>
-        <label class="text-xs text-gray-700 dark:text-gray-300 cursor-pointer truncate" title="${tableName}" onclick="this.previousElementSibling.click()">
-          ${tableName}
-        </label>
-      `;
-        tableListDiv.appendChild(div);
-      });
-      document
-        .getElementById("tableSelectionSection")
-        .classList.remove("hidden");
-    }
-
-    // 绘制空表头
-    function renderEmptyTable(mode) {
-      if (mode) currentMode = mode;
-      const { order, dict } = CONFIG[currentMode];
-      let theadRows = ["<tr>"];
-      let tbodyRows = ["<tr>"];
-
-      for (let i = 0; i < order.length; i++) {
-        const code = order[i];
-        theadRows.push(`
-          <th class="border-r border-b border-gray-200 dark:border-gray-600 px-3 py-2 font-normal bg-gray-50 dark:bg-gray-700 min-w-[100px] sm:min-w-[120px]">
-          <div class="font-bold text-gray-800 dark:text-gray-200">${dict[code]}</div>
-          <div class="text-gray-500 dark:text-gray-300 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
-        </th>`);
-        tbodyRows.push(
-          `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-400 dark:text-gray-500">-</td>`,
-        );
-      }
-      theadRows.push("</tr>");
-      tbodyRows.push("</tr>");
-
-      document.getElementById("exactTableHeader").innerHTML =
-        theadRows.join("");
-      document.getElementById("exactTableBody").innerHTML =
-        tbodyRows.join("");
-      document.getElementById("rawTableHeader").innerHTML = "";
-      document.getElementById("rawTableBody").innerHTML = "";
-      document.getElementById("rawCount").innerText = "0";
-      document.getElementById("rawTruncNote").classList.add("hidden");
-    }
-
-    // 折叠区域事件绑定
-    document
-      .getElementById("pasteToggleBtn")
-      .addEventListener("click", () => {
-        const container = document.getElementById("pasteContainer");
-        const icon = document.getElementById("pasteToggleIcon");
-        container.classList.toggle("hidden");
-        container.classList.toggle("flex");
-        icon.classList.toggle("-rotate-90");
-      });
-
-    document.getElementById("rawToggleBtn").addEventListener("click", () => {
-      const container = document.getElementById("rawContainer");
-      const icon = document.getElementById("rawToggleIcon");
-      container.classList.toggle("hidden");
-      icon.classList.toggle("-rotate-90");
     });
+  },
+  _updateIcon() {
+    const dark = this.current === 'dark';
+    $('iconSun').style.display = dark ? 'block' : 'none';
+    $('iconMoon').style.display = dark ? 'none' : 'block';
+    $('btnTheme').title = dark ? '切换到浅色模式' : '切换到深色模式';
+  },
+};
 
-    // 辅助网格：接收用户粘贴文本并渲染表格
-    document
-      .getElementById("pasteGridWrapper")
-      .addEventListener("paste", (e) => {
-        e.preventDefault();
-        const text = (e.clipboardData || window.clipboardData).getData(
-          "text",
-        );
-        if (!text) return;
+/* ================== sql.js 初始化 ================== */
+async function initSQL() {
+  state.SQL = await initSqlJs({
+    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
+  });
+}
 
-        const pasteArea = document.getElementById("pasteArea");
-        pasteArea.value = pasteArea.value
-          ? pasteArea.value + "\n" + text
-          : text;
+/* ================== 加载数据库 ================== */
+async function loadDatabase(file) {
+  try {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    const db = new state.SQL.Database(buf);
+    const tables = [];
+    const res = db.exec("SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name");
+    if (res[0]) {
+      for (const row of res[0].values) {
+        const name = row[0];
+        const countRes = db.exec(`SELECT COUNT(*) FROM "${name}"`);
+        const count = countRes[0] ? countRes[0].values[0][0] : 0;
+        const colsRes = db.exec(`PRAGMA table_info("${name}")`);
+        const cols = colsRes[0] ? colsRes[0].values.map(r => ({
+          cid: r[0], name: r[1], type: r[2], notnull: r[3], dflt: r[4], pk: r[5]
+        })) : [];
+        tables.push({ name, count, cols });
+      }
+    }
+    const dbObj = {
+      id: uid(),
+      file,
+      name: file.name,
+      size: file.size,
+      db,
+      tables,
+      expanded: false,    // 导入后默认收拢，不自动展开
+    };
+    // 不再展开任何库：导入后全部保持收拢（active 高亮与展开是两个独立概念）
+    state.databases.push(dbObj);
+    state.activeDbId = dbObj.id;
+    renderSidebar();
+    // 导入成功后收起上传区，进入「已就绪，等待选表」状态。
+    // 早期版本靠自动 openTab 顺带触发 showDropzone(false)，需求「导入后不自动打开表」
+    // 改掉后这条路径断了，导致上传区一直显示、表格区一直隐藏。
+    showDropzone(false);
+    renderContent();     // 未打开任何表时，刷新主区为「从左侧选择一张表查看数据」
+    if (isMobile()) closeDrawer();
+    toast(`已加载 ${file.name}`, 'success');
+  } catch (e) {
+    console.error(e);
+    toast(`加载失败: ${file.name}`, 'error');
+  }
+}
 
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="text-blue-500 dark:text-blue-400">正在渲染数据，请稍候</span>`;
+/* ================== 抽屉控制 ================== */
+function openDrawer() {
+  document.body.classList.add('sidebar-open');
+}
+function closeDrawer() {
+  document.body.classList.remove('sidebar-open');
+}
+function toggleDrawer() {
+  document.body.classList.toggle('sidebar-open');
+}
 
-        // 异步释放主线程，防止浏览器卡死
-        setTimeout(() => {
-          renderPasteTableGrid();
-          document.getElementById("queryStatus").innerHTML =
-            `<span class="text-green-600 dark:text-green-400">数据已粘贴至网格，请点击提取按钮</span>`;
-        }, 50);
+/* ================== 侧栏渲染 ================== */
+// 判断某张表是否为「右侧当前正在查看」的表（用于在左侧列表高亮）
+function isActiveTable(dbId, tableName) {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  return !!tab && tab.dbId === dbId && tab.table === tableName;
+}
+
+function renderSidebar() {
+  const list = $('dbList');
+  const count = $('dbCount');
+  count.textContent = state.databases.length;
+
+  if (state.databases.length === 0) {
+    list.innerHTML = `
+      <div style="padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
+        还未添加数据库<br>点击右上角或拖拽 .db 文件
+      </div>`;
+    return;
+  }
+
+  // 按数据库名称升序排序（自然排序：db2 在 db10 前；中文按拼音；忽略大小写）
+  const sortedDbs = [...state.databases].sort((a, b) =>
+    a.name.localeCompare(b.name, 'zh-CN', { numeric: true, sensitivity: 'base' })
+    || a.name.localeCompare(b.name, 'zh-CN')
+  );
+
+  list.innerHTML = sortedDbs.map(d => {
+    const isActive = d.id === state.activeDbId;
+    const tablesHtml = d.tables.map(t => `
+      <div class="table-item ${isActiveTable(d.id, t.name) ? 'active' : ''}" data-db="${d.id}" data-table="${t.name}" title="${escapeHtml(t.name)} · ${formatNum(t.count)} 行">
+        <svg class="table-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+        <span class="table-name">${escapeHtml(t.name)}</span>
+        <span class="table-count">${formatNum(t.count)}</span>
+      </div>
+    `).join('');
+
+    return `
+      <div class="db-item ${isActive ? 'active' : ''} ${d.expanded ? 'expanded' : ''}" data-db="${d.id}">
+        <div class="db-header" data-toggle="${d.id}" title="${escapeHtml(d.name)} · ${d.tables.length} 张表">
+          <svg class="db-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          <svg class="db-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+            <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+            <path d="M3 12a9 3 0 0 0 18 0"/>
+          </svg>
+          <span class="db-name">${escapeHtml(d.name)}</span>
+          <span class="db-meta">${d.tables.length}</span>
+          <button class="db-remove" data-remove="${d.id}" title="移除">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="table-list">
+          <div class="table-item ${isActiveTable(d.id, '__SCHEMA__') ? 'active' : ''}" data-db="${d.id}" data-table="__SCHEMA__" title="查看 ${escapeHtml(d.name)} 所有表结构">
+            <svg class="table-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <span class="table-name">表结构</span>
+            <span class="table-count">${d.tables.length}</span>
+          </div>
+          ${tablesHtml}
+        </div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-toggle]').forEach(el => {
+    el.onclick = (e) => {
+      if (e.target.closest('[data-remove]')) return;
+      toggleDb(el.dataset.toggle);
+    };
+  });
+  list.querySelectorAll('[data-remove]').forEach(el => {
+    el.onclick = async (e) => {
+      e.stopPropagation();
+      const id = el.dataset.remove;
+      const db = state.databases.find(d => d.id === id);
+      const ok = await confirmDialog({
+        title: '移除数据库',
+        message: `确定要移除「${db?.name || ''}」吗？相关标签页也会关闭。`,
+        okText: '移除',
+        danger: true,
       });
+      if (!ok) return;
+      removeDatabase(id);
+    };
+  });
+  list.querySelectorAll('.table-item').forEach(el => {
+    el.onclick = () => {
+      openTab(el.dataset.db, el.dataset.table);
+    };
+  });
+}
 
-    function renderPasteTableGrid(extraText) {
-      const base = document.getElementById("pasteArea").value.trim();
-      let extra = extraText || "";
-      // 用户已粘贴时，去掉 DB TSV 首行表头避免与粘贴表头重复
-      if (base && extra) {
-        const idx = extra.indexOf("\n");
-        extra = idx >= 0 ? extra.slice(idx + 1) : "";
+function toggleDb(id) {
+  const target = state.databases.find(d => d.id === id);
+  if (!target) return;
+  const wasExpanded = target.expanded;
+  state.databases.forEach(d => d.expanded = false);
+  target.expanded = !wasExpanded;
+  state.activeDbId = id;
+  renderSidebar();
+}
+
+function removeDatabase(id) {
+  const idx = state.databases.findIndex(d => d.id === id);
+  if (idx === -1) return;
+  const db = state.databases[idx];
+  try { db.db.close(); } catch {}
+  state.databases.splice(idx, 1);
+  state.openTabs = state.openTabs.filter(t => t.dbId !== id);
+  if (state.activeDbId === id) state.activeDbId = state.databases[0]?.id || null;
+  if (state.activeTabKey && state.activeTabKey.startsWith(id)) {
+    state.activeTabKey = state.openTabs[0] ? tabKey(state.openTabs[0]) : null;
+  }
+  renderSidebar();
+  renderTabs();
+  renderContent();
+  if (state.databases.length === 0) showDropzone(true);
+}
+
+function tabKey(t) { return `${t.dbId}::${t.table}::${t.view}`; }
+
+/* ================== Tab 管理 ================== */
+function openTab(dbId, tableName) {
+  const existing = state.openTabs.find(t => t.dbId === dbId && t.table === tableName);
+  if (existing) {
+    state.activeTabKey = tabKey(existing);
+  } else {
+    const tab = {
+      dbId, table: tableName,
+      view: 'data',
+      page: 1,
+      pageSize: 100,
+      filter: '',
+      columnFilters: {},          // 按列模糊筛选：{ 列名: '关键词' }，与 filter AND 组合
+      columnChecks: {},           // 按列勾选筛选：{ 列名: [值...] }，IN 精确匹配，与模糊词 AND 组合
+      _pendingChecks: {},         // 面板打开时的勾选副本（点确认才写入 columnChecks）
+      _pendingLike: {},           // 面板打开时的模糊词副本（点确认才写入 columnFilters）
+      loadMode: state.loadMode,   // 跟随全局当前模式
+      infinitePage: 0,
+      infiniteLoaded: [],
+      infiniteCount: 0,
+      infiniteTotal: 0,
+      infiniteFinished: false,
+    };
+    state.openTabs.push(tab);
+    state.activeTabKey = tabKey(tab);
+  }
+  state.activeDbId = dbId;
+  showDropzone(false);
+  renderSidebar();          // 同步左侧表名高亮
+  renderTabs();
+  renderContent();
+  // 移动端：选完表关闭抽屉
+  if (isMobile()) closeDrawer();
+}
+
+function closeTab(key) {
+  const idx = state.openTabs.findIndex(t => tabKey(t) === key);
+  if (idx === -1) return;
+  state.openTabs.splice(idx, 1);
+  if (state.activeTabKey === key) {
+    state.activeTabKey = state.openTabs[idx] ? tabKey(state.openTabs[idx]) :
+                         state.openTabs[idx-1] ? tabKey(state.openTabs[idx-1]) : null;
+  }
+  renderSidebar();          // 同步左侧表名高亮
+  renderTabs();
+  renderContent();
+  // 上传区只在「一个数据库都没有」时出现：关闭标签但数据库还在时，
+  // 应保持 dataView 的「从左侧选择一张表查看数据」提示，而不是跳回上传区
+  if (state.databases.length === 0) showDropzone(true);
+}
+
+function renderTabs() {
+  const tabs = $('tabs');
+  if (state.openTabs.length === 0) {
+    tabs.innerHTML = '';
+    return;
+  }
+  tabs.innerHTML = state.openTabs.map(t => {
+    const key = tabKey(t);
+    const db = state.databases.find(d => d.id === t.dbId);
+    const isActive = key === state.activeTabKey;
+    const dbShort = db?.name.replace(/\.(db|sqlite.*|s3db)$/i, '') || '';
+    return `
+      <div class="tab ${isActive ? 'active' : ''}" data-key="${key}" title="${escapeHtml(db?.name || '')} / ${t.table === '__SCHEMA__' ? '表结构' : t.table}">
+        <div class="tab-row1">
+          <span class="tab-table-name">${t.table === '__SCHEMA__' ? '表结构' : escapeHtml(t.table)}</span>
+        </div>
+        <div class="tab-row2" title="${escapeHtml(dbShort)}">
+          <span class="tab-db-name">${escapeHtml(dbShort)}</span>
+        </div>
+        <button class="tab-close" data-close="${key}" title="关闭">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
+  }).join('');
+
+  // 数据库名按「不超过表名宽度」截断（比表名长则省略后面文字）。
+  // 注意：不能用 span.scrollWidth —— inline 元素的 scrollWidth 恒为 0，会把数据库名压成 0 宽。
+  // 改用离屏探针（absolute + nowrap）测量两段文本的完整像素宽度。
+  const probe = document.createElement('span');
+  probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:0;pointer-events:none;';
+  tabs.appendChild(probe);
+  tabs.querySelectorAll('.tab').forEach(tabEl => {
+    const tName = tabEl.querySelector('.tab-table-name');
+    const dName = tabEl.querySelector('.tab-db-name');
+    if (!tName || !dName) return;
+    probe.style.font = getComputedStyle(tName).font;
+    probe.textContent = tName.textContent;
+    const tableW = probe.getBoundingClientRect().width;
+    probe.style.font = getComputedStyle(dName).font;
+    probe.textContent = dName.textContent;
+    const dbW = probe.getBoundingClientRect().width;
+    // 上限 = 表名宽度 + 6px 余量；下限 32px 保证短名也能完整显示
+    dName.style.maxWidth = Math.max(32, Math.min(dbW, tableW + 6)) + 'px';
+  });
+  probe.remove();
+
+  tabs.querySelectorAll('.tab').forEach(el => {
+    el.onclick = (e) => {
+      if (e.target.closest('[data-close]')) return;
+      state.activeTabKey = el.dataset.key;
+      renderSidebar();      // 同步左侧表名高亮
+      renderTabs();
+      renderContent();
+    };
+  });
+  tabs.querySelectorAll('[data-close]').forEach(el => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      closeTab(el.dataset.close);
+    };
+  });
+
+  // 点击/打开/切换 tab 后，把当前激活的 tab 横向滚动到可视区：
+  // 标签多、激活项被挤出右侧时，滚动条自动滑到对应位置（仅在不完全可见时才滚动，避免无谓跳动）。
+  const activeTabEl = tabs.querySelector('.tab.active');
+  if (activeTabEl) {
+    const tRect = activeTabEl.getBoundingClientRect();
+    const cRect = tabs.getBoundingClientRect();
+    const tabLeft = tRect.left - cRect.left + tabs.scrollLeft;
+    const tabRight = tRect.right - cRect.left + tabs.scrollLeft;
+    const viewLeft = tabs.scrollLeft;
+    const viewRight = viewLeft + tabs.clientWidth;
+    if (tabLeft < viewLeft) {
+      tabs.scrollTo({ left: Math.max(0, tabLeft - 8), behavior: 'smooth' });
+    } else if (tabRight > viewRight) {
+      tabs.scrollTo({ left: tabRight - tabs.clientWidth + 8, behavior: 'smooth' });
+    }
+  }
+}
+
+/* ================== 内容渲染 ================== */
+function renderContent() {
+  // 清理旧的 IntersectionObserver
+  if (state.infiniteObserver) {
+    state.infiniteObserver.disconnect();
+    state.infiniteObserver = null;
+  }
+
+  // 清理上次挂到 body 的悬浮面板（下面 buildHeadHtml 会按需重新生成并挂载）
+  document.querySelectorAll('body > .col-filter-input-wrap').forEach(el => el.remove());
+
+  // 记录筛选面板交互状态：输入框焦点（列名+光标位）、候选列表滚动位置
+  // 重渲染后恢复，保证「边输入边筛选」「连续勾选」不被打断
+  let focusInfo = null;
+  const ae = document.activeElement;
+  if (ae && ae.classList && ae.classList.contains('col-filter-input') && ae.dataset.colInputField) {
+    focusInfo = { col: ae.dataset.colInputField, start: ae.selectionStart, end: ae.selectionEnd };
+  }
+  const prevPanel = document.querySelector('.col-filter-options');
+  const prevPanelScroll = prevPanel ? prevPanel.scrollTop : null;
+
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab) {
+    $('contentArea').innerHTML = `<div class="empty-content">从左侧选择一张表查看数据</div>`;
+    $('breadcrumb').innerHTML = '';   // 关闭最后一个 Tab 后清空顶部面包屑，避免残留旧表名
+    $('footerBar').classList.add('hidden');
+    // 按「有没有数据库」判断：只有完全没有任何数据库时（此时由 showDropzone(true)
+    // 负责显示上传区）才隐藏 dataView；否则保持显示，让「选表」提示可见。
+    // 若按 openTabs 判断，未打开任何表时 dataView 会被隐藏，而上传区也已被
+    // showDropzone(false) 隐藏 → 主区域一片空白。
+    $('dataView').style.display = state.databases.length === 0 ? 'none' : 'flex';
+    return;
+  }
+  $('dataView').style.display = 'flex';
+
+  const db = state.databases.find(d => d.id === tab.dbId);
+  if (!db) return;
+
+  $('breadcrumb').innerHTML = `
+    <div class="breadcrumb-item" title="${escapeHtml(db.name)}">${escapeHtml(db.name)}</div>
+    <div class="breadcrumb-sep">/</div>
+    <div class="breadcrumb-item current">${tab.table === '__SCHEMA__' ? '表结构总览' : escapeHtml(tab.table)}</div>
+  `;
+
+  if ($('searchInput').value !== (tab.filter || '')) {
+    $('searchInput').value = tab.filter || '';
+  }
+
+  // 同步 mode-toggle
+  document.querySelectorAll('#modeToggle button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === tab.loadMode);
+  });
+
+  if (tab.table === '__SCHEMA__') {
+    renderSchemaView(db);
+    $('footerBar').classList.add('hidden');
+  } else {
+    if (tab.loadMode === 'infinite') {
+      renderInfiniteGrid(db, tab);
+    } else {
+      renderDataGrid(db, tab);
+    }
+  }
+
+  // 恢复筛选面板：候选列表滚动位置 + 输入框焦点与光标
+  const newPanel = document.querySelector('.col-filter-options');
+  if (newPanel && typeof prevPanelScroll === 'number') {
+    newPanel.scrollTop = prevPanelScroll;
+  }
+  if (focusInfo) {
+    const inp = document.querySelector(`[data-col-input-field="${cssEscape(focusInfo.col)}"]`);
+    if (inp) {
+      inp.focus({ preventScroll: true });
+      try { inp.setSelectionRange(focusInfo.start, focusInfo.end); } catch (err) {}
+    }
+  }
+  // 面板打开时挂载为悬浮面板（表头不下移、出现在列头下方）
+  // 注：preserveGridScroll 场景下这里先按当前滚动定位，滚动恢复后其尾部会再校准一次
+  if (tab._openFilterCol) mountFilterPanelFixed(tab._openFilterCol);
+  updateFabEnd();
+}
+
+function renderSchemaView(db) {
+  const area = $('contentArea');
+  if (db.tables.length === 0) {
+    area.innerHTML = `<div class="empty-content">该数据库没有表</div>`;
+    return;
+  }
+  const cards = db.tables.map(t => {
+    const colsHtml = t.cols.map(c => `
+      <tr>
+        <td>
+          ${c.pk ? '<span class="badge badge-pk" style="margin-right:4px;">PK</span>' : ''}
+          ${c.notnull ? '<span class="badge badge-nn" style="margin-right:4px;">NN</span>' : ''}
+          <span style="font-weight:500;">${escapeHtml(c.name)}</span>
+        </td>
+        <td><span style="color:var(--text-secondary); font-family:'SF Mono',monospace; font-size:11.5px;">${escapeHtml(c.type || 'ANY')}</span></td>
+        <td><span style="color:var(--text-muted); font-size:11.5px;">${c.dflt !== null ? escapeHtml(c.dflt) : '—'}</span></td>
+      </tr>
+    `).join('');
+    return `
+      <div class="schema-card">
+        <div class="schema-card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--primary);">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+          </svg>
+          <span class="schema-card-title">${escapeHtml(t.name)}</span>
+          <span class="schema-card-meta">· ${t.cols.length} 列 · ${formatNum(t.count)} 行</span>
+        </div>
+        <table class="schema-table">
+          <thead><tr><th style="width:50%;">列名</th><th style="width:25%;">类型</th><th>默认值</th></tr></thead>
+          <tbody>${colsHtml}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+  area.innerHTML = `<div class="schema-view">${cards}</div>`;
+}
+
+/* ================== 分页模式 ================== */
+function renderDataGrid(db, tab) {
+  const t = db.tables.find(x => x.name === tab.table);
+  if (!t) {
+    $('contentArea').innerHTML = `<div class="empty-content">表不存在</div>`;
+    return;
+  }
+  const offset = (tab.page - 1) * tab.pageSize;
+  const where = buildWhereClause(tab, t);
+  let sql, countSql, params;
+  if (where) {
+    sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql} LIMIT ${tab.pageSize} OFFSET ${offset}`;
+    countSql = `SELECT COUNT(*) FROM "${tab.table}" WHERE ${where.sql}`;
+    params = where.params;
+  } else {
+    sql = `SELECT * FROM "${tab.table}" LIMIT ${tab.pageSize} OFFSET ${offset}`;
+    countSql = `SELECT COUNT(*) FROM "${tab.table}"`;
+    params = [];
+  }
+
+  const t0 = performance.now();
+  let rows = [], columns = [], total = 0;
+  try {
+    const stmt = db.db.prepare(sql);
+    if (params.length) stmt.bind(params);
+    while (stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+    if (rows.length) columns = Object.keys(rows[0]);
+    const cntStmt = db.db.prepare(countSql);
+    cntStmt.bind(params);
+    if (cntStmt.step()) total = cntStmt.get()[0];
+    cntStmt.free();
+  } catch (e) {
+    $('contentArea').innerHTML = `<div class="empty-content">查询失败: ${escapeHtml(e.message)}</div>`;
+    $('sqlPreview').textContent = sql;
+    return;
+  }
+  const elapsed = Math.round(performance.now() - t0);
+
+  $('sqlPreview').textContent = sql;
+
+  const totalPages = Math.max(1, Math.ceil(total / tab.pageSize));
+  if (tab.page > totalPages) tab.page = totalPages;
+  $('totalPages').textContent = totalPages;
+  $('pageInput').value = tab.page;
+  $('pageInput').max = totalPages;
+  $('btnFirst').disabled = tab.page <= 1;
+  $('btnPrev').disabled = tab.page <= 1;
+  $('btnNext').disabled = tab.page >= totalPages;
+  $('btnLast').disabled = tab.page >= totalPages;
+  $('footerBar').classList.remove('hidden');
+
+  if (rows.length === 0) {
+    $('contentArea').innerHTML = `
+      <div class="data-wrap">
+        <div class="status-bar">
+          <span class="stat">表 <strong>${escapeHtml(tab.table)}</strong></span>
+          <span class="stat-sep">·</span>
+          <span class="stat">当前 <strong>0</strong> 行</span>
+          <span class="stat-sep">·</span>
+          <span class="stat">共 <strong>${formatNum(total)}</strong> 行</span>
+          <span class="stat-sep">·</span>
+          <span class="stat">用时 <strong>${elapsed}ms</strong></span>
+        </div>
+        <div class="empty-content">${tab.filter ? '没有匹配的记录' : '表为空'}</div>
+      </div>`;
+    return;
+  }
+
+  const colTypes = {};
+  t.cols.forEach(c => colTypes[c.name] = c.type);
+
+  const headHtml = buildHeadHtml(columns, colTypes, tab);
+
+  const bodyHtml = rows.map((row, i) => {
+    const cells = columns.map(c => {
+      const v = row[c];
+      if (v === null || v === undefined) return `<td class="null">NULL</td>`;
+      if (typeof v === 'number') return `<td class="number">${v}</td>`;
+      if (typeof v === 'boolean') return `<td class="bool">${v ? 'true' : 'false'}</td>`;
+      if (typeof v === 'object' && v !== null) {
+        const j = JSON.stringify(v);
+        return `<td class="json" title="${escapeHtml(j)}">${escapeHtml(j)}</td>`;
       }
-      const text = (base ? base + "\n" : "") + extra;
-      const table = document.getElementById("pasteVisualTable");
-      const thead = document.getElementById("pasteVisualThead");
-      const tbody = document.getElementById("pasteVisualTbody");
-      const placeholder = document.getElementById("pastePlaceholder");
+      const text = String(v);
+      return `<td title="${escapeHtml(text)}">${escapeHtml(text)}</td>`;
+    }).join('');
+    return `<tr><td class="row-num">${offset + i + 1}</td>${cells}</tr>`;
+  }).join('');
 
-      if (!text) {
-        placeholder.classList.remove("hidden");
-        table.classList.add("hidden");
-        thead.innerHTML = "";
-        tbody.innerHTML = "";
-        document.getElementById("filteredTextCount").innerText = "0";
-        return;
+  $('contentArea').innerHTML = `
+    <div class="data-wrap">
+      <div class="status-bar">
+        <span class="stat">表 <strong>${escapeHtml(tab.table)}</strong></span>
+        <span class="stat-sep">·</span>
+        <span class="stat">当前页 <strong>${formatNum(rows.length)}</strong> 行</span>
+        <span class="stat-sep">·</span>
+        <span class="stat">${tab.filter ? '筛选命中' : '总计'} <strong>${formatNum(total)}</strong> 行</span>
+        <span class="stat-sep">·</span>
+        <span class="stat">用时 <strong>${elapsed}ms</strong></span>
+        <span class="stat-sep">·</span>
+        <span class="stat">列数 <strong>${columns.length}</strong></span>
+      </div>
+      <div class="grid-container">
+        <table class="data-table">
+          <thead>${headHtml}</thead>
+          <tbody>${bodyHtml}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+/* ================== 无限滚动模式 ================== */
+function renderInfiniteGrid(db, tab) {
+  // 重置累积状态
+  tab.infinitePage = 0;
+  tab.infiniteLoaded = [];
+  tab.infiniteCount = 0;
+  tab.infiniteFinished = false;
+  tab._topOffset = undefined;     // 反向无限滚动：当前首行在整表中的偏移（undefined=未启用）
+  tab._topFinished = false;       // 已翻到表头
+  tab._loadingUp = false;
+
+  const t = db.tables.find(x => x.name === tab.table);
+  if (!t) {
+    $('contentArea').innerHTML = `<div class="empty-content">表不存在</div>`;
+    return;
+  }
+
+  const colTypes = {};
+  t.cols.forEach(c => colTypes[c.name] = c.type);
+  const columns = t.cols.map(c => c.name);
+
+  // 先计算总行数（用于状态条）
+  const where0 = buildWhereClause(tab, t);
+  let countSql, countParams;
+  if (where0) {
+    countSql = `SELECT COUNT(*) FROM "${tab.table}" WHERE ${where0.sql}`;
+    countParams = where0.params;
+  } else {
+    countSql = `SELECT COUNT(*) FROM "${tab.table}"`;
+    countParams = [];
+  }
+  let total = 0;
+  try {
+    const cntStmt = db.db.prepare(countSql);
+    cntStmt.bind(countParams);
+    if (cntStmt.step()) total = cntStmt.get()[0];
+    cntStmt.free();
+  } catch (e) {
+    $('contentArea').innerHTML = `<div class="empty-content">查询失败: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+
+  tab.infiniteTotal = total;
+  tab._columns = columns;
+  tab._colTypes = colTypes;
+
+  // 渲染骨架
+  const headHtml = buildHeadHtml(columns, colTypes, tab);
+
+  $('contentArea').innerHTML = `
+    <div class="data-wrap">
+      <div class="status-bar" id="infiniteStatus">
+        <span class="stat">表 <strong>${escapeHtml(tab.table)}</strong></span>
+        <span class="stat-sep">·</span>
+        <span class="stat">已加载 <strong id="loadedCount">0</strong> / <strong>${formatNum(total)}</strong> 行</span>
+        <span class="stat-sep">·</span>
+        <span class="stat">用时 <strong id="elapsedTime">0ms</strong></span>
+        <span class="stat-sep">·</span>
+        <span class="stat">列数 <strong>${columns.length}</strong></span>
+        <span class="stat-sep">·</span>
+        <span class="stat" style="color:var(--primary);">∞ 无限模式</span>
+      </div>
+      <div class="grid-container" id="infiniteContainer">
+        <table class="data-table">
+          <thead>${headHtml}</thead>
+          <tbody id="infiniteTbody"></tbody>
+        </table>
+        <div class="infinite-sentinel" id="infiniteSentinel">
+          <span class="spinner"></span>
+          <span>正在加载…</span>
+        </div>
+      </div>
+    </div>`;
+
+  // SQL 预览用首条
+  $('sqlPreview').textContent = `SELECT * FROM "${tab.table}"${tab.filter ? ` WHERE … LIKE '%${tab.filter}%'` : ''} LIMIT ${tab.pageSize} OFFSET …`;
+  $('footerBar').classList.add('hidden');
+
+  // 启动 observer
+  setupInfiniteObserver(db, tab);
+
+  // 立即加载第一批
+  loadInfiniteBatch(db, tab);
+}
+
+function setupInfiniteObserver(db, tab) {
+  if (state.infiniteObserver) state.infiniteObserver.disconnect();
+
+  const sentinel = $('infiniteSentinel');
+  if (!sentinel) return;
+  const container = $('infiniteContainer');
+
+  state.infiniteObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !tab.infiniteFinished && !tab._loading && !tab._jumping) {
+        loadInfiniteBatch(db, tab);
       }
+    });
+  }, { root: container, rootMargin: '200px 0px' });
 
-      placeholder.classList.add("hidden");
-      table.classList.remove("hidden");
+  state.infiniteObserver.observe(sentinel);
+}
 
-      const lines = text.split("\n").filter((l) => l.trim() !== "");
-      if (lines.length === 0) return;
+/* 把一批行对象渲染成 <tr> HTML 字符串（分页/无限/快速到底共用）。
+   startIndex = 本批第一行对应的「已加载行数」，用于行号。
+   escape 结果在 title 与内容间复用，避免每行每列算两次。 */
 
-      const firstLineCols = lines[0].split("\t").map((c) => c.trim());
-      const hasHeader =
-        firstLineCols.includes("nodeCode") ||
-        firstLineCols.includes("report_time") ||
-        firstLineCols.includes("aproCode");
+/* 构建 WHERE 子句：顶部搜索（跨列 OR） + 列筛选（精确列 AND）。
+   列筛选含两种来源，同列 AND 组合：
+   - columnFilters[col] = '关键词'  → LIKE 模糊匹配
+   - columnChecks[col]  = [值...]   → IN 精确匹配（数组元素为 null 表示勾了 NULL）
+   返回 { sql, params }，无任何筛选时返回 null。 */
+function buildWhereClause(tab, table) {
+  const parts = [];
+  const params = [];
+  // 顶部搜索：所有列 OR LIKE
+  if (tab.filter) {
+    const likeVal = `%${tab.filter}%`;
+    const ors = table.cols.map(c => `CAST("${c.name}" AS TEXT) LIKE ?`).join(' OR ');
+    parts.push(`(${ors})`);
+    for (let i = 0; i < table.cols.length; i++) params.push(likeVal);
+  }
+  // 列筛选（模糊 LIKE）：多个 AND
+  const colFilters = tab.columnFilters || {};
+  for (const colName of Object.keys(colFilters)) {
+    const v = (colFilters[colName] || '').trim();
+    if (!v) continue;
+    if (!table.cols.find(c => c.name === colName)) continue;   // 列已被删
+    parts.push(`CAST("${colName}" AS TEXT) LIKE ?`);
+    params.push(`%${v}%`);
+  }
+  // 列筛选（勾选 IN 精确）：多个 AND；勾了 NULL 时追加 IS NULL 分支
+  const colChecks = tab.columnChecks || {};
+  for (const colName of Object.keys(colChecks)) {
+    const vals = colChecks[colName];
+    if (!Array.isArray(vals) || !vals.length) continue;
+    if (!table.cols.find(c => c.name === colName)) continue;   // 列已被删
+    const hasNull = vals.includes(null);
+    const real = vals.filter(v => v !== null);
+    const castCol = `CAST("${colName}" AS TEXT)`;
+    let expr;
+    if (real.length && hasNull) {
+      expr = `(${castCol} IN (${real.map(() => '?').join(',')}) OR ${castCol} IS NULL)`;
+    } else if (real.length) {
+      expr = `${castCol} IN (${real.map(() => '?').join(',')})`;
+    } else {
+      expr = `${castCol} IS NULL`;
+    }
+    parts.push(expr);
+    params.push(...real);
+  }
+  if (!parts.length) return null;
+  return { sql: parts.join(' AND '), params };
+}
 
-      let headers = [];
-      let startRowIdx = 0;
+/* ================== 列筛选：高频候选词 ================== */
+const COL_STATS_LIMIT = 30;   // 候选词最多展示数（多取 1 条用于探测是否还有更多）
 
-      if (hasHeader) {
-        headers = firstLineCols;
-        startRowIdx = 1;
+// 当前激活的数据表 tab（schema 视图返回 null）
+function getActiveDataTab() {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab || tab.table === '__SCHEMA__') return null;
+  return tab;
+}
+
+// 筛选条件变化后重置分页/无限加载状态
+function resetTabLoading(tab) {
+  tab.page = 1;
+  tab.infinitePage = 0;
+  tab.infiniteLoaded = [];
+  tab.infiniteCount = 0;
+  tab.infiniteFinished = false;
+}
+
+/* 统计某列高频值：GROUP BY 全表按计数降序取前 N。
+   结果缓存到 tab._columnStats[col]（工具只读数据库，缓存不会过期）。
+   返回 { entries: [{v, c}], more, error }，v 为 null 表示 NULL 组。 */
+function getColumnStats(db, tab, colName) {
+  if (!tab._columnStats) tab._columnStats = {};
+  if (tab._columnStats[colName]) return tab._columnStats[colName];
+  const entries = [];
+  let more = false, error = null;
+  try {
+    const stmt = db.db.prepare(
+      `SELECT CAST("${colName}" AS TEXT) AS v, COUNT(*) AS c ` +
+      `FROM "${tab.table}" GROUP BY v ORDER BY c DESC LIMIT ${COL_STATS_LIMIT + 1}`
+    );
+    while (stmt.step()) {
+      const o = stmt.getAsObject();
+      entries.push({ v: o.v === undefined ? null : o.v, c: o.c });
+    }
+    stmt.free();
+    if (entries.length > COL_STATS_LIMIT) {
+      more = true;
+      entries.length = COL_STATS_LIMIT;
+    }
+  } catch (e) {
+    error = e.message || String(e);
+  }
+  const result = { entries, more, error };
+  tab._columnStats[colName] = result;
+  return result;
+}
+
+/* 构建列筛选面板 HTML。
+   面板内的勾选/输入都操作 pending 副本（tab._pendingChecks/_pendingLike），
+   不直接触发表格重渲染；点「确认」才一次性写回 tab.columnChecks/columnFilters。
+   取消关闭（ESC / 点击外部 / 再次点击 ⌕）则 pending 丢弃，保留原筛选。 */
+function buildFilterPanelHtml(tab, colName) {
+  const pendingChecks = (tab._pendingChecks && tab._pendingChecks[colName]) || [];
+  const pendingLike = (tab._pendingLike && tab._pendingLike[colName]) || '';
+  const db = state.databases.find(d => d.id === tab.dbId);
+  let optionsHtml = '';
+  let footHtml = '';
+  if (db) {
+    const stats = getColumnStats(db, tab, colName);
+    if (stats.error) {
+      footHtml = `<div class="col-filter-more">候选统计失败，可使用上方输入框模糊筛选</div>`;
+    } else if (!stats.entries.length) {
+      footHtml = `<div class="col-filter-more">该列暂无数据</div>`;
+    } else {
+      const s = (pendingLike || '').trim().toLowerCase();
+      optionsHtml = stats.entries.map(en => {
+        const isNull = en.v === null;
+        const raw = isNull ? '' : String(en.v);
+        const checked = isNull ? pendingChecks.includes(null) : pendingChecks.includes(raw);
+        const valAttr = escapeHtml(raw);
+        const isNullAttr = isNull ? ' data-isnull="1"' : '';
+        const hiddenAttr = (s && !raw.toLowerCase().includes(s)) ? ' style="display:none;"' : '';
+        return `
+          <label class="col-filter-option" data-val="${valAttr}"${isNullAttr}${hiddenAttr} title="${isNull ? 'NULL' : valAttr}">
+            <input type="checkbox" data-col-check="${escapeHtml(colName)}" value="${valAttr}"${isNullAttr}${checked ? ' checked' : ''}>
+            <span class="opt-val">${isNull ? '<i class="opt-null">NULL</i>' : escapeHtml(raw)}</span>
+            <span class="opt-count">${formatNum(en.c)}</span>
+          </label>`;
+      }).join('');
+      if (stats.more) {
+        footHtml = `<div class="col-filter-more">仅显示前 ${COL_STATS_LIMIT} 个高频值，其余可用输入框模糊筛选</div>`;
+      }
+    }
+  }
+  const checkedCount = pendingChecks.length;
+  return `
+    <div class="col-filter-input-wrap" data-col-input="${escapeHtml(colName)}">
+      <div class="col-filter-panel">
+        <div class="col-filter-input-row${pendingLike ? ' has-value' : ''}">
+          <input type="text" class="col-filter-input" placeholder="模糊筛选 / 过滤候选…" value="${escapeHtml(pendingLike)}" data-col-input-field="${escapeHtml(colName)}">
+          <button type="button" class="col-filter-close" data-col-clear-input="${escapeHtml(colName)}" title="清空输入">×</button>
+        </div>
+        <div class="col-filter-tools">
+          <button type="button" class="col-filter-tool-btn" data-col-selectall="${escapeHtml(colName)}">全选</button>
+          <button type="button" class="col-filter-tool-btn" data-col-clearchecks="${escapeHtml(colName)}">清空勾选</button>
+          ${checkedCount ? `<span class="col-filter-count">已选 ${checkedCount}</span>` : ''}
+          <button type="button" class="col-filter-tool-btn col-filter-confirm" data-col-confirm="${escapeHtml(colName)}">确认</button>
+        </div>
+        <div class="col-filter-options">${optionsHtml}</div>
+        ${footHtml}
+      </div>
+    </div>`;
+}
+
+/* 构建表头 HTML：每列可点击展开筛选面板。
+   tab._openFilterCol 记录当前展开面板的列（重渲染后保持展开）。
+   tab.columnFilters[col]=字符串 → LIKE；tab.columnChecks[col]=数组 → IN。
+   面板打开时使用 tab._pendingChecks/_pendingLike（独立副本），不显示在摘要里。 */
+function buildHeadHtml(columns, colTypes, tab) {
+  const filters = tab.columnFilters || {};
+  const checks = tab.columnChecks || {};
+  const openCol = tab._openFilterCol || null;
+  const cols = columns.map(c => {
+    const likeVal = filters[c] || '';
+    const checkedVals = Array.isArray(checks[c]) ? checks[c] : [];
+    const filtered = !!likeVal || checkedVals.length > 0;
+    // 摘要展示已提交的筛选（pending 不显示，pending 是面板预览态）
+    let summaryHtml = '';
+    if (checkedVals.length) {
+      const list = checkedVals.map(v => v === null ? 'NULL' : String(v)).join('、');
+      summaryHtml = `<div class="col-filter-val" title="已选 ${checkedVals.length} 项：${escapeHtml(list)}">已选 ${checkedVals.length} 项</div>`;
+    } else if (likeVal) {
+      summaryHtml = `<div class="col-filter-val" title="${escapeHtml(likeVal)}">${escapeHtml(likeVal)}</div>`;
+    }
+    const isOpen = openCol === c;
+    return `
+      <th class="col-head ${filtered ? 'is-filtered' : ''}" data-col="${escapeHtml(c)}">
+        <div class="col-head-main">
+          <div class="col-head-row1">
+            <span class="col-name">${escapeHtml(c)}</span>
+            <button class="col-filter-toggle ${isOpen ? 'is-open' : ''}" data-col-toggle="${escapeHtml(c)}" title="筛选此列">⌕</button>
+            ${filtered ? `<button class="col-filter-clear" data-col-clear="${escapeHtml(c)}" title="清除筛选">×</button>` : ''}
+          </div>
+          <span class="col-type">${escapeHtml(colTypes[c] || '')}</span>
+        </div>
+        ${summaryHtml}
+        ${isOpen ? buildFilterPanelHtml(tab, c) : ''}
+      </th>`;
+  }).join('');
+  return `<tr><th class="row-num">#</th>${cols}</tr>`;
+}
+
+/* 把一批行对象渲染成 <tr> HTML 字符串（分页/无限/快速到底共用）。
+   startIndex = 本批第一行对应的「已加载行数」，用于行号。 */
+function buildRowsHtml(rows, columns, startIndex) {
+  const out = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const cells = [];
+    for (let k = 0; k < columns.length; k++) {
+      const v = row[columns[k]];
+      if (v === null || v === undefined) { cells.push('<td class="null">NULL</td>'); continue; }
+      if (typeof v === 'number') { cells.push(`<td class="number">${v}</td>`); continue; }
+      if (typeof v === 'boolean') { cells.push(`<td class="bool">${v ? 'true' : 'false'}</td>`); continue; }
+      if (typeof v === 'object') {
+        const j = JSON.stringify(v);
+        const e = escapeHtml(j);
+        cells.push(`<td class="json" title="${e}">${e}</td>`);
+        continue;
+      }
+      const e = escapeHtml(v);
+      cells.push(`<td title="${e}">${e}</td>`);
+    }
+    out.push(`<tr><td class="row-num">${startIndex + i + 1}</td>${cells.join('')}</tr>`);
+  }
+  return out.join('');
+}
+
+function loadInfiniteBatch(db, tab) {
+  if (tab._loading || tab.infiniteFinished) return;
+  tab._loading = true;
+
+  const t = db.tables.find(x => x.name === tab.table);
+  if (!t) { tab._loading = false; return; }
+
+  // offset 统一取「已加载行数」，保证与普通分页路径口径一致
+  const offset = tab.infiniteCount || 0;
+  const where = buildWhereClause(tab, t);
+  let sql, params;
+  if (where) {
+    sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql} LIMIT ${tab.pageSize} OFFSET ${offset}`;
+    params = where.params;
+  } else {
+    sql = `SELECT * FROM "${tab.table}" LIMIT ${tab.pageSize} OFFSET ${offset}`;
+    params = [];
+  }
+
+  const t0 = performance.now();
+  let rows = [];
+  try {
+    const stmt = db.db.prepare(sql);
+    if (params.length) stmt.bind(params);
+    while (stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+  } catch (e) {
+    console.error(e);
+    tab._loading = false;
+    const sentinel = $('infiniteSentinel');
+    if (sentinel) sentinel.innerHTML = `<span style="color:var(--danger);">加载失败，点击重试</span>`;
+    if (sentinel) sentinel.onclick = () => {
+      sentinel.innerHTML = `<span class="spinner"></span><span>正在加载…</span>`;
+      sentinel.onclick = null;
+      tab._loading = false;
+      loadInfiniteBatch(db, tab);
+    };
+    return;
+  }
+  const elapsed = Math.round(performance.now() - t0);
+
+  tab.infiniteCount = (tab.infiniteCount || 0) + rows.length;
+  tab.infinitePage++;
+  tab._totalElapsed = (tab._totalElapsed || 0) + elapsed;
+
+  // 追加到 tbody
+  const tbody = $('infiniteTbody');
+  if (tbody) {
+    tbody.insertAdjacentHTML('beforeend', buildRowsHtml(rows, tab._columns, offset));
+  }
+
+  // 更新状态条
+  const loadedEl = $('loadedCount');
+  if (loadedEl) loadedEl.textContent = formatNum(tab.infiniteCount || 0);
+  const elapsedEl = $('elapsedTime');
+  if (elapsedEl) elapsedEl.textContent = tab._totalElapsed + 'ms';
+
+  // 判断是否加载完
+  if (rows.length < tab.pageSize || (tab.infiniteCount || 0) >= tab.infiniteTotal) {
+    tab.infiniteFinished = true;
+    const sentinel = $('infiniteSentinel');
+    if (sentinel) {
+      sentinel.innerHTML = `<span class="end-mark">✓</span><span>已加载全部 ${formatNum(tab.infiniteCount || 0)} 行</span>`;
+      sentinel.onclick = null;
+    }
+    if (state.infiniteObserver) state.infiniteObserver.disconnect();
+  } else {
+    // 还有更多，恢复 sentinel 文案
+    const sentinel = $('infiniteSentinel');
+    if (sentinel) sentinel.innerHTML = `<span class="spinner"></span><span>继续加载…</span>`;
+  }
+
+  tab._loading = false;
+  updateFabEnd();
+}
+
+/* ================== Dropzone 控制 ================== */
+function showDropzone(show) {
+  $('dropzone').style.display = show ? 'flex' : 'none';
+  $('dataView').style.display = show ? 'none' : 'flex';
+  $('btnClear').style.display = (!show && state.databases.length) ? 'inline-flex' : 'none';
+  updateFabEnd();
+}
+
+/* ================== 悬浮到底按钮 ================== */
+const fab = $('fabEnd');
+
+// 显隐控制：仅「无限模式数据表」显示；已全部加载完毕时置灰
+function updateFabEnd() {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  const active = tab && tab.table !== '__SCHEMA__' && tab.loadMode === 'infinite'
+                 && $('dataView').style.display !== 'none'
+                 && document.getElementById('infiniteContainer');
+  if (!active) {
+    fab.classList.remove('show');
+    fab.disabled = true;
+    return;
+  }
+  fab.classList.add('show');
+  // 仅「正在跳转中」禁用（防连点重入）；底到了也允许再次点击直达底部
+  // （例如向上回溯翻阅前面行后，再一键跳回末尾）。
+  fab.disabled = !!tab._jumping;
+  fab.classList.toggle('loading', !!tab._jumping);
+}
+
+/* 快速到底：大块查询 + 批量构建 HTML + 批量插入 DOM。
+   相比逐页调用 loadInfiniteBatch（每页 1 次查询 + 1 次 DOM 插入 + 1 次 rAF），
+   这里把每页 100 行放大到每次 5000 行，并把 DOM 插入按阈值合并，
+   10 万行的批次数从 1000 降到 20，rAF 等待从 ~16 秒降到 ~0.3 秒。 */
+// 一键到底统一路径：仅取最后一页（pageSize 行）渲染，等价于分页「末页」。
+// 不论表大小都走这条快速路径，避免小表也把全部行全量塞进 DOM 导致加载变慢；
+// 点击后 DOM 恒为 ~pageSize 行，向上回溯仍可逐页加载前面的行。
+
+async function jumpToEndViaLastPage(db, tab) {
+  const t = db.tables.find(x => x.name === tab.table);
+  if (!t) return false;
+  const total = tab.infiniteTotal || 0;
+  if (total === 0) { tab.infiniteFinished = true; return true; }
+
+  const pageSize = tab.pageSize;
+  const offset = Math.max(0, total - pageSize);
+  const where = buildWhereClause(tab, t);
+  let sql, params;
+  if (where) {
+    sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql} LIMIT ${pageSize} OFFSET ${offset}`;
+    params = where.params;
+  } else {
+    sql = `SELECT * FROM "${tab.table}" LIMIT ${pageSize} OFFSET ${offset}`;
+    params = [];
+  }
+
+  let rows = [];
+  try {
+    const stmt = db.db.prepare(sql);
+    if (params.length) stmt.bind(params);
+    while (stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+
+  // 只渲染末页：一次性替换 tbody（而非追加），DOM 节点量恒为 ~pageSize，不会膨胀
+  const tbody = $('infiniteTbody');
+  if (tbody) tbody.innerHTML = buildRowsHtml(rows, tab._columns, offset);
+  tab.infiniteCount = total;        // 标记已到底
+  tab.infiniteFinished = true;
+  const loadedEl = $('loadedCount');
+  if (loadedEl) loadedEl.textContent = formatNum(total);
+  const sentinel = $('infiniteSentinel');
+  if (sentinel) {
+    sentinel.innerHTML = `<span class="end-mark">✓</span><span>已加载全部 ${formatNum(total)} 行</span>`;
+    sentinel.onclick = null;
+  }
+  if (state.infiniteObserver) state.infiniteObserver.disconnect();
+  // 启用「向上回溯」：当前已渲染的首行在整表中的偏移；翻到表头后置 _topFinished
+  tab._topOffset = Math.max(0, total - pageSize);
+  tab._topFinished = total <= pageSize;
+  tab._loadingUp = false;
+  return true;
+}
+
+// 反向无限滚动：在「一键到底（末页）」状态下，向上翻到顶时补加载上一页
+// （倒数 101-200 行…），如此既保持 DOM 体量可控（每次仅 ~pageSize 行），又能逐级向上回溯。
+// 关键：prepend 后用 scrollTop 补偿新增高度，使原视图内容不发生跳动。
+function loadPreviousBatch(db, tab) {
+  if (tab._loadingUp || tab._topFinished) return;
+  const t = db.tables.find(x => x.name === tab.table);
+  if (!t) return;
+  const pageSize = tab.pageSize;
+  const prevOffset = Math.max(0, (tab._topOffset || 0) - pageSize);
+  const where = buildWhereClause(tab, t);
+  let sql, params;
+  if (where) {
+    sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql} LIMIT ${pageSize} OFFSET ${prevOffset}`;
+    params = where.params;
+  } else {
+    sql = `SELECT * FROM "${tab.table}" LIMIT ${pageSize} OFFSET ${prevOffset}`;
+    params = [];
+  }
+
+  let rows = [];
+  try {
+    const stmt = db.db.prepare(sql);
+    if (params.length) stmt.bind(params);
+    while (stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+  } catch (e) {
+    console.error(e);
+    return;
+  }
+  if (!rows.length) { tab._topFinished = true; return; }
+
+  const c = $('infiniteContainer');
+  const tbody = $('infiniteTbody');
+  if (!c || !tbody) return;
+
+  tab._loadingUp = true;
+  const beforeH = c.scrollHeight;
+  const beforeTop = c.scrollTop;
+  tbody.insertAdjacentHTML('afterbegin', buildRowsHtml(rows, tab._columns, prevOffset));
+  // 保持视图稳定：内容整体下移新增高度
+  c.scrollTop = beforeTop + (c.scrollHeight - beforeH);
+
+  tab._topOffset = prevOffset;
+  if (prevOffset === 0) {
+    tab._topFinished = true;
+    toast('已到表头，无更早数据');
+  }
+  tab._loadingUp = false;
+}
+
+// 一键到最后一行：把剩余数据一次性补拉到全部，再滚动到网格底部
+async function jumpToEnd() {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab || tab.table === '__SCHEMA__' || tab.loadMode !== 'infinite') return;
+  if (tab._jumping) return;                 // 防重入
+  const db = state.databases.find(d => d.id === tab.dbId);
+  if (!db) return;
+  if (tab.infiniteFinished) {               // 已到底：直接滚到底部（可能已向上回溯翻阅过）
+    const c = $('infiniteContainer');
+    if (!c) return;
+    // 用与首次一致的轮询补滚，兼容触摸惯性，稳健落到底部
+    let tries = 0, lastSh = -1;
+    const keepBottom = () => {
+      const sh = c.scrollHeight;            // 本轮统一用同一个值
+      c.scrollTop = sh;
+      const atBottom = c.scrollTop + c.clientHeight >= sh - 4;
+      const stable = sh === lastSh;         // 连续两轮相同 → 布局已稳定
+      lastSh = sh;
+      if ((!atBottom || !stable) && ++tries < 50) setTimeout(keepBottom, 100);
+    };
+    keepBottom();
+    return;
+  }
+
+  tab._jumping = true;
+  updateFabEnd();                            // 立刻切到 loading 态
+
+  // 统一走「巨量行数表」快速路径：不论表大小，仅渲染末页 ~pageSize 行，
+  // 避免小表也把全部行全量塞进 DOM 导致加载变慢；向上回溯仍可逐页加载前面的行。
+  const ok = await jumpToEndViaLastPage(db, tab);
+
+  // 加载完成后收尾：更新 sentinel 文案、断开 observer
+  if (tab.infiniteFinished) {
+    const sentinel = $('infiniteSentinel');
+    if (sentinel) {
+      sentinel.innerHTML = `<span class="end-mark">✓</span><span>已加载全部 ${formatNum(tab.infiniteCount || 0)} 行</span>`;
+      sentinel.onclick = null;
+    }
+    if (state.infiniteObserver) state.infiniteObserver.disconnect();
+  }
+
+  // 等一帧，确保最后一块 DOM 完成布局，scrollHeight 才是最新的
+  await new Promise(r => requestAnimationFrame(r));
+  // 结果导向的补滚（平板/手机修复）：固定延迟补滚不可靠——
+  // ① 慢设备大表插入后布局完成时间不可预测（可能超过 1 秒），补滚可能全部
+  //    赶在布局完成前执行，scrollHeight 是旧值，之后布局变高也无人再滚；
+  // ② 触摸惯性滚动可持续 1~2 秒，期间程序化 scrollTop 赋值可能被忽略/覆盖
+  //    （PC 鼠标滚动几乎无惯性，所以 PC 上没暴露）。
+  // 因此轮询检测「真正到底 且 scrollHeight 连续两轮稳定」才停止，上限 5 秒。
+  let tries = 0;
+  let lastSh = -1;
+  const keepBottom = () => {
+    const c = $('infiniteContainer');
+    if (!c || !tab.infiniteFinished) return;
+    const sh = c.scrollHeight;          // 本轮统一用同一个值
+    c.scrollTop = sh;
+    const atBottom = c.scrollTop + c.clientHeight >= sh - 4;
+    const stable = sh === lastSh;       // 连续两轮相同 → 布局已稳定
+    lastSh = sh;
+    if ((!atBottom || !stable) && ++tries < 50) {
+      setTimeout(keepBottom, 100);
+    }
+  };
+  keepBottom();
+
+  tab._jumping = false;
+  if (tab.infiniteFinished && ok) {
+    toast(`已跳到最后一行，共 ${formatNum(tab.infiniteCount || 0)} 行`, 'success');
+  } else {
+    toast(`已加载 ${formatNum(tab.infiniteCount || 0)} 行，未到末尾`, 'error');
+  }
+  updateFabEnd();
+}
+fab.addEventListener('click', jumpToEnd);
+
+// 反向无限滚动：#infiniteContainer 向上翻到顶（scrollTop 接近 0）时，
+// 若处于「一键到底（末页）」状态，自动补加载上一页（捕获阶段，#infiniteContainer 重建也不丢失）。
+document.addEventListener('scroll', (e) => {
+  const c = e.target;
+  if (!(c instanceof Element) || c.id !== 'infiniteContainer') return;
+  const tab = getActiveDataTab();
+  if (!tab || tab.table === '__SCHEMA__' || tab.loadMode !== 'infinite') return;
+  if (tab._topOffset === undefined || tab._topFinished || tab._loadingUp) return;
+  if (c.scrollTop < 250) {
+    const db = state.databases.find(d => d.id === tab.dbId);
+    if (db) loadPreviousBatch(db, tab);
+  }
+}, true);
+
+/* ================== 导出 CSV ================== */
+function exportCSV() {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab || tab.table === '__SCHEMA__') {
+    toast('请选择数据表后再导出', 'error');
+    return;
+  }
+  const db = state.databases.find(d => d.id === tab.dbId);
+  const t = db.tables.find(x => x.name === tab.table);
+  const where = buildWhereClause(tab, t);
+  let sql, params;
+  if (where) {
+    sql = `SELECT * FROM "${tab.table}" WHERE ${where.sql}`;
+    params = where.params;
+  } else {
+    sql = `SELECT * FROM "${tab.table}"`;
+    params = [];
+  }
+  const stmt = db.db.prepare(sql);
+  stmt.bind(params);
+  const rows = [];
+  const cols = t.cols.map(c => c.name);
+  while (stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+
+  const csv = [
+    cols.join(','),
+    ...rows.map(r => cols.map(c => {
+      const v = r[c];
+      if (v === null || v === undefined) return '';
+      const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(','))
+  ].join('\n');
+
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${tab.table}.csv`;
+  a.click();
+  toast(`已导出 ${formatNum(rows.length)} 行`, 'success');
+}
+
+/* ================== 切换加载模式 ================== */
+function switchLoadMode(tab, mode) {
+  if (tab.loadMode === mode) return;
+  tab.loadMode = mode;
+  tab.infiniteLoaded = [];
+  tab.infiniteCount = 0;
+  tab.infinitePage = 0;
+  tab.infiniteFinished = false;
+  tab._loading = false;
+  tab._totalElapsed = 0;
+  if (mode === 'page') {
+    tab.page = 1;
+  }
+  renderContent();
+}
+
+/* ================== 事件绑定 ================== */
+async function handleFiles(files) {
+  for (const f of files) {
+    await loadDatabase(f);
+  }
+}
+
+$('btnAddDb').onclick = () => $('fileInput').click();
+// 点击虚线区域任意位置均可触发选择文件（按钮自身由冒泡统一处理，避免重复触发）
+$('dropzone').addEventListener('click', () => $('fileInput').click());
+$('fileInput').onchange = (e) => handleFiles([...e.target.files]);
+
+$('btnClear').onclick = async () => {
+  const ok = await confirmDialog({
+    title: '清空所有数据库',
+    message: '此操作将关闭并移除所有已加载的数据库，已打开的标签页也会关闭。',
+    okText: '清空',
+    danger: true,
+  });
+  if (!ok) return;
+  state.databases.forEach(d => { try { d.db.close(); } catch {} });
+  state.databases = [];
+  state.openTabs = [];
+  state.activeDbId = null;
+  state.activeTabKey = null;
+  renderSidebar();
+  renderTabs();
+  showDropzone(true);
+};
+
+$('btnTheme').onclick = () => theme.toggle();
+
+/* 返回主页：跳转到站点根目录（工具门户页） */
+$('btnHome').onclick = async () => {
+  if (state.databases.length === 0) {
+    location.href = '/';
+    return;
+  }
+  const ok = await confirmDialog({
+    title: '返回主页',
+    message: '将离开本工具，跳转到站点主页（根目录 /）。当前打开的数据库不会被保存。',
+    okText: '返回主页',
+  });
+  if (ok) location.href = '/';
+};
+
+// 点击最前的 Logo 图标展开/收起侧栏：桌面切换折叠，手机切换抽屉
+function toggleSidebarByLogo(e) {
+  if (isMobile()) {
+    toggleDrawer();
+  } else {
+    document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('sqlite-sidebar-collapsed',
+      document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
+  }
+}
+const logoToggle = $('logoToggle');
+if (logoToggle) {
+  logoToggle.onclick = toggleSidebarByLogo;
+  logoToggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSidebarByLogo(e); }
+  });
+}
+$('sidebarOverlay').onclick = closeDrawer;
+
+// mode toggle
+document.querySelectorAll('#modeToggle button').forEach(btn => {
+  btn.onclick = () => {
+    const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+    if (!tab || tab.table === '__SCHEMA__') return;
+    state.loadMode = btn.dataset.mode;
+    localStorage.setItem('sqlite-load-mode', state.loadMode);
+    switchLoadMode(tab, btn.dataset.mode);
+  };
+});
+
+// 拖拽
+const dz = $('dropzone');
+['dragenter','dragover'].forEach(ev => {
+  dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drag-over'); });
+});
+['dragleave','drop'].forEach(ev => {
+  dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('drag-over'); });
+});
+dz.addEventListener('drop', e => handleFiles([...e.dataTransfer.files]));
+
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.target.closest('.dropzone')) return;
+  handleFiles([...e.dataTransfer.files]);
+});
+
+// 搜索
+let searchTimer;
+$('searchInput').oninput = (e) => {
+  clearTimeout(searchTimer);
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab || tab.table === '__SCHEMA__') return;
+  searchTimer = setTimeout(() => {
+    tab.filter = e.target.value;
+    tab.page = 1;
+    tab.infinitePage = 0;
+    tab.infiniteLoaded = [];
+    tab.infiniteCount = 0;
+    tab.infiniteFinished = false;
+    // 顶部搜索框清空时，一并清空所有列筛选（更符合「重新开始」直觉）
+    if (!tab.filter) tab.columnFilters = {};
+    renderContent();
+  }, 250);
+};
+
+// 分页
+function getActiveTabSafe() {
+  return state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+}
+$('btnFirst').onclick = () => {
+  const tab = getActiveTabSafe();
+  if (tab && tab.page > 1) { tab.page = 1; renderContent(); }
+};
+$('btnPrev').onclick = () => {
+  const tab = getActiveTabSafe();
+  if (tab && tab.page > 1) { tab.page--; renderContent(); }
+};
+$('btnNext').onclick = () => {
+  const tab = getActiveTabSafe();
+  if (!tab) return;
+  const totalPages = parseInt($('totalPages').textContent);
+  if (tab.page < totalPages) { tab.page++; renderContent(); }
+};
+$('btnLast').onclick = () => {
+  const tab = getActiveTabSafe();
+  if (!tab) return;
+  const totalPages = parseInt($('totalPages').textContent);
+  if (tab.page < totalPages) { tab.page = totalPages; renderContent(); }
+};
+// 输入页数：失焦/回车均跳转，自动夹取到 [1, 总页数]，非法输入回写为当前页。
+// 内联逻辑（仅依赖全局 getActiveTabSafe / renderContent，避免外部函数作用域问题）。
+function clampPageInput(tab, inputEl) {
+  const totalPages = parseInt($('totalPages').textContent) || 1;
+  let p = parseInt(inputEl.value, 10);
+  if (isNaN(p) || p < 1) p = 1;
+  if (p > totalPages) p = totalPages;
+  tab.page = p;
+  inputEl.value = p;
+  renderContent();
+}
+$('pageInput').onchange = (e) => {
+  const tab = getActiveTabSafe();
+  if (tab) clampPageInput(tab, e.target);
+};
+$('pageInput').onkeydown = (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    // 直接用全局 state（避免 onkeydown 闭包解析 getActiveTabSafe / clampPageInput 时的作用域怪象）
+    const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+    if (!tab) return;
+    const totalPages = parseInt($('totalPages').textContent) || 1;
+    let p = parseInt(e.target.value, 10);
+    if (isNaN(p) || p < 1) p = 1;
+    if (p > totalPages) p = totalPages;
+    tab.page = p;
+    e.target.value = p;
+    renderContent();
+  }
+};
+$('pageSize').onchange = (e) => {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab) return;
+  tab.pageSize = parseInt(e.target.value);
+  tab.page = 1;
+  renderContent();
+};
+
+// 导出
+$('btnExport').onclick = exportCSV;
+
+/* ================== 双击单元格复制 ================== */
+// 复制文本到剪贴板（兼容旧浏览器回退）
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      return true;
+    } catch (e2) { return false; }
+  }
+}
+
+// 内容区事件委托：双击任一数据单元格即复制其内容
+$('contentArea').addEventListener('dblclick', async (e) => {
+  // 找被双击的元素所在的 td
+  const td = e.target.closest('td');
+  if (!td) return;
+  // 跳过行号列
+  if (td.classList.contains('row-num')) return;
+  // 保证是数据表格单元格（表头用 th，天然被跳过；schema 表格由 schema-table 渲染）
+  if (!td.closest('.data-table')) return;
+
+  // 取原始文本（json 单元格也是纯文本）
+  const text = td.textContent;
+  const ok = await copyToClipboard(text);
+  if (ok) {
+    toast(`已复制${text.length > 20 ? '（前 20 字）' : ''}：「${text.slice(0, 20)}${text.length > 20 ? '…' : ''}」`, 'success');
+  } else {
+    toast('复制失败，请手动选择复制', 'error');
+  }
+});
+
+/* ================== 表头列筛选交互 ==================
+   模式：面板内交互全部操作 pending 副本（_pendingChecks/_pendingLike），
+   不触发表格重渲染；点「确认」才一次性写入 columnChecks/columnFilters 并重渲染。
+   关闭路径（ESC / 点击外部 / 再次点 ⌕）= 丢弃 pending，保留原筛选。
+   × 直接清已提交状态（不打开面板的快捷路径）。 */
+
+// 表格滚动容器位置保持：面板打开/关闭/确认前后视图不窜位
+// （renderContent 重建 innerHTML 会让 .grid-container 滚动重置为 0，
+//   用户点开面板后视图会跳回表格左上角，面板"不知去向"）
+function preserveGridScroll(renderFn) {
+  const c = document.querySelector('.grid-container');
+  const saved = c ? { left: c.scrollLeft, top: c.scrollTop } : null;
+  renderFn();
+  const c2 = document.querySelector('.grid-container');
+  if (saved && c2) {
+    c2.scrollLeft = saved.left;
+    c2.scrollTop = saved.top;
+  }
+  // 滚动恢复后再挂载悬浮面板：此时列头位置是最终值，面板定位才准确
+  const tab = getActiveDataTab();
+  if (tab && tab._openFilterCol) mountFilterPanelFixed(tab._openFilterCol);
+}
+
+/* 悬浮面板挂载：把面板从 th 内移到 body（fixed 定位），出现在列头正下方。
+   - 表头行高度不变（面板不占文档流，不会把表格往下推）
+   - 右侧溢出视口时左移；底部溢出时改为列头上方
+   - 幂等：已挂载则只重新定位（滚动/渲染后可重复调用校准位置） */
+function mountFilterPanelFixed(colName) {
+  const sel = `[data-col-input="${cssEscape(colName)}"]`;
+  let wrap = document.querySelector(`body > .col-filter-input-wrap` + sel);
+  if (!wrap) {
+    wrap = document.querySelector(sel);
+    if (!wrap) return;
+    wrap.classList.add('col-filter-float');
+    document.body.appendChild(wrap);
+  }
+  const th = document.querySelector(`th.col-head[data-col="${cssEscape(colName)}"]`);
+  if (!th) return;   // 列头不在（如切到 schema 视图），面板交给 renderContent 清理
+  const r = th.getBoundingClientRect();
+  const pw = wrap.offsetWidth || 250;
+  const ph = wrap.offsetHeight || 300;
+  let left = r.left;
+  const maxLeft = window.innerWidth - pw - 8;
+  if (left > maxLeft) left = Math.max(8, maxLeft);
+  let top = r.bottom + 4;
+  if (top + ph > window.innerHeight - 8) {
+    top = Math.max(8, r.top - ph - 4);   // 放不下则改列头上方
+  }
+  wrap.style.left = left + 'px';
+  wrap.style.top = top + 'px';
+}
+
+// 打开筛选面板：从已提交值拷一份到 pending 作初始值
+function setFilterPanelOpen(tab, colName) {
+  const cur = Array.isArray(tab.columnChecks && tab.columnChecks[colName]) ? tab.columnChecks[colName] : [];
+  tab._pendingChecks = { ...(tab._pendingChecks || {}), [colName]: [...cur] };
+  tab._pendingLike = { ...(tab._pendingLike || {}), [colName]: (tab.columnFilters && tab.columnFilters[colName]) || '' };
+  tab._openFilterCol = colName;
+  preserveGridScroll(() => renderContent());
+  // preventScroll：焦点不触发浏览器自动滚动（面板就在点击位置，无需滚动）
+  const input = document.querySelector(`[data-col-input-field="${cssEscape(colName)}"]`);
+  if (input) { input.focus({ preventScroll: true }); input.select(); }
+}
+
+// 关闭并丢弃 pending（用于 ESC / 点击外部 / 再次点 ⌕）
+function closeFilterPanelDiscard(tab) {
+  if (!tab || !tab._openFilterCol) return false;
+  tab._openFilterCol = null;
+  preserveGridScroll(() => renderContent());
+  return true;
+}
+
+// 轻量关闭：只移除悬浮面板节点 + 复位 ⌕ 图标，不重渲染表格。
+// 用于滚动/resize 场景——fixed 面板不跟随列头，位置已错位必须关，
+// 但滚动是高频事件，走全表重渲染（无限模式可能几千行）会卡顿。
+function closeFilterPanelLight() {
+  const tab = getActiveDataTab();
+  const wraps = document.querySelectorAll('body > .col-filter-input-wrap');
+  if (!wraps.length && !(tab && tab._openFilterCol)) return;
+  wraps.forEach(el => el.remove());
+  if (!tab || !tab._openFilterCol) return;
+  const col = tab._openFilterCol;
+  tab._openFilterCol = null;
+  const btn = document.querySelector(`.col-filter-toggle[data-col-toggle="${cssEscape(col)}"]`);
+  if (btn) btn.classList.remove('is-open');
+}
+
+// 读取某列当前 pending 勾选数组（不存在则从已提交值初始化）
+function pendingChecksOf(tab, colName) {
+  if (!tab._pendingChecks) tab._pendingChecks = {};
+  if (!Array.isArray(tab._pendingChecks[colName])) {
+    const cur = Array.isArray(tab.columnChecks && tab.columnChecks[colName]) ? tab.columnChecks[colName] : [];
+    tab._pendingChecks[colName] = [...cur];
+  }
+  return tab._pendingChecks[colName];
+}
+
+// 读取某列当前 pending 模糊词（不存在则从已提交值初始化）
+function pendingLikeOf(tab, colName) {
+  if (!tab._pendingLike) tab._pendingLike = {};
+  if (typeof tab._pendingLike[colName] !== 'string') {
+    tab._pendingLike[colName] = (tab.columnFilters && tab.columnFilters[colName]) || '';
+  }
+  return tab._pendingLike[colName];
+}
+
+// 按关键词过滤面板候选词显示（纯 DOM，不触发查询）
+function filterPanelOptions(colName, q) {
+  const wrap = document.querySelector(`[data-col-input="${cssEscape(colName)}"]`);
+  if (!wrap) return;
+  const s = (q || '').trim().toLowerCase();
+  wrap.querySelectorAll('.col-filter-option').forEach(o => {
+    const v = (o.dataset.val || '').toLowerCase();
+    o.style.display = (!s || v.includes(s)) ? '' : 'none';
+  });
+}
+
+// 刷新面板内「已选 N」计数 + 同步 checkbox checked 态（与 pending 数组保持一致）
+function refreshPanelCount(tab, colName) {
+  const wrap = document.querySelector(`[data-col-input="${cssEscape(colName)}"]`);
+  if (!wrap) return;
+  const arr = pendingChecksOf(tab, colName);
+  wrap.querySelectorAll('.col-filter-option').forEach(o => {
+    const val = o.hasAttribute('data-isnull') ? null : o.dataset.val;
+    const cb = o.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = arr.some(v => v === val);
+  });
+  const tools = wrap.querySelector('.col-filter-tools');
+  if (!tools) return;
+  const old = tools.querySelector('.col-filter-count');
+  const html = arr.length ? `<span class="col-filter-count">已选 ${arr.length}</span>` : '';
+  if (old) {
+    if (html) old.outerHTML = html;
+    else old.remove();
+  } else if (html) {
+    const confirmBtn = tools.querySelector('[data-col-confirm]');
+    if (confirmBtn) confirmBtn.insertAdjacentHTML('beforebegin', html);
+    else tools.insertAdjacentHTML('beforeend', html);
+  }
+}
+
+// 点击交互：toggle / × / 全选 / 清空勾选 / 确认 / 列头切换
+// （挂 document：悬浮面板在 body 下，事件不再经过 contentArea）
+document.addEventListener('click', (e) => {
+  // 切换按钮（⌕）→ 打开或关闭面板（关闭时丢弃 pending）
+  const toggle = e.target.closest('[data-col-toggle]');
+  if (toggle) {
+    const colName = toggle.dataset.colToggle;
+    const tab = getActiveDataTab();
+    if (tab) {
+      if (tab._openFilterCol === colName) closeFilterPanelDiscard(tab);
+      else setFilterPanelOpen(tab, colName);
+    }
+    e.stopPropagation();
+    return;
+  }
+  // 列头清除按钮（×）→ 直接清已提交筛选（快捷路径，不开面板）
+  const clear = e.target.closest('[data-col-clear]');
+  if (clear) {
+    const colName = clear.dataset.colClear;
+    const tab = getActiveDataTab();
+    if (tab) {
+      const nf = { ...(tab.columnFilters || {}) }; delete nf[colName]; tab.columnFilters = nf;
+      const nc = { ...(tab.columnChecks || {}) }; delete nc[colName]; tab.columnChecks = nc;
+      // 一并清掉 pending，避免下次打开面板残留旧 pending
+      if (tab._pendingChecks) { const pc = { ...tab._pendingChecks }; delete pc[colName]; tab._pendingChecks = pc; }
+      if (tab._pendingLike) { const pl = { ...tab._pendingLike }; delete pl[colName]; tab._pendingLike = pl; }
+      resetTabLoading(tab);
+      // 包裹 preserveGridScroll：renderContent 重建表格会重置横向滚动位置，
+      // 需保留当前列位置（避免清除筛选后跳回第一列）
+      preserveGridScroll(() => renderContent());
+    }
+    e.stopPropagation();
+    return;
+  }
+  // 全选 → 把所有「可见」候选加入 pending（不写入 columnChecks）
+  const selectAll = e.target.closest('[data-col-selectall]');
+  if (selectAll) {
+    const colName = selectAll.dataset.colSelectall;
+    const tab = getActiveDataTab();
+    if (tab) {
+      const wrap = document.querySelector(`[data-col-input="${cssEscape(colName)}"]`);
+      const opts = wrap ? [...wrap.querySelectorAll('.col-filter-option')] : [];
+      const arr = pendingChecksOf(tab, colName);
+      opts.forEach(o => {
+        if (o.style.display === 'none') return;
+        const val = o.hasAttribute('data-isnull') ? null : o.dataset.val;
+        if (!arr.some(v => v === val)) arr.push(val);
+      });
+      refreshPanelCount(tab, colName);
+    }
+    e.stopPropagation();
+    return;
+  }
+  // 清空勾选 → pending 数组清空（不动模糊词）
+  const clearChecks = e.target.closest('[data-col-clearchecks]');
+  if (clearChecks) {
+    const colName = clearChecks.dataset.colClearchecks;
+    const tab = getActiveDataTab();
+    if (tab) {
+      pendingChecksOf(tab, colName).length = 0;
+      refreshPanelCount(tab, colName);
+    }
+    e.stopPropagation();
+    return;
+  }
+  // 确认 → pending 写入 columnChecks/columnFilters，关闭面板，触发筛选
+  const confirm = e.target.closest('[data-col-confirm]');
+  if (confirm) {
+    const colName = confirm.dataset.colConfirm;
+    const tab = getActiveDataTab();
+    if (tab) {
+      const arr = pendingChecksOf(tab, colName);
+      const like = pendingLikeOf(tab, colName).trim();
+      if (arr.length) {
+        tab.columnChecks = { ...(tab.columnChecks || {}), [colName]: [...arr] };
       } else {
-        const maxCols = Math.max(
-          ...lines.slice(0, 5).map((l) => l.split("\t").length),
-        );
-        for (let c = 1; c <= maxCols; c++) {
-          headers.push(`列 ${c}`);
-        }
-        startRowIdx = 0;
+        const next = { ...(tab.columnChecks || {}) }; delete next[colName]; tab.columnChecks = next;
       }
-
-      // 使用数组拼接替代字符串累加
-      let theadRows = ["<tr>"];
-      for (let h = 0; h < headers.length; h++) {
-        theadRows.push(
-          `<th class="border-b border-r border-gray-200 dark:border-gray-600 px-3 py-1.5 font-semibold text-gray-700 dark:text-gray-200 text-left bg-gray-50 dark:bg-gray-700 shadow-sm sticky top-0">${headers[h]}</th>`,
-        );
-      }
-      theadRows.push("</tr>");
-      thead.innerHTML = theadRows.join("");
-
-      // DOM 限流保护：截断过长展示数据
-      const isTruncated = lines.length > MAX_RENDER_ROWS;
-      const displayLines = isTruncated
-        ? lines.slice(0, MAX_RENDER_ROWS)
-        : lines;
-
-      let tbodyLines = new Array(displayLines.length - startRowIdx);
-      let validRows = lines.length - startRowIdx;
-
-      for (let i = startRowIdx; i < displayLines.length; i++) {
-        const cols = displayLines[i].split("\t");
-        let trHtml =
-          '<tr class="hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors">';
-        for (let j = 0; j < headers.length; j++) {
-          const cellVal = cols[j] !== undefined ? cols[j].trim() : "";
-          trHtml += `<td class="border-b border-r border-gray-100 dark:border-gray-700 px-3 py-1.5 text-gray-700 dark:text-gray-200 whitespace-nowrap">${cellVal}</td>`;
-        }
-        trHtml += "</tr>";
-        tbodyLines[i - startRowIdx] = trHtml;
-      }
-
-      tbody.innerHTML = tbodyLines.join("");
-      const truncNote = isTruncated
-        ? ` (为保证性能，仅渲染前${MAX_RENDER_ROWS}行)`
-        : "";
-      document.getElementById("filteredTextCount").innerText =
-        `${validRows}${truncNote}`;
-    }
-
-    // 事件绑定
-    document
-      .getElementById("btnParseNear")
-      .addEventListener("click", () => executeExtraction("near"));
-    document
-      .getElementById("btnParseRemote")
-      .addEventListener("click", () => executeExtraction("remote"));
-
-    // 单击复制日期的通用逻辑
-    document
-      .getElementById("extractedDateDisplay")
-      .addEventListener("click", function () {
-        const dateTextEl = this.querySelector(".date-text");
-        const text = dateTextEl ? dateTextEl.textContent : "";
-        if (!text) return;
-
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.opacity = "0";
-        document.body.appendChild(textArea);
-        textArea.select();
-
-        try {
-          document.execCommand("copy");
-          const copyIcon = this.querySelector(".copy-icon");
-          const checkIcon = this.querySelector(".check-icon");
-          if (copyIcon && checkIcon) {
-            copyIcon.classList.add("hidden");
-            checkIcon.classList.remove("hidden");
-            setTimeout(() => {
-              copyIcon.classList.remove("hidden");
-              checkIcon.classList.add("hidden");
-            }, 1200);
-          }
-        } catch (err) {
-          alert("复制失败，请手动选择复制");
-        }
-        document.body.removeChild(textArea);
-      });
-
-    // 【核心引擎】
-    function executeExtraction(mode) {
-      if (!sqlEngine) return alert("引擎尚未就绪，请稍候");
-
-      currentMode = mode;
-      const { dict, order, label } = CONFIG[currentMode];
-
-      const selectedTables = Array.from(
-        document.querySelectorAll(".table-checkbox:checked"),
-      ).map((cb) => cb.value);
-      const startTime = document.getElementById("startTime").value.trim();
-      const endTime = document.getElementById("endTime").value.trim();
-      const aproCode = document.getElementById("aproCode").value.trim();
-      let pasteText = document.getElementById("pasteArea").value.trim();
-
-      // 第一道门：无数据来源（未勾选数据表 且 未手动粘贴）时，直接提示，不再继续
-      if (selectedTables.length === 0 && !pasteText) {
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="text-red-500 font-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
-        renderEmptyTable(currentMode);
-        return;
-      }
-
-      // 查询条件必填：开始时间 / 结束时间 / 机位号 三者都需填写，缺一不可
-      if (!startTime || !endTime || !aproCode) {
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="text-red-500 font-bold">请完整填写查询条件（开始时间、结束时间、机位号 均需填写）</span>`;
-        renderEmptyTable(currentMode);
-        return;
-      }
-
-      // 记录本次提取实际用到的数据表名与过滤条件（供"复制镜头编号"按钮使用）
-      lastUsedTables = selectedTables.slice();
-      lastExtractionFilter = { startTime, endTime, aproCode };
-
-      document.getElementById("queryStatus").innerHTML =
-        `<span class="text-blue-500 dark:text-blue-400">正在解析并合并数据流，请稍候</span>`;
-
-      // 使用 setTimeout 释放主线程以渲染 loading 状态
-      setTimeout(() => {
-        let temporaryMap = {};
-        let allRawResults = [];
-        let allColumns = new Set();
-        let hasDataParsed = false;
-        let appidExcluded = 0; // 因 appid 与当前提取模式矛盾而被排除的行数
-        let dbFilteredRawDataForTextarea = [];
-        let dbFilteredColumns = new Set();
-
-        if (selectedTables.length > 0) {
-          databases.forEach(({ name, db }) => {
-            selectedTables.forEach((tableName) => {
-              try {
-                let conditions = [];
-                if (startTime)
-                  conditions.push(`report_time >= '${startTime}'`);
-                if (endTime) conditions.push(`report_time <= '${endTime}'`);
-                if (aproCode) conditions.push(`aproCode = '${aproCode}'`);
-                const whereClause =
-                  conditions.length > 0
-                    ? `WHERE ${conditions.join(" AND ")}`
-                    : "";
-
-                const sqlFull = `SELECT * FROM "${tableName}" ${whereClause}`;
-                const resultFull = db.exec(sqlFull);
-                if (resultFull.length > 0) {
-                  const cols = resultFull[0].columns;
-                  cols.forEach((c) => dbFilteredColumns.add(c));
-                  resultFull[0].values.forEach((row) => {
-                    let rowObj = {};
-                    cols.forEach((col, idx) => {
-                      rowObj[col] = row[idx];
-                    });
-                    dbFilteredRawDataForTextarea.push(rowObj);
-                  });
-                }
-
-                const sqlRaw = `SELECT * FROM "${tableName}"`;
-                const resultRaw = db.exec(sqlRaw);
-                if (resultRaw.length > 0) {
-                  const colsRaw = resultRaw[0].columns;
-                  colsRaw.forEach((col) => allColumns.add(col));
-                  resultRaw[0].values.forEach((row) => {
-                    let rowObj = {
-                      _source_db: name,
-                      _source_table: tableName,
-                    };
-                    colsRaw.forEach((col, idx) => {
-                      rowObj[col] = row[idx];
-                    });
-                    allRawResults.push(rowObj);
-                  });
-                }
-              } catch (e) {
-                console.warn("DB Read Error:", e.message);
-              }
-            });
-          });
-        }
-
-        // 把 DB 命中数据拼成 TSV：仅用于本次解析，绝不写回粘贴区，
-        // 否则取消勾选/未手动粘贴时粘贴区会残留旧数据，被误判为“有输入”而重复出内容。
-        let dbTsvString = "";
-        if (dbFilteredRawDataForTextarea.length > 0) {
-          const colsArr = Array.from(dbFilteredColumns);
-          const priorityCols = ["nodeCode", "report_time", "aproCode"];
-          let filteredColsArr = colsArr.filter(
-            (c) => !priorityCols.includes(c),
-          );
-          const finalColsArr = [
-            ...priorityCols.filter((c) => dbFilteredColumns.has(c)),
-            ...filteredColsArr,
-          ];
-
-          // 优化大文本拼接速度
-          let dbTsvLines = [finalColsArr.join("\t")];
-          for (let i = 0; i < dbFilteredRawDataForTextarea.length; i++) {
-            const row = dbFilteredRawDataForTextarea[i];
-            const lineVals = new Array(finalColsArr.length);
-            for (let j = 0; j < finalColsArr.length; j++) {
-              lineVals[j] = row[finalColsArr[j]] || "";
-            }
-            dbTsvLines.push(lineVals.join("\t"));
-          }
-
-          dbTsvString = dbTsvLines.join("\n") + "\n";
-          // 把 DB 命中数据一并回显到“数据粘贴与展示区”（仅展示，不写回 pasteArea）
-          renderPasteTableGrid(dbTsvString);
-        }
-
-        // 解析文本 = 用户粘贴内容 + DB 命中数据；DB 数据只在内存参与本次解析，不污染粘贴区
-        const parseText = (pasteText ? pasteText + "\n" : "") + dbTsvString;
-
-        if (parseText) {
-          const lines = parseText.split("\n");
-          const headers = lines[0].split("\t").map((h) => h.trim());
-          let globalCodeIdx = headers.indexOf("nodeCode");
-          let globalTimeIdx = headers.indexOf("report_time");
-          // appid 列：remote=远机位，near=近机位（权威判定依据）
-          // 数据特性：数据库导入时 appid 必为 near/remote（不会为空）→ 等同于严格过滤；
-          // 仅下方粘贴区手工粘贴的数据 appid 可能为空 → 空值时回退原字典匹配，避免提取不到
-          let globalAppidIdx = headers.indexOf("appid");
-
-          let inferredCodeIdx = -1;
-          let inferredTimeIdx = -1;
-
-          // 全局智能列定位推断（解决无表头时数字被模糊兜底误杀问题）
-          if (globalCodeIdx === -1 || globalTimeIdx === -1) {
-            for (let i = 0; i < lines.length; i++) {
-              let sampleLine = lines[i].trim();
-              if (!sampleLine) continue;
-
-              let sampleCols = sampleLine.split("\t");
-              if (sampleCols.length > 1) {
-                let tIdx = sampleCols.findIndex((c) => TIME_REGEX.test(c));
-                if (tIdx !== -1) {
-                  if (
-                    tIdx + 1 < sampleCols.length &&
-                    dict[sampleCols[tIdx + 1].trim()]
-                  ) {
-                    inferredTimeIdx = tIdx;
-                    inferredCodeIdx = tIdx + 1;
-                    break;
-                  }
-                  if (tIdx - 1 >= 0 && dict[sampleCols[tIdx - 1].trim()]) {
-                    inferredTimeIdx = tIdx;
-                    inferredCodeIdx = tIdx - 1;
-                    break;
-                  }
-                }
-              }
-            }
-          }
-
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-
-            let matchedCode = null;
-            let matchedTime = null;
-
-            if (globalCodeIdx !== -1 && globalTimeIdx !== -1 && i > 0) {
-              const cols = line.split("\t");
-              if (cols.length > Math.max(globalCodeIdx, globalTimeIdx)) {
-                // 先用 appid 做近/远机位权威判定：仅当该字段明确为 near/remote 时才参与过滤，
-                // 为空或无法识别时保持原有字典匹配行为，避免旧数据提取不到
-                if (globalAppidIdx !== -1) {
-                  const appidVal = String(
-                    cols[globalAppidIdx] ?? "",
-                  )
-                    .trim()
-                    .toLowerCase();
-                  if (appidVal === "near" || appidVal === "remote") {
-                    if (appidVal !== mode) {
-                      appidExcluded++;
-                      continue;
-                    }
-                  }
-                }
-                let code = cols[globalCodeIdx].trim();
-                let rTime = cols[globalTimeIdx].trim();
-                if (dict[code] && rTime) {
-                  matchedCode = code;
-                  let tMatch = rTime.match(TIME_REGEX);
-                  if (tMatch) matchedTime = tMatch[0];
-                }
-              }
-            } else if (inferredCodeIdx !== -1 && inferredTimeIdx !== -1) {
-              const cols = line.split("\t");
-              if (cols.length > Math.max(inferredCodeIdx, inferredTimeIdx)) {
-                let code = cols[inferredCodeIdx].trim();
-                let rTime = cols[inferredTimeIdx].trim();
-                if (dict[code] && rTime) {
-                  matchedCode = code;
-                  let tMatch = rTime.match(TIME_REGEX);
-                  if (tMatch) matchedTime = tMatch[0];
-                }
-              }
-            } else if (globalCodeIdx === -1) {
-              let tMatch = line.match(TIME_REGEX);
-              if (tMatch) {
-                matchedTime = tMatch[0];
-                const tokens = line.split(SPLIT_REGEX);
-                for (let j = 0; j < tokens.length; j++) {
-                  let cleanToken = tokens[j].trim();
-                  if (
-                    cleanToken &&
-                    dict[cleanToken] &&
-                    cleanToken !== matchedTime
-                  ) {
-                    matchedCode = cleanToken;
-                    break;
-                  }
-                }
-              }
-            }
-
-            if (matchedCode && matchedTime) {
-              if (!temporaryMap[matchedCode]) {
-                temporaryMap[matchedCode] = new Set();
-              }
-              temporaryMap[matchedCode].add(matchedTime);
-              hasDataParsed = true;
-            }
-          }
-        }
-
-        if (!hasDataParsed) {
-          if (selectedTables.length === 0 && !pasteText) {
-            document.getElementById("queryStatus").innerHTML =
-              `<span class="text-red-500 font-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
-          } else {
-            document.getElementById("queryStatus").innerHTML =
-              `<span class="text-orange-500 font-bold">未在数据中提取到匹配【${label}】的有效节点</span>`;
-          }
-          // 无数据时清空结果表，避免“未输入却仍显示上一次内容”的观感
-          renderEmptyTable(currentMode);
-          return;
-        }
-
-        finalCleanedTimes = {};
-        let hitCount = 0;
-        let theadRows = ["<tr>"];
-        let tbodyRows = ["<tr>"];
-
-        let extractedDate = "";
-
-        order.forEach((code) => {
-          const timesSet = temporaryMap[code];
-          const sortedTimes = timesSet
-            ? Array.from(timesSet).sort((a, b) => a.localeCompare(b))
-            : [];
-          let finalSelectedTime = "";
-          let displayHtml = "-";
-
-          // 【新增点】：悄悄提取 03 节点的第一条记录的日期部分
-          if (code === "03" && sortedTimes.length > 0) {
-            const firstTimeStr = sortedTimes[0];
-            if (firstTimeStr.includes(" ")) {
-              extractedDate = firstTimeStr.split(" ")[0];
-            }
-          }
-
-          if (sortedTimes.length > 0) {
-            hitCount++;
-            const allTimes = sortedTimes.map((ts) =>
-              ts.includes(" ") ? ts.split(" ")[1] : ts,
-            );
-
-            let timesToDisplay = allTimes;
-            // 行李车过滤规则：入位取首，离开取末
-            if (code === "baggage_start") {
-              timesToDisplay = [allTimes[0]];
-            } else if (code === "baggage_end") {
-              timesToDisplay = [allTimes[allTimes.length - 1]];
-            }
-
-            finalSelectedTime = timesToDisplay.join("\n");
-            finalCleanedTimes[code] = finalSelectedTime;
-
-            if (timesToDisplay.length === 1) {
-              displayHtml = timesToDisplay[0];
-            } else if (timesToDisplay.length === 2) {
-              displayHtml = timesToDisplay.join("<br>");
-            } else {
-              displayHtml = `
-              <details class="cursor-pointer group">
-                <summary class="outline-none list-none text-center" style="list-style: none;">
-                  <div>${timesToDisplay[0]}</div>
-                  <div class="text-[10px] text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 rounded px-1.5 py-0.5 mt-1 inline-block group-open:hidden hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">▼ 展开余下 ${timesToDisplay.length - 1} 条</div>
-                  <div class="text-[10px] text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 rounded px-1.5 py-0.5 mt-1 hidden group-open:inline-block hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">▲ 收起</div>
-                </summary>
-                <div class="mt-1 pt-1 border-t border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 leading-relaxed">
-                  ${timesToDisplay.slice(1).join("<br>")}
-                </div>
-              </details>
-            `;
-            }
-          } else {
-            finalCleanedTimes[code] = "";
-          }
-
-          theadRows.push(`
-          <th class="border-r border-b border-gray-200 dark:border-gray-600 px-3 py-2 font-normal bg-gray-50 dark:bg-gray-700 min-w-[100px] sm:min-w-[120px]">
-            <div class="font-bold text-gray-800 dark:text-gray-200">${dict[code]}</div>
-            <div class="text-gray-500 dark:text-gray-300 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
-          </th>`);
-          tbodyRows.push(
-            `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 align-middle font-mono font-medium">${displayHtml}</td>`,
-          );
-        });
-
-        theadRows.push("</tr>");
-        tbodyRows.push("</tr>");
-
-        // 更新 03 节点日期 UI
-        const dateDisplayEl = document.getElementById("extractedDateDisplay");
-        const dateTextEl = dateDisplayEl.querySelector(".date-text");
-        if (extractedDate) {
-          if (dateTextEl) dateTextEl.textContent = extractedDate;
-          dateDisplayEl.classList.remove("hidden");
-        } else {
-          dateDisplayEl.classList.add("hidden");
-          if (dateTextEl) dateTextEl.textContent = "";
-        }
-
-        document.getElementById("exactTableHeader").innerHTML =
-          theadRows.join("");
-        document.getElementById("exactTableBody").innerHTML =
-          tbodyRows.join("");
-
-        if (selectedTables.length > 0) {
-          renderRawTable(allRawResults, Array.from(allColumns));
-        } else {
-          document.getElementById("rawTableHeader").innerHTML = "";
-          document.getElementById("rawTableBody").innerHTML = "";
-          document.getElementById("rawCount").innerText = "0";
-          document.getElementById("rawTruncNote").classList.add("hidden");
-        }
-
-        const appidNote =
-          appidExcluded > 0
-            ? ` <span class="text-gray-500 dark:text-gray-400">（已按 appid=${mode} 过滤掉 ${appidExcluded} 行异类数据）</span>`
-            : "";
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="text-${mode === "near" ? "blue" : "sky"}-600 dark:text-${mode === "near" ? "blue" : "sky"}-400 font-bold">[${label}]</span> 解析完毕，提取到 <span class="text-red-600 dark:text-red-400 font-bold">${hitCount}</span> 个节点${appidNote}`;
-      }, 50); // 让出主线程完毕
-    }
-
-    function renderRawTable(data, columns) {
-      const isTruncated = data.length > MAX_RENDER_ROWS;
-      const displayData = isTruncated ? data.slice(0, MAX_RENDER_ROWS) : data;
-      document.getElementById("rawCount").innerText = `${data.length}`;
-      const rawTruncNote = document.getElementById("rawTruncNote");
-      if (isTruncated) {
-        rawTruncNote.textContent = `为保证性能，仅渲染前${MAX_RENDER_ROWS}条`;
-        rawTruncNote.classList.remove("hidden");
+      if (like) {
+        tab.columnFilters = { ...(tab.columnFilters || {}), [colName]: like };
       } else {
-        rawTruncNote.classList.add("hidden");
+        const next = { ...(tab.columnFilters || {}) }; delete next[colName]; tab.columnFilters = next;
       }
-
-      const thead = document.getElementById("rawTableHeader");
-      const tbody = document.getElementById("rawTableBody");
-
-      if (data.length === 0) {
-        thead.innerHTML = "";
-        tbody.innerHTML = "";
-        return;
+      tab._openFilterCol = null;
+      resetTabLoading(tab);
+      preserveGridScroll(() => renderContent());
+    }
+    e.stopPropagation();
+    return;
+  }
+  // 输入框内清空按钮（×）→ 清空输入框、保留面板打开、不触发筛选
+  const clearInputBtn = e.target.closest('[data-col-clear-input]');
+  if (clearInputBtn) {
+    const colName = clearInputBtn.dataset.colClearInput;
+    const tab = getActiveDataTab();
+    if (tab) {
+      const input = document.querySelector(`.col-filter-input[data-col-input-field="${cssEscape(colName)}"]`);
+      if (input) {
+        input.value = '';
+        tab._pendingLike[colName] = '';
+        const row = clearInputBtn.closest('.col-filter-input-row');
+        if (row) row.classList.remove('has-value');
+        filterPanelOptions(colName, '');
       }
-
-      const expectedOrder = [
-        "id",
-        "appid",
-        "taskid",
-        "aproCode",
-        "camera",
-        "report_time",
-        "nodeCode",
-        "visualId",
-        "image_path",
-        "info",
-        "create_time",
-      ];
-      let finalColumns = ["_source_db", "_source_table"];
-      expectedOrder.forEach((col) => {
-        if (columns.includes(col)) finalColumns.push(col);
-      });
-      columns.forEach((col) => {
-        if (!expectedOrder.includes(col)) finalColumns.push(col);
-      });
-
-      let theadRows = ["<tr>"];
-      finalColumns.forEach((col) => {
-        let title =
-          col === "_source_db"
-            ? "来源库"
-            : col === "_source_table"
-              ? "表名"
-              : col;
-        theadRows.push(
-          `<th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 whitespace-nowrap border-b border-gray-200 dark:border-gray-600">${title}</th>`,
-        );
-      });
-      theadRows.push("</tr>");
-      thead.innerHTML = theadRows.join("");
-
-      let tbodyLines = new Array(displayData.length);
-      for (let i = 0; i < displayData.length; i++) {
-        const row = displayData[i];
-        let trHtml =
-          '<tr class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">';
-        for (let j = 0; j < finalColumns.length; j++) {
-          let cellData = row[finalColumns[j]];
-          if (cellData === null || cellData === undefined) {
-            trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-400 dark:text-gray-500">-</td>`;
-          } else {
-            const textStr = String(cellData);
-            if (textStr.length > 40) {
-              trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700 dark:text-gray-200" title="${textStr}">${textStr.substring(0, 40)}...</td>`;
-            } else {
-              trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700 dark:text-gray-200">${textStr}</td>`;
-            }
-          }
-        }
-        trHtml += "</tr>";
-        tbodyLines[i] = trHtml;
-      }
-      tbody.innerHTML = tbodyLines.join("");
     }
-
-    // 清空重置
-    document.getElementById("btnClear").addEventListener("click", () => {
-      finalCleanedTimes = {};
-      lastUsedTables = []; // 同步清空本次提取用到的表记录
-      lastExtractionFilter = null; // 同步清空过滤条件快照
-      document.getElementById("pasteArea").value = "";
-
-      document.querySelectorAll(".table-checkbox").forEach((cb) => {
-        cb.checked = true;
-      });
-
-      renderEmptyTable();
-
-      document.getElementById("pastePlaceholder").classList.remove("hidden");
-      document.getElementById("pasteVisualTable").classList.add("hidden");
-      document.getElementById("pasteVisualThead").innerHTML = "";
-      document.getElementById("pasteVisualTbody").innerHTML = "";
-      document.getElementById("filteredTextCount").innerText = "0";
-
-      // 清空日期 UI
-      const resetDateDisplay = document.getElementById(
-        "extractedDateDisplay",
-      );
-      resetDateDisplay.classList.add("hidden");
-      const resetDateText = resetDateDisplay.querySelector(".date-text");
-      if (resetDateText) resetDateText.textContent = "";
-
-      document.getElementById("queryStatus").innerText = "页面已全部清空重置";
-    });
-
-    // 强力复制
-    document.getElementById("btnCopy").addEventListener("click", () => {
-      if (Object.keys(finalCleanedTimes).length === 0)
-        return alert("没有可复制的数据，请先执行提取");
-
-      const { order } = CONFIG[currentMode];
-      let text = order
-        .map((code) => {
-          let val = finalCleanedTimes[code] || "";
-          if (val.includes("\n")) {
-            return `"${val}"`;
-          }
-          return val;
-        })
-        .join("\t");
-
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      textArea.style.position = "fixed";
-      textArea.style.top = "0";
-      textArea.style.left = "0";
-      textArea.style.opacity = "0";
-
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-
-      try {
-        const successful = document.execCommand("copy");
-        if (successful) {
-          document.getElementById("queryStatus").innerHTML =
-            `<span class="text-green-600 dark:text-green-400 font-bold">时间行已成功复制，快去粘贴吧</span>`;
-        } else {
-          alert("写入失败，请手动框选结果复制");
-        }
-      } catch (err) {
-        alert("当前浏览器环境受限，请手动框选");
-      }
-
-      document.body.removeChild(textArea);
-    });
-
-    // CSV导出
-    document.getElementById("btnExport").addEventListener("click", () => {
-      if (Object.keys(finalCleanedTimes).length === 0)
-        return alert("没有可导出的数据，请先执行提取");
-
-      const { order, dict, label } = CONFIG[currentMode];
-      let csv = "\uFEFF";
-
-      csv += order.map((code) => `"${dict[code]}\n${code}"`).join(",") + "\n";
-      csv += order
-        .map((code) => `"${finalCleanedTimes[code] || ""}"`)
-        .join(",");
-
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `航班保障提取(${label})_${new Date().getTime()}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      document.getElementById("queryStatus").innerHTML =
-        `<span class="text-purple-600 dark:text-purple-400 font-bold">CSV数据已成功导出</span>`;
-    });
-
-    // 复制镜头编号（一行一个）排序规则：
-    //   含 "03" 且同表还有摆渡车(052/27)或客舱门(06/29) → 最前；仅含 "03"（无摆渡车/客舱门）→ 次前（有 03 其他规则一律不生效）
-    //   有摆渡车(052/27)、客舱门(06/29) 或 客梯车(051/272) 且【没有 03】的表 → 排最后
-    //   其余表 → 排在中间
-    // 各组内部保持表的原始顺序，不做任何时间排序。
-    document
-      .getElementById("btnCopyTableNums")
-      .addEventListener("click", () => {
-        if (!lastUsedTables || lastUsedTables.length === 0) {
-          return alert("请先执行节点提取，再复制镜头编号");
-        }
-        if (!sqlEngine) return alert("引擎尚未就绪，请稍候");
-
-        const aproCodeVal = document.getElementById("aproCode").value.trim();
-
-        // 命名规则：xxx_aproCode_xxxxx。aproCode 是下划线分隔的「整段」，必须精确相等匹配，
-        // 严禁子串匹配（否则 90903 会被 903 误匹配进来）。复制的镜头编号必须严格来自该 aproCode 的表。
-        let matchedTables = [];
-        if (aproCodeVal) {
-          matchedTables = lastUsedTables.filter((tn) =>
-            tn.split("_").some((seg) => seg.trim() === aproCodeVal),
-          );
-        } else {
-          // 无 aproCode 输入时，按命名规则 xxx_aproCode_xxxxx 兜底匹配（至少两段下划线）
-          matchedTables = lastUsedTables.filter(
-            (tn) => (tn.match(/_/g) || []).length >= 2,
-          );
-        }
-
-        if (matchedTables.length === 0) {
-          return alert(
-            "未找到包含 aproCode 的数据表，请检查表名命名或 aproCode 输入",
-          );
-        }
-
-        // 扫描整张表收集 nodeCode 特征（不再套用提取时间过滤，避免摆渡车/客舱门/客梯车节点因时间超出范围而被漏判）
-        const infos = matchedTables.map((tn) => {
-          let has03 = false,
-            hasBus = false,
-            hasDoor = false,
-            hasStair = false;
-          databases.forEach(({ db }) => {
-            try {
-              const res = db.exec(`SELECT nodeCode FROM "${tn}"`);
-              if (res.length > 0) {
-                const cols = res[0].columns;
-                const iCode = cols.indexOf("nodeCode");
-                if (iCode === -1) return;
-                res[0].values.forEach((row) => {
-                  const code = String(
-                    row[iCode] === null || row[iCode] === undefined
-                      ? ""
-                      : row[iCode],
-                  ).trim();
-                  // 03：永远排第一（无论同表是否还有摆渡车/客舱门，其他规则对其不生效）
-                  if (code === "03" || code.split("/").includes("03"))
-                    has03 = true;
-                  // 摆渡车：052（到港摆渡车到位）/ 27（离港摆渡车到位）
-                  if (
-                    ["052", "27", "52"].some((t) =>
-                      code.split("/").includes(t),
-                    )
-                  )
-                    hasBus = true;
-                  // 客舱门：06（开客舱门）/ 29（关客舱门）
-                  if (["06", "29"].some((t) => code.split("/").includes(t)))
-                    hasDoor = true;
-                  // 客梯车：051（客梯车对接）/ 272（客梯车撤离），并入尾组特征
-                  if (["051", "272"].some((t) => code.split("/").includes(t)))
-                    hasStair = true;
-                });
-              }
-            } catch (e) {
-              /* 该库中无此表等情况，忽略 */
-            }
-          });
-          return { tn, has03, hasTailFeat: hasBus || hasDoor || hasStair };
-        });
-
-        // 分组排序规则（不做任何时间排序，各组保持表的原始顺序）：
-        // 1) 含 03 且同表有摆渡车(052/27)或客舱门(06/29) → 最前组（比仅 03 更靠前）
-        // 2) 仅含 03（同表无摆渡车/客舱门）→ 次前组
-        // 3) 不含 03 但有摆渡车(052/27)、客舱门(06/29) 或 客梯车(051/272) 任一 → 尾组排最后
-        // 4) 其余 → 中间组
-        const firstBusGroup = [],
-          firstGroup = [],
-          middleGroup = [],
-          lastGroup = [];
-        infos.forEach((it) => {
-          if (it.has03 && it.hasTailFeat)
-            firstBusGroup.push(it); // 03 + 摆渡车/客舱门 同表 → 最最前
-          else if (it.has03)
-            firstGroup.push(it); // 仅 03（同表无摆渡车/客舱门）→ 次前
-          else if (it.hasTailFeat) lastGroup.push(it);
-          else middleGroup.push(it);
-        });
-
-        const ordered = [
-          ...firstBusGroup,
-          ...firstGroup,
-          ...middleGroup,
-          ...lastGroup,
-        ];
-
-        // 提取每个表名末尾的数字（取最后一个下划线后的连续数字段；若无下划线则取表名末尾连续数字）
-        const tailNums = [];
-        ordered.forEach((it) => {
-          const tn = it.tn;
-          const parts = tn.split("_");
-          let tail = parts[parts.length - 1];
-          const m = tail.match(/\d+/);
-          if (m) {
-            tailNums.push(m[0]);
-          } else {
-            // 兜底：从整个表名末尾抓连续数字
-            const fm = tn.match(/(\d+)$/);
-            if (fm) tailNums.push(fm[1]);
-          }
-        });
-
-        if (tailNums.length === 0) {
-          return alert("已匹配到表，但未在表名末尾解析出数字");
-        }
-
-        // 去重保序
-        const uniqNums = [];
-        const seen = new Set();
-        for (const n of tailNums) {
-          if (!seen.has(n)) {
-            seen.add(n);
-            uniqNums.push(n);
-          }
-        }
-
-        // 一行一个，换行分隔，便于粘贴到 Excel 单列
-        const text = uniqNums.join("\n");
-
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.top = "0";
-        textArea.style.left = "0";
-        textArea.style.opacity = "0";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-
-        try {
-          const successful = document.execCommand("copy");
-          if (successful) {
-            document.getElementById("queryStatus").innerHTML =
-              `<span class="text-amber-600 dark:text-amber-400 font-bold">已复制 ${uniqNums.length} 个镜头编号</span>`;
-          } else {
-            alert("写入失败，请手动复制");
-          }
-        } catch (err) {
-          alert("当前浏览器环境受限，请手动复制");
-        }
-        document.body.removeChild(textArea);
-      });
-  </script>
-
-  <!-- 返回主页图标按钮样式 -->
-  <style>
-    .home-back-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      color: #fff;
-      background: rgba(255, 255, 255, 0.16);
-      border: 1px solid transparent;
-      text-decoration: none;
-      flex-shrink: 0;
-      transition:
-        background 0.2s ease,
-        transform 0.2s ease;
-      -webkit-tap-highlight-color: transparent;
+    e.stopPropagation();
+    return;
+  }
+  // 面板内部其余点击（label/checkbox 等）不触发表头切换
+  if (e.target.closest('.col-filter-panel')) return;
+  // 点击表头列名（非按钮/输入框）→ 切换面板
+  const head = e.target.closest('th.col-head');
+  if (head) {
+    const colName = head.dataset.col;
+    const tab = getActiveDataTab();
+    if (tab) {
+      if (tab._openFilterCol === colName) closeFilterPanelDiscard(tab);
+      else setFilterPanelOpen(tab, colName);
     }
+  }
+});
 
-    .home-back-icon:hover {
-      background: rgba(255, 255, 255, 0.28);
-      transform: translateY(-1px);
-    }
+// checkbox 变化 → 操作 pending（不重渲染；挂 document 以覆盖悬浮面板）
+document.addEventListener('change', (e) => {
+  const cb = e.target.closest('[data-col-check]');
+  if (!cb) return;
+  const colName = cb.dataset.colCheck;
+  const tab = getActiveDataTab();
+  if (!tab) return;
+  const val = cb.hasAttribute('data-isnull') ? null : cb.value;
+  const arr = pendingChecksOf(tab, colName);
+  if (cb.checked) {
+    if (!arr.some(v => v === val)) arr.push(val);
+  } else {
+    const idx = arr.findIndex(v => v === val);
+    if (idx >= 0) arr.splice(idx, 1);
+  }
+  refreshPanelCount(tab, colName);
+});
 
-    .home-back-icon svg {
-      width: 18px;
-      height: 18px;
-      display: block;
-    }
+// 输入框 → ① 立即过滤候选词 ② 仅写 pending（不触发 SQL；挂 document 以覆盖悬浮面板）
+document.addEventListener('input', (e) => {
+  const input = e.target.closest('.col-filter-input');
+  if (!input) return;
+  const colName = input.dataset.colInputField;
+  const tab = getActiveDataTab();
+  if (!tab) return;
+  pendingLikeOf(tab, colName);   // 确保 pendingLike 已初始化
+  tab._pendingLike[colName] = input.value;
+  // 输入框有内容时才显示右侧 × 清空按钮；空内容时隐藏，避免压在边框线上
+  const row = input.closest('.col-filter-input-row');
+  if (row) row.classList.toggle('has-value', !!input.value);
+  filterPanelOptions(colName, input.value);
+});
 
-    .title-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 5px;
-    }
+// ESC 关闭面板（丢弃 pending）
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const tab = getActiveDataTab();
+  if (closeFilterPanelDiscard(tab)) e.preventDefault();
+});
 
-    .title-row h1 {
-      margin-bottom: 0;
-    }
-  </style>
+// 点击面板外部 → 关闭面板（丢弃 pending）
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.col-filter-panel')) return;
+  if (e.target.closest('[data-col-toggle]')) return;
+  if (e.target.closest('th.col-head')) return;
+  closeFilterPanelDiscard(getActiveDataTab());
+});
+
+// CSS.escape polyfill（极少数老浏览器缺失）
+function cssEscape(s) {
+  if (window.CSS && CSS.escape) return CSS.escape(s);
+  return String(s).replace(/[^a-zA-Z0-9_-]/g, c => '\\' + c);
+}
+
+// 悬浮筛选面板是 fixed 定位、不跟随列头：滚动导致列头移位后把面板重新对齐到列头当前位置。
+// 不能在错位时直接关闭：手机软键盘弹出会引发 resize + 页面滚动，面板若被关闭，
+// 用户会「还没来得及勾选/输入」就消失。重新对齐后面板持续可用（类似 Excel 筛选体验）。
+// scroll 事件不冒泡，必须用捕获阶段监听；面板内部滚动（候选列表）除外。
+document.addEventListener('scroll', (e) => {
+  const t = e.target;
+  if (t instanceof Element && t.closest('.col-filter-input-wrap')) return;
+  const tab = getActiveDataTab();
+  const wrap = document.querySelector('body > .col-filter-input-wrap');
+  if (!wrap || !tab || !tab._openFilterCol) return;
+  const th = document.querySelector(`th.col-head[data-col="${cssEscape(tab._openFilterCol)}"]`);
+  if (!th) { closeFilterPanelLight(); return; }
+  const wr = wrap.getBoundingClientRect();
+  const tr = th.getBoundingClientRect();
+  // 面板应在列头正下方（常规）或列头上方（视口底部放不下时），横向与列头对齐
+  const okBelow = wr.top >= tr.bottom - 4 && wr.top <= tr.bottom + 8;
+  const okAbove = wr.bottom <= tr.top + 4 && wr.bottom >= tr.top - 8;
+  const alignedX = Math.abs(wr.left - tr.left) <= 6;
+  if (!(alignedX && (okBelow || okAbove))) mountFilterPanelFixed(tab._openFilterCol);
+}, true);
+
+// 响应窗口尺寸变化
+window.addEventListener('resize', () => {
+  // 手机/平板上打开面板会 focus 输入框 → 软键盘弹出 → 视口 resize。
+  // 此时不能关闭面板（用户还没来得及勾选），而是把面板重新对齐到列头当前位置。
+  const tab = getActiveDataTab();
+  if (tab && tab._openFilterCol) mountFilterPanelFixed(tab._openFilterCol);
+  const nowMobile = matchMedia('(max-width: 768px)').matches;
+  if (nowMobile !== state.isMobile) {
+    state.isMobile = nowMobile;
+    renderContent();
+  }
+});
+
+/* ================== 启动 ================== */
+if (localStorage.getItem('sqlite-sidebar-collapsed') === '1' && !state.isMobile) {
+  document.body.classList.add('sidebar-collapsed');
+}
+
+theme.init();
+
+(async () => {
+  try {
+    await initSQL();
+    toast('SQLite 引擎已就绪', 'success');
+  } catch (e) {
+    toast('引擎加载失败，请检查网络', 'error');
+    console.error(e);
+  }
+})();
+</script>
 </body>
-
 </html>
