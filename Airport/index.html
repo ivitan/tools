@@ -963,14 +963,14 @@
             }, 1200);
           }
         } catch (err) {
-          alert("复制失败，请手动选择复制。");
+          alert("复制失败，请手动选择复制");
         }
         document.body.removeChild(textArea);
       });
 
     // 【核心引擎】
     function executeExtraction(mode) {
-      if (!sqlEngine) return alert("引擎尚未就绪，请稍候。");
+      if (!sqlEngine) return alert("引擎尚未就绪，请稍候");
 
       currentMode = mode;
       const { dict, order, label } = CONFIG[currentMode];
@@ -982,6 +982,14 @@
       const endTime = document.getElementById("endTime").value.trim();
       const aproCode = document.getElementById("aproCode").value.trim();
       let pasteText = document.getElementById("pasteArea").value.trim();
+
+      // 第一道门：无数据来源（未勾选数据表 且 未手动粘贴）时，直接提示，不再继续
+      if (selectedTables.length === 0 && !pasteText) {
+        document.getElementById("queryStatus").innerHTML =
+          `<span class="text-red-500 font-bold">请勾选数据表，或在工作网格粘贴数据</span>`;
+        renderEmptyTable(currentMode);
+        return;
+      }
 
       // 查询条件必填：开始时间 / 结束时间 / 机位号 三者都需填写，缺一不可
       if (!startTime || !endTime || !aproCode) {
@@ -1442,7 +1450,7 @@
     // 强力复制
     document.getElementById("btnCopy").addEventListener("click", () => {
       if (Object.keys(finalCleanedTimes).length === 0)
-        return alert("没有可复制的数据，请先执行提取。");
+        return alert("没有可复制的数据，请先执行提取");
 
       const { order } = CONFIG[currentMode];
       let text = order
@@ -1472,10 +1480,10 @@
           document.getElementById("queryStatus").innerHTML =
             `<span class="text-green-600 dark:text-green-400 font-bold">时间行已成功复制，快去粘贴吧</span>`;
         } else {
-          alert("写入失败，请手动框选结果复制。");
+          alert("写入失败，请手动框选结果复制");
         }
       } catch (err) {
-        alert("当前浏览器环境受限，请手动框选。");
+        alert("当前浏览器环境受限，请手动框选");
       }
 
       document.body.removeChild(textArea);
@@ -1484,7 +1492,7 @@
     // CSV导出
     document.getElementById("btnExport").addEventListener("click", () => {
       if (Object.keys(finalCleanedTimes).length === 0)
-        return alert("没有可导出的数据，请先执行提取。");
+        return alert("没有可导出的数据，请先执行提取");
 
       const { order, dict, label } = CONFIG[currentMode];
       let csv = "\uFEFF";
@@ -1514,9 +1522,9 @@
       .getElementById("btnCopyTableNums")
       .addEventListener("click", () => {
         if (!lastUsedTables || lastUsedTables.length === 0) {
-          return alert("请先执行节点提取，再复制镜头编号。");
+          return alert("请先执行节点提取，再复制镜头编号");
         }
-        if (!sqlEngine) return alert("引擎尚未就绪，请稍候。");
+        if (!sqlEngine) return alert("引擎尚未就绪，请稍候");
 
         const aproCodeVal = document.getElementById("aproCode").value.trim();
 
@@ -1536,7 +1544,7 @@
 
         if (matchedTables.length === 0) {
           return alert(
-            "未找到包含 aproCode 的数据表，请检查表名命名或 aproCode 输入。",
+            "未找到包含 aproCode 的数据表，请检查表名命名或 aproCode 输入",
           );
         }
 
@@ -1626,7 +1634,7 @@
         });
 
         if (tailNums.length === 0) {
-          return alert("已匹配到表，但未在表名末尾解析出数字。");
+          return alert("已匹配到表，但未在表名末尾解析出数字");
         }
 
         // 去重保序
@@ -1658,10 +1666,10 @@
             document.getElementById("queryStatus").innerHTML =
               `<span class="text-amber-600 dark:text-amber-400 font-bold">已复制 ${uniqNums.length} 个镜头编号</span>`;
           } else {
-            alert("写入失败，请手动复制。");
+            alert("写入失败，请手动复制");
           }
         } catch (err) {
-          alert("当前浏览器环境受限，请手动复制。");
+          alert("当前浏览器环境受限，请手动复制");
         }
         document.body.removeChild(textArea);
       });
