@@ -203,7 +203,7 @@
     position: relative;
   }
   .sidebar {
-    width: 240px;
+    width: 320px;
     background: var(--panel);
     border-right: 1px solid var(--border);
     display: flex;
@@ -1365,8 +1365,10 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
   /* ===== Responsive: 平板 ===== */
+  /* 与 PC、手机抽屉统一为 320px（原 200px 比手机还窄，已修）。
+     若觉得 800px 左右的小窗口下主区偏挤，可把这档单独降到 280px。 */
   @media (max-width: 1024px) {
-    .sidebar { width: 200px; }
+    .sidebar { width: 320px; }
   }
 
   /* ===== Responsive: 手机 ===== */
