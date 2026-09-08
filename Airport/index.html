@@ -90,8 +90,10 @@
       user-select: none;
     }
 
-    #pasteGridWrapper:focus {
+    #pasteGridWrapper.focus-glow {
       outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 1px #3b82f6;
     }
 
     .drag-active {
@@ -929,6 +931,15 @@
         }, 50);
       });
 
+    // 焦点蓝边（激活指示）仅在非数据库展示状态下显示
+    const pasteGridEl = document.getElementById("pasteGridWrapper");
+    pasteGridEl.addEventListener("focus", () => {
+      if (!bAreaDbDataActive) pasteGridEl.classList.add("focus-glow");
+    });
+    pasteGridEl.addEventListener("blur", () => {
+      pasteGridEl.classList.remove("focus-glow");
+    });
+
     // 轻量提示 toast
     function showToast(msg) {
       let t = document.getElementById("copyToast");
@@ -1021,6 +1032,8 @@
       table.classList.remove("hidden");
       // 来自数据库的数据展示时置位标志，禁用粘贴直至「清空结果集」
       bAreaDbDataActive = !!extraText;
+      // 数据库展示期间不显示蓝色激活光晕
+      if (extraText) wrapper.classList.remove("focus-glow");
 
       const lines = text.split("\n").filter((l) => l.trim() !== "");
       if (lines.length === 0) return;
