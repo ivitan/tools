@@ -74,6 +74,18 @@
       white-space: nowrap;
     }
 
+    /* 数据库与数据表名展示表格：文字居中，与上方各展示区保持一致 */
+    .raw-table th,
+    .raw-table td {
+      text-align: center;
+    }
+
+    /* 数据粘贴与展示区表格：文字居中，与节点提取表视觉一致 */
+    .paste-table th,
+    .paste-table td {
+      text-align: center;
+    }
+
     #pasteGridWrapper:focus {
       outline: none;
       border-color: #3b82f6;
@@ -431,7 +443,7 @@
             <textarea id="pasteArea" class="hidden"></textarea>
 
             <div id="pasteGridWrapper" tabindex="0"
-              class="flex-1 w-full min-h-[140px] max-h-[30vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
+              class="w-full min-h-[140px] max-h-[60vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
               <div id="pastePlaceholder"
                 class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 text-xs text-center p-4 pointer-events-none select-none">
                 <svg class="w-6 h-6 mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor"
@@ -458,13 +470,13 @@
             <span class="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center">
               <span
                 class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-1">C</span>
-              查看原始全量数据明细 (<span id="rawCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>
+              查看数据库与数据表名 (<span id="rawCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>
               条)
             </span>
             <span id="rawToggleIcon"
               class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
           </div>
-          <div id="rawContainer" class="hidden overflow-auto custom-scrollbar max-h-48 sm:max-h-64">
+          <div id="rawContainer" class="hidden overflow-auto custom-scrollbar">
             <p id="rawTruncNote" class="hidden text-[11px] text-gray-500 dark:text-gray-400 px-3 pt-3 pb-2"></p>
             <table
               class="raw-table min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-[11px] sm:text-xs border-collapse"
@@ -920,12 +932,14 @@
       const thead = document.getElementById("pasteVisualThead");
       const tbody = document.getElementById("pasteVisualTbody");
       const placeholder = document.getElementById("pastePlaceholder");
+      const wrapper = document.getElementById("pasteGridWrapper");
 
       if (!text) {
         placeholder.classList.remove("hidden");
         table.classList.add("hidden");
         thead.innerHTML = "";
         tbody.innerHTML = "";
+        wrapper.style.maxHeight = "";
         document.getElementById("filteredTextCount").innerText = "0";
         return;
       }
@@ -990,6 +1004,12 @@
       }
 
       tbody.innerHTML = tbodyLines.join("");
+
+      // B 区高度自适应：无论来自数据库还是手动粘贴，行数少则贴合内容，
+      // 行数多则限制为视口高度并在内部滚动，避免整页被撑得过长
+      const rowCount = displayLines.length - startRowIdx;
+      wrapper.style.maxHeight = rowCount > 50 ? "60vh" : "";
+
       const truncNote = isTruncated
         ? ` (为保证性能，仅渲染前${MAX_RENDER_ROWS}行)`
         : "";
@@ -1106,7 +1126,7 @@
                   const cols = resultFull[0].columns;
                   cols.forEach((c) => dbFilteredColumns.add(c));
                   resultFull[0].values.forEach((row) => {
-                    let rowObj = {};
+                    let rowObj = { _source_table: tableName };
                     cols.forEach((col, idx) => {
                       rowObj[col] = row[idx];
                     });
@@ -1114,7 +1134,10 @@
                   });
                 }
 
-                const sqlRaw = `SELECT * FROM "${tableName}"`;
+                // 全量明细表与提取使用同一过滤条件（开始/结束时间 + 机位号），
+                // 即只展示「提取前」落入该时间区间与机位号范围内的原始数据，
+                // 避免出现非输入框 aproCode 的整表数据
+                const sqlRaw = `SELECT * FROM "${tableName}" ${whereClause}`;
                 const resultRaw = db.exec(sqlRaw);
                 if (resultRaw.length > 0) {
                   const colsRaw = resultRaw[0].columns;
@@ -1152,12 +1175,15 @@
           ];
 
           // 优化大文本拼接速度
-          let dbTsvLines = [finalColsArr.join("\t")];
+          // 首列放置「来源表」：标识该行命中自哪个库表（仅 DB 数据有值，手工粘贴行为空）
+          const SOURCE_COL = "来源表";
+          let dbTsvLines = [[SOURCE_COL, ...finalColsArr].join("\t")];
           for (let i = 0; i < dbFilteredRawDataForTextarea.length; i++) {
             const row = dbFilteredRawDataForTextarea[i];
-            const lineVals = new Array(finalColsArr.length);
+            const lineVals = new Array(finalColsArr.length + 1);
+            lineVals[0] = row._source_table || "";
             for (let j = 0; j < finalColsArr.length; j++) {
-              lineVals[j] = row[finalColsArr[j]] || "";
+              lineVals[j + 1] = row[finalColsArr[j]] || "";
             }
             dbTsvLines.push(lineVals.join("\t"));
           }
@@ -1347,10 +1373,11 @@
                 <summary class="outline-none list-none text-center" style="list-style: none;">
                   <div>${timesToDisplay[0]}</div>
                   <div class="text-[10px] text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 rounded px-1.5 py-0.5 mt-1 inline-block group-open:hidden hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">▼ 展开余下 ${timesToDisplay.length - 1} 条</div>
-                  <div class="text-[10px] text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 rounded px-1.5 py-0.5 mt-1 hidden group-open:inline-block hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">▲ 收起</div>
                 </summary>
                 <div class="mt-1 pt-1 border-t border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 leading-relaxed">
                   ${timesToDisplay.slice(1).join("<br>")}
+                  <div class="text-[10px] text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 rounded px-1.5 py-0.5 mt-2 inline-block hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors"
+                       onclick="this.closest('details').removeAttribute('open')">▲ 收起</div>
                 </div>
               </details>
             `;
@@ -1410,6 +1437,11 @@
       const isTruncated = data.length > MAX_RENDER_ROWS;
       const displayData = isTruncated ? data.slice(0, MAX_RENDER_ROWS) : data;
       document.getElementById("rawCount").innerText = `${data.length}`;
+      // 自适应容器高度：行数少时贴合内容（不设上限），行数多时限制为视口高度并内部滚动，
+      // 避免页面被超长表格顶得过长
+      const rawContainer = document.getElementById("rawContainer");
+      rawContainer.style.maxHeight =
+        displayData.length > 50 ? "60vh" : "";
       const rawTruncNote = document.getElementById("rawTruncNote");
       if (isTruncated) {
         rawTruncNote.textContent = `为保证性能，仅渲染前${MAX_RENDER_ROWS}条`;
@@ -1424,6 +1456,7 @@
       if (data.length === 0) {
         thead.innerHTML = "";
         tbody.innerHTML = "";
+        rawContainer.style.maxHeight = "";
         return;
       }
 
