@@ -1088,6 +1088,124 @@
     color: var(--text-muted);
     line-height: 1.4;
   }
+  /* 筛选面板底部「隐藏此列」操作行 */
+  .col-filter-foot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2px;
+  }
+  .col-filter-tool-btn.col-hide-col {
+    color: var(--text-secondary);
+  }
+  .col-filter-tool-btn.col-hide-col:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: var(--danger-light);
+  }
+
+  /* ===== 字段管理弹窗（显示/隐藏列） ===== */
+  .col-manager {
+    position: fixed;
+    z-index: 99998;
+    width: 240px;
+    box-sizing: border-box;
+    background: var(--panel) !important;
+    border: 1.5px solid var(--border-hover);
+    border-radius: 8px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.40), 0 4px 10px rgba(0,0,0,0.22);
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .col-manager-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 9px 11px 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  .col-manager-hint {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+  .col-manager-list {
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 4px;
+  }
+  .col-manager-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text);
+    min-width: 0;
+  }
+  .col-manager-item:hover { background: var(--primary-soft); }
+  .col-manager-item input[type="checkbox"] {
+    flex: none;
+    margin: 0;
+    width: 14px;
+    height: 14px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+  .col-manager-item .cm-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .col-manager-item.is-hidden { color: var(--text-muted); }
+  .col-manager-item.is-hidden .cm-name { font-weight: 500; text-decoration: line-through; }
+  .col-manager-item .cm-tag {
+    flex: none;
+    font-size: 10px;
+    color: var(--danger);
+    background: var(--danger-light);
+    border-radius: 9px;
+    padding: 0 7px;
+    line-height: 16px;
+  }
+  .col-manager-foot {
+    display: flex;
+    justify-content: flex-end;
+    padding: 7px 8px 9px;
+    border-top: 1px solid var(--border);
+  }
+  /* 工具栏「字段」按钮：有隐藏列时显示数量角标并高亮 */
+  .icon-btn { position: relative; }
+  #btnColumns.has-hidden {
+    color: var(--primary);
+    background: var(--primary-soft);
+  }
+  .col-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: 8px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 14px;
+    text-align: center;
+    box-shadow: 0 0 0 1.5px var(--panel);
+    pointer-events: none;
+  }
   .data-table td {
     padding: 6px 10px;
     border-bottom: 1px solid var(--table-row-border);
@@ -1600,6 +1718,10 @@
             <span class="mode-label">无限</span>
           </button>
         </div>
+        <button class="icon-btn" id="btnColumns" title="显示/隐藏字段（列）">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+          <span class="col-badge" id="colBadge" hidden>0</span>
+        </button>
         <button class="icon-btn" id="btnExport" title="导出当前数据为 CSV">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
@@ -2006,6 +2128,7 @@ function openTab(dbId, tableName) {
       filter: '',
       columnFilters: {},          // 按列模糊筛选：{ 列名: '关键词' }，与 filter AND 组合
       columnChecks: {},           // 按列勾选筛选：{ 列名: [值...] }，IN 精确匹配，与模糊词 AND 组合
+      hiddenCols: [],             // 隐藏字段：列名数组（隐藏后不渲染该列，筛选值仍保留）
       _pendingChecks: {},         // 面板打开时的勾选副本（点确认才写入 columnChecks）
       _pendingLike: {},           // 面板打开时的模糊词副本（点确认才写入 columnFilters）
       loadMode: state.loadMode,   // 跟随全局当前模式
@@ -2146,6 +2269,7 @@ function renderContent() {
 
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
   if (!tab) {
+    updateColumnsBadge();   // 无活动表时清空「字段」角标
     $('contentArea').innerHTML = `<div class="empty-content">从左侧选择一张表查看数据</div>`;
     $('breadcrumb').innerHTML = '';   // 关闭最后一个 Tab 后清空顶部面包屑，避免残留旧表名
     $('footerBar').classList.add('hidden');
@@ -2203,6 +2327,7 @@ function renderContent() {
   // 注：preserveGridScroll 场景下这里先按当前滚动定位，滚动恢复后其尾部会再校准一次
   if (tab._openFilterCol) mountFilterPanelFixed(tab._openFilterCol);
   updateFabEnd();
+  updateColumnsBadge();   // 同步「字段」按钮的隐藏数量角标
 }
 
 function renderSchemaView(db) {
@@ -2271,6 +2396,7 @@ function renderDataGrid(db, tab) {
     while (stmt.step()) rows.push(stmt.getAsObject());
     stmt.free();
     if (rows.length) columns = Object.keys(rows[0]);
+    columns = visibleColumnsOf(tab, columns);   // 过滤隐藏列，HEAD/BODY 一致
     const cntStmt = db.db.prepare(countSql);
     cntStmt.bind(params);
     if (cntStmt.step()) total = cntStmt.get()[0];
@@ -2376,7 +2502,7 @@ function renderInfiniteGrid(db, tab) {
 
   const colTypes = {};
   t.cols.forEach(c => colTypes[c.name] = c.type);
-  const columns = t.cols.map(c => c.name);
+  const columns = t.cols.map(c => c.name).filter(c => !isColHidden(tab, c));
 
   // 先计算总行数（用于状态条）
   const where0 = buildWhereClause(tab, t);
@@ -2616,8 +2742,133 @@ function buildFilterPanelHtml(tab, colName) {
         </div>
         <div class="col-filter-options">${optionsHtml}</div>
         ${footHtml}
+        <div class="col-filter-foot">
+          <button type="button" class="col-filter-tool-btn col-hide-col" data-col-hide="${escapeHtml(colName)}" title="在表格中隐藏此列">隐藏此列</button>
+        </div>
       </div>
     </div>`;
+}
+
+/* ================== 列显隐 ================== */
+function allColumnsOf(tab, db) {
+  const t = db && db.tables.find(x => x.name === tab.table);
+  return t ? t.cols.map(c => c.name) : [];
+}
+function isColHidden(tab, c) {
+  return Array.isArray(tab.hiddenCols) && tab.hiddenCols.includes(c);
+}
+// 给定「全量列名」，返回当前可见列（过滤掉 hiddenCols）。HEAD/BODY 统一走它，保证一致。
+function visibleColumnsOf(tab, allColNames) {
+  return allColNames.filter(c => !isColHidden(tab, c));
+}
+
+// 切换某列隐藏状态：更新 tab.hiddenCols、关闭其筛选面板（若隐藏的是展开列）、
+// 清掉列宽缓存（列数变化，原按位置缓存失效），再整体重渲染。
+function setColumnHidden(tab, col, hidden) {
+  tab.hiddenCols = Array.isArray(tab.hiddenCols) ? tab.hiddenCols.slice() : [];
+  const idx = tab.hiddenCols.indexOf(col);
+  if (hidden && idx === -1) tab.hiddenCols.push(col);
+  else if (!hidden && idx !== -1) tab.hiddenCols.splice(idx, 1);
+  if (hidden && tab._openFilterCol === col) closeFilterPanelDiscard(tab);
+  tab._colWidths = null;          // 列数变化，原按位置缓存失效，强制重新测量
+  renderContent();
+  updateColumnsBadge();
+}
+
+// 工具栏「字段」按钮角标：有隐藏列时显示数量并高亮
+function updateColumnsBadge() {
+  const badge = $('colBadge');
+  const btn = $('btnColumns');
+  if (!badge || !btn) return;
+  const tab = getActiveDataTab();
+  const n = tab && Array.isArray(tab.hiddenCols) ? tab.hiddenCols.length : 0;
+  if (n > 0) {
+    badge.textContent = String(n);
+    badge.hidden = false;
+    btn.classList.add('has-hidden');
+  } else {
+    badge.hidden = true;
+    btn.classList.remove('has-hidden');
+  }
+}
+
+// 字段管理弹窗：列出当前表所有列，复选框控制显隐（与筛选面板同风格）。
+function closeColumnsPopover() {
+  const el = $('colManager');
+  if (el) el.remove();
+}
+function openColumnsPopover() {
+  const tab = getActiveDataTab();
+  if (!tab) return;
+  const db = state.databases.find(d => d.id === tab.dbId);
+  const allCols = allColumnsOf(tab, db);
+  if (!allCols.length) return;
+  closeColumnsPopover();
+  closeFilterPanelDiscard(tab);     // 同时开着两个浮层会重叠，关掉筛选面板
+
+  const items = allCols.map(c => {
+    const hidden = isColHidden(tab, c);
+    return `
+      <label class="col-manager-item ${hidden ? 'is-hidden' : ''}">
+        <input type="checkbox" data-col-toggle-vis="${escapeHtml(c)}"${hidden ? '' : ' checked'}>
+        <span class="cm-name">${escapeHtml(c)}</span>
+        ${hidden ? '<span class="cm-tag">已隐藏</span>' : ''}
+      </label>`;
+  }).join('');
+
+  const wrap = document.createElement('div');
+  wrap.className = 'col-manager';
+  wrap.id = 'colManager';
+  wrap.innerHTML = `
+    <div class="col-manager-head">
+      <span>显示字段</span>
+      <span class="col-manager-hint">${allCols.length} 列</span>
+    </div>
+    <div class="col-manager-list">${items}</div>
+    <div class="col-manager-foot">
+      <button type="button" class="col-filter-tool-btn" id="colShowAll">全部显示</button>
+    </div>`;
+  document.body.appendChild(wrap);
+
+  // 定位在「字段」按钮正下方（与筛选面板一致用 fixed 定位）
+  const btn = $('btnColumns');
+  const r = btn.getBoundingClientRect();
+  const pw = wrap.offsetWidth || 240;
+  const ph = wrap.offsetHeight || 300;
+  let left = Math.min(r.left, window.innerWidth - pw - 8);
+  left = Math.max(8, left);
+  let top = r.bottom + 6;
+  if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
+  wrap.style.left = left + 'px';
+  wrap.style.top = top + 'px';
+
+  wrap.querySelectorAll('[data-col-toggle-vis]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const col = cb.dataset.colToggleVis;
+      setColumnHidden(tab, col, !cb.checked);   // 取消勾选 = 隐藏
+      const label = cb.closest('.col-manager-item');
+      if (label) {
+        if (cb.checked) {
+          label.classList.remove('is-hidden');
+          const tag = label.querySelector('.cm-tag'); if (tag) tag.remove();
+        } else {
+          label.classList.add('is-hidden');
+          if (!label.querySelector('.cm-tag')) {
+            const s = document.createElement('span');
+            s.className = 'cm-tag'; s.textContent = '已隐藏';
+            label.appendChild(s);
+          }
+        }
+      }
+    });
+  });
+  $('colShowAll').onclick = () => {
+    tab.hiddenCols = [];
+    tab._colWidths = null;
+    renderContent();
+    updateColumnsBadge();
+    closeColumnsPopover();
+  };
 }
 
 /* 构建表头 HTML：每列可点击展开筛选面板。
@@ -2628,7 +2879,8 @@ function buildHeadHtml(columns, colTypes, tab) {
   const filters = tab.columnFilters || {};
   const checks = tab.columnChecks || {};
   const openCol = tab._openFilterCol || null;
-  const cols = columns.map(c => {
+  // 过滤掉隐藏列，使 HEAD 与 BODY 渲染的列完全一致
+  const cols = columns.filter(c => !isColHidden(tab, c)).map(c => {
     const likeVal = filters[c] || '';
     const checkedVals = Array.isArray(checks[c]) ? checks[c] : [];
     const filtered = !!likeVal || checkedVals.length > 0;
@@ -2864,14 +3116,17 @@ function refineByRealWidth(table, widths, ths, trs) {
   // ① 表头：字段名 + 类型必须完整显示（col-name 有 overflow:hidden，宽度不够会被 ellipsis 裁掉）
   for (let i = 0; i < ths.length && i < widths.length; i++) {
     if (ths[i].classList.contains('row-num')) continue;
-    const nameEl = ths[i].querySelector('.col-name');
-    const typeEl = ths[i].querySelector('.col-type');
+    const th = ths[i];
+    const nameEl = th.querySelector('.col-name');
+    const typeEl = th.querySelector('.col-type');
     let need = 0;
-    // scrollWidth 已包含元素自身 padding，nameEl 的 padding 是 0 22px 0 4px，
-    // 所以这里直接取 scrollWidth，不要再加 26，避免短表头列（如 id）被过度撑宽。
+    // scrollWidth 已包含元素自身 padding（nameEl 左右各 16px、typeEl 自身 padding），直接取即可。
     if (nameEl) need = Math.max(need, nameEl.scrollWidth);
     if (typeEl) need = Math.max(need, typeEl.scrollWidth);
-    need += 22; // th 自身 padding 8px 10px（左右 18~20px）+ 1px 边框
+    // 补 th 自身的左右 padding(各 10px) + 真实边框宽。边框用 offsetWidth-clientWidth 实测，
+    // 因为 border-collapse 下边框会折叠成 1px，硬编码 +2 会每轮多算 1px、列宽持续累加膨胀。
+    const thBorder = th.offsetWidth - th.clientWidth;
+    need += 20 + thBorder;
     if (need > widths[i]) { widths[i] = Math.min(need, COL_FIT_MAX); changed = true; }
   }
   // ② 数据单元格：全量实测。canvas 对超长文本估算偏差更大，只查「估算最宽」那一格
@@ -2881,8 +3136,9 @@ function refineByRealWidth(table, widths, ths, trs) {
     for (let i = 1; i < tds.length && i < widths.length; i++) {
       const td = tds[i];
       if (!td.textContent) continue;
-      // +2 抵消亚像素取整误差，避免刚好差 1px 就被裁掉一个字
-      const need = td.scrollWidth + 2;
+      // scrollWidth 不含边框，补上真实边框宽(offsetWidth-clientWidth)才是刚好容纳的 border-box 宽度；
+      // 这样内容恰好放得下时 need === 当前宽度，测量幂等、不会每轮 +1px 累加。
+      const need = td.scrollWidth + (td.offsetWidth - td.clientWidth);
       if (need > widths[i]) { widths[i] = Math.min(need, COL_FIT_MAX); changed = true; }
     }
   }
@@ -3511,6 +3767,25 @@ $('pageSize').onchange = (e) => {
 // 导出
 $('btnExport').onclick = exportCSV;
 
+// 字段管理弹窗
+$('btnColumns').onclick = (e) => {
+  e.stopPropagation();
+  if ($('colManager')) closeColumnsPopover();
+  else openColumnsPopover();
+};
+// 点击弹窗外部 / 切换表时关闭
+document.addEventListener('click', (e) => {
+  const mgr = $('colManager');
+  if (mgr && !e.target.closest('#colManager') && !e.target.closest('#btnColumns')) {
+    closeColumnsPopover();
+  }
+});
+// 滚动时关闭（与筛选面板一致，避免错位）
+document.addEventListener('scroll', (e) => {
+  if (e.target instanceof Element && e.target.closest('#colManager')) return;
+  if ($('colManager')) closeColumnsPopover();
+}, true);
+
 /* ================== 双击单元格复制 ================== */
 // 复制文本到剪贴板（兼容旧浏览器回退）
 async function copyToClipboard(text) {
@@ -3706,6 +3981,15 @@ document.addEventListener('click', (e) => {
       if (tab._openFilterCol === colName) closeFilterPanelDiscard(tab);
       else setFilterPanelOpen(tab, colName);
     }
+    e.stopPropagation();
+    return;
+  }
+  // 筛选面板里的「隐藏此列」→ 隐藏该列（CONFIRM 前先关闭面板避免错位）
+  const hideBtn = e.target.closest('[data-col-hide]');
+  if (hideBtn) {
+    const colName = hideBtn.dataset.colHide;
+    const tab = getActiveDataTab();
+    if (tab) setColumnHidden(tab, colName, true);
     e.stopPropagation();
     return;
   }
