@@ -712,34 +712,75 @@
     setupDropZone(dropZoneLarge, fileInputLarge);
     setupDropZone(dropZoneSmall, fileInputSmall);
 
-    async function handleFiles(files) {
-      document.getElementById("fileInfo").innerText =
-        `已载入 ${files.length} 个库`;
-      document.getElementById("fileInfo").classList.remove("hidden");
+    // 每个 SQLite 库的前 16 字节恒为 "SQLite format 3\0"
+    const SQLITE_MAGIC = [
+      0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20,
+      0x66, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x20, 0x33, 0x00,
+    ];
+    function isSqliteBuffer(buf) {
+      if (!buf || buf.length < 16) return false;
+      for (let i = 0; i < 16; i++) {
+        if (buf[i] !== SQLITE_MAGIC[i]) return false;
+      }
+      return true;
+    }
 
-      // 导入后切换布局：大上传框隐藏，小上传框与表选择区显示
-      dropZoneLarge.classList.add("hidden");
-      dropZoneSmall.classList.remove("hidden");
+    // 用 textContent 而非 innerHTML，避免文件名中的 HTML 被解析
+    function showFileStatus(msg, isError) {
+      const el = document.getElementById("fileInfo");
+      el.textContent = msg;
+      el.className = isError
+        ? "ml-auto text-xs font-bold text-red-500 dark:text-red-400"
+        : "ml-auto text-xs font-bold text-blue-600 dark:text-blue-400";
+    }
+
+    async function handleFiles(files) {
+      if (!sqlEngine) {
+        showFileStatus("引擎尚未就绪，请稍候重试", true);
+        return;
+      }
 
       databases = [];
       const tableMap = new Map();
+      const failed = [];
 
       for (let file of files) {
-        const arrayBuffer = await file.arrayBuffer();
-        const db = new sqlEngine.Database(new Uint8Array(arrayBuffer));
-        databases.push({ name: file.name, db: db });
+        let buf = null;
+        try {
+          buf = new Uint8Array(await file.arrayBuffer());
+        } catch (e) {
+          failed.push({ name: file.name, reason: "无法读取文件" });
+          continue;
+        }
 
-        const res = db.exec(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
-        );
-        if (res.length > 0) {
-          res[0].values.forEach((row) => {
-            const tableName = row[0];
-            if (!tableMap.has(tableName)) {
-              tableMap.set(tableName, []);
-            }
-            tableMap.get(tableName).push(file.name);
-          });
+        // ① 文件头校验：SQLite 打开是惰性的，非数据库文件要到执行查询时才报错，
+        //    那时 UI 早已显示「已载入」，给用户假成功的错觉，所以这里提前拦截
+        if (!isSqliteBuffer(buf)) {
+          failed.push({ name: file.name, reason: "不是 SQLite 数据库文件" });
+          continue;
+        }
+
+        let db = null;
+        try {
+          db = new sqlEngine.Database(buf);
+          const res = db.exec(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
+          );
+          databases.push({ name: file.name, db: db });
+          if (res.length > 0) {
+            res[0].values.forEach((row) => {
+              const tableName = row[0];
+              if (!tableMap.has(tableName)) {
+                tableMap.set(tableName, []);
+              }
+              tableMap.get(tableName).push(file.name);
+            });
+          }
+        } catch (e) {
+          if (db) {
+            try { db.close(); } catch (_) {}
+          }
+          failed.push({ name: file.name, reason: "数据库损坏或格式不支持" });
         }
       }
 
@@ -757,9 +798,38 @@
       `;
         tableListDiv.appendChild(div);
       });
+
+      const okCount = databases.length;
+
+      // ② 全部失败时回滚到上传前状态，绝不留下「已载入」的假象
+      if (okCount === 0) {
+        dropZoneLarge.classList.remove("hidden");
+        dropZoneSmall.classList.add("hidden");
+        document.getElementById("tableSelectionSection").classList.add("hidden");
+        const msg =
+          failed.length === 1
+            ? `${failed[0].name} 导入失败：${failed[0].reason}`
+            : `${failed.length} 个文件导入失败：${failed.map((f) => f.name).join("、")}`;
+        showFileStatus(msg, true);
+        return;
+      }
+
+      dropZoneLarge.classList.add("hidden");
+      dropZoneSmall.classList.remove("hidden");
       document
         .getElementById("tableSelectionSection")
         .classList.remove("hidden");
+
+      if (failed.length > 0) {
+        showFileStatus(
+          `已载入 ${okCount} 个库，${failed.length} 个失败：${failed.map((f) => f.name).join("、")}`,
+          true,
+        );
+      } else if (tableMap.size === 0) {
+        showFileStatus(`已载入 ${okCount} 个库，但未找到数据表`, true);
+      } else {
+        showFileStatus(`已载入 ${okCount} 个库`, false);
+      }
     }
 
     // 绘制空表头
