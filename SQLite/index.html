@@ -1127,12 +1127,12 @@
        同时 JS 会给每个 td/th 直设 width（不用 colgroup，避免 Chrome 下 50px 莫名 scrollWidth）。 */
     width: max-content;
   }
-  /* 完整显示：不截断、不用省略号。列宽超上限时折行（行高增加），保证每个字都看得见 */
+  /* 单行完整显示：列宽 = 该列文字的完整长度，不折行、不截断、无省略号 */
   .data-table.col-fit td {
     max-width: none;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;   /* 不用省略号：列宽已按完整长度算，理论上不会溢出 */
   }
   /* 列宽被固定后，表头字段名同样保持单行，与 Excel 表头一致 */
   .data-table.col-fit th .col-name {
@@ -2682,9 +2682,10 @@ function buildRowsHtml(rows, columns, startIndex) {
    - 紧凑：交回浏览器自动布局，沿用 360px 上限 + 省略号。
    文本宽度用 canvas.measureText 计算（比逐个 DOM 测量快两个数量级，几千个单元格也不卡顿）。 */
 const COL_FIT_MIN = 64;       // 列宽下限（px，含内边距）
-// 列宽上限：优先完整显示所有文字。宽度超过这个值时折行（而不是省略号截断），
-// 所以既保证「一个字都不少」，又避免单列被撑到两千多像素、让短内容单元格显得空荡荡。
-const COL_FIT_MAX = 600;
+// 列宽上限：列宽 = 该列最长文字的完整单行长度，这里只在 8000px 处做极端兜底
+// （约 640 个汉字 / 1150 个英文字符），防止单条几万字符的脏数据把表格拉成几十万像素宽。
+// 正常数据远达不到这个值，都能完整一行显示。
+const COL_FIT_MAX = 8000;
 const COL_FIT_CELLS = 8000;   // 单次全量测量的单元格上限，防止大表卡死
 let _fitCanvas = null;
 
