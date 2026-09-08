@@ -2706,7 +2706,7 @@ function cellFont(el) {
 // 此时保留横向滚动条更友好（用户可手动滑动查看完整内容）
 // 仅在窄屏（手机）生效：桌面端一律不压缩——只要压缩就必然有文字显示不全，
 // 与「列宽 = 文字完整长度」的目标冲突，桌面端宁可横向滚动。
-function compressToViewport(widths, table, dryRun) {
+function compressToViewport(widths, table) {
   if (!table.parentElement) return false;
   if (!window.matchMedia('(max-width: 768px)').matches) return false;
   const viewportW = table.parentElement.clientWidth;
@@ -2721,7 +2721,6 @@ function compressToViewport(widths, table, dryRun) {
   if (total <= available) return false;       // 总宽够，无需压缩
   const ratio = available / total;
   if (ratio < 0.5) return false;              // 视口严重不足，跳过压缩保留可读性 + 横向滚动
-  if (dryRun) return true;                    // 只判断是否需要压缩，不改数值
   let sum = 0;
   for (let i = 1; i < widths.length; i++) {
     widths[i] = Math.max(HARD_MIN, Math.floor(widths[i] * ratio));
@@ -2807,13 +2806,12 @@ function autoFitColumns(table, opts) {
   table._colWidths = widths;
   writeCellWidths(table, widths);
 
-  // ② 实测校准：按浏览器真实布局逐格复检补齐。文本越长 canvas 偏差越大，
-  //    只抽查「估算最宽」的那一格会漏掉真正最长的，所以这里全量扫。
-  //    压缩模式下跳过：压缩本身就是有意让总宽适配窄屏，校准会把列宽撑回去。
-  const needCompress = compressToViewport(widths, table, true);
-  const refined = needCompress ? false : refineByRealWidth(table, widths, ths, trs);
-  // ③ 压缩放最后（仅手机端），保证校准结果不被压回去
-  const compressed = compressToViewport(widths, table, false);
+  // ② 先按窄屏视口压缩（仅 ≤768px 生效；桌面不压缩，宁可横向滚动也不裁字）
+  const compressed = compressToViewport(widths, table);
+  // ③ 再全量实测校准：把被压缩到「低于内容真实宽度」的列撑回原宽，保证「任何单元格都不裁字」。
+  //    顺序必须是指校准在压缩之后——否则压缩会把列宽又压窄，导致长文本显示不全。
+  //    校准后短内容表仍贴合视口，长内容表则按内容宽度横向滚动（绝不截断）。
+  const refined = refineByRealWidth(table, widths, ths, trs);
   if (refined || compressed) {
     table._colWidths = widths;
     writeCellWidths(table, widths);
