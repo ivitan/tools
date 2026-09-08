@@ -1174,6 +1174,13 @@
         // 否则取消勾选/未手动粘贴时粘贴区会残留旧数据，被误判为“有输入”而重复出内容。
         let dbTsvString = "";
         if (dbFilteredRawDataForTextarea.length > 0) {
+          // 按 report_time 时间顺序升序排列（格式 YYYY-MM-DD HH:MM:SS 或 HH:MM:SS，字典序即时间序）
+          dbFilteredRawDataForTextarea.sort((a, b) => {
+            const ta = a.report_time || "";
+            const tb = b.report_time || "";
+            return ta < tb ? -1 : ta > tb ? 1 : 0;
+          });
+
           const colsArr = Array.from(dbFilteredColumns);
           const priorityCols = ["nodeCode", "report_time", "aproCode"];
           let filteredColsArr = colsArr.filter(
