@@ -1137,6 +1137,10 @@
   /* 列宽被固定后，表头字段名同样保持单行，与 Excel 表头一致 */
   .data-table.col-fit th .col-name {
     white-space: nowrap;
+    /* 字段名与类型必须完整显示：去掉基础样式的 ellipsis 裁切，
+       宽度由 fitHeadWidth 实测保证（refineByRealWidth 还会按真实 scrollWidth 兜底补齐） */
+    overflow: visible;
+    text-overflow: clip;
     /* ⌕/× 是绝对定位在右侧的，左右各 24px 的对称 padding 会把短数据列也撑宽，
        改成「左小右大」：只给右侧按钮留位，短列能更贴合内容 */
     padding: 0 22px 0 4px;
@@ -2727,7 +2731,9 @@ function fitTextWidth(text, font) {
   let max = 0;
   const lines = String(text).split('\n');
   for (const line of lines) {
-    const w = ctx.measureText(line.length > 500 ? line.slice(0, 500) : line).width;
+    // 不再截断到 500 字符：那会低估超长文本的真实宽度，导致列宽不够、文字显示不全。
+    // measureText 很快，几万字符也就几毫秒，直接测整串。
+    const w = ctx.measureText(line).width;
     if (w > max) max = w;
   }
   return max;
@@ -2774,6 +2780,8 @@ function autoFitColumns(table, opts) {
   let trs = Array.from(table.querySelectorAll('tbody tr'));
   if (incremental) trs = trs.slice((opts && opts.fromRow) || 0);
   let cells = 0;
+  // 记录每列「最宽的那个单元格」，供后面实测校验用（只需复检这几个，不必遍历全表）
+  const widest = new Array(widths.length).fill(null);
   for (const tr of trs) {
     const tds = tr.children;
     for (let i = 1; i < tds.length && i < widths.length; i++) { // i=0 是行号列，跳过
@@ -2781,7 +2789,7 @@ function autoFitColumns(table, opts) {
       const text = td.textContent;
       if (!text) continue;
       const w = fitTextWidth(text, td.classList.contains('json') ? jsonFont : baseFont) + 22; // td padding 6px 10px + 边框
-      if (w > widths[i]) widths[i] = w;
+      if (w > widths[i]) { widths[i] = w; widest[i] = td; }
       if (++cells >= COL_FIT_CELLS) break;
     }
     if (cells >= COL_FIT_CELLS) break;
@@ -2794,8 +2802,16 @@ function autoFitColumns(table, opts) {
   compressToViewport(widths, table);
   table._colWidths = widths;
 
-  // 完全不用 colgroup（colgroup 在 fixed+border-spacing 下会有 50+px 莫名 scrollWidth 溢出），
-  // 直接给每个 cell 写 width 撑满；table 自身用 inline style 锁死总宽
+  writeCellWidths(table, widths);
+  // 实测校准：canvas 估算与浏览器真实渲染存在偏差（tabular-nums、italic、中文字体回退、
+  // letter-spacing 等都会让估算偏小），写入列宽后按真实 scrollWidth 补齐，保证：
+  // ① 表头字段名 + 类型始终完整显示；② 每个单元格文字一行显示全。
+  refineByRealWidth(table, widths, ths, widest);
+}
+
+// 把 widths 写进每个 td/th 的 inline style，并锁死 table 总宽
+// （不用 colgroup：Chrome 下 colgroup + fixed + border-spacing 会多出 50+px 莫名 scrollWidth）
+function writeCellWidths(table, widths) {
   table.querySelectorAll('colgroup').forEach(cg => cg.remove());
   const allRows = table.querySelectorAll('tr');
   for (const tr of allRows) {
@@ -2806,8 +2822,37 @@ function autoFitColumns(table, opts) {
       tds[i].style.maxWidth = widths[i] + 'px';
     }
   }
-  const sum = widths.reduce((a, b) => a + b, 0);
-  table.style.width = sum + 'px';
+  table.style.width = widths.reduce((a, b) => a + b, 0) + 'px';
+}
+
+// 写入列宽后，用浏览器真实布局复检每列，宽度不够就补到刚好容纳内容
+function refineByRealWidth(table, widths, ths, widest) {
+  let changed = false;
+  // ① 表头：字段名 + 类型必须完整显示（col-name 有 overflow:hidden，宽度不够会被 ellipsis 裁掉）
+  for (let i = 0; i < ths.length && i < widths.length; i++) {
+    if (ths[i].classList.contains('row-num')) continue;
+    const nameEl = ths[i].querySelector('.col-name');
+    const typeEl = ths[i].querySelector('.col-type');
+    let need = 0;
+    // scrollWidth 反映内容真实宽度（当前宽度不够时会大于 clientWidth）
+    if (nameEl) need = Math.max(need, nameEl.scrollWidth + 26); // col-name padding 左4+右22
+    if (typeEl) need = Math.max(need, typeEl.scrollWidth);
+    need += 22; // th padding 20 + 边框
+    if (need > widths[i]) { widths[i] = Math.min(need, COL_FIT_MAX); changed = true; }
+  }
+  // ② 数据单元格：只复检每列「估算最宽」的那个，避免遍历全表
+  for (let i = 1; i < widths.length; i++) {
+    const td = widest[i];
+    if (!td) continue;
+    if (td.scrollWidth + 2 > widths[i]) {
+      widths[i] = Math.min(td.scrollWidth + 2, COL_FIT_MAX);
+      changed = true;
+    }
+  }
+  if (changed) {
+    table._colWidths = widths;
+    writeCellWidths(table, widths);
+  }
 }
 
 // 对当前内容区的表格应用列宽模式；opts 透传给 autoFitColumns（增量测量用）
