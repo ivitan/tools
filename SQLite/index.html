@@ -1141,31 +1141,26 @@
        宽度由 fitHeadWidth 实测保证（refineByRealWidth 还会按真实 scrollWidth 兜底补齐） */
     overflow: visible;
     text-overflow: clip;
-    /* ⌕/× 是绝对定位在右侧的，左右各 24px 的对称 padding 会把短数据列也撑宽，
-       改成「左小右大」：只给右侧按钮留位，短列能更贴合内容 */
-    padding: 0 22px 0 4px;
+    /* 覆盖基础样式的 flex:1，防止表头文字被强制撑满 th 宽度，
+       导致短数据列（如 id=1）出现大量空白。
+       flex:none 会让 col-name 只占自身宽度、落在行首（左对齐），
+       故用 margin:0 auto 在 flex 行内重新居中，保持与「类型」同行居中。
+       字段名与类型必须视觉居中，因此 padding 左右对称（各 16px），
+       为右侧绝对定位的 ⌕/× 留位，同时让文字中心与 th 中心重合。 */
+    flex: none;
+    margin: 0 auto;
+    text-align: center;
+    padding: 0 16px;
   }
-
-  /* 列宽模式切换：与 .mode-toggle 同风格，放在分页/无限切换旁边 */
-  .col-fit-btn {
-    height: 30px;
-    padding: 0 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--panel);
-    color: var(--text-secondary);
+  /* col-fit 下把 ⌕/× 按钮改小并贴边，让字段名左右对称 padding 16px 就能同时
+     满足「居中」和「不遮挡按钮」。仅影响 col-fit 模式，紧凑模式保持原大小。 */
+  .data-table.col-fit th .col-filter-toggle,
+  .data-table.col-fit th .col-filter-clear {
+    width: 14px;
+    height: 14px;
+    right: 2px;
     font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-    transition: all 0.12s;
   }
-  .col-fit-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
-  .col-fit-btn:hover { background: var(--panel-hover); color: var(--text); }
-  .col-fit-btn.on { background: var(--primary); color: var(--primary-on); border-color: var(--primary); }
 
   .row-num {
     background: var(--header-row) !important;
@@ -1463,8 +1458,7 @@
     .breadcrumb { width: 100%; order: 1; font-size: 12px; }
     .toolbar-input { flex: 1; order: 2; width: auto; min-width: 0; }
     .mode-toggle { order: 3; }
-    .col-fit-btn { order: 4; }
-    #btnExport { order: 5; }
+    #btnExport { order: 4; }
 
     .tabs { padding: 0 10px; }
 
@@ -1491,10 +1485,15 @@
 
     .mode-toggle button { padding: 0 8px; }
     .mode-toggle button .mode-label { display: none; }
-    .col-fit-btn { padding: 0 8px; }
-    .col-fit-btn .col-fit-label { display: none; }
 
     .toast { top: 56px; right: 10px; left: 10px; max-width: none; }
+
+    /* 手机端筛选面板：窄屏下宽度自适应，避免被宽列挤到屏幕外 */
+    .col-filter-float .col-filter-panel {
+      width: min(250px, calc(100vw - 32px));
+      max-width: calc(100vw - 32px);
+      min-width: 180px;
+    }
   }
 </style>
 
@@ -1601,12 +1600,6 @@
             <span class="mode-label">无限</span>
           </button>
         </div>
-        <button class="col-fit-btn" id="colFitBtn" data-col-fit title="列宽按内容自适应">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M4 5v14M20 5v14"/><path d="M9 9l-3 3 3 3M15 9l3 3-3 3"/><path d="M8 12h8"/>
-          </svg>
-          <span class="col-fit-label">列宽自适应</span>
-        </button>
         <button class="icon-btn" id="btnExport" title="导出当前数据为 CSV">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
@@ -1653,7 +1646,6 @@ const state = {
   activeTabKey: null,
   SQL: null,
   loadMode: localStorage.getItem('sqlite-load-mode') || 'infinite', // 默认无限滚动
-  colFit: localStorage.getItem('sqlite-col-fit') !== '0', // 列宽自适应，默认开；'0' = 紧凑截断
   isMobile: matchMedia('(max-width: 768px)').matches,
   infiniteObserver: null,
 };
@@ -1780,61 +1772,76 @@ async function loadDatabase(file) {
   try {
     const buf = new Uint8Array(await file.arrayBuffer());
     const hash = await computeFingerprint(buf);
+    return await loadDatabaseFromBuffer(file, buf, hash, { silent: false });
+  } catch (e) {
+    console.error(e);
+    toast(`加载失败: ${file.name}`, 'error');
+    return { kind: 'error', error: e, fileName: file.name };
+  }
+}
 
-    // ① 内容完全一致 → 已加载过，直接跳过，保证同一个数据库只显示一个
-    const dup = state.databases.find(d => d.hash === hash);
-    if (dup) {
-      state.activeDbId = dup.id;
-      dup.expanded = true;        // 展开已存在的库，方便确认它还在列表里
+// 从已读取的 buffer 建库。silent=true 时不渲染 UI、不弹 toast（批量导入时统一处理）。
+async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
+  const silent = !!(opts && opts.silent);
+
+  // ① 内容完全一致 → 已加载过，直接跳过，保证同一个数据库只显示一个
+  const dup = state.databases.find(d => d.hash === hash);
+  if (dup) {
+    state.activeDbId = dup.id;
+    dup.expanded = true;        // 展开已存在的库，方便确认它还在列表里
+    if (!silent) {
       renderSidebar();
       toast(`「${file.name}」已加载，已跳过重复导入`, 'warn');
-      return;
     }
+    return { kind: 'duplicate', db: dup };
+  }
 
-    const db = new state.SQL.Database(buf);
-    const tables = [];
-    const res = db.exec("SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name");
-    if (res[0]) {
-      for (const row of res[0].values) {
-        const name = row[0];
-        const countRes = db.exec(`SELECT COUNT(*) FROM "${name}"`);
-        const count = countRes[0] ? countRes[0].values[0][0] : 0;
-        const colsRes = db.exec(`PRAGMA table_info("${name}")`);
-        const cols = colsRes[0] ? colsRes[0].values.map(r => ({
-          cid: r[0], name: r[1], type: r[2], notnull: r[3], dflt: r[4], pk: r[5]
-        })) : [];
-        tables.push({ name, count, cols });
-      }
+  const db = new state.SQL.Database(buf);
+  const tables = [];
+  const res = db.exec("SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name");
+  if (res[0]) {
+    for (const row of res[0].values) {
+      const name = row[0];
+      const countRes = db.exec(`SELECT COUNT(*) FROM "${name}"`);
+      const count = countRes[0] ? countRes[0].values[0][0] : 0;
+      const colsRes = db.exec(`PRAGMA table_info("${name}")`);
+      const cols = colsRes[0] ? colsRes[0].values.map(r => ({
+        cid: r[0], name: r[1], type: r[2], notnull: r[3], dflt: r[4], pk: r[5]
+  })) : [];
+      tables.push({ name, count, cols });
     }
-    const dbObj = {
-      id: uid(),
-      file,
-      name: file.name,
-      size: file.size,
-      db,
-      tables,
-      hash,
-      expanded: false,    // 导入后默认收拢，不自动展开
-    };
+  }
+  const dbObj = {
+    id: uid(),
+    file,
+    name: file.name,
+    size: file.size,
+    db,
+    tables,
+    hash,
+    expanded: false,    // 导入后默认收拢，不自动展开
+  };
 
-    // ② 同名但内容不同 → 视为新版本，原位替换旧库（同样只显示一个）
-    const sameIdx = state.databases.findIndex(d => d.name === file.name);
-    let replaced = false;
-    if (sameIdx !== -1) {
-      const old = state.databases[sameIdx];
-      // 旧库已打开的表先关掉，避免指向失效的 dbId
-      state.openTabs = state.openTabs.filter(t => t.dbId !== old.id);
-      if (!state.openTabs.some(t => tabKey(t) === state.activeTabKey)) {
-        state.activeTabKey = state.openTabs[0] ? tabKey(state.openTabs[0]) : null;
-      }
-      try { old.db.close(); } catch (e) {}
-      state.databases[sameIdx] = dbObj;
-      replaced = true;
-    } else {
-      // 不再展开任何库：导入后全部保持收拢（active 高亮与展开是两个独立概念）
-      state.databases.push(dbObj);
+  // ② 同名但内容不同 → 视为新版本，原位替换旧库（同样只显示一个）
+  const sameIdx = state.databases.findIndex(d => d.name === file.name);
+  let replaced = false;
+  if (sameIdx !== -1) {
+    const old = state.databases[sameIdx];
+    // 旧库已打开的表先关掉，避免指向失效的 dbId
+    state.openTabs = state.openTabs.filter(t => t.dbId !== old.id);
+    if (!state.openTabs.some(t => tabKey(t) === state.activeTabKey)) {
+      state.activeTabKey = state.openTabs[0] ? tabKey(state.openTabs[0]) : null;
     }
-    state.activeDbId = dbObj.id;
+    try { old.db.close(); } catch (e) {}
+    state.databases[sameIdx] = dbObj;
+    replaced = true;
+  } else {
+    // 不再展开任何库：导入后全部保持收拢（active 高亮与展开是两个独立概念）
+    state.databases.push(dbObj);
+  }
+  state.activeDbId = dbObj.id;
+
+  if (!silent) {
     renderSidebar();
     renderTabs();
     // 导入成功后收起上传区，进入「已就绪，等待选表」状态。
@@ -1844,10 +1851,8 @@ async function loadDatabase(file) {
     renderContent();     // 未打开任何表时，刷新主区为「从左侧选择一张表查看数据」
     if (isMobile()) closeDrawer();
     toast(replaced ? `「${file.name}」已更新为新版本` : `已加载 ${file.name}`, 'success');
-  } catch (e) {
-    console.error(e);
-    toast(`加载失败: ${file.name}`, 'error');
   }
+  return { kind: replaced ? 'replaced' : 'added', db: dbObj, replaced };
 }
 
 /* ================== 抽屉控制 ================== */
@@ -2706,30 +2711,6 @@ function cellFont(el) {
 // 此时保留横向滚动条更友好（用户可手动滑动查看完整内容）
 // 仅在窄屏（手机）生效：桌面端一律不压缩——只要压缩就必然有文字显示不全，
 // 与「列宽 = 文字完整长度」的目标冲突，桌面端宁可横向滚动。
-function compressToViewport(widths, table) {
-  if (!table.parentElement) return false;
-  if (!window.matchMedia('(max-width: 768px)').matches) return false;
-  const viewportW = table.parentElement.clientWidth;
-  if (viewportW <= 0) return false;
-  const ROW_NUM = widths[0];
-  const PAD = 2;
-  const SCROLLBAR = 14;
-  const HARD_MIN = 36;
-  const available = Math.max(HARD_MIN * 2, viewportW - ROW_NUM - PAD - SCROLLBAR);
-  let total = 0;
-  for (let i = 1; i < widths.length; i++) total += widths[i];
-  if (total <= available) return false;       // 总宽够，无需压缩
-  const ratio = available / total;
-  if (ratio < 0.5) return false;              // 视口严重不足，跳过压缩保留可读性 + 横向滚动
-  let sum = 0;
-  for (let i = 1; i < widths.length; i++) {
-    widths[i] = Math.max(HARD_MIN, Math.floor(widths[i] * ratio));
-    sum += widths[i];
-  }
-  widths[widths.length - 1] = Math.max(HARD_MIN, widths[widths.length - 1] - (sum - available));
-  return true;
-}
-
 function fitTextWidth(text, font) {
   if (!_fitCanvas) _fitCanvas = document.createElement('canvas');
   const ctx = _fitCanvas.getContext('2d');
@@ -2746,16 +2727,17 @@ function fitTextWidth(text, font) {
 }
 
 // 表头需求宽度：字段名（左右各 24px padding，给 ⌕/× 让位）、类型、筛选摘要三者取最大 + 表头内边距
-function fitHeadWidth(th) {
+// fonts：字段名/类型/摘要三者的计算字体，由 autoFitColumns 只测一次后传入，避免逐列 getComputedStyle
+function fitHeadWidth(th, fonts) {
   const nameEl = th.querySelector('.col-name');
   const typeEl = th.querySelector('.col-type');
   const valEl = th.querySelector('.col-filter-val');
   let w = 0;
-  // 字段名 + 48 是因为 .col-name 左右各 24px padding；现在改成左 4 右 22（共 26px），
-  // 相应把这里的常量从 48 降到 26，短数据列才不会被表头虚高撑宽
-  if (nameEl) w = Math.max(w, fitTextWidth(nameEl.textContent, cellFont(nameEl)) + 26);
-  if (typeEl) w = Math.max(w, fitTextWidth(typeEl.textContent, cellFont(typeEl)));
-  if (valEl) w = Math.max(w, fitTextWidth(valEl.textContent, cellFont(valEl)));
+  // 字段名 + 32 是因为 .col-name 在 col-fit 下左右各 16px padding（给右侧 ⌕/× 留位，
+  // 同时让文字视觉居中）。对应 CSS 的 padding:0 16px，短数据列不会被表头虚高撑宽。
+  if (nameEl) w = Math.max(w, fitTextWidth(nameEl.textContent, fonts.name) + 32);
+  if (typeEl) w = Math.max(w, fitTextWidth(typeEl.textContent, fonts.type));
+  if (valEl) w = Math.max(w, fitTextWidth(valEl.textContent, fonts.val));
   // 筛选面板展开时内容更宽，直接用实测宽度兜底
   if (th.querySelector('.col-filter-panel')) w = Math.max(w, th.getBoundingClientRect().width);
   return w + 22; // th padding 8px 10px（左右 20px）+ 1px 边框
@@ -2767,15 +2749,31 @@ function autoFitColumns(table, opts) {
   if (!ths.length) return;
 
   const incremental = !!(opts && opts.incremental);
-  const cached = (table._colWidths && table._colWidths.length === ths.length) ? table._colWidths : null;
-  if (incremental && !cached) { autoFitColumns(table); return; }  // 没有基准就退回全量
+  // 优先用调用方传入的持久缓存（tab._colWidths，跨分页/跨模式复用），否则回退到本 DOM 节点的临时缓存。
+  // 翻页时表格节点会重建，table._colWidths 会丢失，但 tab._colWidths 仍在，所以翻页不必每页从头全量测量。
+  const cached = (opts && opts.cache && opts.cache.length === ths.length) ? opts.cache
+               : (table._colWidths && table._colWidths.length === ths.length ? table._colWidths : null);
+  if (incremental && !cached) { autoFitColumns(table, { tab: opts && opts.tab }); return; }  // 没有基准就退回全量（并写入 tab 缓存）
+
+  // 字体只测一次（所有字段名/类型/摘要共用同一套字体），避免逐列 getComputedStyle 触发样式重算
+  let fonts = opts && opts._fonts;
+  if (!fonts) {
+    const nameEl = table.querySelector('.col-name');
+    const typeEl = table.querySelector('.col-type');
+    const valEl = table.querySelector('.col-filter-val');
+    fonts = {
+      name: nameEl ? cellFont(nameEl) : '14px sans-serif',
+      type: typeEl ? cellFont(typeEl) : '11px sans-serif',
+      val:  valEl  ? cellFont(valEl)  : '11px sans-serif',
+    };
+  }
 
   const widths = cached ? cached.slice() : ths.map(() => COL_FIT_MIN);
 
   // 表头只在首次测量（后续不变）
   if (!cached) {
     ths.forEach((th, i) => {
-      widths[i] = th.classList.contains('row-num') ? 50 : Math.max(widths[i], fitHeadWidth(th));
+      widths[i] = th.classList.contains('row-num') ? 50 : Math.max(widths[i], fitHeadWidth(th, fonts));
     });
   }
 
@@ -2803,16 +2801,17 @@ function autoFitColumns(table, opts) {
   }
   widths[0] = 50;
 
+  // 跨渲染持久化：写回 tab，使翻页/切换模式时复用已测宽度（不必每页从头全量测量）
+  if (opts && opts.tab) opts.tab._colWidths = widths;
   table._colWidths = widths;
   writeCellWidths(table, widths);
 
-  // ② 先按窄屏视口压缩（仅 ≤768px 生效；桌面不压缩，宁可横向滚动也不裁字）
-  const compressed = compressToViewport(widths, table);
-  // ③ 再全量实测校准：把被压缩到「低于内容真实宽度」的列撑回原宽，保证「任何单元格都不裁字」。
-  //    顺序必须是指校准在压缩之后——否则压缩会把列宽又压窄，导致长文本显示不全。
-  //    校准后短内容表仍贴合视口，长内容表则按内容宽度横向滚动（绝不截断）。
+  // ② 全量实测校准（不再做任何视口压缩）：用户明确要求「不压缩、不省略」。
+  //    无论桌面还是手机端，列宽一律等于该列文字一行显示的完整长度；
+  //    总宽超出视口时由外层 .grid-container 的 overflow-x:auto 提供横向滚动，绝不截断。
   const refined = refineByRealWidth(table, widths, ths, trs);
-  if (refined || compressed) {
+  if (refined) {
+    if (opts && opts.tab) opts.tab._colWidths = widths;
     table._colWidths = widths;
     writeCellWidths(table, widths);
   }
@@ -2820,15 +2819,40 @@ function autoFitColumns(table, opts) {
 
 // 把 widths 写进每个 td/th 的 inline style，并锁死 table 总宽
 // （不用 colgroup：Chrome 下 colgroup + fixed + border-spacing 会多出 50+px 莫名 scrollWidth）
+// 性能：① 与上一轮完全一致则直接跳过（无限滚动追加行时，绝大多数批次不会改变任何列宽，省去整表 style 写入与重排）；
+//       ② 仅少数列变化时只重写这些列（其余列上一轮已写好），大幅减少 style 写入量。
 function writeCellWidths(table, widths) {
+  const prev = table._lastWidths;
+  let changed = null;
+  if (prev && prev.length === widths.length) {
+    changed = [];
+    for (let i = 0; i < widths.length; i++) {
+      if (prev[i] !== widths[i]) changed.push(i);
+    }
+    if (changed.length === 0) return;            // 完全没变 → 跳过
+    if (changed.length === widths.length) changed = null;  // 全变 → 走全量
+  }
+  table._lastWidths = widths.slice();
+
   table.querySelectorAll('colgroup').forEach(cg => cg.remove());
   const allRows = table.querySelectorAll('tr');
-  for (const tr of allRows) {
-    const tds = tr.children;
-    for (let i = 0; i < tds.length && i < widths.length; i++) {
-      tds[i].style.width = widths[i] + 'px';
-      tds[i].style.minWidth = widths[i] + 'px';
-      tds[i].style.maxWidth = widths[i] + 'px';
+  if (changed) {
+    for (const tr of allRows) {
+      const tds = tr.children;
+      for (const i of changed) {
+        if (i < tds.length && i < widths.length) {
+          const w = widths[i] + 'px';
+          tds[i].style.width = w; tds[i].style.minWidth = w; tds[i].style.maxWidth = w;
+        }
+      }
+    }
+  } else {
+    for (const tr of allRows) {
+      const tds = tr.children;
+      for (let i = 0; i < tds.length && i < widths.length; i++) {
+        const w = widths[i] + 'px';
+        tds[i].style.width = w; tds[i].style.minWidth = w; tds[i].style.maxWidth = w;
+      }
     }
   }
   table.style.width = widths.reduce((a, b) => a + b, 0) + 'px';
@@ -2843,10 +2867,11 @@ function refineByRealWidth(table, widths, ths, trs) {
     const nameEl = ths[i].querySelector('.col-name');
     const typeEl = ths[i].querySelector('.col-type');
     let need = 0;
-    // scrollWidth 反映内容真实宽度（当前宽度不够时会大于 clientWidth）
-    if (nameEl) need = Math.max(need, nameEl.scrollWidth + 26); // col-name padding 左4+右22
+    // scrollWidth 已包含元素自身 padding，nameEl 的 padding 是 0 22px 0 4px，
+    // 所以这里直接取 scrollWidth，不要再加 26，避免短表头列（如 id）被过度撑宽。
+    if (nameEl) need = Math.max(need, nameEl.scrollWidth);
     if (typeEl) need = Math.max(need, typeEl.scrollWidth);
-    need += 22; // th padding 20 + 边框
+    need += 22; // th 自身 padding 8px 10px（左右 18~20px）+ 1px 边框
     if (need > widths[i]) { widths[i] = Math.min(need, COL_FIT_MAX); changed = true; }
   }
   // ② 数据单元格：全量实测。canvas 对超长文本估算偏差更大，只查「估算最宽」那一格
@@ -2868,35 +2893,12 @@ function refineByRealWidth(table, widths, ths, trs) {
 function applyColFit(opts) {
   const table = document.querySelector('#contentArea .data-table');
   if (!table) return;
-  if (!state.colFit) {
-    table.classList.remove('col-fit');
-    const cg = table.querySelector('colgroup');
-    if (cg) cg.remove();
-    // 必须清掉之前给 td/th 直设的 inline width，否则紧凑模式仍沿用自适应算出的宽度
-    table.querySelectorAll('th, td').forEach(cell => {
-      cell.style.width = '';
-      cell.style.minWidth = '';
-      cell.style.maxWidth = '';
-    });
-    table.style.width = '';
-    table._colWidths = null;
-    return;
-  }
+  // 列宽自适应改为唯一模式：总是按内容完整长度显示，不压缩、不省略、不截断。
   table.classList.add('col-fit');
-  autoFitColumns(table, opts);
-}
-
-// 同步工具栏上的列宽模式按钮（与「分页 / 无限」切换并排）外观
-function syncColFitBtn() {
-  const on = state.colFit;
-  document.querySelectorAll('[data-col-fit]').forEach(b => {
-    b.classList.toggle('on', on);
-    b.title = on
-      ? '当前：列宽按内容自适应，点击切换为紧凑截断'
-      : '当前：列宽紧凑截断，点击切换为按内容自适应';
-    const label = b.querySelector('.col-fit-label');
-    if (label) label.textContent = on ? '列宽自适应' : '列宽紧凑';
-  });
+  const tab = getActiveDataTab();
+  // 复用 tab 上已测的列宽缓存（跨分页/跨模式），skipCache 时强制重新测量
+  const cache = (opts && opts.skipCache) ? null : (tab && tab._colWidths);
+  autoFitColumns(table, Object.assign({}, opts, { tab, cache }));
 }
 
 function loadInfiniteBatch(db, tab) {
@@ -2949,7 +2951,7 @@ function loadInfiniteBatch(db, tab) {
   if (tbody) {
     const prevRows = tbody.children.length;   // 增量测量：只算本次新追加的行
     tbody.insertAdjacentHTML('beforeend', buildRowsHtml(rows, tab._columns, offset));
-    if (state.colFit) applyColFit({ incremental: true, fromRow: prevRows });
+    applyColFit({ incremental: true, fromRow: prevRows });
   }
 
   // 更新状态条
@@ -3046,7 +3048,7 @@ async function jumpToEndViaLastPage(db, tab) {
   // 只渲染末页：一次性替换 tbody（而非追加），DOM 节点量恒为 ~pageSize，不会膨胀
   const tbody = $('infiniteTbody');
   if (tbody) tbody.innerHTML = buildRowsHtml(rows, tab._columns, offset);
-  if (state.colFit) applyColFit();   // 整块替换，重新全量测量
+  applyColFit();   // 整块替换，重新全量测量
   tab.infiniteCount = total;        // 标记已到底
   tab.infiniteFinished = true;
   const loadedEl = $('loadedCount');
@@ -3103,7 +3105,7 @@ function loadPreviousBatch(db, tab) {
   const beforeH = c.scrollHeight;
   const beforeTop = c.scrollTop;
   tbody.insertAdjacentHTML('afterbegin', buildRowsHtml(rows, tab._columns, prevOffset));
-  if (state.colFit) applyColFit();   // 行序变化，重新全量测量；且列宽会影响高度，必须在补偿前完成
+  applyColFit();   // 行序变化，重新全量测量；且列宽会影响高度，必须在补偿前完成
   // 保持视图稳定：内容整体下移新增高度
   c.scrollTop = beforeTop + (c.scrollHeight - beforeH);
 
@@ -3205,6 +3207,13 @@ document.addEventListener('scroll', (e) => {
 }, true);
 
 /* ================== 导出 CSV ================== */
+// CSV 字段转义：含逗号/引号/换行/回车则整段用双引号包裹，并转义内部引号
+function csvField(v) {
+  if (v === null || v === undefined) return '';
+  const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
 function exportCSV() {
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
   if (!tab || tab.table === '__SCHEMA__') {
@@ -3212,7 +3221,9 @@ function exportCSV() {
     return;
   }
   const db = state.databases.find(d => d.id === tab.dbId);
+  if (!db) return;
   const t = db.tables.find(x => x.name === tab.table);
+  if (!t) return;
   const where = buildWhereClause(tab, t);
   let sql, params;
   if (where) {
@@ -3222,29 +3233,36 @@ function exportCSV() {
     sql = `SELECT * FROM "${tab.table}"`;
     params = [];
   }
-  const stmt = db.db.prepare(sql);
-  stmt.bind(params);
-  const rows = [];
-  const cols = t.cols.map(c => c.name);
-  while (stmt.step()) rows.push(stmt.getAsObject());
-  stmt.free();
 
-  const csv = [
-    cols.join(','),
-    ...rows.map(r => cols.map(c => {
-      const v = r[c];
-      if (v === null || v === undefined) return '';
-      const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
-      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    }).join(','))
-  ].join('\n');
+  const cols = t.cols.map(c => c.name);
+  const colCount = cols.length;
+  // 流式导出：逐行读取 + 分块拼接，避免把整张表一次性塞进内存（大表不会卡死/爆内存）。
+  // 用位置数组 stmt.get() 替代 getAsObject()，省去每行建对象与键查找的开销。
+  const chunks = [cols.map(csvField).join(',')];
+  const CHUNK = 2000;
+  let buf = [];
+  let rowCount = 0;
+
+  const stmt = db.db.prepare(sql);
+  if (params.length) stmt.bind(params);
+  while (stmt.step()) {
+    const vals = stmt.get();
+    const cells = new Array(colCount);
+    for (let i = 0; i < colCount; i++) cells[i] = csvField(i < vals.length ? vals[i] : null);
+    buf.push(cells.join(','));
+    if (++rowCount % CHUNK === 0) { chunks.push(buf.join('\n')); buf = []; }
+  }
+  stmt.free();
+  if (buf.length) chunks.push(buf.join('\n'));
+  const csv = chunks.join('\n');
 
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${tab.table}.csv`;
   a.click();
-  toast(`已导出 ${formatNum(rows.length)} 行`, 'success');
+  URL.revokeObjectURL(a.href);
+  toast(`已导出 ${formatNum(rowCount)} 行`, 'success');
 }
 
 /* ================== 切换加载模式 ================== */
@@ -3265,8 +3283,61 @@ function switchLoadMode(tab, mode) {
 
 /* ================== 事件绑定 ================== */
 async function handleFiles(files) {
-  for (const f of files) {
-    await loadDatabase(f);
+  const arr = [...files];
+  if (!arr.length) return;
+
+  // 阶段 1：并行读取文件并计算指纹（IO/异步，互不阻塞）
+  const prepared = await Promise.all(arr.map(async f => {
+    try {
+      const buf = new Uint8Array(await f.arrayBuffer());
+      const hash = await computeFingerprint(buf);
+      return { file: f, buf, hash, error: null };
+    } catch (e) {
+      return { file: f, error: e };
+    }
+  }));
+
+  // 阶段 2：串行执行 CPU 重的建库逻辑，每完成一个让出主线程，避免一次性卡死
+  const results = [];
+  for (let i = 0; i < prepared.length; i++) {
+    const p = prepared[i];
+    if (p.error) {
+      results.push({ kind: 'error', fileName: p.file.name, error: p.error });
+      continue;
+    }
+    const r = await loadDatabaseFromBuffer(p.file, p.buf, p.hash, { silent: true });
+    results.push(r);
+    if (i < prepared.length - 1) await new Promise(res => setTimeout(res, 0));
+  }
+
+  // 阶段 3：统一渲染一次，而不是每个文件都渲染
+  renderSidebar();
+  renderTabs();
+  showDropzone(false);
+  renderContent();
+  if (isMobile()) closeDrawer();
+
+  // 阶段 4：汇总 toast
+  const added = results.filter(r => r.kind === 'added').length;
+  const replaced = results.filter(r => r.kind === 'replaced').length;
+  const skipped = results.filter(r => r.kind === 'duplicate').length;
+  const failed = results.filter(r => r.kind === 'error').length;
+
+  // 单个文件保持原来的文件名提示，多文件才用汇总形式
+  if (results.length === 1 && !failed) {
+    const r = results[0];
+    if (r.kind === 'added') toast(`已加载 ${r.db.name}`, 'success');
+    else if (r.kind === 'replaced') toast(`「${r.db.name}」已更新为新版本`, 'success');
+    else if (r.kind === 'duplicate') toast(`「${r.db.name}」已加载，已跳过重复导入`, 'warn');
+  } else {
+    const parts = [];
+    if (added) parts.push(`新增 ${added} 个`);
+    if (replaced) parts.push(`更新 ${replaced} 个`);
+    if (skipped) parts.push(`跳过 ${skipped} 个重复`);
+    if (failed) parts.push(`失败 ${failed} 个`);
+    if (parts.length) {
+      toast(`数据库导入：${parts.join('，')}`, failed ? 'error' : (skipped ? 'warn' : 'success'));
+    }
   }
 }
 
@@ -3461,18 +3532,6 @@ async function copyToClipboard(text) {
   }
 }
 
-// 工具栏「列宽自适应 / 列宽紧凑」切换（与分页/无限切换并排）：
-// 只改列宽，不整页重渲染，避免滚动位置丢失
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-col-fit]');
-  if (!btn) return;
-  state.colFit = !state.colFit;
-  try { localStorage.setItem('sqlite-col-fit', state.colFit ? '1' : '0'); } catch (err) {}
-  applyColFit();
-  syncColFitBtn();
-  toast(state.colFit ? '列宽已按内容自适应' : '列宽已切换为紧凑模式', 'success');
-});
-
 // 内容区事件委托：双击任一数据单元格即复制其内容
 $('contentArea').addEventListener('dblclick', async (e) => {
   // 找被双击的元素所在的 td
@@ -3535,8 +3594,9 @@ function mountFilterPanelFixed(colName) {
   const pw = wrap.offsetWidth || 250;
   const ph = wrap.offsetHeight || 300;
   let left = r.left;
-  const maxLeft = window.innerWidth - pw - 8;
-  if (left > maxLeft) left = Math.max(8, maxLeft);
+  // 列头可能只有右侧露在视口内（left 为负），面板不能跟着跑到屏幕外；
+  // 同时也不能贴右边缘溢出。左右各留 8px 安全边距。
+  left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
   let top = r.bottom + 4;
   if (top + ph > window.innerHeight - 8) {
     top = Math.max(8, r.top - ph - 4);   // 放不下则改列头上方
@@ -3850,7 +3910,6 @@ if (localStorage.getItem('sqlite-sidebar-collapsed') === '1' && !state.isMobile)
 }
 
 theme.init();
-syncColFitBtn();   // 工具栏列宽按钮初始态（默认按 localStorage，无记录则自适应）
 
 (async () => {
   try {
