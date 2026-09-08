@@ -2681,16 +2681,18 @@ function buildRowsHtml(rows, columns, startIndex) {
 
 /* ================== 列宽自适应 ==================
    两种模式：
-   - 自适应（默认）：实测「表头 + 单元格文本」宽度写入 <colgroup>，配合 table-layout:fixed
-     让列宽贴合内容，长文本按上限折行而不是被省略号截断；
+   - 自适应（默认）：列宽 = 该列文字一行显示完整所需的宽度，配合 table-layout:fixed 精确贴合，
+     不折行、不截断、无省略号；宽度直写到每个 th/td 的 inline style（不用 colgroup：
+     Chrome 下 colgroup + fixed + border-spacing 会多出几十 px 的莫名 scrollWidth）；
    - 紧凑：交回浏览器自动布局，沿用 360px 上限 + 省略号。
-   文本宽度用 canvas.measureText 计算（比逐个 DOM 测量快两个数量级，几千个单元格也不卡顿）。 */
+   计算分两阶段：先 canvas.measureText 粗估（比逐个 DOM 测量快两个数量级），
+   写入列宽后再按浏览器真实布局 scrollWidth 全量复检补齐——canvas 对 tabular-nums、
+   italic、中文字体回退、letter-spacing 都存在偏差，且文本越长偏差越大。 */
 const COL_FIT_MIN = 64;       // 列宽下限（px，含内边距）
-// 列宽上限：列宽 = 该列最长文字的完整单行长度，这里只在 8000px 处做极端兜底
-// （约 640 个汉字 / 1150 个英文字符），防止单条几万字符的脏数据把表格拉成几十万像素宽。
-// 正常数据远达不到这个值，都能完整一行显示。
-const COL_FIT_MAX = 8000;
-const COL_FIT_CELLS = 8000;   // 单次全量测量的单元格上限，防止大表卡死
+// 列宽上限：只在 30000px 处做极端兜底（约 2400 个汉字 / 4300 个英文字符），
+// 防止单条几十万字符的脏数据把表格撑爆导致浏览器卡死。正常数据远达不到。
+const COL_FIT_MAX = 30000;
+const COL_FIT_ROWS = 3000;    // 估算 / 实测校准阶段最多扫描的行数，防止超大表卡死
 let _fitCanvas = null;
 
 function cellFont(el) {
@@ -2698,14 +2700,17 @@ function cellFont(el) {
   return cs.font || `${cs.fontSize} ${cs.fontFamily}`;
 }
 
-// 多行文本取「最长一行」的宽度；超长文本截断测量（反正会被 clamp 到上限）
 // 把 widths 按「视口宽 − 行号列 − 滚动条」等比压缩，保证移动端一屏可见所有列不横向溢出
 // 视口极窄时允许列宽 < COL_FIT_MIN，但不少于 36（保证字段名 + 几个字符仍可读）
 // 当压缩比例 < 0.5（即视口严重不足）时跳过压缩：勉强压到极限会变成不可读的小列，
 // 此时保留横向滚动条更友好（用户可手动滑动查看完整内容）
-function compressToViewport(widths, table) {
-  const viewportW = table.parentElement ? table.parentElement.clientWidth : 0;
-  if (viewportW <= 0) return;
+// 仅在窄屏（手机）生效：桌面端一律不压缩——只要压缩就必然有文字显示不全，
+// 与「列宽 = 文字完整长度」的目标冲突，桌面端宁可横向滚动。
+function compressToViewport(widths, table, dryRun) {
+  if (!table.parentElement) return false;
+  if (!window.matchMedia('(max-width: 768px)').matches) return false;
+  const viewportW = table.parentElement.clientWidth;
+  if (viewportW <= 0) return false;
   const ROW_NUM = widths[0];
   const PAD = 2;
   const SCROLLBAR = 14;
@@ -2713,15 +2718,17 @@ function compressToViewport(widths, table) {
   const available = Math.max(HARD_MIN * 2, viewportW - ROW_NUM - PAD - SCROLLBAR);
   let total = 0;
   for (let i = 1; i < widths.length; i++) total += widths[i];
-  if (total <= available) return;       // 总宽够，无需压缩
+  if (total <= available) return false;       // 总宽够，无需压缩
   const ratio = available / total;
-  if (ratio < 0.5) return;              // 视口严重不足，跳过压缩保留可读性 + 横向滚动
+  if (ratio < 0.5) return false;              // 视口严重不足，跳过压缩保留可读性 + 横向滚动
+  if (dryRun) return true;                    // 只判断是否需要压缩，不改数值
   let sum = 0;
   for (let i = 1; i < widths.length; i++) {
     widths[i] = Math.max(HARD_MIN, Math.floor(widths[i] * ratio));
     sum += widths[i];
   }
   widths[widths.length - 1] = Math.max(HARD_MIN, widths[widths.length - 1] - (sum - available));
+  return true;
 }
 
 function fitTextWidth(text, font) {
@@ -2779,9 +2786,8 @@ function autoFitColumns(table, opts) {
 
   let trs = Array.from(table.querySelectorAll('tbody tr'));
   if (incremental) trs = trs.slice((opts && opts.fromRow) || 0);
-  let cells = 0;
-  // 记录每列「最宽的那个单元格」，供后面实测校验用（只需复检这几个，不必遍历全表）
-  const widest = new Array(widths.length).fill(null);
+  if (trs.length > COL_FIT_ROWS) trs = trs.slice(0, COL_FIT_ROWS);
+  // ① canvas 粗估：快，但有偏差（tabular-nums / italic / 中文字体回退 / letter-spacing）
   for (const tr of trs) {
     const tds = tr.children;
     for (let i = 1; i < tds.length && i < widths.length; i++) { // i=0 是行号列，跳过
@@ -2789,24 +2795,29 @@ function autoFitColumns(table, opts) {
       const text = td.textContent;
       if (!text) continue;
       const w = fitTextWidth(text, td.classList.contains('json') ? jsonFont : baseFont) + 22; // td padding 6px 10px + 边框
-      if (w > widths[i]) { widths[i] = w; widest[i] = td; }
-      if (++cells >= COL_FIT_CELLS) break;
+      if (w > widths[i]) widths[i] = w;
     }
-    if (cells >= COL_FIT_CELLS) break;
   }
 
   for (let i = 1; i < widths.length; i++) {
     widths[i] = Math.min(Math.max(Math.ceil(widths[i]), COL_FIT_MIN), COL_FIT_MAX);
   }
   widths[0] = 50;
-  compressToViewport(widths, table);
-  table._colWidths = widths;
 
+  table._colWidths = widths;
   writeCellWidths(table, widths);
-  // 实测校准：canvas 估算与浏览器真实渲染存在偏差（tabular-nums、italic、中文字体回退、
-  // letter-spacing 等都会让估算偏小），写入列宽后按真实 scrollWidth 补齐，保证：
-  // ① 表头字段名 + 类型始终完整显示；② 每个单元格文字一行显示全。
-  refineByRealWidth(table, widths, ths, widest);
+
+  // ② 实测校准：按浏览器真实布局逐格复检补齐。文本越长 canvas 偏差越大，
+  //    只抽查「估算最宽」的那一格会漏掉真正最长的，所以这里全量扫。
+  //    压缩模式下跳过：压缩本身就是有意让总宽适配窄屏，校准会把列宽撑回去。
+  const needCompress = compressToViewport(widths, table, true);
+  const refined = needCompress ? false : refineByRealWidth(table, widths, ths, trs);
+  // ③ 压缩放最后（仅手机端），保证校准结果不被压回去
+  const compressed = compressToViewport(widths, table, false);
+  if (refined || compressed) {
+    table._colWidths = widths;
+    writeCellWidths(table, widths);
+  }
 }
 
 // 把 widths 写进每个 td/th 的 inline style，并锁死 table 总宽
@@ -2825,8 +2836,8 @@ function writeCellWidths(table, widths) {
   table.style.width = widths.reduce((a, b) => a + b, 0) + 'px';
 }
 
-// 写入列宽后，用浏览器真实布局复检每列，宽度不够就补到刚好容纳内容
-function refineByRealWidth(table, widths, ths, widest) {
+// 写入列宽后，用浏览器真实布局复检，宽度不够就补到刚好容纳内容。返回是否调整过。
+function refineByRealWidth(table, widths, ths, trs) {
   let changed = false;
   // ① 表头：字段名 + 类型必须完整显示（col-name 有 overflow:hidden，宽度不够会被 ellipsis 裁掉）
   for (let i = 0; i < ths.length && i < widths.length; i++) {
@@ -2840,19 +2851,19 @@ function refineByRealWidth(table, widths, ths, widest) {
     need += 22; // th padding 20 + 边框
     if (need > widths[i]) { widths[i] = Math.min(need, COL_FIT_MAX); changed = true; }
   }
-  // ② 数据单元格：只复检每列「估算最宽」的那个，避免遍历全表
-  for (let i = 1; i < widths.length; i++) {
-    const td = widest[i];
-    if (!td) continue;
-    if (td.scrollWidth + 2 > widths[i]) {
-      widths[i] = Math.min(td.scrollWidth + 2, COL_FIT_MAX);
-      changed = true;
+  // ② 数据单元格：全量实测。canvas 对超长文本估算偏差更大，只查「估算最宽」那一格
+  //    很可能选错对象，导致真正最长的单元格被漏掉、显示不全，所以逐格读 scrollWidth。
+  for (const tr of trs) {
+    const tds = tr.children;
+    for (let i = 1; i < tds.length && i < widths.length; i++) {
+      const td = tds[i];
+      if (!td.textContent) continue;
+      // +2 抵消亚像素取整误差，避免刚好差 1px 就被裁掉一个字
+      const need = td.scrollWidth + 2;
+      if (need > widths[i]) { widths[i] = Math.min(need, COL_FIT_MAX); changed = true; }
     }
   }
-  if (changed) {
-    table._colWidths = widths;
-    writeCellWidths(table, widths);
-  }
+  return changed;
 }
 
 // 对当前内容区的表格应用列宽模式；opts 透传给 autoFitColumns（增量测量用）
