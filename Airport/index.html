@@ -1673,6 +1673,20 @@
         }
         document.body.removeChild(textArea);
       });
+
+  /* ===== 输入框双击全选 =====
+     用事件委托统一处理：覆盖静态输入框和后续动态生成的控件，
+     排除 checkbox / radio / file / 按钮类（select() 对它们无意义）。 */
+  document.addEventListener('dblclick', function (e) {
+    var el = e.target;
+    if (!el || typeof el.select !== 'function') return;
+    var tag = el.tagName;
+    if (tag !== 'INPUT' && tag !== 'TEXTAREA') return;
+    var type = (el.type || '').toLowerCase();
+    if (['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'range', 'color'].indexOf(type) !== -1) return;
+    if (el.disabled || el.readOnly) return;
+    el.select();
+  });
   </script>
 
   <!-- 返回主页图标按钮样式 -->
