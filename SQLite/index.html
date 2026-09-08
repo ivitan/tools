@@ -728,13 +728,13 @@
     min-height: 0;
   }
   .status-bar {
-    height: 30px;
-    padding: 0 14px;
+    min-height: 30px;
+    padding: 4px 14px;
     background: var(--panel);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 8px 14px;
     font-size: 12.5px;
     font-weight: 500;
     color: var(--text-secondary);
@@ -1112,6 +1112,52 @@
   .data-table td.number { text-align: center; font-variant-numeric: tabular-nums; }
   .data-table td.bool { text-align: center; }
   .data-table td.json { color: var(--primary); font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 11.5px; }
+
+  /* ===== 列宽自适应（Excel 式）=====
+     目标：一行里每列按「该列最长内容」撑开列宽，短列就窄、不留空白；
+     行高保持单行（不折行），长内容列宽撑到上限后用省略号 + 悬停看全文。
+     实现：JS 实测「表头 + 单元格文本」宽度写入每个 td/th 的 style.width，
+     配合 fixed 布局锁死列宽；总宽用 max-content，不被 min-width:100% 平摊拉伸。 */
+  .data-table.col-fit {
+    table-layout: fixed;
+    border-collapse: collapse;
+    min-width: 0;
+    /* 关键：不能用 width:100% —— fixed 布局下会把各列按比例拉伸填满容器，
+       导致「内容很少的列被撑得很宽、大片空白」。改为 max-content 让总宽 = 各列内容宽之和。
+       同时 JS 会给每个 td/th 直设 width（不用 colgroup，避免 Chrome 下 50px 莫名 scrollWidth）。 */
+    width: max-content;
+  }
+  /* 保持单行：不折行，超出列宽的部分用省略号（td 已有 title，悬停可看全文） */
+  .data-table.col-fit td {
+    max-width: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* 列宽被固定后，表头字段名同样保持单行，与 Excel 表头一致 */
+  .data-table.col-fit th .col-name { white-space: nowrap; }
+
+  /* 列宽模式切换：与 .mode-toggle 同风格，放在分页/无限切换旁边 */
+  .col-fit-btn {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    transition: all 0.12s;
+  }
+  .col-fit-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .col-fit-btn:hover { background: var(--panel-hover); color: var(--text); }
+  .col-fit-btn.on { background: var(--primary); color: var(--primary-on); border-color: var(--primary); }
+
   .row-num {
     background: var(--header-row) !important;
     color: var(--text-secondary);
@@ -1408,7 +1454,8 @@
     .breadcrumb { width: 100%; order: 1; font-size: 12px; }
     .toolbar-input { flex: 1; order: 2; width: auto; min-width: 0; }
     .mode-toggle { order: 3; }
-    #btnExport { order: 4; }
+    .col-fit-btn { order: 4; }
+    #btnExport { order: 5; }
 
     .tabs { padding: 0 10px; }
 
@@ -1435,6 +1482,8 @@
 
     .mode-toggle button { padding: 0 8px; }
     .mode-toggle button .mode-label { display: none; }
+    .col-fit-btn { padding: 0 8px; }
+    .col-fit-btn .col-fit-label { display: none; }
 
     .toast { top: 56px; right: 10px; left: 10px; max-width: none; }
   }
@@ -1543,6 +1592,12 @@
             <span class="mode-label">无限</span>
           </button>
         </div>
+        <button class="col-fit-btn" id="colFitBtn" data-col-fit title="列宽按内容自适应">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 5v14M20 5v14"/><path d="M9 9l-3 3 3 3M15 9l3 3-3 3"/><path d="M8 12h8"/>
+          </svg>
+          <span class="col-fit-label">列宽自适应</span>
+        </button>
         <button class="icon-btn" id="btnExport" title="导出当前数据为 CSV">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
@@ -1589,6 +1644,7 @@ const state = {
   activeTabKey: null,
   SQL: null,
   loadMode: localStorage.getItem('sqlite-load-mode') || 'infinite', // 默认无限滚动
+  colFit: localStorage.getItem('sqlite-col-fit') !== '0', // 列宽自适应，默认开；'0' = 紧凑截断
   isMobile: matchMedia('(max-width: 768px)').matches,
   infiniteObserver: null,
 };
@@ -2283,6 +2339,8 @@ function renderDataGrid(db, tab) {
         </table>
       </div>
     </div>`;
+
+  applyColFit();   // 按内容实测列宽
 }
 
 /* ================== 无限滚动模式 ================== */
@@ -2362,6 +2420,8 @@ function renderInfiniteGrid(db, tab) {
   // SQL 预览用首条
   $('sqlPreview').textContent = `SELECT * FROM "${tab.table}"${tab.filter ? ` WHERE … LIKE '%${tab.filter}%'` : ''} LIMIT ${tab.pageSize} OFFSET …`;
   $('footerBar').classList.add('hidden');
+
+  applyColFit();   // 先按表头定出初始列宽，后续追加行时增量修正
 
   // 启动 observer
   setupInfiniteObserver(db, tab);
@@ -2610,6 +2670,166 @@ function buildRowsHtml(rows, columns, startIndex) {
   return out.join('');
 }
 
+/* ================== 列宽自适应 ==================
+   两种模式：
+   - 自适应（默认）：实测「表头 + 单元格文本」宽度写入 <colgroup>，配合 table-layout:fixed
+     让列宽贴合内容，长文本按上限折行而不是被省略号截断；
+   - 紧凑：交回浏览器自动布局，沿用 360px 上限 + 省略号。
+   文本宽度用 canvas.measureText 计算（比逐个 DOM 测量快两个数量级，几千个单元格也不卡顿）。 */
+const COL_FIT_MIN = 64;       // 列宽下限（px，含内边距）
+// 列宽上限：Excel 双击列边界会把列撑到内容实际宽度，这里给 800px 封顶，
+// 避免单条 5000 字符的 JSON 把表格拉到几万像素宽；超出部分省略号，悬停看全文。
+const COL_FIT_MAX = 800;
+const COL_FIT_CELLS = 8000;   // 单次全量测量的单元格上限，防止大表卡死
+let _fitCanvas = null;
+
+function cellFont(el) {
+  const cs = getComputedStyle(el);
+  return cs.font || `${cs.fontSize} ${cs.fontFamily}`;
+}
+
+// 多行文本取「最长一行」的宽度；超长文本截断测量（反正会被 clamp 到上限）
+// 把 widths 按「视口宽 − 行号列 − 滚动条」等比压缩，保证移动端一屏可见所有列不横向溢出
+// 视口极窄时允许列宽 < COL_FIT_MIN，但不少于 36（保证字段名 + 几个字符仍可读）
+// 当压缩比例 < 0.5（即视口严重不足）时跳过压缩：勉强压到极限会变成不可读的小列，
+// 此时保留横向滚动条更友好（用户可手动滑动查看完整内容）
+function compressToViewport(widths, table) {
+  const viewportW = table.parentElement ? table.parentElement.clientWidth : 0;
+  if (viewportW <= 0) return;
+  const ROW_NUM = widths[0];
+  const PAD = 2;
+  const SCROLLBAR = 14;
+  const HARD_MIN = 36;
+  const available = Math.max(HARD_MIN * 2, viewportW - ROW_NUM - PAD - SCROLLBAR);
+  let total = 0;
+  for (let i = 1; i < widths.length; i++) total += widths[i];
+  if (total <= available) return;       // 总宽够，无需压缩
+  const ratio = available / total;
+  if (ratio < 0.5) return;              // 视口严重不足，跳过压缩保留可读性 + 横向滚动
+  let sum = 0;
+  for (let i = 1; i < widths.length; i++) {
+    widths[i] = Math.max(HARD_MIN, Math.floor(widths[i] * ratio));
+    sum += widths[i];
+  }
+  widths[widths.length - 1] = Math.max(HARD_MIN, widths[widths.length - 1] - (sum - available));
+}
+
+function fitTextWidth(text, font) {
+  if (!_fitCanvas) _fitCanvas = document.createElement('canvas');
+  const ctx = _fitCanvas.getContext('2d');
+  ctx.font = font;
+  let max = 0;
+  const lines = String(text).split('\n');
+  for (const line of lines) {
+    const w = ctx.measureText(line.length > 500 ? line.slice(0, 500) : line).width;
+    if (w > max) max = w;
+  }
+  return max;
+}
+
+// 表头需求宽度：字段名（左右各 24px padding，给 ⌕/× 让位）、类型、筛选摘要三者取最大 + 表头内边距
+function fitHeadWidth(th) {
+  const nameEl = th.querySelector('.col-name');
+  const typeEl = th.querySelector('.col-type');
+  const valEl = th.querySelector('.col-filter-val');
+  let w = 0;
+  if (nameEl) w = Math.max(w, fitTextWidth(nameEl.textContent, cellFont(nameEl)) + 48);
+  if (typeEl) w = Math.max(w, fitTextWidth(typeEl.textContent, cellFont(typeEl)));
+  if (valEl) w = Math.max(w, fitTextWidth(valEl.textContent, cellFont(valEl)));
+  // 筛选面板展开时内容更宽，直接用实测宽度兜底
+  if (th.querySelector('.col-filter-panel')) w = Math.max(w, th.getBoundingClientRect().width);
+  return w + 22; // th padding 8px 10px（左右 20px）+ 1px 边框
+}
+
+function autoFitColumns(table, opts) {
+  if (!table) return;
+  const ths = Array.from(table.querySelectorAll('thead th'));
+  if (!ths.length) return;
+
+  const incremental = !!(opts && opts.incremental);
+  const cached = (table._colWidths && table._colWidths.length === ths.length) ? table._colWidths : null;
+  if (incremental && !cached) { autoFitColumns(table); return; }  // 没有基准就退回全量
+
+  const widths = cached ? cached.slice() : ths.map(() => COL_FIT_MIN);
+
+  // 表头只在首次测量（后续不变）
+  if (!cached) {
+    ths.forEach((th, i) => {
+      widths[i] = th.classList.contains('row-num') ? 50 : Math.max(widths[i], fitHeadWidth(th));
+    });
+  }
+
+  const baseFont = cellFont(table);
+  const jsonEl = table.querySelector('td.json');
+  const jsonFont = jsonEl ? cellFont(jsonEl) : baseFont;
+
+  let trs = Array.from(table.querySelectorAll('tbody tr'));
+  if (incremental) trs = trs.slice((opts && opts.fromRow) || 0);
+  let cells = 0;
+  for (const tr of trs) {
+    const tds = tr.children;
+    for (let i = 1; i < tds.length && i < widths.length; i++) { // i=0 是行号列，跳过
+      const td = tds[i];
+      const text = td.textContent;
+      if (!text) continue;
+      const w = fitTextWidth(text, td.classList.contains('json') ? jsonFont : baseFont) + 22; // td padding 6px 10px + 边框
+      if (w > widths[i]) widths[i] = w;
+      if (++cells >= COL_FIT_CELLS) break;
+    }
+    if (cells >= COL_FIT_CELLS) break;
+  }
+
+  for (let i = 1; i < widths.length; i++) {
+    widths[i] = Math.min(Math.max(Math.ceil(widths[i]), COL_FIT_MIN), COL_FIT_MAX);
+  }
+  widths[0] = 50;
+  compressToViewport(widths, table);
+  table._colWidths = widths;
+
+  // 完全不用 colgroup（colgroup 在 fixed+border-spacing 下会有 50+px 莫名 scrollWidth 溢出），
+  // 直接给每个 cell 写 width 撑满；table 自身用 inline style 锁死总宽
+  table.querySelectorAll('colgroup').forEach(cg => cg.remove());
+  const allRows = table.querySelectorAll('tr');
+  for (const tr of allRows) {
+    const tds = tr.children;
+    for (let i = 0; i < tds.length && i < widths.length; i++) {
+      tds[i].style.width = widths[i] + 'px';
+      tds[i].style.minWidth = widths[i] + 'px';
+      tds[i].style.maxWidth = widths[i] + 'px';
+    }
+  }
+  const sum = widths.reduce((a, b) => a + b, 0);
+  table.style.width = sum + 'px';
+}
+
+// 对当前内容区的表格应用列宽模式；opts 透传给 autoFitColumns（增量测量用）
+function applyColFit(opts) {
+  const table = document.querySelector('#contentArea .data-table');
+  if (!table) return;
+  if (!state.colFit) {
+    table.classList.remove('col-fit');
+    const cg = table.querySelector('colgroup');
+    if (cg) cg.remove();
+    table._colWidths = null;
+    return;
+  }
+  table.classList.add('col-fit');
+  autoFitColumns(table, opts);
+}
+
+// 同步工具栏上的列宽模式按钮（与「分页 / 无限」切换并排）外观
+function syncColFitBtn() {
+  const on = state.colFit;
+  document.querySelectorAll('[data-col-fit]').forEach(b => {
+    b.classList.toggle('on', on);
+    b.title = on
+      ? '当前：列宽按内容自适应，点击切换为紧凑截断'
+      : '当前：列宽紧凑截断，点击切换为按内容自适应';
+    const label = b.querySelector('.col-fit-label');
+    if (label) label.textContent = on ? '列宽自适应' : '列宽紧凑';
+  });
+}
+
 function loadInfiniteBatch(db, tab) {
   if (tab._loading || tab.infiniteFinished) return;
   tab._loading = true;
@@ -2658,7 +2878,9 @@ function loadInfiniteBatch(db, tab) {
   // 追加到 tbody
   const tbody = $('infiniteTbody');
   if (tbody) {
+    const prevRows = tbody.children.length;   // 增量测量：只算本次新追加的行
     tbody.insertAdjacentHTML('beforeend', buildRowsHtml(rows, tab._columns, offset));
+    if (state.colFit) applyColFit({ incremental: true, fromRow: prevRows });
   }
 
   // 更新状态条
@@ -2755,6 +2977,7 @@ async function jumpToEndViaLastPage(db, tab) {
   // 只渲染末页：一次性替换 tbody（而非追加），DOM 节点量恒为 ~pageSize，不会膨胀
   const tbody = $('infiniteTbody');
   if (tbody) tbody.innerHTML = buildRowsHtml(rows, tab._columns, offset);
+  if (state.colFit) applyColFit();   // 整块替换，重新全量测量
   tab.infiniteCount = total;        // 标记已到底
   tab.infiniteFinished = true;
   const loadedEl = $('loadedCount');
@@ -2811,6 +3034,7 @@ function loadPreviousBatch(db, tab) {
   const beforeH = c.scrollHeight;
   const beforeTop = c.scrollTop;
   tbody.insertAdjacentHTML('afterbegin', buildRowsHtml(rows, tab._columns, prevOffset));
+  if (state.colFit) applyColFit();   // 行序变化，重新全量测量；且列宽会影响高度，必须在补偿前完成
   // 保持视图稳定：内容整体下移新增高度
   c.scrollTop = beforeTop + (c.scrollHeight - beforeH);
 
@@ -3167,6 +3391,18 @@ async function copyToClipboard(text) {
     } catch (e2) { return false; }
   }
 }
+
+// 工具栏「列宽自适应 / 列宽紧凑」切换（与分页/无限切换并排）：
+// 只改列宽，不整页重渲染，避免滚动位置丢失
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-col-fit]');
+  if (!btn) return;
+  state.colFit = !state.colFit;
+  try { localStorage.setItem('sqlite-col-fit', state.colFit ? '1' : '0'); } catch (err) {}
+  applyColFit();
+  syncColFitBtn();
+  toast(state.colFit ? '列宽已按内容自适应' : '列宽已切换为紧凑模式', 'success');
+});
 
 // 内容区事件委托：双击任一数据单元格即复制其内容
 $('contentArea').addEventListener('dblclick', async (e) => {
@@ -3545,6 +3781,7 @@ if (localStorage.getItem('sqlite-sidebar-collapsed') === '1' && !state.isMobile)
 }
 
 theme.init();
+syncColFitBtn();   // 工具栏列宽按钮初始态（默认按 localStorage，无记录则自适应）
 
 (async () => {
   try {
