@@ -898,21 +898,20 @@
     // B 区是否正处于「数据库提取结果」展示状态（此状态下禁用粘贴，清空后恢复）
     let bAreaDbDataActive = false;
 
-    // 辅助网格：接收用户粘贴文本并渲染表格
-    document
-      .getElementById("pasteGridWrapper")
-      .addEventListener("paste", (e) => {
-        e.preventDefault();
-        // 数据库数据展示期间不触发粘贴，需先点击「清空结果集」恢复
-        if (bAreaDbDataActive) {
-          document.getElementById("queryStatus").innerHTML =
-            `<span class="text-amber-500 dark:text-amber-400">当前为数据库提取结果，请先点击「清空结果集」后再粘贴</span>`;
-          return;
-        }
-        const text = (e.clipboardData || window.clipboardData).getData(
-          "text",
-        );
-        if (!text) return;
+    // 辅助网格：接收用户粘贴文本并渲染表格（监听挂到 document，
+    // 避免「清空结果集」后焦点仍在按钮上导致粘贴事件收不到）
+    document.addEventListener("paste", (e) => {
+      e.preventDefault();
+      // 数据库数据展示期间不触发粘贴，需先点击「清空结果集」恢复
+      if (bAreaDbDataActive) {
+        document.getElementById("queryStatus").innerHTML =
+          `<span class="text-amber-500 dark:text-amber-400">当前为数据库提取结果，请先点击「清空结果集」后再粘贴</span>`;
+        return;
+      }
+      const text = (e.clipboardData || window.clipboardData).getData(
+        "text",
+      );
+      if (!text) return;
 
         const pasteArea = document.getElementById("pasteArea");
         pasteArea.value = pasteArea.value
