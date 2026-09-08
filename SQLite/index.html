@@ -1127,15 +1127,20 @@
        同时 JS 会给每个 td/th 直设 width（不用 colgroup，避免 Chrome 下 50px 莫名 scrollWidth）。 */
     width: max-content;
   }
-  /* 保持单行：不折行，超出列宽的部分用省略号（td 已有 title，悬停可看全文） */
+  /* 完整显示：不截断、不用省略号。列宽超上限时折行（行高增加），保证每个字都看得见 */
   .data-table.col-fit td {
     max-width: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   /* 列宽被固定后，表头字段名同样保持单行，与 Excel 表头一致 */
-  .data-table.col-fit th .col-name { white-space: nowrap; }
+  .data-table.col-fit th .col-name {
+    white-space: nowrap;
+    /* ⌕/× 是绝对定位在右侧的，左右各 24px 的对称 padding 会把短数据列也撑宽，
+       改成「左小右大」：只给右侧按钮留位，短列能更贴合内容 */
+    padding: 0 22px 0 4px;
+  }
 
   /* 列宽模式切换：与 .mode-toggle 同风格，放在分页/无限切换旁边 */
   .col-fit-btn {
@@ -2677,10 +2682,9 @@ function buildRowsHtml(rows, columns, startIndex) {
    - 紧凑：交回浏览器自动布局，沿用 360px 上限 + 省略号。
    文本宽度用 canvas.measureText 计算（比逐个 DOM 测量快两个数量级，几千个单元格也不卡顿）。 */
 const COL_FIT_MIN = 64;       // 列宽下限（px，含内边距）
-// 列宽上限：Excel「双击列边界自动调整列宽」会把列撑到内容实际宽度、完整显示所有文字，
-// 这里给 2400px 封顶（约 190 个汉字 / 340 个英文字符，覆盖绝大多数场景），
-// 避免单条几万字符的文本把表格拉成几万像素宽；极少数超出的仍用省略号，双击单元格可复制全文。
-const COL_FIT_MAX = 2400;
+// 列宽上限：优先完整显示所有文字。宽度超过这个值时折行（而不是省略号截断），
+// 所以既保证「一个字都不少」，又避免单列被撑到两千多像素、让短内容单元格显得空荡荡。
+const COL_FIT_MAX = 600;
 const COL_FIT_CELLS = 8000;   // 单次全量测量的单元格上限，防止大表卡死
 let _fitCanvas = null;
 
@@ -2734,7 +2738,9 @@ function fitHeadWidth(th) {
   const typeEl = th.querySelector('.col-type');
   const valEl = th.querySelector('.col-filter-val');
   let w = 0;
-  if (nameEl) w = Math.max(w, fitTextWidth(nameEl.textContent, cellFont(nameEl)) + 48);
+  // 字段名 + 48 是因为 .col-name 左右各 24px padding；现在改成左 4 右 22（共 26px），
+  // 相应把这里的常量从 48 降到 26，短数据列才不会被表头虚高撑宽
+  if (nameEl) w = Math.max(w, fitTextWidth(nameEl.textContent, cellFont(nameEl)) + 26);
   if (typeEl) w = Math.max(w, fitTextWidth(typeEl.textContent, cellFont(typeEl)));
   if (valEl) w = Math.max(w, fitTextWidth(valEl.textContent, cellFont(valEl)));
   // 筛选面板展开时内容更宽，直接用实测宽度兜底
