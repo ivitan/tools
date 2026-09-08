@@ -74,7 +74,7 @@
       white-space: nowrap;
     }
 
-    /* 数据库与数据表名展示表格：文字居中，与上方各展示区保持一致 */
+    /* 原始数据来源明细表格：文字居中，与上方各展示区保持一致 */
     .raw-table th,
     .raw-table td {
       text-align: center;
@@ -474,7 +474,7 @@
             <span class="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center">
               <span
                 class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-1">C</span>
-              查看数据库与数据表名 (<span id="rawCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>
+              查看原始数据来源明细 (<span id="rawCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>
               条)
             </span>
             <span id="rawToggleIcon"
@@ -801,19 +801,17 @@
       }
 
       const tableListDiv = document.getElementById("tableList");
-      tableListDiv.innerHTML = "";
+      // 一次性拼接后写入 innerHTML，避免逐项 appendChild 触发多次重排
+      let listHtml = "";
       tableMap.forEach((files, tableName) => {
-        const isChecked = "checked";
-        const div = document.createElement("div");
-        div.className = "flex items-center space-x-1";
-        div.innerHTML = `
-        <input type="checkbox" value="${tableName}" class="table-checkbox w-3.5 h-3.5 text-blue-600 rounded" ${isChecked}>
+        listHtml += `<div class="flex items-center space-x-1">
+        <input type="checkbox" value="${tableName}" class="table-checkbox w-3.5 h-3.5 text-blue-600 rounded" checked>
         <label class="text-xs text-gray-700 dark:text-gray-300 cursor-pointer truncate" title="${tableName}" onclick="this.previousElementSibling.click()">
           ${tableName}
         </label>
-      `;
-        tableListDiv.appendChild(div);
+      </div>`;
       });
+      tableListDiv.innerHTML = listHtml;
 
       const okCount = databases.length;
 
@@ -1061,7 +1059,7 @@
       }
 
       // 来自数据库的数据：B 区展示时隐藏 image_path 列
-      // （该字段不参与提取逻辑，仅保留在 C 区「查看数据库与数据表名」原始明细中）
+      // （该字段不参与提取逻辑，仅保留在 C 区「查看原始数据来源明细」中）
       const skipCols = extraText ? new Set(["image_path"]) : new Set();
       const colKeep = [];
       for (let h = 0; h < headers.length; h++) {
@@ -1205,51 +1203,43 @@
         let dbFilteredColumns = new Set();
 
         if (selectedTables.length > 0) {
+          // 过滤条件与具体表无关，提升到循环外只构建一次
+          const conditions = [];
+          if (startTime) conditions.push(`report_time >= '${startTime}'`);
+          if (endTime) conditions.push(`report_time <= '${endTime}'`);
+          if (aproCode) conditions.push(`aproCode = '${aproCode}'`);
+          const whereClause =
+            conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
           databases.forEach(({ name, db }) => {
             selectedTables.forEach((tableName) => {
               try {
-                let conditions = [];
-                if (startTime)
-                  conditions.push(`report_time >= '${startTime}'`);
-                if (endTime) conditions.push(`report_time <= '${endTime}'`);
-                if (aproCode) conditions.push(`aproCode = '${aproCode}'`);
-                const whereClause =
-                  conditions.length > 0
-                    ? `WHERE ${conditions.join(" AND ")}`
-                    : "";
+                // 单次查询：结果同时供 B 区展示/解析 与 C 区原始明细使用。
+                // 此前 sqlFull 与 sqlRaw 是两条完全相同的 SQL，各跑一遍并各自建一遍行对象，
+                // 耗时与内存都翻倍，这里合并为一次查询、一次建对象后共用。
+                const result = db.exec(
+                  `SELECT * FROM "${tableName}" ${whereClause}`,
+                );
+                if (result.length === 0) return;
 
-                const sqlFull = `SELECT * FROM "${tableName}" ${whereClause}`;
-                const resultFull = db.exec(sqlFull);
-                if (resultFull.length > 0) {
-                  const cols = resultFull[0].columns;
-                  cols.forEach((c) => dbFilteredColumns.add(c));
-                  resultFull[0].values.forEach((row) => {
-                    let rowObj = { _source_table: tableName };
-                    cols.forEach((col, idx) => {
-                      rowObj[col] = row[idx];
-                    });
-                    dbFilteredRawDataForTextarea.push(rowObj);
-                  });
+                const cols = result[0].columns;
+                const colCount = cols.length;
+                const values = result[0].values;
+                for (let c = 0; c < colCount; c++) {
+                  const col = cols[c];
+                  allColumns.add(col);
+                  dbFilteredColumns.add(col);
                 }
 
-                // 全量明细表与提取使用同一过滤条件（开始/结束时间 + 机位号），
-                // 即只展示「提取前」落入该时间区间与机位号范围内的原始数据，
-                // 避免出现非输入框 aproCode 的整表数据
-                const sqlRaw = `SELECT * FROM "${tableName}" ${whereClause}`;
-                const resultRaw = db.exec(sqlRaw);
-                if (resultRaw.length > 0) {
-                  const colsRaw = resultRaw[0].columns;
-                  colsRaw.forEach((col) => allColumns.add(col));
-                  resultRaw[0].values.forEach((row) => {
-                    let rowObj = {
-                      _source_db: name,
-                      _source_table: tableName,
-                    };
-                    colsRaw.forEach((col, idx) => {
-                      rowObj[col] = row[idx];
-                    });
-                    allRawResults.push(rowObj);
-                  });
+                // 用 for 循环替代 forEach 闭包，避免每行一次闭包分配
+                for (let i = 0; i < values.length; i++) {
+                  const row = values[i];
+                  const rowObj = { _source_db: name, _source_table: tableName };
+                  for (let j = 0; j < colCount; j++) {
+                    rowObj[cols[j]] = row[j];
+                  }
+                  allRawResults.push(rowObj);
+                  dbFilteredRawDataForTextarea.push(rowObj);
                 }
               } catch (e) {
                 console.warn("DB Read Error:", e.message);
