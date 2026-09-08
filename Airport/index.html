@@ -86,10 +86,12 @@
       text-align: center;
     }
 
+    .paste-table {
+      user-select: none;
+    }
+
     #pasteGridWrapper:focus {
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 1px #3b82f6;
     }
 
     .drag-active {
@@ -893,11 +895,20 @@
       icon.classList.toggle("-rotate-90");
     });
 
+    // B 区是否正处于「数据库提取结果」展示状态（此状态下禁用粘贴，清空后恢复）
+    let bAreaDbDataActive = false;
+
     // 辅助网格：接收用户粘贴文本并渲染表格
     document
       .getElementById("pasteGridWrapper")
       .addEventListener("paste", (e) => {
         e.preventDefault();
+        // 数据库数据展示期间不触发粘贴，需先点击「清空结果集」恢复
+        if (bAreaDbDataActive) {
+          document.getElementById("queryStatus").innerHTML =
+            `<span class="text-amber-500 dark:text-amber-400">当前为数据库提取结果，请先点击「清空结果集」后再粘贴</span>`;
+          return;
+        }
         const text = (e.clipboardData || window.clipboardData).getData(
           "text",
         );
@@ -917,6 +928,69 @@
           document.getElementById("queryStatus").innerHTML =
             `<span class="text-green-600 dark:text-green-400">数据已粘贴至网格，请点击提取按钮</span>`;
         }, 50);
+      });
+
+    // 轻量提示 toast
+    function showToast(msg) {
+      let t = document.getElementById("copyToast");
+      if (!t) {
+        t = document.createElement("div");
+        t.id = "copyToast";
+        t.className =
+          "fixed left-1/2 bottom-6 -translate-x-1/2 z-50 px-3 py-1.5 rounded-md bg-gray-900/85 text-white text-xs shadow-lg transition-opacity duration-200 pointer-events-none";
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = "1";
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => {
+        t.style.opacity = "0";
+      }, 1200);
+    }
+
+    // 复制文本（优先 Clipboard API，失败/非安全上下文降级 execCommand）
+    function copyText(text) {
+      return new Promise((resolve) => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(resolve).catch(() => {
+            fallbackCopy(text);
+            resolve();
+          });
+        } else {
+          fallbackCopy(text);
+          resolve();
+        }
+      });
+    }
+    function fallbackCopy(text) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.top = "0";
+        ta.style.left = "0";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch (e) {}
+    }
+
+    // 双击 B 区网格内任意单元格复制其内容（含数据库来源数据）
+    document
+      .getElementById("pasteGridWrapper")
+      .addEventListener("dblclick", (e) => {
+        const cell = e.target.closest("td, th");
+        if (!cell) return;
+        const text = (cell.getAttribute("title") || cell.innerText || "").trim();
+        if (!text) return;
+        copyText(text).then(() =>
+          showToast(
+            "已复制：" + (text.length > 30 ? text.slice(0, 30) + "…" : text),
+          ),
+        );
       });
 
     function renderPasteTableGrid(extraText) {
@@ -946,6 +1020,8 @@
 
       placeholder.classList.add("hidden");
       table.classList.remove("hidden");
+      // 来自数据库的数据展示时置位标志，禁用粘贴直至「清空结果集」
+      bAreaDbDataActive = !!extraText;
 
       const lines = text.split("\n").filter((l) => l.trim() !== "");
       if (lines.length === 0) return;
@@ -1543,6 +1619,7 @@
       lastUsedTables = []; // 同步清空本次提取用到的表记录
       lastExtractionFilter = null; // 同步清空过滤条件快照
       document.getElementById("pasteArea").value = "";
+      bAreaDbDataActive = false; // 恢复 B 区粘贴能力
 
       document.querySelectorAll(".table-checkbox").forEach((cb) => {
         cb.checked = true;
