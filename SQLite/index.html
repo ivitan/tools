@@ -2677,9 +2677,10 @@ function buildRowsHtml(rows, columns, startIndex) {
    - 紧凑：交回浏览器自动布局，沿用 360px 上限 + 省略号。
    文本宽度用 canvas.measureText 计算（比逐个 DOM 测量快两个数量级，几千个单元格也不卡顿）。 */
 const COL_FIT_MIN = 64;       // 列宽下限（px，含内边距）
-// 列宽上限：Excel 双击列边界会把列撑到内容实际宽度，这里给 800px 封顶，
-// 避免单条 5000 字符的 JSON 把表格拉到几万像素宽；超出部分省略号，悬停看全文。
-const COL_FIT_MAX = 800;
+// 列宽上限：Excel「双击列边界自动调整列宽」会把列撑到内容实际宽度、完整显示所有文字，
+// 这里给 2400px 封顶（约 190 个汉字 / 340 个英文字符，覆盖绝大多数场景），
+// 避免单条几万字符的文本把表格拉成几万像素宽；极少数超出的仍用省略号，双击单元格可复制全文。
+const COL_FIT_MAX = 2400;
 const COL_FIT_CELLS = 8000;   // 单次全量测量的单元格上限，防止大表卡死
 let _fitCanvas = null;
 
@@ -2810,6 +2811,13 @@ function applyColFit(opts) {
     table.classList.remove('col-fit');
     const cg = table.querySelector('colgroup');
     if (cg) cg.remove();
+    // 必须清掉之前给 td/th 直设的 inline width，否则紧凑模式仍沿用自适应算出的宽度
+    table.querySelectorAll('th, td').forEach(cell => {
+      cell.style.width = '';
+      cell.style.minWidth = '';
+      cell.style.maxWidth = '';
+    });
+    table.style.width = '';
     table._colWidths = null;
     return;
   }
