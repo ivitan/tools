@@ -972,9 +972,18 @@
         startRowIdx = 0;
       }
 
+      // 来自数据库的数据：B 区展示时隐藏 image_path 列
+      // （该字段不参与提取逻辑，仅保留在 C 区「查看数据库与数据表名」原始明细中）
+      const skipCols = extraText ? new Set(["image_path"]) : new Set();
+      const colKeep = [];
+      for (let h = 0; h < headers.length; h++) {
+        if (!skipCols.has(headers[h])) colKeep.push(h);
+      }
+
       // 使用数组拼接替代字符串累加
       let theadRows = ["<tr>"];
-      for (let h = 0; h < headers.length; h++) {
+      for (let k = 0; k < colKeep.length; k++) {
+        const h = colKeep[k];
         theadRows.push(
           `<th class="border-b border-r border-gray-200 dark:border-gray-600 px-3 py-1.5 font-semibold text-gray-700 dark:text-gray-200 text-left bg-gray-50 dark:bg-gray-700 shadow-sm sticky top-0">${headers[h]}</th>`,
         );
@@ -995,7 +1004,8 @@
         const cols = displayLines[i].split("\t");
         let trHtml =
           '<tr class="hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors">';
-        for (let j = 0; j < headers.length; j++) {
+        for (let k = 0; k < colKeep.length; k++) {
+          const j = colKeep[k];
           const cellVal = cols[j] !== undefined ? cols[j].trim() : "";
           trHtml += `<td class="border-b border-r border-gray-100 dark:border-gray-700 px-3 py-1.5 text-gray-700 dark:text-gray-200 whitespace-nowrap">${cellVal}</td>`;
         }
