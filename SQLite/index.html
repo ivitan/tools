@@ -1427,7 +1427,7 @@
     border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
     font-weight: 600;
   }
-  /* 导入失败：多个文件时每个文件一行（「文件名 导入失败：无法读取文件」） */
+  /* 导入失败：多个文件时每个文件一行（「文件名 不是 SQLite 数据库文件」） */
   .toast.fail {
     white-space: pre-line;
     line-height: 1.5;
@@ -3289,12 +3289,11 @@ function showDropzone(show) {
 }
 
 /* ================== 导入失败提示 ================== */
-// 复用页面原有 toast，只换文案与配色：统一样板「文件名 导入失败：无法读取文件」，
-// 红粉字体（.toast.fail 用 var(--danger)）。多个失败文件逐行显示。
-// 失败不影响右侧视图：视图状态由调用方决定是否刷新，这里只负责提示。
+// 复用页面原有 toast，只换文案与配色：统一「文件名 不是 SQLite 数据库文件」，红粉字体（.toast.fail）。
+// 多个失败文件逐行显示。失败不影响右侧视图：视图状态由调用方决定是否刷新，这里只负责提示。
 function toastImportFailed(failedList) {
   if (!failedList || !failedList.length) return;
-  toast(failedList.map(f => `${f.fileName} 导入失败：无法读取文件`).join('\n'), 'fail', 4000);
+  toast(failedList.map(f => `${f.fileName} 不是 SQLite 数据库文件`).join('\n'), 'fail', 4000);
 }
 
 /* ================== 悬浮到底按钮 ================== */
@@ -3603,7 +3602,7 @@ async function handleFiles(files) {
       const hash = await computeFingerprint(buf);
       return { file: f, buf, hash, error: null };
     } catch (e) {
-      return { file: f, error: e };
+      return { file: f, error: e };   // 文件读不出来，同样按导入失败处理
     }
   }));
 
@@ -3628,7 +3627,7 @@ async function handleFiles(files) {
   }
 
   // 阶段 3：渲染。只有真正「新增 / 更新」了数据库才刷新并收起上传区；
-  // 全部失败（或仅重复跳过）时右侧严格保持导入前状态，只在顶部叠加失败提示条。
+  // 全部失败（或仅重复跳过）时右侧严格保持导入前状态，只弹出失败 toast。
   const failedResults = results.filter(r => r.kind === 'error');
   const changed = results.some(r => r.kind === 'added' || r.kind === 'replaced');
   if (changed) {
