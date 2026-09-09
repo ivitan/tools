@@ -14,10 +14,7 @@
     })();
   </script>
   <meta charset="UTF-8" />
-  <!-- interactive-widget=overlays-content：软键盘弹出时作为覆盖层，
-       不改变 layout / visual 视口尺寸，页面布局与可视区完全不动（消除底部区域跳动闪烁） -->
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>节点信息提取</title>
   <link rel="icon" type="image/svg+xml" href="/img/Airport.svg" />
   <!-- 开启 Tailwind 暗色模式支持 -->
@@ -41,27 +38,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    /* svh = 最小稳定视口高度：软键盘弹出/收起时数值不变，
-       避免 body 高度跟着视口抖动导致文档总高变化、底部内容跳动。
-       写在本文件 style 中且提高特异性，确保覆盖 Tailwind 的 min-h-screen(100vh) */
-    body.min-h-screen {
-      min-height: 100vh;
-    }
-
-    @supports (min-height: 100svh) {
-      body.min-h-screen {
-        min-height: 100svh;
-      }
-    }
-
-    /* 关闭浏览器「滚动锚定」：上方面板高度变化时浏览器会自动修正 scrollTop，
-       在部分设备/浏览器上表现为页面跳动、下方区域「闪一下」 */
-    #pasteGridWrapper,
-    #rawContainer,
-    main {
-      overflow-anchor: none;
-    }
-
     .custom-scrollbar::-webkit-scrollbar {
       height: 6px;
       width: 6px;
@@ -471,7 +447,7 @@
             <textarea id="pasteArea" class="hidden"></textarea>
 
             <div id="pasteGridWrapper" tabindex="0"
-              class="w-full min-h-[140px] max-h-[400px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
+              class="w-full min-h-[140px] max-h-[60vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
               <div id="pastePlaceholder"
                 class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 text-xs text-center p-4 pointer-events-none select-none">
                 <svg class="w-6 h-6 mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor"
@@ -1143,8 +1119,7 @@
       // B 区高度自适应：无论来自数据库还是手动粘贴，行数少则贴合内容，
       // 行数多则限制为视口高度并在内部滚动，避免整页被撑得过长
       const rowCount = displayLines.length - startRowIdx;
-      // 同 C 区：固定 px 上限，避免 vh 随视口高度变化导致面板闪烁
-      wrapper.style.maxHeight = rowCount > 50 ? "400px" : "";
+      wrapper.style.maxHeight = rowCount > 50 ? "60vh" : "";
 
       const truncNote = isTruncated
         ? ` (为保证性能，仅渲染前${MAX_RENDER_ROWS}行)`
@@ -1575,10 +1550,8 @@
       // 自适应容器高度：行数少时贴合内容（不设上限），行数多时限制为视口高度并内部滚动，
       // 避免页面被超长表格顶得过长
       const rawContainer = document.getElementById("rawContainer");
-      // 上限用固定 px 而非 vh：vh 会随视口高度变化（软键盘弹出/工具栏收起/缩放）重新计算，
-      // 导致面板高度突变、出现闪烁；固定 px 在各设备上保持稳定
       rawContainer.style.maxHeight =
-        displayData.length > 50 ? "400px" : "";
+        displayData.length > 50 ? "60vh" : "";
       const rawTruncNote = document.getElementById("rawTruncNote");
       if (isTruncated) {
         rawTruncNote.textContent = `为保证性能，仅渲染前${MAX_RENDER_ROWS}条`;
@@ -1928,52 +1901,6 @@
     if (el.disabled || el.readOnly) return;
     el.select();
   });
-
-  /* ===== 抑制「聚焦输入框导致页面跳动」 =====
-     现象：点击条件区输入框 → 软键盘弹出 → 浏览器为保持焦点可见会自动平移视口/滚动页面，
-     导致刚好贴在屏幕底边的 C 区标题「闪一下」甚至消失；在部分 WebView 上
-     键盘还会改变 layout 视口高度，文档总高随之变化，跳动更明显。
-     策略：聚焦瞬间记下滚动位置，在键盘弹出的整个过程里多次校正回原位；
-     用户一旦主动滚动、按键或再次按下，立即解锁，不影响正常操作。
-     条件区位于页面顶部，输入框始终可见，锁滚动不会遮挡输入内容。 */
-  (function () {
-    var lockUntil = 0;
-    var savedY = 0;
-
-    function restore() {
-      if (Date.now() >= lockUntil) return;
-      if (window.scrollY !== savedY) window.scrollTo(0, savedY);
-    }
-
-    // 用户主动操作 → 立刻放弃锁定，不干扰正常滚动
-    function unlock() {
-      lockUntil = 0;
-    }
-
-    // 程序校正后 scrollY 会等于 savedY，据此把它与用户主动滚动区分开
-    function onScroll() {
-      if (Math.abs(window.scrollY - savedY) <= 1) return;
-      lockUntil = 0;
-    }
-
-    document.addEventListener("focusin", function (e) {
-      var t = e.target;
-      if (!t) return;
-      var tag = t.tagName;
-      if (tag !== "INPUT" && tag !== "TEXTAREA") return;
-      if (t.type === "file") return; // 文件选择不参与
-      savedY = window.scrollY;
-      lockUntil = Date.now() + 600;
-      [0, 30, 80, 150, 250, 400, 550].forEach(function (d) {
-        setTimeout(restore, d);
-      });
-    });
-
-    ["wheel", "touchmove", "keydown", "mousedown"].forEach(function (ev) {
-      window.addEventListener(ev, unlock, { passive: true });
-    });
-    window.addEventListener("scroll", onScroll, { passive: true });
-  })();
   </script>
 
   <!-- 返回主页图标按钮样式 -->
