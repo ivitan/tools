@@ -38,6 +38,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
+    /* 关闭浏览器「滚动锚定」：上方面板高度变化时浏览器会自动修正 scrollTop，
+       在部分设备/浏览器上表现为页面跳动、下方区域「闪一下」 */
+    #pasteGridWrapper,
+    #rawContainer,
+    main {
+      overflow-anchor: none;
+    }
+
     .custom-scrollbar::-webkit-scrollbar {
       height: 6px;
       width: 6px;
@@ -447,7 +455,7 @@
             <textarea id="pasteArea" class="hidden"></textarea>
 
             <div id="pasteGridWrapper" tabindex="0"
-              class="w-full min-h-[140px] max-h-[60vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
+              class="w-full min-h-[140px] max-h-[400px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
               <div id="pastePlaceholder"
                 class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 text-xs text-center p-4 pointer-events-none select-none">
                 <svg class="w-6 h-6 mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor"
@@ -1119,7 +1127,8 @@
       // B 区高度自适应：无论来自数据库还是手动粘贴，行数少则贴合内容，
       // 行数多则限制为视口高度并在内部滚动，避免整页被撑得过长
       const rowCount = displayLines.length - startRowIdx;
-      wrapper.style.maxHeight = rowCount > 50 ? "60vh" : "";
+      // 同 C 区：固定 px 上限，避免 vh 随视口高度变化导致面板闪烁
+      wrapper.style.maxHeight = rowCount > 50 ? "400px" : "";
 
       const truncNote = isTruncated
         ? ` (为保证性能，仅渲染前${MAX_RENDER_ROWS}行)`
@@ -1550,8 +1559,10 @@
       // 自适应容器高度：行数少时贴合内容（不设上限），行数多时限制为视口高度并内部滚动，
       // 避免页面被超长表格顶得过长
       const rawContainer = document.getElementById("rawContainer");
+      // 上限用固定 px 而非 vh：vh 会随视口高度变化（软键盘弹出/工具栏收起/缩放）重新计算，
+      // 导致面板高度突变、出现闪烁；固定 px 在各设备上保持稳定
       rawContainer.style.maxHeight =
-        displayData.length > 50 ? "60vh" : "";
+        displayData.length > 50 ? "400px" : "";
       const rawTruncNote = document.getElementById("rawTruncNote");
       if (isTruncated) {
         rawTruncNote.textContent = `为保证性能，仅渲染前${MAX_RENDER_ROWS}条`;
