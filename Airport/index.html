@@ -901,6 +901,18 @@
     // 辅助网格：接收用户粘贴文本并渲染表格（监听挂到 document，
     // 避免「清空结果集」后焦点仍在按钮上导致粘贴事件收不到）
     document.addEventListener("paste", (e) => {
+      // 粘贴目标若为输入框（开始/结束时间、机位号等条件区），保持浏览器默认行为：
+      // 不拦截、不写入 B 区网格，粘贴内容仅作为筛选条件参与提取
+      const pasteTarget = e.target;
+      if (
+        pasteTarget &&
+        (pasteTarget.tagName === "INPUT" ||
+          pasteTarget.tagName === "TEXTAREA" ||
+          pasteTarget.isContentEditable)
+      ) {
+        return;
+      }
+
       e.preventDefault();
       // 数据库数据展示期间不触发粘贴，需先点击「清空结果集」恢复
       if (bAreaDbDataActive) {
