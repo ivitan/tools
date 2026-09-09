@@ -1387,10 +1387,20 @@
   }
   .pager-text { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
   /* ===== Toast ===== */
-  .toast {
+  /* 容器：同屏多个 toast（例如「导入成功」与「导入失败」同时出现）纵向堆叠、右对齐，
+     不再各自 fixed 在同一坐标上互相重叠。 */
+  .toast-container {
     position: fixed;
     top: 16px;
     right: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    z-index: 200;
+    pointer-events: none;   /* 纯提示层，不拦截下方点击 */
+  }
+  .toast {
     background: var(--text);
     color: var(--panel);
     padding: 9px 16px;
@@ -1399,7 +1409,6 @@
     font-weight: 500;
     letter-spacing: 0.1px;
     box-shadow: var(--shadow-lg);
-    z-index: 200;
     animation: slideIn 0.18s ease;
     display: flex;
     align-items: center;
@@ -1611,7 +1620,9 @@
     .mode-toggle button { padding: 0 8px; }
     .mode-toggle button .mode-label { display: none; }
 
-    .toast { top: 56px; right: 10px; left: 10px; max-width: none; }
+    /* 手机端：整列 toast 下挪避开头部按钮，并左右留边 */
+    .toast-container { top: 56px; right: 10px; left: 10px; align-items: stretch; }
+    .toast { max-width: none; }
 
     /* 手机端筛选面板：窄屏下宽度自适应，避免被宽列挤到屏幕外 */
     .col-filter-float .col-filter-panel {
@@ -1766,6 +1777,9 @@
   </svg>
 </button>
 
+<!-- Toast 容器：多条提示纵向堆叠、右对齐 -->
+<div class="toast-container" id="toastContainer"></div>
+
 <script>
 /* ================== 全局状态 ================== */
 const state = {
@@ -1783,14 +1797,28 @@ const state = {
 const $ = (id) => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-// duration：停留时长（毫秒），失败信息较长/可能多行，默认给更久的停留时间
+// duration：停留时长（毫秒），失败信息较长/可能多行，调用方可传更久的停留时间
 function toast(msg, type = '', duration = 1800) {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
   el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.2s'; }, duration);
-  setTimeout(() => el.remove(), duration + 400);
+  ($('toastContainer') || document.body).appendChild(el);   // 进容器，多条自动纵向堆叠
+  setTimeout(() => {
+    // 同屏有多条时（如成功 + 失败），先锁当前高度再收到 0，
+    // 让下方的 toast 平滑上移，而不是等这条被移除时瞬间跳位
+    el.style.height = el.offsetHeight + 'px';
+    el.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      el.style.transition = 'opacity 0.2s, height 0.2s, margin 0.2s, padding 0.2s, border-width 0.2s';
+      el.style.opacity = '0';
+      el.style.height = '0px';
+      el.style.paddingTop = '0px';
+      el.style.paddingBottom = '0px';
+      el.style.borderWidth = '0px';
+      el.style.marginTop = '-8px';   // 抵消容器的 gap，收起后无缝
+    });
+  }, duration);
+  setTimeout(() => el.remove(), duration + 300);
 }
 
 /* 自定义确认弹窗（替代浏览器原生 confirm，深色友好） */
