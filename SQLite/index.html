@@ -1408,14 +1408,21 @@
   }
   .toast.success { background: var(--success); color: #052e1a; }
   .toast.error { background: var(--danger); color: #450a0a; }
-  /* 重复导入提示：绿底会把「够亮的红」压到 1.0:1 隐形、把「够深的红」压成黑色，
-     所以改用面板底色 + 主题危险红，让红色真正显示出来，并配红色描边强化警示感。
-     用 var(--danger) 自动适配：日间 #dc2626、暗色 #f87171，无需额外 dark 覆盖。 */
-  .toast.warn {
+  /* 重复导入（warn）与导入失败（fail）提示：绿底会把「够亮的红」压到 1.0:1 隐形、
+     把「够深的红」压成黑色，所以改用面板底色 + 主题危险红，让红色真正显示出来，
+     并配红色描边强化警示感。用 var(--danger) 自动适配：日间 #dc2626、暗色 #f87171，无需额外 dark 覆盖。 */
+  .toast.warn,
+  .toast.fail {
     background: var(--panel);
     color: var(--danger);
     border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
     font-weight: 600;
+  }
+  /* 导入失败：多个文件时每个文件一行（「文件名 导入失败：无法读取文件」） */
+  .toast.fail {
+    white-space: pre-line;
+    line-height: 1.5;
+    align-items: flex-start;
   }
   [data-theme="dark"] .toast.success { color: #02261a; }
   [data-theme="dark"] .toast.error { color: #3b0808; }
@@ -1776,13 +1783,14 @@ const state = {
 const $ = (id) => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-function toast(msg, type = '') {
+// duration：停留时长（毫秒），失败信息较长/可能多行，默认给更久的停留时间
+function toast(msg, type = '', duration = 1800) {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
   el.textContent = msg;
   document.body.appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.2s'; }, 1800);
-  setTimeout(() => el.remove(), 2200);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.2s'; }, duration);
+  setTimeout(() => el.remove(), duration + 400);
 }
 
 /* 自定义确认弹窗（替代浏览器原生 confirm，深色友好） */
@@ -1897,7 +1905,8 @@ async function loadDatabase(file) {
     return await loadDatabaseFromBuffer(file, buf, hash, { silent: false });
   } catch (e) {
     console.error(e);
-    toast(`加载失败: ${file.name}`, 'error');
+    // 与批量导入统一：失败按样板走 toast
+    toastImportFailed([{ fileName: file.name }]);
     return { kind: 'error', error: e, fileName: file.name };
   }
 }
@@ -1920,18 +1929,26 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
 
   const db = new state.SQL.Database(buf);
   const tables = [];
-  const res = db.exec("SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name");
-  if (res[0]) {
-    for (const row of res[0].values) {
-      const name = row[0];
-      const countRes = db.exec(`SELECT COUNT(*) FROM "${name}"`);
-      const count = countRes[0] ? countRes[0].values[0][0] : 0;
-      const colsRes = db.exec(`PRAGMA table_info("${name}")`);
-      const cols = colsRes[0] ? colsRes[0].values.map(r => ({
-        cid: r[0], name: r[1], type: r[2], notnull: r[3], dflt: r[4], pk: r[5]
+  // 非 SQLite 数据（如 zip / 文本 / 其他格式）不会在建库时暴露，而是在首次读 schema 时
+  // 抛出「file is not a database」。这里统一捕获：关闭半初始化的库（释放 wasm 内存）后
+  // 原样上抛，由调用方按「导入失败」统一处理（内嵌样板提示，不动右侧视图）。
+  try {
+    const res = db.exec("SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name");
+    if (res[0]) {
+      for (const row of res[0].values) {
+        const name = row[0];
+        const countRes = db.exec(`SELECT COUNT(*) FROM "${name}"`);
+        const count = countRes[0] ? countRes[0].values[0][0] : 0;
+        const colsRes = db.exec(`PRAGMA table_info("${name}")`);
+        const cols = colsRes[0] ? colsRes[0].values.map(r => ({
+          cid: r[0], name: r[1], type: r[2], notnull: r[3], dflt: r[4], pk: r[5]
   })) : [];
-      tables.push({ name, count, cols });
+        tables.push({ name, count, cols });
+      }
     }
+  } catch (e) {
+    try { db.close(); } catch (_) {}
+    throw e;
   }
   const dbObj = {
     id: uid(),
@@ -3243,6 +3260,15 @@ function showDropzone(show) {
   updateFabEnd();
 }
 
+/* ================== 导入失败提示 ================== */
+// 复用页面原有 toast，只换文案与配色：统一样板「文件名 导入失败：无法读取文件」，
+// 红粉字体（.toast.fail 用 var(--danger)）。多个失败文件逐行显示。
+// 失败不影响右侧视图：视图状态由调用方决定是否刷新，这里只负责提示。
+function toastImportFailed(failedList) {
+  if (!failedList || !failedList.length) return;
+  toast(failedList.map(f => `${f.fileName} 导入失败：无法读取文件`).join('\n'), 'fail', 4000);
+}
+
 /* ================== 悬浮到底按钮 ================== */
 const fab = $('fabEnd');
 
@@ -3553,7 +3579,9 @@ async function handleFiles(files) {
     }
   }));
 
-  // 阶段 2：串行执行 CPU 重的建库逻辑，每完成一个让出主线程，避免一次性卡死
+  // 阶段 2：串行执行 CPU 重的建库逻辑，每完成一个让出主线程，避免一次性卡死。
+  // 非 SQLite 数据（zip / 文本 / 损坏文件）会在建库读 schema 时抛「file is not a database」，
+  // 必须逐个捕获记为失败，否则一个坏文件会让整批导入中断且没有任何提示。
   const results = [];
   for (let i = 0; i < prepared.length; i++) {
     const p = prepared[i];
@@ -3561,39 +3589,52 @@ async function handleFiles(files) {
       results.push({ kind: 'error', fileName: p.file.name, error: p.error });
       continue;
     }
-    const r = await loadDatabaseFromBuffer(p.file, p.buf, p.hash, { silent: true });
-    results.push(r);
+    try {
+      const r = await loadDatabaseFromBuffer(p.file, p.buf, p.hash, { silent: true });
+      results.push(r);
+    } catch (e) {
+      console.error(e);
+      results.push({ kind: 'error', fileName: p.file.name, error: e });
+    }
     if (i < prepared.length - 1) await new Promise(res => setTimeout(res, 0));
   }
 
-  // 阶段 3：统一渲染一次，而不是每个文件都渲染
-  renderSidebar();
-  renderTabs();
-  showDropzone(false);
-  renderContent();
-  if (isMobile()) closeDrawer();
+  // 阶段 3：渲染。只有真正「新增 / 更新」了数据库才刷新并收起上传区；
+  // 全部失败（或仅重复跳过）时右侧严格保持导入前状态，只在顶部叠加失败提示条。
+  const failedResults = results.filter(r => r.kind === 'error');
+  const changed = results.some(r => r.kind === 'added' || r.kind === 'replaced');
+  if (changed) {
+    renderSidebar();
+    renderTabs();
+    showDropzone(false);
+    renderContent();
+    if (isMobile()) closeDrawer();
+  } else if (results.some(r => r.kind === 'duplicate')) {
+    renderSidebar();   // 仅同步重复库的展开与高亮，右侧视图不动
+  }
 
-  // 阶段 4：汇总 toast
+  // 阶段 4：提示。失败统一按样板走 toast（红粉字体），成功/重复沿用原有 toast。
   const added = results.filter(r => r.kind === 'added').length;
   const replaced = results.filter(r => r.kind === 'replaced').length;
   const skipped = results.filter(r => r.kind === 'duplicate').length;
-  const failed = results.filter(r => r.kind === 'error').length;
 
-  // 单个文件保持原来的文件名提示，多文件才用汇总形式
-  if (results.length === 1 && !failed) {
-    const r = results[0];
-    if (r.kind === 'added') toast(`已加载 ${r.db.name}`, 'success');
-    else if (r.kind === 'replaced') toast(`「${r.db.name}」已更新为新版本`, 'success');
-    else if (r.kind === 'duplicate') toast(`「${r.db.name}」已加载，已跳过重复导入`, 'warn');
-  } else {
-    const parts = [];
-    if (added) parts.push(`新增 ${added} 个`);
-    if (replaced) parts.push(`更新 ${replaced} 个`);
-    if (skipped) parts.push(`跳过 ${skipped} 个重复`);
-    if (failed) parts.push(`失败 ${failed} 个`);
-    if (parts.length) {
-      toast(`数据库导入：${parts.join('，')}`, failed ? 'error' : (skipped ? 'warn' : 'success'));
+  toastImportFailed(failedResults);
+
+  if (added || replaced) {
+    if (results.length === 1) {
+      const r = results[0];
+      if (r.kind === 'added') toast(`已加载 ${r.db.name}`, 'success');
+      else toast(`「${r.db.name}」已更新为新版本`, 'success');
+    } else {
+      const parts = [];
+      if (added) parts.push(`新增 ${added} 个`);
+      if (replaced) parts.push(`更新 ${replaced} 个`);
+      if (skipped) parts.push(`跳过 ${skipped} 个重复`);
+      toast(`数据库导入：${parts.join('，')}`, skipped ? 'warn' : 'success');
     }
+  } else if (skipped && !failedResults.length) {
+    if (results.length === 1) toast(`「${results[0].db.name}」已加载，已跳过重复导入`, 'warn');
+    else toast(`数据库导入：跳过 ${skipped} 个重复`, 'warn');
   }
 }
 
