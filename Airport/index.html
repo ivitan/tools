@@ -274,7 +274,7 @@
             <div class="flex items-center gap-1 mb-2">
               <span
                 class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold shrink-0">A</span>
-              <span class="text-sm font-bold text-gray-700 dark:text-gray-200 leading-5">导入数据库 (可选)</span>
+              <span class="text-sm font-bold text-gray-700 dark:text-gray-200 leading-5 shrink-0 whitespace-nowrap">导入数据库 (可选)</span>
               <div id="dropZoneSmall"
                 class="hidden relative h-7 w-7 border border-dashed border-gray-400 dark:border-gray-500 rounded flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 shrink-0"
                 title="点击选择 .db 文件，或将文件拖拽至此导入">
@@ -288,7 +288,7 @@
                 <input type="file" id="dbFilesSmall" multiple accept=".db,.sqlite"
                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
               </div>
-              <span id="fileInfo" class="ml-auto text-xs text-blue-600 dark:text-blue-400 font-bold hidden"></span>
+              <span id="fileInfo" class="ml-auto min-w-0 truncate text-xs text-blue-600 dark:text-blue-400 font-bold hidden"></span>
             </div>
             <div id="dropZoneLarge"
               class="relative h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded px-2 py-3 flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 mb-2">
@@ -745,9 +745,12 @@
     function showFileStatus(msg, isError) {
       const el = document.getElementById("fileInfo");
       el.textContent = msg;
+      // 完整文案挂到 title：长文件名时行内以省略号截断，鼠标悬浮查看完整内容，
+      // 避免长文本把左侧标题挤扁
+      el.title = msg;
       el.className = isError
-        ? "ml-auto text-xs font-bold text-red-500 dark:text-red-400"
-        : "ml-auto text-xs font-bold text-blue-600 dark:text-blue-400";
+        ? "ml-auto min-w-0 truncate text-xs font-bold text-red-500 dark:text-red-400"
+        : "ml-auto min-w-0 truncate text-xs font-bold text-blue-600 dark:text-blue-400";
     }
 
     async function handleFiles(files) {
@@ -822,7 +825,7 @@
         document.getElementById("tableSelectionSection").classList.add("hidden");
         const msg =
           failed.length === 1
-            ? `${failed[0].name} 导入失败：${failed[0].reason}`
+            ? `${failed[0].name} ${failed[0].reason}`
             : `${failed.length} 个文件导入失败：${failed.map((f) => f.name).join("、")}`;
         showFileStatus(msg, true);
         return;
