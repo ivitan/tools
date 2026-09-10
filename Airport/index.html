@@ -105,6 +105,21 @@
       background-color: #1e3a8a !important;
     }
 
+    /* 上传区点击激活态：边框虚线变蓝、内部浅蓝，与拖拽高亮同色系；
+       :active 负责按下瞬间的即时反馈，.drop-focus 负责点击后的持续激活 */
+    .drop-focus,
+    #dropZoneLarge:active,
+    #dropZoneSmall:active {
+      border-color: #3b82f6 !important;
+      background-color: #eff6ff !important;
+    }
+
+    [data-theme="dark"] .drop-focus,
+    [data-theme="dark"] #dropZoneLarge:active,
+    [data-theme="dark"] #dropZoneSmall:active {
+      background-color: #1e3a8a !important;
+    }
+
     /* ===== 统一设计系统（以 SQLite 工具为蓝本） ===== */
     :root {
       --bg: #f8fafc;
@@ -727,6 +742,16 @@
 
     setupDropZone(dropZoneLarge, fileInputLarge);
     setupDropZone(dropZoneSmall, fileInputSmall);
+
+    // 上传区点击激活态：点击后虚线边框变蓝、内部浅蓝（.drop-focus），
+    // 点击上传区以外的任意位置即恢复原状；拖拽高亮（.drag-active）优先级相同、互不冲突
+    const dropFocusZones = [dropZoneLarge, dropZoneSmall];
+    document.addEventListener("click", (e) => {
+      dropFocusZones.forEach((z) => {
+        if (z.contains(e.target)) z.classList.add("drop-focus");
+        else z.classList.remove("drop-focus");
+      });
+    });
 
     // 每个 SQLite 库的前 16 字节恒为 "SQLite format 3\0"
     const SQLITE_MAGIC = [
