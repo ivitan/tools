@@ -541,7 +541,9 @@
 
   /* ===== 自定义 hover 提示 =====
      不用原生 title：它的延迟约 1 秒、样式完全不可控、触屏设备不显示，用户几乎感知不到。
-     这里用 [data-tip] + ::after 立即显示纯 CSS 提示，无需 JS，不影响布局。 */
+     也不用纯 CSS :hover：在触屏 / 触控设备上 :hover 是「sticky hover」——
+     手指点了才出现、且粘住不消失，必须再点别处才释放，体验很差。
+     改为 JS 显式加 .tip-on 类控制，鼠标 / 触摸 / 键盘三种输入都能预期行事。 */
   [data-tip] { position: relative; }
   [data-tip]::after {
     content: attr(data-tip);
@@ -562,7 +564,7 @@
     transition: opacity 0.12s ease, transform 0.12s ease;
     z-index: 300;
   }
-  [data-tip]:hover::after { opacity: 1; transform: translateY(0); }
+  [data-tip].tip-on::after { opacity: 1; transform: translateY(0); }
   /* 侧栏标题行里的按钮紧贴右侧且右侧空间不足：
      提示改为向下展开、右对齐按钮，避免超出侧栏被裁切。 */
   .sidebar-header [data-tip]::after { top: calc(100% + 6px); right: 0; }
@@ -1684,7 +1686,7 @@
 
 <div class="header">
   <div class="logo">
-    <div class="logo-icon" id="logoToggle" title="展开数据库列表" role="button" tabindex="0">
+    <div class="logo-icon" id="logoToggle" data-tip="展开数据库列表" aria-label="展开数据库列表" role="button" tabindex="0">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <ellipse cx="12" cy="5" rx="9" ry="3"/>
         <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
@@ -1692,7 +1694,7 @@
       </svg>
     </div>
     <span>SQLite 读取工具</span>
-    <button class="home-btn" id="btnHome" title="返回主页">
+    <button class="home-btn" id="btnHome" data-tip="返回主页" aria-label="返回主页">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 11.5 12 4l9 7.5"/>
         <path d="M5 10.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9.5"/>
@@ -1777,13 +1779,13 @@
       <div class="footer-bar" id="footerBar">
         <div class="sql-box" id="sqlPreview"></div>
         <div class="pager">
-          <button id="btnFirst" title="首页">首页</button>
-          <button id="btnPrev" title="上一页">上一页</button>
-          <input type="number" id="pageInput" value="1" min="1" title="输入页码后回车或失焦跳转">
+          <button id="btnFirst" data-tip="首页" aria-label="首页">首页</button>
+          <button id="btnPrev" data-tip="上一页" aria-label="上一页">上一页</button>
+          <input type="number" id="pageInput" value="1" min="1" data-tip="输入页码后回车跳转" aria-label="输入页码">
           <span class="pager-text">/ <span id="totalPages">1</span> 页</span>
-          <button id="btnNext" title="下一页">下一页</button>
-          <button id="btnLast" title="末页">末页</button>
-          <select id="pageSize" title="每页行数">
+          <button id="btnNext" data-tip="下一页" aria-label="下一页">下一页</button>
+          <button id="btnLast" data-tip="末页" aria-label="末页">末页</button>
+          <select id="pageSize" data-tip="每页行数" aria-label="每页行数">
             <option value="50">50 行</option>
             <option value="100" selected>100 行</option>
             <option value="200">200 行</option>
@@ -1796,7 +1798,7 @@
 </div>
 
 <!-- 悬浮到底按钮（仅无限模式） -->
-<button class="fab-end" id="fabEnd" title="一键跳到最后一行" disabled>
+<button class="fab-end" id="fabEnd" data-tip="一键跳到最后一行" aria-label="一键跳到最后一行" disabled>
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
     <line x1="12" y1="3" x2="12" y2="21"/>
     <polyline points="5 14 12 21 19 14"/>
@@ -1808,7 +1810,7 @@
 
 <script>
 /* UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面 */
-const UI_BUILD = '2026-09-11-tooltip-and-toolbar-compact';
+const UI_BUILD = '2026-09-12-tooltip-all-controls';
 
 /* ================== 全局状态 ================== */
 const state = {
@@ -2117,7 +2119,7 @@ function renderSidebar() {
           </svg>
           <span class="db-name">${escapeHtml(d.name)}</span>
           <span class="db-meta">${d.tables.length}</span>
-          <button class="db-remove" data-remove="${d.id}" title="移除">
+          <button class="db-remove" data-remove="${d.id}" data-tip="移除此数据库" aria-label="移除此数据库">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
@@ -2303,7 +2305,7 @@ function renderTabs() {
         <div class="tab-row2" title="${escapeHtml(dbShort)}">
           <span class="tab-db-name">${escapeHtml(dbShort)}</span>
         </div>
-        <button class="tab-close" data-close="${key}" title="关闭">
+        <button class="tab-close" data-close="${key}" data-tip="关闭标签页" aria-label="关闭标签页">
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>`;
@@ -2827,7 +2829,7 @@ function buildFilterPanelHtml(tab, colName) {
       <div class="col-filter-panel">
         <div class="col-filter-input-row${pendingLike ? ' has-value' : ''}">
           <input type="text" class="col-filter-input" placeholder="模糊筛选 / 过滤候选…" value="${escapeHtml(pendingLike)}" data-col-input-field="${escapeHtml(colName)}">
-          <button type="button" class="col-filter-close" data-col-clear-input="${escapeHtml(colName)}" title="清空输入">×</button>
+          <button type="button" class="col-filter-close" data-col-clear-input="${escapeHtml(colName)}" data-tip="清空输入" aria-label="清空输入">×</button>
         </div>
         <div class="col-filter-tools">
           <button type="button" class="col-filter-tool-btn" data-col-selectall="${escapeHtml(colName)}">全选</button>
@@ -2838,7 +2840,7 @@ function buildFilterPanelHtml(tab, colName) {
         <div class="col-filter-options">${optionsHtml}</div>
         ${footHtml}
         <div class="col-filter-foot">
-          <button type="button" class="col-filter-tool-btn col-hide-col" data-col-hide="${escapeHtml(colName)}" title="在表格中隐藏此列">隐藏此列</button>
+          <button type="button" class="col-filter-tool-btn col-hide-col" data-col-hide="${escapeHtml(colName)}" data-tip="在表格中隐藏此列" aria-label="在表格中隐藏此列">隐藏此列</button>
         </div>
       </div>
     </div>`;
@@ -2993,8 +2995,8 @@ function buildHeadHtml(columns, colTypes, tab) {
         <div class="col-head-main">
           <div class="col-head-row1">
             <span class="col-name">${escapeHtml(c)}</span>
-            <button class="col-filter-toggle ${isOpen ? 'is-open' : ''}" data-col-toggle="${escapeHtml(c)}" title="筛选此列">⌕</button>
-            ${filtered ? `<button class="col-filter-clear" data-col-clear="${escapeHtml(c)}" title="清除筛选">×</button>` : ''}
+            <button class="col-filter-toggle ${isOpen ? 'is-open' : ''}" data-col-toggle="${escapeHtml(c)}" data-tip="筛选此列" aria-label="筛选此列">⌕</button>
+            ${filtered ? `<button class="col-filter-clear" data-col-clear="${escapeHtml(c)}" data-tip="清除筛选" aria-label="清除筛选">×</button>` : ''}
           </div>
           <span class="col-type">${escapeHtml(colTypes[c] || '')}</span>
         </div>
@@ -4286,6 +4288,79 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('th.col-head')) return;
   closeFilterPanelDiscard(getActiveDataTab());
 });
+
+/* ================== 按钮 hover 提示（data-tip） ==================
+   纯 CSS :hover 在触屏 / 触控设备上是 sticky hover：手指点了才出现、且粘住不消失，
+   必须再点别处才释放。这里改用 JS 显式加 .tip-on 类，行为规则很简单：
+     · 提示只服务于「点击之前」——告诉你这个按钮是干什么的
+     · 鼠标悬停立即显示，移开立即消失（不依赖浏览器 hover 语义）
+     · 一旦点击，立即收起；鼠标在该按钮上停留期间不再弹出（冷却），移开后恢复正常
+     · 键盘 Tab 聚焦（未点击）也显示，失焦隐藏
+   事件委托到 document：动态插入的按钮（如侧栏）无需重新绑定。 */
+(function setupTooltips() {
+  const hideAll = () => {
+    document.querySelectorAll('[data-tip].tip-on').forEach(el => el.classList.remove('tip-on'));
+  };
+  const tipOf = (e) => (e.target.closest && e.target.closest('[data-tip]')) || null;
+  // 鼠标点击会让按钮获得焦点，focusin 又排在 click 之前（冷却尚未建立），
+  // 结果「点击后立刻隐藏」被 focusin 反过来点亮。这里记住鼠标按下的目标，
+  // 由鼠标带来的焦点不显示提示，纯键盘 Tab 才显示。
+  let pointerDownEl = null;
+  document.addEventListener('pointerdown', (e) => { pointerDownEl = tipOf(e); }, true);
+
+  // 提示只用于「点击之前」告诉用户这个按钮是干什么的——用户既然已经点了，就不该再浮着挡视线。
+  // 因此点击后立即收起并进入冷却，鼠标真正移开前不再弹出。
+  let cooled = null;                       // 处于冷却中的按钮
+  document.addEventListener('mouseover', (e) => {
+    const el = tipOf(e);
+    if (!el) return;
+    if (cooled === el) return;             // 已点过且鼠标还没离开 → 不再提示
+    if (cooled && cooled !== el) { cooled.classList.remove('tip-on'); cooled = null; }
+    hideAll();
+    el.classList.add('tip-on');
+  });
+  document.addEventListener('mouseout', (e) => {
+    const el = tipOf(e);
+    if (!el) return;
+    const to = e.relatedTarget;
+    if (to && el.contains(to)) return;     // 移到自身子元素上不算离开
+    el.classList.remove('tip-on');
+    if (cooled === el) cooled = null;      // 真正离开 → 解除冷却
+  });
+  // 兜底解除冷却：按钮被禁用 / 被替换 / 由脚本调用 click() 时 mouseout 不会触发，
+  // 冷却会永久卡住（之后再悬停也没提示）。这里按鼠标实际位置判断是否已移出。
+  document.addEventListener('mousemove', (e) => {
+    if (!cooled) return;
+    const r = cooled.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right &&
+                   e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inside) { cooled.classList.remove('tip-on'); cooled = null; }
+  }, true);
+  // 点击 = 已经知道用途 → 立刻隐藏，并在鼠标移开前不再出现。
+  // 必须用捕获阶段：部分按钮（如 btnColumns）的 onclick 里有 e.stopPropagation()，
+  // 冒泡阶段根本到不了这里，会导致「点了照样显示提示」。
+  document.addEventListener('click', (e) => {
+    const el = tipOf(e);
+    if (!el) { cooled = null; pointerDownEl = null; hideAll(); return; }
+    hideAll();
+    cooled = el;
+    pointerDownEl = null;
+  }, true);
+  // 键盘可达性：Tab 聚焦（尚未点击）时也提示；鼠标按下带来的焦点不提示
+  document.addEventListener('focusin', (e) => {
+    const el = tipOf(e);
+    if (!el || cooled === el || pointerDownEl === el) return;
+    hideAll();
+    el.classList.add('tip-on');
+  });
+  document.addEventListener('focusout', (e) => {
+    const el = tipOf(e);
+    if (el) el.classList.remove('tip-on');
+  });
+  // 滚动 / 鼠标离开窗口时收起，避免提示悬在错位的按钮旁边
+  document.addEventListener('scroll', () => hideAll(), true);
+  document.addEventListener('mouseleave', () => hideAll());
+})();
 
 // CSS.escape polyfill（极少数老浏览器缺失）
 function cssEscape(s) {
