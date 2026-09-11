@@ -1828,7 +1828,7 @@
 
 <script>
 /* UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面 */
-const UI_BUILD = '2026-09-12-tip-lock-after-click';
+const UI_BUILD = '2026-09-12-clear-tip-lock';
 
 /* ================== 全局状态 ================== */
 const state = {
@@ -4343,6 +4343,10 @@ document.addEventListener('click', (e) => {
   const samePoint = (x, y) => cdX !== null && x === cdX && y === cdY;
   const onPointerMove = (e) => {
     if (!cooled) return;
+    // 确认框遮罩存在时，鼠标在遮罩（取消/确定按钮）上移动看似「移出了原按钮」，
+    // 但这是遮罩造成的假象，不应解除冷却——否则遮罩关闭后鼠标回到按钮上，
+    // 提示会复活（就是「点击清空后一直显示」）。遮罩期间一律忽略移动。
+    if (document.querySelector('.dialog-mask')) return;
     // 位置和点击时一模一样 → 视为「没动」，不解锁（防合成事件）
     if (samePoint(e.clientX, e.clientY)) return;
     const r = cooled.getBoundingClientRect();
@@ -4374,7 +4378,11 @@ document.addEventListener('click', (e) => {
     //     指针移出视口时 relatedTarget 会是 null，但 :hover 也同时消失，靠 b) 兜底。
     // 反过来，脚本合成的 mouseout 既没有 relatedTarget、:hover 又依然成立
     // （指针其实还停在按钮上），两个条件都不满足 → 不解锁 → 提示不会复活。
-    if (cooled === el && (to || !el.matches(':hover'))) { cooled = null; cdX = cdY = null; }
+    // 出现 .dialog-mask（确认框）时，遮罩盖住按钮会让 :hover 丢失、并补发
+    // mouseout（relatedTarget 指向遮罩）。若据此解锁，确认框关闭后鼠标回到按钮上，
+    // 提示就会复活——正是「点击清空后一直显示」的现象。遮罩期间的 hover 丢失是假象，
+    // 所以只要遮罩还在，就不解除冷却（解锁只会在遮罩关闭后、真实移出按钮时发生）。
+    if (cooled === el && (to || !el.matches(':hover')) && !document.querySelector('.dialog-mask')) { cooled = null; cdX = cdY = null; }
   };
   document.addEventListener('mouseout', onMouseOut);
   // 点击 = 已经知道用途 → 立刻隐藏，并在指针移开前不再出现。
