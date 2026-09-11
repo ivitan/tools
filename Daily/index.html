@@ -709,6 +709,7 @@
 <datalist id="reason-list" style="display: none">
   <option value="无异常"></option>
   <option value="已下视频"></option>
+  <option value="算法无数据"></option>
 </datalist>
 
 <div class="page">
@@ -838,9 +839,20 @@ const SEP_TAIL_AT_END_RE = /[、，,]$/;
 function isNodeList(listId) {
   return listId === "event-list-far" || listId === "event-list-near";
 }
-/* 该输入框当前是否处于「逗号 + 尾部补位」模式 */
-function isVideoMode(listId, selected) {
-  return !isNodeList(listId) && Array.isArray(selected) && selected.includes(VIDEO_OPT);
+/* 该输入框是否处于「逗号 + 尾部补位」模式。
+   一旦选中「已下视频」（含二次编辑后的文本，如「已下视频(高清)」），
+   这一整条原因就固定用逗号分隔，后续增删都沿用，直到内容被清空 */
+function useCommaSep(input, listId, items) {
+  if (isNodeList(listId)) return false;
+  if (!Array.isArray(items) || !items.length) {
+    delete input.dataset.sep;
+    return false;
+  }
+  if (items.some((v) => String(v).includes(VIDEO_OPT))) {
+    input.dataset.sep = SEP_COMMA;
+    return true;
+  }
+  return input.dataset.sep === SEP_COMMA;
 }
 
 /* ====== 文本框自动增高：随内容向下扩展，到上限后才内部滚动 ====== */
@@ -886,7 +898,8 @@ window.onload = () => {
          否则下拉会一直停在「无匹配项」，没法继续点选 */
       if (activeDropdown && activeDropdown.parentNode === e.target.parentNode) {
         const listId = e.target.getAttribute("data-list");
-        if (ensureTrailingSep(e.target, listId)) refreshDropdown(e.target, activeDropdown, listId);
+        ensureTrailingSep(e.target, listId);
+        refreshDropdown(e.target, activeDropdown, listId);
         return;
       }
       showDropdown(e.target);
@@ -939,12 +952,24 @@ function parseInput(val, validOptions, isNode) {
    否则新输入/新点选的内容会粘连在它后面，变成一整段无法匹配的长文本。
    行为与节点一致；「已下视频」模式用逗号。返回是否发生了变化 */
 function ensureTrailingSep(input, listId) {
-  if (!input.value || SEP_TAIL_AT_END_RE.test(input.value)) return false;
+  if (!input.value) {
+    delete input.dataset.sep;   /* 内容清空后恢复默认的顿号模式 */
+    return false;
+  }
+  if (SEP_TAIL_AT_END_RE.test(input.value)) return false;
+
+  /* 光标不在末尾（点进了某段已有文字里 / 选中了一段）＝ 要编辑这段内容，
+     此时不补分隔符，否则会把待编辑的内容和新输入的文字切成两项 */
+  if (typeof input.selectionStart === "number" && input.selectionStart < input.value.length) {
+    return false;
+  }
 
   const isNode = isNodeList(listId);
-  const { selected } = parseInput(input.value, baseOptions[listId] || [], isNode);
+  const { selected, query } = parseInput(input.value, baseOptions[listId] || [], isNode);
+  /* 末尾那段还没落定时不在 selected 里，判定模式时要算上 */
+  const items = query ? selected.concat(query) : selected;
 
-  input.value += isVideoMode(listId, selected) ? SEP_COMMA : SEP_DUN;
+  input.value += useCommaSep(input, listId, items) ? SEP_COMMA : SEP_DUN;
   autoResize(input);
   generatePreview();
   return true;
@@ -1034,7 +1059,7 @@ function toggleSelection(input, opt, dropdown, listId) {
 
   /* 节点：顿号拼接 + 尾部补位，便于连续搜索；
      异常原因：默认顿号拼接且不补位，一旦选中「已下视频」则切换为逗号拼接 + 尾部补位 */
-  const videoMode = isVideoMode(listId, selected);
+  const videoMode = useCommaSep(input, listId, selected);
   const sep = videoMode ? SEP_COMMA : SEP_DUN;
   const keepTail = isNode || videoMode;
 
