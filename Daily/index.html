@@ -44,24 +44,28 @@
 
     /* 近机位强调色（琥珀系，与 SQLite 工具 warning 语义一致） */
     --warn: #f59e0b;
-    --warn-ink: #b45309;
+    --warn-ink: #78350f;
     --warn-light: #fef3c7;
     --warn-soft: rgba(245,158,11,0.12);
 
     /* 操作按钮：浅色填充 + 同系描边 + 深色文字（与工具组按钮风格统一） */
-    --btn-far-bg: #dbeafe;            /* blue-100 */
+    --btn-far-bg: #93c5fd;            /* blue-300 */
     --btn-far-border: #3b82f6;        /* blue-500 */
-    --btn-far-ink: #1d4ed8;           /* blue-700 */
-    --btn-far-bg-hover: #bfdbfe;      /* blue-200 */
-    --btn-far-border-hover: #2563eb;  /* blue-600 */
-    --btn-near-bg: #fef3c7;           /* amber-100 */
+    --btn-far-ink: #1e3a8a;           /* blue-900 */
+    --btn-far-bg-hover: #60a5fa;      /* blue-400 */
+    --btn-far-border-hover: #1d4ed8;  /* blue-700 */
+    --btn-far-ink-hover: #172554;     /* blue-950，hover 底色更深，文字再深一档保对比度 */
+    --btn-near-bg: #fcd34d;           /* amber-300 */
     --btn-near-border: #f59e0b;       /* amber-500 */
-    --btn-near-ink: #b45309;          /* amber-700 */
-    --btn-near-bg-hover: #fde68a;     /* amber-200 */
+    --btn-near-ink: #78350f;          /* amber-900 */
+    --btn-near-bg-hover: #fbbf24;     /* amber-400 */
     --btn-near-border-hover: #d97706; /* amber-600 */
-    --btn-danger-bg: #fee2e2;         /* red-100 */
-    --btn-danger-border: #fca5a5;     /* red-300 */
-    --btn-danger-ink: #b91c1c;        /* red-700 */
+    --btn-danger-bg: #fca5a5;         /* red-300 */
+    --btn-danger-border: #ef4444;     /* red-500 */
+    --btn-danger-ink: #7f1d1d;        /* red-900 */
+    /* 远/近机位分类徽章底色：与按钮同档，原先的半透明太淡 */
+    --badge-far-bg: #bfdbfe;          /* blue-200 */
+    --badge-near-bg: #fde68a;         /* amber-200 */
     /* 输入框描边：比面板分隔线深一档，保证日间可读性 */
     --input-border: #cbd5e1;          /* slate-300 */
 
@@ -103,19 +107,21 @@
     --warn-ink: #fbbf24;
     --warn-light: rgba(251,191,36,0.16);
     --warn-soft: rgba(251,191,36,0.20);
-    --btn-far-bg: rgba(96,165,250,0.16);
+    --btn-far-bg: rgba(96,165,250,0.26);
     --btn-far-border: #3b82f6;
     --btn-far-ink: #93c5fd;
-    --btn-far-bg-hover: rgba(96,165,250,0.28);
+    --btn-far-bg-hover: rgba(96,165,250,0.38);
     --btn-far-border-hover: #60a5fa;
-    --btn-near-bg: rgba(251,191,36,0.14);
+    --btn-near-bg: rgba(251,191,36,0.24);
     --btn-near-border: #d97706;
     --btn-near-ink: #fbbf24;
-    --btn-near-bg-hover: rgba(251,191,36,0.24);
+    --btn-near-bg-hover: rgba(251,191,36,0.36);
     --btn-near-border-hover: #f59e0b;
-    --btn-danger-bg: rgba(248,113,113,0.14);
-    --btn-danger-border: rgba(248,113,113,0.45);
+    --btn-danger-bg: rgba(248,113,113,0.22);
+    --btn-danger-border: rgba(248,113,113,0.55);
     --btn-danger-ink: #fca5a5;
+    --badge-far-bg: rgba(96,165,250,0.28);
+    --badge-near-bg: rgba(251,191,36,0.24);
     --input-border: #475569;
     --scrollbar-thumb: #475569;
     --scrollbar-thumb-hover: #64748b;
@@ -278,12 +284,14 @@
     --accent-ink: var(--primary-ink);
     --accent-soft: var(--primary-soft);
     --accent-light: var(--primary-light);
+    --accent-badge: var(--badge-far-bg);
   }
   .stand-card[data-type="近机位"] {
     --accent: var(--warn);
     --accent-ink: var(--warn-ink);
     --accent-soft: var(--warn-soft);
     --accent-light: var(--warn-light);
+    --accent-badge: var(--badge-near-bg);
   }
   /* 整圈已是主色，聚焦时改用外发光提示编辑位置 */
   .stand-card:focus-within {
@@ -317,7 +325,7 @@
     font-weight: 600;
     letter-spacing: 0.3px;
     white-space: nowrap;
-    background: var(--accent-soft);
+    background: var(--accent-badge);
     color: var(--accent-ink);
   }
 
@@ -424,7 +432,7 @@
   .btn-add.far:hover {
     background: var(--btn-far-bg-hover);
     border-color: var(--btn-far-border-hover);
-    color: var(--btn-far-ink);
+    color: var(--btn-far-ink-hover);
   }
   .btn-add.near {
     background: var(--btn-near-bg);
