@@ -148,11 +148,6 @@
   [data-theme="dark"] .home-btn { background: var(--panel-hover); }
   [data-theme="dark"] .home-btn:hover { color: #fff; }
   .header-spacer { flex: 1; }
-  .header-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
   .icon-btn {
     width: 32px;
     height: 32px;
@@ -235,7 +230,7 @@
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 4px;
     min-height: 38px;
   }
   .sidebar-title {
@@ -244,6 +239,15 @@
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    flex: 1;              /* 标题靠左，添加/清空/计数整体靠右 */
+    min-width: 0;
+  }
+  /* 侧边栏标题行内的添加 / 清空按钮：小一号，与「数据库」标题同排不显拥挤 */
+  .sidebar-header .icon-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    flex-shrink: 0;
   }
   .sidebar-count {
     background: var(--primary-soft);
@@ -447,6 +451,15 @@
     gap: 10px;
     flex-shrink: 0;
   }
+  /* 右侧按钮组：主题 / 模式 / 字段 / 导出 四个图标按钮紧凑排列，
+     间距单独收窄（原来的 gap:10px 对图标按钮过宽），并与搜索框保持距离。 */
+  .toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    margin-left: -2px;
+  }
   .breadcrumb {
     display: flex;
     align-items: center;
@@ -487,28 +500,24 @@
   .toolbar-input::placeholder { color: var(--text-muted); font-weight: 400; }
 
   /* ===== 模式切换 ===== */
-  /* 分页 / 无限 合并为单个按钮：显示当前模式，点击切到另一种（title 提示目标模式）。 */
+  /* 分页 / 无限 合并为单个图标按钮：显示当前模式图标，点击切到另一种（title 提示目标模式）。 */
   .mode-toggle {
-    height: 30px;
-    padding: 0 10px;
-    border: 1px solid var(--border);
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid transparent;
     border-radius: 6px;
-    background: var(--panel);
+    background: transparent;
     color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 500;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
     cursor: pointer;
     flex-shrink: 0;
-    white-space: nowrap;
-    transition: all 0.12s;
+    transition: all 0.15s;
   }
-  .mode-toggle:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border-hover); }
+  .mode-toggle:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border); }
   .mode-toggle svg { flex-shrink: 0; }
-  .mode-toggle svg[hidden] { display: none; }   /* hidden 属性对 SVG 不生效，需显式隐藏 */
 
   /* ===== Tabs ===== */
   .tabs {
@@ -1554,9 +1563,6 @@
     .header { height: 48px; padding: 0 10px; gap: 4px; }
     /* 手机端也显示标题：小字号 + 超出截断（窄屏设备兜底） */
     .logo span { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 44vw; }
-    .header-actions { gap: 2px; }
-    .header-actions .btn span { display: none; }
-    .header-actions .btn { padding: 0; width: 32px; justify-content: center; }
 
     /* 抽屉模式（dvh 同上：避免底部被地址栏遮挡） */
     .layout { height: calc(100vh - 48px); height: calc(100dvh - 48px); }
@@ -1581,12 +1587,12 @@
       padding: 8px 10px;
       gap: 6px;
     }
-    .breadcrumb { width: 100%; order: 1; font-size: 12px; }
+    /* flex:1 的 basis 是 0，会把 width:100% 吃掉导致面包屑无法独占一行；
+       显式写 flex-basis:100% 才能真正换行，给下面的搜索框留出空间 */
+    .breadcrumb { width: 100%; flex: 1 0 100%; order: 1; font-size: 12px; }
     .toolbar-input { flex: 1; order: 2; width: auto; min-width: 0; }
-    /* 手机端顺序与 PC 端一致：模式切换 → 显示字段 → 导出 */
-    .mode-toggle { order: 3; }
-    #btnColumns { order: 4; }
-    #btnExport { order: 5; }
+    /* 手机端顺序与 PC 端一致：主题 → 模式切换 → 显示字段 → 导出（按钮间距同样收紧） */
+    .toolbar-actions { order: 3; gap: 2px; }
 
     .tabs { padding: 0 10px; }
 
@@ -1663,23 +1669,6 @@
     </button>
   </div>
   <div class="header-spacer"></div>
-  <div class="header-actions">
-    <button class="icon-btn" id="btnTheme" title="切换主题">
-      <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-      </svg>
-      <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-      </svg>
-    </button>
-    <button class="btn" id="btnAddDb">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-      <span>添加数据库</span>
-    </button>
-    <button class="icon-btn" id="btnClear" title="清空所有数据库" style="display:none;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-    </button>
-  </div>
   <input type="file" id="fileInput" accept=".db,.sqlite,.sqlite3,.s3db" multiple style="display:none;">
 </div>
 
@@ -1689,11 +1678,17 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title">数据库</div>
+      <button class="icon-btn" id="btnAddDb" title="添加数据库">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="icon-btn" id="btnClear" title="清空所有数据库" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      </button>
       <div class="sidebar-count" id="dbCount">0</div>
     </div>
     <div class="db-list" id="dbList">
       <div style="padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
-        还未添加数据库<br>点击右上角或拖拽 .db 文件
+        还未添加数据库<br>点击上方 + 或拖拽 .db 文件至右侧
       </div>
     </div>
   </aside>
@@ -1714,16 +1709,24 @@
       <div class="toolbar">
         <div class="breadcrumb" id="breadcrumb"></div>
         <input type="text" class="toolbar-input" id="searchInput" placeholder="筛选所有列…">
-        <button class="mode-toggle" id="modeToggle" title="切换到无限滚动模式">
-          <svg data-mode-icon="page" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="toolbar-actions">
+        <button class="icon-btn" id="btnTheme" title="切换主题">
+          <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        <button class="mode-toggle" id="modeToggle" title="切换到分页模式">
+          <!-- 默认 loadMode 为 infinite，这里初始就显示 ∞，避免 JS 未执行时图标与模式不符 -->
+          <svg data-mode-icon="page" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
             <rect x="3" y="4" width="18" height="16" rx="2"/>
             <line x1="3" y1="10" x2="21" y2="10"/>
           </svg>
-          <svg data-mode-icon="infinite" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" hidden>
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <polyline points="19 12 12 19 5 12"/>
+          <svg data-mode-icon="infinite" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M8 12c-2.2 0-4-1.8-4-4s1.8-4 4-4c4 0 7 8 11 8 2.2 0 4-1.8 4-4s-1.8-4-4-4c-4 0-7 8-11 8z" transform="translate(0,4)"/>
           </svg>
-          <span class="mode-label" id="modeLabel">分页</span>
         </button>
         <button class="icon-btn" id="btnColumns" title="显示/隐藏字段（列）">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
@@ -1732,6 +1735,7 @@
         <button class="icon-btn" id="btnExport" title="导出当前数据为 CSV">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
+        </div>
       </div>
       <div class="tabs" id="tabs"></div>
       <div class="content-area" id="contentArea">
@@ -1770,6 +1774,9 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
+/* UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面 */
+const UI_BUILD = '2026-09-09-mode-icon-display';
+
 /* ================== 全局状态 ================== */
 const state = {
   databases: [],
@@ -2037,7 +2044,7 @@ function renderSidebar() {
   if (state.databases.length === 0) {
     list.innerHTML = `
       <div style="padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
-        还未添加数据库<br>点击右上角或拖拽 .db 文件
+        还未添加数据库<br>点击上方 + 或拖拽 .db 文件至右侧
       </div>`;
     return;
   }
@@ -2574,8 +2581,6 @@ function renderInfiniteGrid(db, tab) {
         <span class="stat">用时 <strong id="elapsedTime">0ms</strong></span>
         <span class="stat-sep">·</span>
         <span class="stat">列数 <strong>${columns.length}</strong></span>
-        <span class="stat-sep">·</span>
-        <span class="stat" style="color:var(--primary);">∞ 无限模式</span>
       </div>
       <div class="grid-container" id="infiniteContainer">
         <table class="data-table">
@@ -3561,18 +3566,21 @@ function exportCSV() {
   toast(`已导出 ${formatNum(rowCount)} 行`, 'success');
 }
 
-/* ================== 模式切换按钮（分页 / 无限 合并为单按钮） ================== */
-// 按钮显示当前模式，点击切到另一种；title 提示点击后会发生什么。
+/* ================== 模式切换按钮（分页 / 无限 合并为单图标按钮） ================== */
+// 按钮显示当前模式的图标（分页=表格、无限=∞ 符号），点击切到另一种；title 提示目标模式。
 function syncModeToggle(mode) {
   const btn = $('modeToggle');
   if (!btn) return;
   const isPage = mode !== 'infinite';
+  // 用 style.display 切换，与主题按钮（日/月图标）做法一致。
+  // 注意：不能用 svg.hidden —— hidden 是 HTML 属性，SVG 元素不识别，
+  // 设 svg.hidden 只会挂个普通 JS 属性，CSS 的 svg[hidden] 匹配不到，两个图标会同时显示。
   btn.querySelectorAll('[data-mode-icon]').forEach(svg => {
-    svg.hidden = svg.dataset.modeIcon !== (isPage ? 'page' : 'infinite');
+    const on = svg.dataset.modeIcon === (isPage ? 'page' : 'infinite');
+    svg.style.display = on ? '' : 'none';
   });
   btn.dataset.mode = isPage ? 'page' : 'infinite';
-  $('modeLabel').textContent = isPage ? '分页' : '无限';
-  btn.title = isPage ? '切换到无限滚动模式' : '切换到分页模式';
+  btn.title = isPage ? '切换到无限模式' : '切换到分页模式';
 }
 
 /* ================== 切换加载模式 ================== */
@@ -3621,7 +3629,8 @@ async function handleFiles(files) {
       const r = await loadDatabaseFromBuffer(p.file, p.buf, p.hash, { silent: true });
       results.push(r);
     } catch (e) {
-      console.error(e);
+      // 非 SQLite 文件属于可预期的用户输入，用 warn 记录即可，避免控制台出现红色报错堆栈引起误解
+      console.warn(`[导入跳过] ${p.file.name}: ${e?.message || e}`);
       results.push({ kind: 'error', fileName: p.file.name, error: e });
     }
     if (i < prepared.length - 1) await new Promise(res => setTimeout(res, 0));
@@ -3729,9 +3738,11 @@ $('modeToggle').onclick = () => {
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
   if (!tab || tab.table === '__SCHEMA__') return;
   const next = tab.loadMode === 'page' ? 'infinite' : 'page';
+  // 先切图标：即使后续渲染被中断/提前 return，按钮也能立刻反映当前模式
+  syncModeToggle(next);
   state.loadMode = next;
   localStorage.setItem('sqlite-load-mode', next);
-  switchLoadMode(tab, next);   // 内部会 renderContent → syncModeToggle
+  switchLoadMode(tab, next);   // 内部会 renderContent → 再同步一次（幂等）
 };
 
 // 拖拽
