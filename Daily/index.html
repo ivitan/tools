@@ -708,6 +708,7 @@
 
 <datalist id="reason-list" style="display: none">
   <option value="无异常"></option>
+  <option value="已下视频"></option>
 </datalist>
 
 <div class="page">
@@ -822,6 +823,26 @@ let currentSearchQuery = "";
 
 const MAX_TEXTAREA_H = 320;
 
+/* 异常原因选中「已下视频」后：沿用节点的连续搜索体验（尾部补分隔符），
+   但拼接符号改用逗号「，」 */
+const VIDEO_OPT = "已下视频";
+const SEP_COMMA = "，";
+const SEP_DUN = "、";
+/* 解析时同时兼容顿号/逗号，避免切换分隔符后已填内容被误判为一整段 */
+const SEP_SPLIT_RE = /[、，,]/;
+/* 收尾时清理悬空的分隔符 */
+const SEP_TAIL_RE = /[、，,]+$/;
+/* 判断结尾是否已有分隔符 */
+const SEP_TAIL_AT_END_RE = /[、，,]$/;
+
+function isNodeList(listId) {
+  return listId === "event-list-far" || listId === "event-list-near";
+}
+/* 该输入框当前是否处于「逗号 + 尾部补位」模式 */
+function isVideoMode(listId, selected) {
+  return !isNodeList(listId) && Array.isArray(selected) && selected.includes(VIDEO_OPT);
+}
+
 /* ====== 文本框自动增高：随内容向下扩展，到上限后才内部滚动 ====== */
 function autoResize(el) {
   if (!el || !el.classList || !el.classList.contains("auto-grow")) return;
@@ -861,7 +882,13 @@ window.onload = () => {
 
   document.addEventListener("click", (e) => {
     if (e.target.classList.contains("custom-dropdown-input")) {
-      if (activeDropdown && activeDropdown.parentNode === e.target.parentNode) return;
+      /* 同一个输入框再次点击：先把手输内容落定为一项，再重开搜索，
+         否则下拉会一直停在「无匹配项」，没法继续点选 */
+      if (activeDropdown && activeDropdown.parentNode === e.target.parentNode) {
+        const listId = e.target.getAttribute("data-list");
+        if (ensureTrailingSep(e.target, listId)) refreshDropdown(e.target, activeDropdown, listId);
+        return;
+      }
       showDropdown(e.target);
     } else if (!e.target.closest(".multi-select-dropdown")) {
       closeAllDropdowns();
@@ -888,7 +915,7 @@ window.onload = () => {
 
 /* ====== 下拉框与智能搜索核心逻辑 ====== */
 function parseInput(val, validOptions, isNode) {
-  const rawParts = val.split("、").map((v) => v.trim());
+  const rawParts = String(val || "").split(SEP_SPLIT_RE).map((v) => v.trim());
   const selected = [];
   let query = "";
 
@@ -908,10 +935,34 @@ function parseInput(val, validOptions, isNode) {
   return { selected, query };
 }
 
+/* 补齐尾部分隔符，把已输入的内容（含手写的自定义文本）落定为一项：
+   否则新输入/新点选的内容会粘连在它后面，变成一整段无法匹配的长文本。
+   行为与节点一致；「已下视频」模式用逗号。返回是否发生了变化 */
+function ensureTrailingSep(input, listId) {
+  if (!input.value || SEP_TAIL_AT_END_RE.test(input.value)) return false;
+
+  const isNode = isNodeList(listId);
+  const { selected } = parseInput(input.value, baseOptions[listId] || [], isNode);
+
+  input.value += isVideoMode(listId, selected) ? SEP_COMMA : SEP_DUN;
+  autoResize(input);
+  generatePreview();
+  return true;
+}
+
+/* 按当前输入重算搜索词并重绘下拉 */
+function refreshDropdown(input, dropdown, listId) {
+  const { query } = parseInput(input.value, baseOptions[listId] || [], isNodeList(listId));
+  currentSearchQuery = query;
+  renderOptions(input, dropdown, listId);
+}
+
 function showDropdown(input) {
   closeAllDropdowns();
   const listId = input.getAttribute("data-list");
   if (!baseOptions[listId]) return;
+
+  ensureTrailingSep(input, listId);
 
   const dropdown = document.createElement("div");
   dropdown.className = "multi-select-dropdown show";
@@ -969,7 +1020,11 @@ function renderOptions(input, dropdown, listId) {
 function toggleSelection(input, opt, dropdown, listId) {
   const isNode = listId === "event-list-far" || listId === "event-list-near";
   const validOptions = baseOptions[listId];
-  let { selected } = parseInput(input.value, validOptions, isNode);
+  let { selected, query } = parseInput(input.value, validOptions, isNode);
+
+  /* 末尾未落定的那一段：若与任何选项都不匹配，说明是用户手写的自定义内容，
+     点选时保留并拼在前面；若存在匹配项，它只是搜索关键词，丢弃 */
+  if (query && !validOptions.some((o) => o.includes(query))) selected.push(query);
 
   if (selected.includes(opt)) {
     selected = selected.filter((v) => v !== opt);
@@ -977,11 +1032,13 @@ function toggleSelection(input, opt, dropdown, listId) {
     selected.push(opt);
   }
 
-  if (listId === "reason-list") {
-    input.value = selected.join("、");
-  } else {
-    input.value = selected.join("、") + (selected.length > 0 ? "、" : "");
-  }
+  /* 节点：顿号拼接 + 尾部补位，便于连续搜索；
+     异常原因：默认顿号拼接且不补位，一旦选中「已下视频」则切换为逗号拼接 + 尾部补位 */
+  const videoMode = isVideoMode(listId, selected);
+  const sep = videoMode ? SEP_COMMA : SEP_DUN;
+  const keepTail = isNode || videoMode;
+
+  input.value = selected.join(sep) + (keepTail && selected.length > 0 ? sep : "");
 
   autoResize(input);
   generatePreview();
@@ -992,7 +1049,7 @@ function toggleSelection(input, opt, dropdown, listId) {
 function closeAllDropdowns() {
   if (activeDropdown) {
     if (activeInput) {
-      activeInput.value = activeInput.value.replace(/、+$/, "");
+      activeInput.value = activeInput.value.replace(SEP_TAIL_RE, "");
       generatePreview();
     }
     activeDropdown.remove();
