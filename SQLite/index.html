@@ -3749,11 +3749,14 @@ async function handleFiles(files) {
     if (results.length === 1) toast(`「${results[0].db.name}」已加载，已跳过重复导入`, 'warn');
     else toast(`数据库导入：跳过 ${skipped} 个重复`, 'warn');
   }
+  // 导入流程结束：清冷却残留（不动挂起，以免漏掉对话框关闭后迟到的合成 over）。
+  // 覆盖「点击清空后冷却残留」等极端时序，确保下次 hover 能正常显示提示（详见 note 30）。
+  window.resetCooldown && window.resetCooldown();
 }
 
-$('btnAddDb').onclick = () => $('fileInput').click();
+$('btnAddDb').onclick = () => { window.suspendTips && window.suspendTips(true); $('fileInput').click(); setTimeout(() => window.resetTips && window.resetTips(), 2000); };
 // 点击虚线区域任意位置均可触发选择文件（按钮自身由冒泡统一处理，避免重复触发）
-$('dropzone').addEventListener('click', () => $('fileInput').click());
+$('dropzone').addEventListener('click', () => { window.suspendTips && window.suspendTips(true); $('fileInput').click(); setTimeout(() => window.resetTips && window.resetTips(), 2000); });
 $('fileInput').onchange = (e) => handleFiles([...e.target.files]);
 
 $('btnClear').onclick = async () => {
@@ -4340,8 +4343,23 @@ document.addEventListener('click', (e) => {
   // 除非用户真把鼠标拖到 (0,0)，否则无法骗过这个判断。
   let cooled = null;                       // 处于冷却中（锁定）的按钮
   let cdX = null, cdY = null;              // 点击瞬间的真实指针坐标
+  // 文件选择器（系统模态）打开期间挂起 tooltip：对话框关闭后浏览器会补发合成
+  // over/focus，其坐标落在刚重显的按钮上并点亮提示、且永不派发真实 mouseout → 永久卡住。
+  // 挂起期间一律不点亮，导入完成后再恢复（详见 note 30）。
+  let tipSuspended = false;
+  window.suspendTips = (v) => { tipSuspended = v; if (v) hideAll(); };
+  // 导入完成（含文件选择器关闭后补发的合成事件平息）后强制复位 tooltip：
+  // 收起所有提示并清冷却。用于接管「合成 over 点亮提示后永不派发真实 mouseout」的场景——
+  // 那种提示无法靠后续事件收掉，只能主动收（详见 note 30）。
+  window.resetTips = () => { tipSuspended = false; hideAll(); cooled = null; cdX = cdY = null; };
+  // 仅清冷却、不动「挂起」：供导入完成时调用。若一并清掉挂起，会让对话框关闭后迟到的
+  // 合成 over 漏网点亮（chooser 路径由此翻车），故合成 over 的拦截仍交给挂起负责。
+  window.resetCooldown = () => { cooled = null; cdX = cdY = null; };
   const samePoint = (x, y) => cdX !== null && x === cdX && y === cdY;
   const onPointerMove = (e) => {
+    // 收到一次真实移动即解除「文件选择器挂起」：对话框关闭后浏览器补发的合成 over 必然
+    // 早于用户下一次真实移动，故挂起能拦掉它；用户一旦动鼠标即恢复正常（详见 note 30）。
+    if (tipSuspended) tipSuspended = false;
     if (!cooled) return;
     // 确认框遮罩存在时，鼠标在遮罩（取消/确定按钮）上移动看似「移出了原按钮」，
     // 但这是遮罩造成的假象，不应解除冷却——否则遮罩关闭后鼠标回到按钮上，
@@ -4359,6 +4377,8 @@ document.addEventListener('click', (e) => {
   const onMouseOver = (e) => {
     const el = tipOf(e);
     if (!el) return;
+    // 文件选择器（系统模态）打开期间挂起：过滤对话框关闭后浏览器补发的合成 over
+    if (tipSuspended) return;
     // 冷却中的按钮一律不再自动弹出；解锁只由「真实指针移出」负责
     if (cooled === el) return;
     if (cooled && cooled !== el) { cooled.classList.remove('tip-on'); cooled = null; cdX = cdY = null; }
@@ -4404,7 +4424,7 @@ document.addEventListener('click', (e) => {
   // 键盘可达性：Tab 聚焦（尚未点击）时也提示；点击过的按钮（冷却中）不提示
   const onFocusIn = (e) => {
     const el = tipOf(e);
-    if (!el || cooled === el) return;
+    if (!el || tipSuspended || cooled === el) return;
     if (pointerDownEl === el) return;                // 鼠标按下带来的焦点，不算「未点击」
     hideAll();
     el.classList.add('tip-on');
