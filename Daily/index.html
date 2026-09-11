@@ -48,6 +48,23 @@
     --warn-light: #fef3c7;
     --warn-soft: rgba(245,158,11,0.12);
 
+    /* 操作按钮：浅色填充 + 同系描边 + 深色文字（与工具组按钮风格统一） */
+    --btn-far-bg: #dbeafe;            /* blue-100 */
+    --btn-far-border: #3b82f6;        /* blue-500 */
+    --btn-far-ink: #1d4ed8;           /* blue-700 */
+    --btn-far-bg-hover: #bfdbfe;      /* blue-200 */
+    --btn-far-border-hover: #2563eb;  /* blue-600 */
+    --btn-near-bg: #fef3c7;           /* amber-100 */
+    --btn-near-border: #f59e0b;       /* amber-500 */
+    --btn-near-ink: #b45309;          /* amber-700 */
+    --btn-near-bg-hover: #fde68a;     /* amber-200 */
+    --btn-near-border-hover: #d97706; /* amber-600 */
+    --btn-danger-bg: #fee2e2;         /* red-100 */
+    --btn-danger-border: #fca5a5;     /* red-300 */
+    --btn-danger-ink: #b91c1c;        /* red-700 */
+    /* 输入框描边：比面板分隔线深一档，保证日间可读性 */
+    --input-border: #cbd5e1;          /* slate-300 */
+
     --scrollbar-thumb: #cbd5e1;
     --scrollbar-thumb-hover: #94a3b8;
     --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
@@ -86,6 +103,20 @@
     --warn-ink: #fbbf24;
     --warn-light: rgba(251,191,36,0.16);
     --warn-soft: rgba(251,191,36,0.20);
+    --btn-far-bg: rgba(96,165,250,0.16);
+    --btn-far-border: #3b82f6;
+    --btn-far-ink: #93c5fd;
+    --btn-far-bg-hover: rgba(96,165,250,0.28);
+    --btn-far-border-hover: #60a5fa;
+    --btn-near-bg: rgba(251,191,36,0.14);
+    --btn-near-border: #d97706;
+    --btn-near-ink: #fbbf24;
+    --btn-near-bg-hover: rgba(251,191,36,0.24);
+    --btn-near-border-hover: #f59e0b;
+    --btn-danger-bg: rgba(248,113,113,0.14);
+    --btn-danger-border: rgba(248,113,113,0.45);
+    --btn-danger-ink: #fca5a5;
+    --input-border: #475569;
     --scrollbar-thumb: #475569;
     --scrollbar-thumb-hover: #64748b;
     --shadow: 0 1px 3px rgba(0,0,0,0.5);
@@ -232,9 +263,9 @@
 
   /* ===== 机位卡片 ===== */
   .stand-card {
-    background: var(--accent-light);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
+    background: var(--panel);
+    /* 整圈轮廓：四边同粗同色 */
+    border: 2px solid var(--accent);
     border-radius: var(--r);
     padding: 10px 12px;
     margin-bottom: 10px;
@@ -242,7 +273,7 @@
   }
   .stand-card[data-type="远机位"] {
     --accent: var(--primary);
-    --accent-ink: var(--primary);
+    --accent-ink: var(--primary-ink);
     --accent-soft: var(--primary-soft);
     --accent-light: var(--primary-light);
   }
@@ -252,7 +283,8 @@
     --accent-soft: var(--warn-soft);
     --accent-light: var(--warn-light);
   }
-  .stand-card:focus-within { border-color: var(--accent); }
+  /* 整圈已是主色，聚焦时改用外发光提示编辑位置 */
+  .stand-card:focus-within { box-shadow: 0 0 0 3px var(--accent-soft); }
 
   .stand-header {
     display: grid;
@@ -289,7 +321,7 @@
   input, textarea {
     width: 100%;
     padding: 7px 10px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--input-border);
     border-radius: var(--r-sm);
     background: var(--panel);
     color: var(--text);
@@ -347,51 +379,69 @@
   }
   .btn:hover { border-color: var(--border-hover); background: var(--border-hover); }
   .btn i { font-size: 12px; }
+  /* 主操作也沿用浅色填充 + 同系描边 + 深色文字，与其余按钮同一模式 */
   .btn-primary {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: var(--primary-on);
+    background: var(--btn-far-bg);
+    border-color: var(--btn-far-border);
+    color: var(--btn-far-ink);
     font-weight: 600;
   }
   .btn-primary:hover {
-    background: var(--primary-hover);
-    border-color: var(--primary-hover);
-    color: var(--primary-on);
+    background: var(--btn-far-bg-hover);
+    border-color: var(--btn-far-border-hover);
+    color: var(--btn-far-ink);
   }
   .btn-danger { background: var(--danger); border-color: var(--danger); color: var(--danger-on); font-weight: 600; }
   .btn-danger:hover { background: var(--danger); border-color: var(--danger); color: var(--danger-on); filter: brightness(0.94); }
-  /* 弱化危险操作：描边 + 文字，hover 才填色（与 SQLite 工具的删除按钮一致） */
+  /* 危险操作：浅红填充 + 红描边，hover 才填实底红（与工具组清空按钮一致） */
   .btn-danger-ghost {
-    background: var(--danger-light);
-    border-color: var(--border);
-    color: var(--danger-ink);
+    background: var(--btn-danger-bg);
+    border-color: var(--btn-danger-border);
+    color: var(--btn-danger-ink);
     height: 28px;
     padding: 0 10px;
     font-size: 12.5px;
+    font-weight: 600;
   }
   .btn-danger-ghost:hover { background: var(--danger); border-color: var(--danger); color: var(--danger-on); }
 
   .add-stand-group { display: flex; gap: 10px; margin-top: 12px; }
+  /* 浅色填充 + 同系描边 + 深色文字，常显彩色（不再等 hover 才上色） */
   .btn-add {
     flex: 1;
-    background: var(--panel-hover);
-    border-color: var(--border);
-    font-weight: 500;
+    font-weight: 600;
+    border-width: 1px;
   }
-  .btn-add.far { color: var(--primary); }
-  .btn-add.far:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
-  .btn-add.near { color: var(--warn-ink); }
-  .btn-add.near:hover { background: var(--warn-light); border-color: var(--warn); color: var(--warn-ink); }
+  .btn-add.far {
+    background: var(--btn-far-bg);
+    border-color: var(--btn-far-border);
+    color: var(--btn-far-ink);
+  }
+  .btn-add.far:hover {
+    background: var(--btn-far-bg-hover);
+    border-color: var(--btn-far-border-hover);
+    color: var(--btn-far-ink);
+  }
+  .btn-add.near {
+    background: var(--btn-near-bg);
+    border-color: var(--btn-near-border);
+    color: var(--btn-near-ink);
+  }
+  .btn-add.near:hover {
+    background: var(--btn-near-bg-hover);
+    border-color: var(--btn-near-border-hover);
+    color: var(--btn-near-ink);
+  }
 
   .btn-dashed {
     width: 100%;
     height: 32px;
-    border: 1px dashed var(--border-hover);
+    border: 1px dashed var(--btn-far-border);
     border-radius: var(--r-sm);
-    background: var(--primary-light);
-    color: var(--primary-ink);
+    background: var(--btn-far-bg);
+    color: var(--btn-far-ink);
     font-size: 12.5px;
-    font-weight: 500;
+    font-weight: 600;
     font-family: inherit;
     cursor: pointer;
     display: inline-flex;
@@ -402,9 +452,9 @@
     -webkit-tap-highlight-color: transparent;
   }
   .btn-dashed:hover {
-    border-color: var(--primary);
-    color: var(--primary-ink);
-    background: var(--primary-soft);
+    border-color: var(--btn-far-border-hover);
+    color: var(--btn-far-ink);
+    background: var(--btn-far-bg-hover);
   }
 
   /* 删除：默认低调，hover 才显红 */
