@@ -156,6 +156,51 @@
       --success: #34d399;
       --danger: #f87171;
     }
+
+    /* ===== 日间模式可读性优化 =====
+       Tailwind 原生 gray-300/400/500 在白底上的对比度仅约 1.5:1 / 2.6:1 / 4.8:1，
+       低于 WCAG AA 门槛（正文 4.5:1、非文本 3:1），在 10~12px 小字号下发虚发飘。
+       这里只在「非暗色主题」下把浅灰档位整体上提一档，并统一到与 --bg(#f8fafc)
+       同源的 slate 色系，避免灰中泛黄与页面底色割裂。
+       选择器带 html:not([data-theme="dark"])，暗色主题完全不受影响。 */
+    html:not([data-theme="dark"]) .text-gray-300 { color: #94a3b8; }  /* 纯装饰图标 → 约 3:1 */
+    html:not([data-theme="dark"]) .text-gray-400 { color: #64748b; }  /* 2.6:1 → 4.8:1 */
+    html:not([data-theme="dark"]) .text-gray-500 { color: #475569; }  /* 4.8:1 → 7.4:1 */
+    html:not([data-theme="dark"]) .text-gray-600 { color: #334155; }  /* 7.5:1 → 10.9:1 */
+
+    /* 轮廓与分隔线：白底上原 gray-100/200 近乎隐形，卡片边界糊成一片。
+       divide-* 需沿用 Tailwind 自身的选择器结构，否则特异性不足会被覆盖 */
+    html:not([data-theme="dark"]) .border-gray-100 { border-color: #e2e8f0; }
+    html:not([data-theme="dark"]) .border-gray-200 { border-color: #cbd5e1; }
+    html:not([data-theme="dark"]) .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+      border-color: #e2e8f0;
+    }
+    html:not([data-theme="dark"]) .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+      border-color: #cbd5e1;
+    }
+
+    /* 面板层次：原 gray-50(#f9fafb) 与页面底色 #f8fafc 几乎同色，面板浮不起来 */
+    html:not([data-theme="dark"]) .bg-gray-50 { background-color: #f1f5f9; }
+
+    /* 卡片投影：日间下默认 shadow-sm 过淡，补一点带蓝调的阴影让白卡片立起来 */
+    html:not([data-theme="dark"]) .shadow-sm {
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 3px rgba(15, 23, 42, .08);
+    }
+
+    /* 输入框占位符：浏览器默认色偏淡且各浏览器不一致，统一到 slate-500 */
+    html:not([data-theme="dark"]) input::placeholder,
+    html:not([data-theme="dark"]) textarea::placeholder {
+      color: #64748b;
+      opacity: 1;
+    }
+
+    /* 表格行悬停高亮：长表格逐行比对时给出明确的视线锚点 */
+    html:not([data-theme="dark"]) .node-table tbody tr:hover,
+    html:not([data-theme="dark"]) .paste-table tbody tr:hover,
+    html:not([data-theme="dark"]) .raw-table tbody tr:hover {
+      background-color: #eff6ff;
+    }
+
     body {
       background: var(--bg) !important;
       color: var(--text) !important;
@@ -346,7 +391,7 @@
               <!-- 核心操作按钮组：每行 3 个，排成两行 -->
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <button id="btnParseNear"
-                  class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                  class="bg-blue-300 hover:bg-blue-400 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-900 dark:text-blue-300 border border-blue-500 dark:border-blue-700 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center">
                   <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
@@ -354,7 +399,7 @@
                   </svg>近机位提取
                 </button>
                 <button id="btnParseRemote"
-                  class="bg-sky-500 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                  class="bg-sky-300 hover:bg-sky-400 dark:bg-sky-900/30 dark:hover:bg-sky-900/50 text-sky-900 dark:text-sky-300 border border-sky-500 dark:border-sky-700 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center">
                   <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
@@ -362,14 +407,14 @@
                   </svg>远机位提取
                 </button>
                 <button id="btnExport"
-                  class="bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                  class="bg-purple-300 hover:bg-purple-400 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-900 dark:text-purple-300 border border-purple-500 dark:border-purple-700 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center">
                   <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                   </svg>导出结果表
                 </button>
                 <button id="btnCopy"
-                  class="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                  class="bg-emerald-300 hover:bg-emerald-400 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 text-emerald-900 dark:text-emerald-300 border border-emerald-600 dark:border-emerald-700 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center">
                   <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
@@ -377,7 +422,7 @@
                   </svg>复制时间点
                 </button>
                 <button id="btnCopyTableNums"
-                  class="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center"
+                  class="bg-amber-300 hover:bg-amber-400 dark:bg-amber-900/30 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-300 border border-amber-600 dark:border-amber-700 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center"
                   title="复制镜头号">
                   <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -386,7 +431,7 @@
                   </svg>复制镜头号
                 </button>
                 <button id="btnClear"
-                  class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium py-2 px-3 rounded shadow-sm transition-colors flex items-center justify-center">
+                  class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-300 border border-gray-400 dark:border-gray-500 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center">
                   <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
