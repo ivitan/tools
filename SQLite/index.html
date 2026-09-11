@@ -486,37 +486,29 @@
   .toolbar-input:focus { border-color: var(--primary); }
   .toolbar-input::placeholder { color: var(--text-muted); font-weight: 400; }
 
-  /* ===== Mode Toggle ===== */
+  /* ===== 模式切换 ===== */
+  /* 分页 / 无限 合并为单个按钮：显示当前模式，点击切到另一种（title 提示目标模式）。 */
   .mode-toggle {
-    display: inline-flex;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--panel);
-    flex-shrink: 0;
-  }
-  .mode-toggle button {
     height: 30px;
     padding: 0 10px;
-    border: none;
-    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel);
     color: var(--text-secondary);
-    font-weight: 500;
-    cursor: pointer;
     font-size: 12px;
+    font-weight: 500;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
     transition: all 0.12s;
-    border-right: 1px solid var(--border);
   }
-  .mode-toggle button:last-child { border-right: none; }
-  .mode-toggle button:hover { background: var(--panel-hover); color: var(--text); }
-  .mode-toggle button.active {
-    background: var(--primary);
-    color: #fff;
-  }
-  .mode-toggle button svg { flex-shrink: 0; }
+  .mode-toggle:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border-hover); }
+  .mode-toggle svg { flex-shrink: 0; }
+  .mode-toggle svg[hidden] { display: none; }   /* hidden 属性对 SVG 不生效，需显式隐藏 */
 
   /* ===== Tabs ===== */
   .tabs {
@@ -1591,8 +1583,10 @@
     }
     .breadcrumb { width: 100%; order: 1; font-size: 12px; }
     .toolbar-input { flex: 1; order: 2; width: auto; min-width: 0; }
+    /* 手机端顺序与 PC 端一致：模式切换 → 显示字段 → 导出 */
     .mode-toggle { order: 3; }
-    #btnExport { order: 4; }
+    #btnColumns { order: 4; }
+    #btnExport { order: 5; }
 
     .tabs { padding: 0 10px; }
 
@@ -1617,8 +1611,8 @@
 
     .status-bar { padding: 0 10px; gap: 8px; font-size: 11px; }
 
-    .mode-toggle button { padding: 0 8px; }
-    .mode-toggle button .mode-label { display: none; }
+    /* 合并成单按钮后空间足够，手机端也保留「分页 / 无限」文字，与 PC 端一致 */
+    .mode-toggle { padding: 0 9px; }
 
     /* 手机端：整列 toast 下挪避开头部按钮，并左右留边 */
     .toast-container { top: 56px; right: 10px; left: 10px; align-items: stretch; }
@@ -1720,22 +1714,17 @@
       <div class="toolbar">
         <div class="breadcrumb" id="breadcrumb"></div>
         <input type="text" class="toolbar-input" id="searchInput" placeholder="筛选所有列…">
-        <div class="mode-toggle" id="modeToggle">
-          <button data-mode="page" title="分页模式">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="16" rx="2"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            <span class="mode-label">分页</span>
-          </button>
-          <button data-mode="infinite" title="无限滚动">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <polyline points="19 12 12 19 5 12"/>
-            </svg>
-            <span class="mode-label">无限</span>
-          </button>
-        </div>
+        <button class="mode-toggle" id="modeToggle" title="切换到无限滚动模式">
+          <svg data-mode-icon="page" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="16" rx="2"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <svg data-mode-icon="infinite" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" hidden>
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <polyline points="19 12 12 19 5 12"/>
+          </svg>
+          <span class="mode-label" id="modeLabel">分页</span>
+        </button>
         <button class="icon-btn" id="btnColumns" title="显示/隐藏字段（列）">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
           <span class="col-badge" id="colBadge" hidden>0</span>
@@ -2340,10 +2329,8 @@ function renderContent() {
     $('searchInput').value = tab.filter || '';
   }
 
-  // 同步 mode-toggle
-  document.querySelectorAll('#modeToggle button').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.mode === tab.loadMode);
-  });
+  // 同步模式切换按钮（分页 / 无限 合并为单按钮）
+  syncModeToggle(tab.loadMode);
 
   if (tab.table === '__SCHEMA__') {
     renderSchemaView(db);
@@ -3574,6 +3561,20 @@ function exportCSV() {
   toast(`已导出 ${formatNum(rowCount)} 行`, 'success');
 }
 
+/* ================== 模式切换按钮（分页 / 无限 合并为单按钮） ================== */
+// 按钮显示当前模式，点击切到另一种；title 提示点击后会发生什么。
+function syncModeToggle(mode) {
+  const btn = $('modeToggle');
+  if (!btn) return;
+  const isPage = mode !== 'infinite';
+  btn.querySelectorAll('[data-mode-icon]').forEach(svg => {
+    svg.hidden = svg.dataset.modeIcon !== (isPage ? 'page' : 'infinite');
+  });
+  btn.dataset.mode = isPage ? 'page' : 'infinite';
+  $('modeLabel').textContent = isPage ? '分页' : '无限';
+  btn.title = isPage ? '切换到无限滚动模式' : '切换到分页模式';
+}
+
 /* ================== 切换加载模式 ================== */
 function switchLoadMode(tab, mode) {
   if (tab.loadMode === mode) return;
@@ -3723,16 +3724,15 @@ if (logoToggle) {
 }
 $('sidebarOverlay').onclick = closeDrawer;
 
-// mode toggle
-document.querySelectorAll('#modeToggle button').forEach(btn => {
-  btn.onclick = () => {
-    const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
-    if (!tab || tab.table === '__SCHEMA__') return;
-    state.loadMode = btn.dataset.mode;
-    localStorage.setItem('sqlite-load-mode', state.loadMode);
-    switchLoadMode(tab, btn.dataset.mode);
-  };
-});
+// 模式切换：单按钮在分页 / 无限之间来回切
+$('modeToggle').onclick = () => {
+  const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
+  if (!tab || tab.table === '__SCHEMA__') return;
+  const next = tab.loadMode === 'page' ? 'infinite' : 'page';
+  state.loadMode = next;
+  localStorage.setItem('sqlite-load-mode', next);
+  switchLoadMode(tab, next);   // 内部会 renderContent → syncModeToggle
+};
 
 // 拖拽
 const dz = $('dropzone');
@@ -4262,6 +4262,7 @@ if (localStorage.getItem('sqlite-sidebar-collapsed') === '1' && !state.isMobile)
 }
 
 theme.init();
+syncModeToggle(state.loadMode);   // 未打开表时，按钮先按全局默认模式显示
 
 (async () => {
   try {
