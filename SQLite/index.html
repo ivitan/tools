@@ -571,9 +571,16 @@
     z-index: 300;
   }
   [data-tip].tip-on::after { opacity: 1; transform: translateY(0); }
-  /* 侧栏标题行里的按钮紧贴右侧且右侧空间不足：
-     提示改为向下展开、右对齐按钮，避免超出侧栏被裁切。 */
-  .sidebar-header [data-tip]::after { top: calc(100% + 6px); right: 0; }
+  /* 侧栏标题行里的按钮只有 24px 且紧贴右侧：
+     默认的 right:0 会让提示左边缘飘到按钮左外侧（实测 gap 达 39px），
+     看起来像"没挨着按钮"，容易误判成没显示。
+     这里改为居中对齐到按钮，并限制最大宽度避免溢出侧栏。 */
+  .sidebar-header [data-tip]::after {
+    top: calc(100% + 6px);
+    right: 0;
+    left: auto;
+    max-width: 46vw;
+  }
 
   /* ===== Tabs ===== */
   .tabs {
@@ -1821,7 +1828,7 @@
 
 <script>
 /* UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面 */
-const UI_BUILD = '2026-09-12-theme-back-to-header-half-search';
+const UI_BUILD = '2026-09-12-tip-lock-after-click';
 
 /* ================== 全局状态 ================== */
 const state = {
@@ -4320,50 +4327,85 @@ document.addEventListener('click', (e) => {
   document.addEventListener('pointerdown', (e) => { pointerDownEl = tipOf(e); }, true);
 
   // 提示只用于「点击之前」告诉用户这个按钮是干什么的——用户既然已经点了，就不该再浮着挡视线。
-  // 因此点击后立即收起并进入冷却，鼠标真正移开前不再弹出。
-  let cooled = null;                       // 处于冷却中的按钮
-  document.addEventListener('mouseover', (e) => {
+  // 因此点击后立即收起并进入冷却，指针真正移开前不再弹出。
+  //
+  // 冷却为什么不能靠鼠标坐标判断：点击后浏览器会补发 mouseover / focusin
+  // （典型场景：btnAddDb 弹出文件选择器，取消或选完后窗口重新聚焦）。
+  // 实测这种合成事件的 clientX/clientY **都是 0**，而按钮在 (257,62)~(281,86)，
+  // 按坐标算会被判成「指针已离开」→ 冷却解除 → 提示残留（就是用户看到的现象）。
+  //
+  // 所以改用「指针是否真的动过」来解锁：点击时记下当时的真实坐标，
+  // 只有收到一个坐标与它不同的**真实** mousemove/pointermove，才认为用户动了鼠标，
+  // 此时再判断是否已移出按钮，移出才解锁。合成事件坐标恒为 0，
+  // 除非用户真把鼠标拖到 (0,0)，否则无法骗过这个判断。
+  let cooled = null;                       // 处于冷却中（锁定）的按钮
+  let cdX = null, cdY = null;              // 点击瞬间的真实指针坐标
+  const samePoint = (x, y) => cdX !== null && x === cdX && y === cdY;
+  const onPointerMove = (e) => {
+    if (!cooled) return;
+    // 位置和点击时一模一样 → 视为「没动」，不解锁（防合成事件）
+    if (samePoint(e.clientX, e.clientY)) return;
+    const r = cooled.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right &&
+                   e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inside) { cooled.classList.remove('tip-on'); cooled = null; cdX = cdY = null; }
+  };
+  document.addEventListener('mousemove', onPointerMove, true);
+  document.addEventListener('pointermove', onPointerMove, true);
+  const onMouseOver = (e) => {
     const el = tipOf(e);
     if (!el) return;
-    if (cooled === el) return;             // 已点过且鼠标还没离开 → 不再提示
-    if (cooled && cooled !== el) { cooled.classList.remove('tip-on'); cooled = null; }
+    // 冷却中的按钮一律不再自动弹出；解锁只由「真实指针移出」负责
+    if (cooled === el) return;
+    if (cooled && cooled !== el) { cooled.classList.remove('tip-on'); cooled = null; cdX = cdY = null; }
     hideAll();
     el.classList.add('tip-on');
-  });
-  document.addEventListener('mouseout', (e) => {
+  };
+  document.addEventListener('mouseover', onMouseOver);
+  const onMouseOut = (e) => {
     const el = tipOf(e);
     if (!el) return;
     const to = e.relatedTarget;
     if (to && el.contains(to)) return;     // 移到自身子元素上不算离开
     el.classList.remove('tip-on');
-    if (cooled === el) cooled = null;      // 真正离开 → 解除冷却
-  });
-  // 兜底解除冷却：按钮被禁用 / 被替换 / 由脚本调用 click() 时 mouseout 不会触发，
-  // 冷却会永久卡住（之后再悬停也没提示）。这里按鼠标实际位置判断是否已移出。
-  document.addEventListener('mousemove', (e) => {
-    if (!cooled) return;
-    const r = cooled.getBoundingClientRect();
-    const inside = e.clientX >= r.left && e.clientX <= r.right &&
-                   e.clientY >= r.top && e.clientY <= r.bottom;
-    if (!inside) { cooled.classList.remove('tip-on'); cooled = null; }
-  }, true);
-  // 点击 = 已经知道用途 → 立刻隐藏，并在鼠标移开前不再出现。
+    // 解锁条件（二者满足其一即可，缺一不可）：
+    //  a) relatedTarget 非空 —— 明确知道指针移到了哪个元素，是真实移出；
+    //  b) 按钮已不带 :hover —— 说明指针确实不在它上面了。
+    //     指针移出视口时 relatedTarget 会是 null，但 :hover 也同时消失，靠 b) 兜底。
+    // 反过来，脚本合成的 mouseout 既没有 relatedTarget、:hover 又依然成立
+    // （指针其实还停在按钮上），两个条件都不满足 → 不解锁 → 提示不会复活。
+    if (cooled === el && (to || !el.matches(':hover'))) { cooled = null; cdX = cdY = null; }
+  };
+  document.addEventListener('mouseout', onMouseOut);
+  // 点击 = 已经知道用途 → 立刻隐藏，并在指针移开前不再出现。
   // 必须用捕获阶段：部分按钮（如 btnColumns）的 onclick 里有 e.stopPropagation()，
   // 冒泡阶段根本到不了这里，会导致「点了照样显示提示」。
+  // 同时记下点击瞬间的真实坐标，作为后续「指针有没有动过」的基准。
   document.addEventListener('click', (e) => {
     const el = tipOf(e);
-    if (!el) { cooled = null; pointerDownEl = null; hideAll(); return; }
+    // 点在非提示元素上时只收起气泡，**不清除冷却**：
+    // btnAddDb 点击后会用脚本去点隐藏的 fileInput，那次点击的 e.target 是 input
+    // （没有 data-tip），若在这里清掉冷却，随后的补发 mouseover 就会让提示复活。
+    // 冷却的解除只有一个出口：指针真的移动并离开该按钮。
+    if (!el) { pointerDownEl = null; hideAll(); return; }
     hideAll();
     cooled = el;
+    cdX = e.clientX; cdY = e.clientY;
     pointerDownEl = null;
   }, true);
-  // 键盘可达性：Tab 聚焦（尚未点击）时也提示；鼠标按下带来的焦点不提示
-  document.addEventListener('focusin', (e) => {
+  // 键盘可达性：Tab 聚焦（尚未点击）时也提示；点击过的按钮（冷却中）不提示
+  const onFocusIn = (e) => {
     const el = tipOf(e);
-    if (!el || cooled === el || pointerDownEl === el) return;
+    if (!el || cooled === el) return;
+    if (pointerDownEl === el) return;                // 鼠标按下带来的焦点，不算「未点击」
     hideAll();
     el.classList.add('tip-on');
-  });
+  };
+  document.addEventListener('focusin', onFocusIn);
+  // 注意：mouseover / focusin 都注册在冒泡阶段。
+  // 这两个处理器内部用 `if (cooled === el) return;` 拦住冷却中的按钮，
+  // 比"额外加一个捕获阶段的擦除监听"更可靠——
+  // 捕获监听会先执行并摘掉 .tip-on，紧接着冒泡监听又把它加回来，等于没拦。
   document.addEventListener('focusout', (e) => {
     const el = tipOf(e);
     if (el) el.classList.remove('tip-on');
