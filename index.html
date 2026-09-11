@@ -348,6 +348,18 @@
       padding: 20px 16px 0;
     }
 
+    /* 移动端抽屉遮罩：侧栏展开时盖住内容区，点击空白处收起（桌面端不生效） */
+    .sidebar-overlay {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      top: calc(var(--header-h) + 20px);
+      background: rgba(0, 0, 0, 0.35);
+      z-index: 35; /* 高于 header(30)，低于 sidebar(40) */
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+
     /* 移动端：左侧栏变抽屉覆盖 */
     @media (max-width: 768px) {
       .header { top: 8px; }
@@ -364,6 +376,7 @@
       }
       body.cat-open .sidebar { width: min(80vw, 260px); border-width: 1px; }
       .sidebar-inner { width: min(80vw, 260px); }
+      body.cat-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
     }
 
     @media (max-width: 500px) {
@@ -408,6 +421,9 @@
       </div>
     </div>
   </header>
+
+  <!-- 移动端抽屉遮罩：点击侧栏外空白区域收起 -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="layout">
     <!-- 左侧分类风琴栏：默认收起 -->
@@ -479,6 +495,8 @@
             activeCategory = value;
             renderCategories();
             applyFilter();
+            // 移动端：选中分类后自动收起风琴栏，立即展示筛选结果
+            if (mqMobile.matches) closeCat();
           });
           return btn;
         };
@@ -553,14 +571,25 @@
       // -------------------- 左侧分类栏展开/收起（点最前 Logo 图标） --------------------
       const logoToggle = document.getElementById("logoToggle");
       const sidebar = document.getElementById("sidebar");
+      // 移动端断点（与 CSS 768px 保持一致）
+      const mqMobile = window.matchMedia("(max-width: 768px)");
+      function closeCat() {
+        document.body.classList.remove("cat-open");
+        logoToggle.title = "展开分类";
+        logoToggle.setAttribute("aria-label", "展开分类");
+      }
       function toggleCat() {
         const open = document.body.classList.toggle("cat-open");
-        logoToggle.title = open ? "收起分类" : "展开分类";
+        const label = open ? "收起分类" : "展开分类";
+        logoToggle.title = label;
+        logoToggle.setAttribute("aria-label", label);
       }
       logoToggle.addEventListener("click", toggleCat);
       logoToggle.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCat(); }
       });
+      // 移动端：点击遮罩（侧栏外空白区域）收起抽屉
+      document.getElementById("sidebarOverlay").addEventListener("click", closeCat);
 
       // -------------------- 返回全部 --------------------
       document.getElementById("clearFilter").addEventListener("click", () => {
