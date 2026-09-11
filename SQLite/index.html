@@ -465,10 +465,30 @@
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    flex: 1;
     min-width: 0;
     overflow: hidden;
   }
+  /* ===== 工具栏内的统计信息 =====
+     原本「表 / 已加载 / 用时 / 列数」是内容区里独立的一行（.status-bar，高 34px 且右侧大片空白），
+     既浪费一整行高度，信息也和顶部工具栏重复。这里并到工具栏中紧跟面包屑，省掉整行。 */
+  .toolbar-stats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    flex: 1;                 /* 占据面包屑与搜索框之间的剩余空间 */
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .toolbar-stats .stat { display: inline-flex; align-items: center; gap: 4px; }
+  .toolbar-stats .stat strong { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .toolbar-stats .stat-sep { color: var(--border-hover); font-weight: 400; }
+  .toolbar-stats .stat:not(:first-child) { flex-shrink: 0; }
+  /* 窗口不够宽时，整块统计信息整体隐藏，优先保住筛选框与操作按钮 */
+  @media (max-width: 860px) { .toolbar-stats { display: none; } }
   .breadcrumb-item {
     color: var(--text-secondary);
     white-space: nowrap;
@@ -519,14 +539,42 @@
   .mode-toggle:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border); }
   .mode-toggle svg { flex-shrink: 0; }
 
+  /* ===== 自定义 hover 提示 =====
+     不用原生 title：它的延迟约 1 秒、样式完全不可控、触屏设备不显示，用户几乎感知不到。
+     这里用 [data-tip] + ::after 立即显示纯 CSS 提示，无需 JS，不影响布局。 */
+  [data-tip] { position: relative; }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 7px);
+    right: 0;
+    background: var(--text);
+    color: var(--panel);
+    font-size: 11.5px;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+    padding: 5px 9px;
+    border-radius: 5px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-3px);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    z-index: 300;
+  }
+  [data-tip]:hover::after { opacity: 1; transform: translateY(0); }
+  /* 侧栏标题行里的按钮紧贴右侧且右侧空间不足：
+     提示改为向下展开、右对齐按钮，避免超出侧栏被裁切。 */
+  .sidebar-header [data-tip]::after { top: calc(100% + 6px); right: 0; }
+
   /* ===== Tabs ===== */
   .tabs {
     /* 不能用固定 height：标签页是「表名 + 数据库名」上下两行，固定高度会让
        .tab 被 stretch 压缩，row1/row2 各被 flex-shrink 削掉一半，文字被截半且两行重叠。
-       改 min-height：没有标签时保持 34px 占位，有标签时按内容自动撑开。
-       高度预留 ≈ 两行标签(42px) + 横向滚动条(≈6px)，避免桌面浏览器滚动条占用高度时
-       把两行文字裁掉。 */
-    min-height: 48px;
+       改 min-height：没有标签时占位，有标签时按内容自动撑开。
+       高度按实测收紧：标签两行内容 32px + 上下 padding 8px + 横向滚动条 6px ≈ 40px。
+       原先是 48px，多出的 16px 在两行文字底部形成一段可见空白，浪费了表格高度。 */
+    min-height: 40px;
     padding: 0 14px;
     border-bottom: 1px solid var(--border);
     background: var(--panel);
@@ -728,23 +776,8 @@
     flex-direction: column;
     min-height: 0;
   }
-  .status-bar {
-    min-height: 30px;
-    padding: 4px 14px;
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px 14px;
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    flex-shrink: 0;
-    flex-wrap: wrap;
-  }
-  .status-bar .stat { display: inline-flex; align-items: center; gap: 5px; }
-  .status-bar .stat strong { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
-  .status-bar .stat-sep { color: var(--border-hover); font-weight: 400; }
+  /* 原 .status-bar（内容区里独立的一行统计）已并入顶部工具栏的 .toolbar-stats：
+     省掉一整行高度，且避免和面包屑重复展示表名。 */
 
   .grid-container {
     flex: 1;
@@ -1615,8 +1648,6 @@
     .data-table th .col-type { font-size: 10px; }
     .row-num { width: 40px; }
 
-    .status-bar { padding: 0 10px; gap: 8px; font-size: 11px; }
-
     /* 合并成单按钮后空间足够，手机端也保留「分页 / 无限」文字，与 PC 端一致 */
     .mode-toggle { padding: 0 9px; }
 
@@ -1678,10 +1709,10 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title">数据库</div>
-      <button class="icon-btn" id="btnAddDb" title="添加数据库">
+      <button class="icon-btn" id="btnAddDb" data-tip="添加数据库" aria-label="添加数据库">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
       </button>
-      <button class="icon-btn" id="btnClear" title="清空所有数据库" style="display:none;">
+      <button class="icon-btn" id="btnClear" data-tip="清空所有数据库" aria-label="清空所有数据库" style="display:none;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
       </button>
       <div class="sidebar-count" id="dbCount">0</div>
@@ -1708,9 +1739,11 @@
     <div id="dataView" style="display:none; flex-direction: column; height: 100%; min-height:0;">
       <div class="toolbar">
         <div class="breadcrumb" id="breadcrumb"></div>
+        <!-- 统计信息由 renderToolbarStats() 填充，替代原先内容区里独立的 .status-bar 行 -->
+        <div class="toolbar-stats" id="toolbarStats"></div>
         <input type="text" class="toolbar-input" id="searchInput" placeholder="筛选所有列…">
         <div class="toolbar-actions">
-        <button class="icon-btn" id="btnTheme" title="切换主题">
+        <button class="icon-btn" id="btnTheme" data-tip="切换主题" aria-label="切换主题">
           <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
             <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
           </svg>
@@ -1718,7 +1751,7 @@
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
         </button>
-        <button class="mode-toggle" id="modeToggle" title="切换到分页模式">
+        <button class="mode-toggle" id="modeToggle" data-tip="切换到分页模式" aria-label="切换加载模式">
           <!-- 默认 loadMode 为 infinite，这里初始就显示 ∞，避免 JS 未执行时图标与模式不符 -->
           <svg data-mode-icon="page" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
             <rect x="3" y="4" width="18" height="16" rx="2"/>
@@ -1728,11 +1761,11 @@
             <path d="M8 12c-2.2 0-4-1.8-4-4s1.8-4 4-4c4 0 7 8 11 8 2.2 0 4-1.8 4-4s-1.8-4-4-4c-4 0-7 8-11 8z" transform="translate(0,4)"/>
           </svg>
         </button>
-        <button class="icon-btn" id="btnColumns" title="显示/隐藏字段（列）">
+        <button class="icon-btn" id="btnColumns" data-tip="显示/隐藏字段（列）" aria-label="显示或隐藏字段列">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
           <span class="col-badge" id="colBadge" hidden>0</span>
         </button>
-        <button class="icon-btn" id="btnExport" title="导出当前数据为 CSV">
+        <button class="icon-btn" id="btnExport" data-tip="导出当前数据为 CSV" aria-label="导出当前数据为 CSV">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
         </div>
@@ -1775,7 +1808,7 @@
 
 <script>
 /* UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面 */
-const UI_BUILD = '2026-09-09-mode-icon-display';
+const UI_BUILD = '2026-09-11-tooltip-and-toolbar-compact';
 
 /* ================== 全局状态 ================== */
 const state = {
@@ -1892,7 +1925,11 @@ const theme = {
     const dark = this.current === 'dark';
     $('iconSun').style.display = dark ? 'block' : 'none';
     $('iconMoon').style.display = dark ? 'none' : 'block';
-    $('btnTheme').title = dark ? '切换到浅色模式' : '切换到深色模式';
+    // 提示文案要跟着当前主题变：深色时提示可切回浅色。
+    // 用 data-tip（自定义提示）而非 title，保证提示即时可见。
+    const tip = dark ? '切换到浅色模式' : '切换到深色模式';
+    $('btnTheme').dataset.tip = tip;
+    $('btnTheme').setAttribute('aria-label', tip);
   },
 };
 
@@ -2207,6 +2244,46 @@ function closeTab(key) {
   if (state.databases.length === 0) showDropzone(true);
 }
 
+/* ================== 工具栏统计信息 ==================
+   原先「表 / 已加载 / 用时 / 列数」是内容区里独立的一行 .status-bar（高约 34px，
+   右侧还有一大片空白）。现在并进顶部工具栏、紧跟面包屑，把整行高度还给数据表格。
+   - tab 为 null 时清空（未打开任何表）。
+   - 无限模式滚动加载是高频操作，这里只做「文本级」增量更新，不重建 DOM：
+     见 updateStatsNumbers()。 */
+function renderToolbarStats(tab) {
+  const box = $('toolbarStats');
+  if (!box) return;
+  if (!tab || tab.table === '__SCHEMA__') { box.innerHTML = ''; return; }
+
+  if (tab.loadMode === 'infinite') {
+    // 无限模式：行数会随滚动持续增长，用 id 标记以便增量更新
+    box.innerHTML =
+      `<span class="stat">已加载 <strong id="statLoaded">${formatNum(tab.infiniteCount || 0)}</strong> / <strong>${formatNum(tab.infiniteTotal || 0)}</strong> 行</span>` +
+      `<span class="stat-sep">·</span>` +
+      `<span class="stat">用时 <strong id="statElapsed">${tab._totalElapsed || 0}ms</strong></span>` +
+      `<span class="stat-sep">·</span>` +
+      `<span class="stat">列数 <strong>${tab._columns ? tab._columns.length : '-'}</strong></span>`;
+  } else {
+    // 分页模式：一次性渲染完，直接输出最终值
+    const total = tab.total ?? 0;
+    box.innerHTML =
+      `<span class="stat">${tab.filter ? '筛选命中' : '总计'} <strong>${formatNum(total)}</strong> 行</span>` +
+      `<span class="stat-sep">·</span>` +
+      `<span class="stat">用时 <strong>${tab._elapsed ?? 0}ms</strong></span>` +
+      `<span class="stat-sep">·</span>` +
+      `<span class="stat">列数 <strong>${tab._columns ? tab._columns.length : '-'}</strong></span>`;
+  }
+}
+
+// 无限模式加载一批数据后，只改已加载行数与用时的文本，避免整块重绘导致闪烁
+function updateStatsNumbers(tab) {
+  if (!tab) return;
+  const loadedEl = $('statLoaded');
+  if (loadedEl) loadedEl.textContent = formatNum(tab.infiniteCount || 0);
+  const elapsedEl = $('statElapsed');
+  if (elapsedEl) elapsedEl.textContent = (tab._totalElapsed || 0) + 'ms';
+}
+
 function renderTabs() {
   const tabs = $('tabs');
   if (state.openTabs.length === 0) {
@@ -2313,6 +2390,7 @@ function renderContent() {
     updateColumnsBadge();   // 无活动表时清空「字段」角标
     $('contentArea').innerHTML = `<div class="empty-content">从左侧选择一张表查看数据</div>`;
     $('breadcrumb').innerHTML = '';   // 关闭最后一个 Tab 后清空顶部面包屑，避免残留旧表名
+    renderToolbarStats(null);
     $('footerBar').classList.add('hidden');
     // 按「有没有数据库」判断：只有完全没有任何数据库时（此时由 showDropzone(true)
     // 负责显示上传区）才隐藏 dataView；否则保持显示，让「选表」提示可见。
@@ -2342,12 +2420,16 @@ function renderContent() {
   if (tab.table === '__SCHEMA__') {
     renderSchemaView(db);
     $('footerBar').classList.add('hidden');
+    renderToolbarStats(null);
   } else {
     if (tab.loadMode === 'infinite') {
       renderInfiniteGrid(db, tab);
     } else {
       renderDataGrid(db, tab);
     }
+    // 放在数据渲染之后：renderToolbarStats 需要读取 _columns / total / _elapsed，
+    // 这些值由 renderDataGrid / renderInfiniteGrid 在查询完成后写入。
+    renderToolbarStats(tab);
   }
 
   // 恢复筛选面板：候选列表滚动位置 + 输入框焦点与光标
@@ -2447,6 +2529,11 @@ function renderDataGrid(db, tab) {
   }
   const elapsed = Math.round(performance.now() - t0);
 
+  // 缓存本次查询结果，供工具栏统计区（renderToolbarStats）读取
+  tab.total = total;
+  tab._elapsed = elapsed;
+  tab._columns = columns;
+
   $('sqlPreview').textContent = sql;
 
   const totalPages = Math.max(1, Math.ceil(total / tab.pageSize));
@@ -2463,15 +2550,6 @@ function renderDataGrid(db, tab) {
   if (rows.length === 0) {
     $('contentArea').innerHTML = `
       <div class="data-wrap">
-        <div class="status-bar">
-          <span class="stat">表 <strong>${escapeHtml(tab.table)}</strong></span>
-          <span class="stat-sep">·</span>
-          <span class="stat">当前 <strong>0</strong> 行</span>
-          <span class="stat-sep">·</span>
-          <span class="stat">共 <strong>${formatNum(total)}</strong> 行</span>
-          <span class="stat-sep">·</span>
-          <span class="stat">用时 <strong>${elapsed}ms</strong></span>
-        </div>
         <div class="empty-content">${tab.filter ? '没有匹配的记录' : '表为空'}</div>
       </div>`;
     return;
@@ -2500,17 +2578,6 @@ function renderDataGrid(db, tab) {
 
   $('contentArea').innerHTML = `
     <div class="data-wrap">
-      <div class="status-bar">
-        <span class="stat">表 <strong>${escapeHtml(tab.table)}</strong></span>
-        <span class="stat-sep">·</span>
-        <span class="stat">当前页 <strong>${formatNum(rows.length)}</strong> 行</span>
-        <span class="stat-sep">·</span>
-        <span class="stat">${tab.filter ? '筛选命中' : '总计'} <strong>${formatNum(total)}</strong> 行</span>
-        <span class="stat-sep">·</span>
-        <span class="stat">用时 <strong>${elapsed}ms</strong></span>
-        <span class="stat-sep">·</span>
-        <span class="stat">列数 <strong>${columns.length}</strong></span>
-      </div>
       <div class="grid-container">
         <table class="data-table">
           <thead>${headHtml}</thead>
@@ -2573,15 +2640,6 @@ function renderInfiniteGrid(db, tab) {
 
   $('contentArea').innerHTML = `
     <div class="data-wrap">
-      <div class="status-bar" id="infiniteStatus">
-        <span class="stat">表 <strong>${escapeHtml(tab.table)}</strong></span>
-        <span class="stat-sep">·</span>
-        <span class="stat">已加载 <strong id="loadedCount">0</strong> / <strong>${formatNum(total)}</strong> 行</span>
-        <span class="stat-sep">·</span>
-        <span class="stat">用时 <strong id="elapsedTime">0ms</strong></span>
-        <span class="stat-sep">·</span>
-        <span class="stat">列数 <strong>${columns.length}</strong></span>
-      </div>
       <div class="grid-container" id="infiniteContainer">
         <table class="data-table">
           <thead>${headHtml}</thead>
@@ -3247,11 +3305,8 @@ function loadInfiniteBatch(db, tab) {
     applyColFit({ incremental: true, fromRow: prevRows });
   }
 
-  // 更新状态条
-  const loadedEl = $('loadedCount');
-  if (loadedEl) loadedEl.textContent = formatNum(tab.infiniteCount || 0);
-  const elapsedEl = $('elapsedTime');
-  if (elapsedEl) elapsedEl.textContent = tab._totalElapsed + 'ms';
+  // 更新工具栏统计（只改文本，避免整块重绘）
+  updateStatsNumbers(tab);
 
   // 判断是否加载完
   if (rows.length < tab.pageSize || (tab.infiniteCount || 0) >= tab.infiniteTotal) {
@@ -3352,8 +3407,7 @@ async function jumpToEndViaLastPage(db, tab) {
   applyColFit();   // 整块替换，重新全量测量
   tab.infiniteCount = total;        // 标记已到底
   tab.infiniteFinished = true;
-  const loadedEl = $('loadedCount');
-  if (loadedEl) loadedEl.textContent = formatNum(total);
+  updateStatsNumbers(tab);
   const sentinel = $('infiniteSentinel');
   if (sentinel) {
     sentinel.innerHTML = `<span class="end-mark">✓</span><span>已加载全部 ${formatNum(total)} 行</span>`;
@@ -3580,7 +3634,9 @@ function syncModeToggle(mode) {
     svg.style.display = on ? '' : 'none';
   });
   btn.dataset.mode = isPage ? 'page' : 'infinite';
-  btn.title = isPage ? '切换到无限模式' : '切换到分页模式';
+  const tip = isPage ? '切换到无限模式' : '切换到分页模式';
+  btn.dataset.tip = tip;
+  btn.setAttribute('aria-label', tip);
 }
 
 /* ================== 切换加载模式 ================== */
@@ -3736,7 +3792,11 @@ $('sidebarOverlay').onclick = closeDrawer;
 // 模式切换：单按钮在分页 / 无限之间来回切
 $('modeToggle').onclick = () => {
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
-  if (!tab || tab.table === '__SCHEMA__') return;
+  // 没有打开数据表时给出反馈：否则点击毫无动静，会让人以为按钮坏了
+  if (!tab || tab.table === '__SCHEMA__') {
+    toast(tab ? '表结构视图不支持切换加载模式' : '请先选择一张表', 'warn');
+    return;
+  }
   const next = tab.loadMode === 'page' ? 'infinite' : 'page';
   // 先切图标：即使后续渲染被中断/提前 return，按钮也能立刻反映当前模式
   syncModeToggle(next);
