@@ -1688,8 +1688,10 @@
   (function () {
     try {
       var saved = localStorage.getItem('sqlite-theme');
-      var t = saved ||
-        (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      // 无偏好或偏好为「跟随系统」时，按浏览器 prefers-color-scheme 计算（详见 theme 模块）
+      var t = (saved && saved !== 'system')
+        ? saved
+        : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       document.documentElement.dataset.theme = t;
       document.documentElement.style.colorScheme = t;      // 同步滚动条/原生控件配色
       if (t === 'dark') document.documentElement.style.background = '#0b1220';  // 兜底，防 CSS 解析前露白
@@ -1723,7 +1725,7 @@
       <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
         <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
       </svg>
-      <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
     </button>
@@ -1828,7 +1830,7 @@
 
 <script>
 /* UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面 */
-const UI_BUILD = '2026-09-12-clear-tip-lock';
+const UI_BUILD = '2026-09-12-theme-one-tap';
 
 /* ================== 全局状态 ================== */
 const state = {
@@ -1924,30 +1926,46 @@ function isMobile() { return state.isMobile; }
 
 /* ================== 主题管理 ================== */
 const theme = {
-  get current() { return document.documentElement.dataset.theme || 'light'; },
-  set(t, manual = true) {
+  // 模式：'light' 浅色 | 'dark' 深色 | 'system' 跟随系统（默认）
+  get mode() { return localStorage.getItem('sqlite-theme') || 'system'; },
+  // 实际生效主题：system 模式下由浏览器 prefers-color-scheme 决定
+  get effective() {
+    if (this.mode === 'system')
+      return (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    return this.mode;
+  },
+  // 应用生效主题到 <html data-theme> 与滚动条/原生控件配色
+  apply() {
+    const t = this.effective;
     document.documentElement.dataset.theme = t;
-    if (manual) localStorage.setItem('sqlite-theme', t);
+    document.documentElement.style.colorScheme = t;
     this._updateIcon();
   },
-  toggle() { this.set(this.current === 'dark' ? 'light' : 'dark'); },
+  // 点击 = 在当前「实际外观」基础上直接反转日/夜并锁定，始终 1 下到位。
+  // 关键：不再经过与外观相同的 'system' 中间态（旧循环在 system+系统深色时，
+  // 第一下会跳到外观相同、看似无效的锁定深色，要再点一下才变色 → 用户感知「要点两次」）。
+  // 'system' 仅作为默认初态与可恢复态（双击按钮恢复跟随），不进入点击循环。
+  toggle() {
+    const next = this.effective === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('sqlite-theme', next);
+    this.apply();
+  },
   init() {
-    const saved = localStorage.getItem('sqlite-theme');
-    const initial = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    this.set(initial, false);
-    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-      if (!localStorage.getItem('sqlite-theme')) {
-        this.set(e.matches ? 'dark' : 'light', false);
-      }
+    this.apply();
+    // 跟随浏览器：仅 system 模式下随系统主题切换（手动锁定的浅/深不被覆盖）
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (this.mode === 'system') this.apply();
     });
   },
   _updateIcon() {
-    const dark = this.current === 'dark';
-    $('iconSun').style.display = dark ? 'block' : 'none';
-    $('iconMoon').style.display = dark ? 'none' : 'block';
-    // 提示文案要跟着当前主题变：深色时提示可切回浅色。
-    // 用 data-tip（自定义提示）而非 title，保证提示即时可见。
-    const tip = dark ? '切换到浅色模式' : '切换到深色模式';
+    const eff = this.effective;   // 系统模式下跟随浏览器，图标随实际主题在日/夜间切换
+    $('iconSun').style.display = eff === 'light' ? 'block' : 'none';
+    $('iconMoon').style.display = eff === 'dark' ? 'block' : 'none';
+    // 提示描述「下一次单击」的动作：单击始终是日/夜反转（'system' 仅作默认/可双击恢复）
+    const opp = eff === 'dark' ? '浅色' : '深色';
+    const tip = this.mode === 'system'
+      ? `切换为${opp}模式（停止跟随系统）`
+      : `切换为${opp}模式`;
     $('btnTheme').dataset.tip = tip;
     $('btnTheme').setAttribute('aria-label', tip);
   },
@@ -3778,6 +3796,12 @@ $('btnClear').onclick = async () => {
 };
 
 $('btnTheme').onclick = () => theme.toggle();
+// 双击主题按钮：恢复「跟随系统」（默认初态）。单击恒为日/夜反转，
+// 故双击时两次单击的副作用会被此处 removeItem 后的 apply() 抵消，最终干净回到 system。
+$('btnTheme').addEventListener('dblclick', () => {
+  localStorage.removeItem('sqlite-theme');
+  theme.apply();
+});
 
 /* 返回主页：跳转到站点根目录（工具门户页） */
 $('btnHome').onclick = async () => {
