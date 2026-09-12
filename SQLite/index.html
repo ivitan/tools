@@ -1830,7 +1830,7 @@
 
 <script>
 /* UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面 */
-const UI_BUILD = '2026-09-12-theme-one-tap';
+const UI_BUILD = '2026-09-12-theme-follow-hint';
 
 /* ================== 全局状态 ================== */
 const state = {
@@ -1949,6 +1949,10 @@ const theme = {
     const next = this.effective === 'dark' ? 'light' : 'dark';
     localStorage.setItem('sqlite-theme', next);
     this.apply();
+    // 点击后的状态反馈走原有的 toast（不再用 data-tip 预测「下一步」动作）
+    const label = this.effective === 'dark' ? '深色' : '浅色';
+    // 提示里带上「双击恢复跟随系统」，避免手动锁定后系统切换不跟随被误以为坏了
+    toast(`已切换为${label}模式（双击按钮恢复跟随系统）`, 'success');
   },
   init() {
     this.apply();
@@ -1961,13 +1965,7 @@ const theme = {
     const eff = this.effective;   // 系统模式下跟随浏览器，图标随实际主题在日/夜间切换
     $('iconSun').style.display = eff === 'light' ? 'block' : 'none';
     $('iconMoon').style.display = eff === 'dark' ? 'block' : 'none';
-    // 提示描述「下一次单击」的动作：单击始终是日/夜反转（'system' 仅作默认/可双击恢复）
-    const opp = eff === 'dark' ? '浅色' : '深色';
-    const tip = this.mode === 'system'
-      ? `切换为${opp}模式（停止跟随系统）`
-      : `切换为${opp}模式`;
-    $('btnTheme').dataset.tip = tip;
-    $('btnTheme').setAttribute('aria-label', tip);
+    // hover 提示保持 HTML 初始的静态「切换主题」；点击后的状态反馈改走原有的 toast（见 toggle / dblclick）
   },
 };
 
@@ -3801,6 +3799,7 @@ $('btnTheme').onclick = () => theme.toggle();
 $('btnTheme').addEventListener('dblclick', () => {
   localStorage.removeItem('sqlite-theme');
   theme.apply();
+  toast('已恢复跟随系统', 'success');
 });
 
 /* 返回主页：跳转到站点根目录（工具门户页） */
