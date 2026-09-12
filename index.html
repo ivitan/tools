@@ -4,13 +4,15 @@
 <head>
   <script>
     // 早期注入主题，避免浅/深色闪烁（与 SQLite 一致：用 data-theme 控制）
+    // 三态：auto（默认，跟随系统）/ light / dark
+    // 键升级到 v2：旧版 toolbox-theme 的残留锁定直接作废，打开即默认跟随系统
     (function () {
       try {
-        var saved = localStorage.getItem("toolbox-theme");
+        var saved = localStorage.getItem("toolbox-theme-v2");
+        var auto = !saved || saved === "auto";
         var dark =
           saved === "dark" ||
-          (!saved &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches);
+          (auto && window.matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.dataset.theme = dark ? "dark" : "light";
       } catch (e) { }
     })();
@@ -607,23 +609,86 @@
         applyFilter();
       });
 
-      // -------------------- 主题切换（对齐 SQLite 机制） --------------------
+      // -------------------- 主题切换（三态：auto 默认跟随系统 / light / dark） --------------------
       const themeToggle = document.getElementById("themeToggle");
       const root = document.documentElement;
       const iconSun = document.getElementById("iconSun");
       const iconMoon = document.getElementById("iconMoon");
+      const mqDark = window.matchMedia("(prefers-color-scheme: dark)");
+      const THEME_KEY = "toolbox-theme-v2";     // 升级键名，旧版残留锁定直接作废
+      const LONG_PRESS_MS = 600;                // 长按清除手动锁定
+      const DBL_CLICK_MS = 250;                 // 双击清除手动锁定
+
+      // 读取主题模式：手动选过 light/dark 则固定，否则 auto 跟随系统
+      function getThemeMode() {
+        try {
+          const saved = localStorage.getItem(THEME_KEY);
+          return saved === "light" || saved === "dark" ? saved : "auto";
+        } catch (e) { return "auto"; }
+      }
+      // 图标仅两态：按当前生效主题显示（深色→太阳，浅色→月亮）
       function updateThemeIcon() {
         const dark = root.dataset.theme === "dark";
         iconSun.style.display = dark ? "block" : "none";
         iconMoon.style.display = dark ? "none" : "block";
         themeToggle.title = dark ? "切换到浅色模式" : "切换到深色模式";
       }
-      themeToggle.addEventListener("click", () => {
-        const next = root.dataset.theme === "dark" ? "light" : "dark";
-        root.dataset.theme = next;
-        localStorage.setItem("toolbox-theme", next);
+      function applyTheme(dark) {
+        root.dataset.theme = dark ? "dark" : "light";
         updateThemeIcon();
+      }
+      function toggleTheme() {
+        const next = root.dataset.theme === "dark" ? "light" : "dark";
+        try { localStorage.setItem(THEME_KEY, next); } catch (e) { }
+        applyTheme(next === "dark");
+      }
+      // 清除手动锁定，回到默认 auto（跟随系统），并立即应用当前系统主题
+      function resetTheme() {
+        try { localStorage.removeItem(THEME_KEY); } catch (e) { }
+        applyTheme(mqDark.matches);
+        // 视觉反馈：缩放一下让用户感知已重置
+        themeToggle.style.transform = "scale(0.92)";
+        setTimeout(() => { themeToggle.style.transform = ""; }, 150);
+      }
+
+      // 单击切换 light/dark；双击或长按 ≥600ms 清除手动锁定回到跟随系统
+      let pressTimer = null;
+      let longPressFired = false;
+      let clickTimer = null;
+      function startPress(e) {
+        longPressFired = false;
+        if (e.type === "mousedown" && e.button !== 0) return;
+        pressTimer = setTimeout(() => {
+          pressTimer = null;
+          longPressFired = true;
+          resetTheme();
+        }, LONG_PRESS_MS);
+      }
+      function cancelPress() {
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      }
+      themeToggle.addEventListener("mousedown", startPress);
+      themeToggle.addEventListener("touchstart", startPress, { passive: true });
+      themeToggle.addEventListener("mouseup", cancelPress);
+      themeToggle.addEventListener("mouseleave", cancelPress);
+      themeToggle.addEventListener("touchend", cancelPress);
+      themeToggle.addEventListener("click", () => {
+        if (longPressFired) { longPressFired = false; return; }
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+          resetTheme();
+        } else {
+          clickTimer = setTimeout(() => { clickTimer = null; toggleTheme(); }, DBL_CLICK_MS);
+        }
       });
+
+      // auto 模式：系统切换日/深色时页面实时跟随（手动模式不响应）
+      const onSchemeChange = (e) => {
+        if (getThemeMode() === "auto") applyTheme(e.matches);
+      };
+      if (mqDark.addEventListener) mqDark.addEventListener("change", onSchemeChange);
+      else if (mqDark.addListener) mqDark.addListener(onSchemeChange);
       updateThemeIcon();
 
       // -------------------- 搜索（防抖） --------------------

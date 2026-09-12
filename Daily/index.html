@@ -7,13 +7,15 @@
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <title>日报生成工具</title>
 <script>
-  /* 提前应用主题，避免刷新时闪白（沿用 SQLite 工具的 data-theme 方案，
-     同时兼容旧版 localStorage 键名 "theme"） */
+  /* 提前应用主题，避免刷新时闪白。
+     使用版本化键 daily-theme-v2：旧键 daily-theme / theme 的锁定值直接作废，
+     打开页面即默认跟随系统，解决跨版本残留锁定导致不能秒切的问题。 */
   (function () {
     try {
-      var saved = localStorage.getItem('daily-theme') || localStorage.getItem('theme');
-      var dark = saved ? saved === 'dark'
-        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var saved = localStorage.getItem('daily-theme-v2');
+      var dark = saved === 'dark' ? true
+        : saved === 'light' ? false
+        : window.matchMedia('(prefers-color-scheme: dark)').matches; /* auto 或未设置 → 跟随系统 */
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     } catch (e) {}
   })();
@@ -807,33 +809,108 @@
 </div>
 
 <script>
-/* ================== 主题管理 ================== */
+/* ================== 主题管理（三态：浅色 / 深色 / 跟随系统） ================== */
+const THEME_KEY = 'daily-theme-v2';
 const theme = {
-  get current() { return document.documentElement.dataset.theme || 'light'; },
-  set(t, manual = true) {
-    document.documentElement.dataset.theme = t;
-    if (manual) localStorage.setItem('daily-theme', t);
+  /* 当前模式：light / dark / auto（默认跟随系统，未写入时按系统走） */
+  get mode() {
+    const s = localStorage.getItem(THEME_KEY);
+    return (s === 'light' || s === 'dark' || s === 'auto') ? s : 'auto';
+  },
+  /* 实际生效主题：auto 时取系统偏好 */
+  get effective() {
+    if (this.mode !== 'auto') return this.mode;
+    return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  },
+  /* 应用当前生效主题到页面，并刷新图标 */
+  _apply() {
+    document.documentElement.dataset.theme = this.effective;
     this._updateIcon();
   },
-  toggle() { this.set(this.current === 'dark' ? 'light' : 'dark'); },
+  /* 选择模式并持久化（点按钮 / 循环切换时调用） */
+  set(mode) {
+    localStorage.setItem(THEME_KEY, mode);
+    this._apply();
+  },
+  /* 清除锁定，恢复默认跟随系统；同时清理旧键避免残留 */
+  reset() {
+    localStorage.removeItem(THEME_KEY);
+    localStorage.removeItem('daily-theme');
+    localStorage.removeItem('theme');
+    this._apply();
+  },
+  /* 单击直接翻转当前生效主题并锁定到相反主题，保证每次点击都有可见变化。
+     想恢复跟随系统，用长按（≥600ms）或双击主题按钮，触发 theme.reset()。 */
+  toggle() {
+    this.set(this.effective === 'dark' ? 'light' : 'dark');
+  },
   init() {
-    const saved = localStorage.getItem('daily-theme') || localStorage.getItem('theme');
-    const initial = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    this.set(initial, false);
-    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-      const s = localStorage.getItem('daily-theme') || localStorage.getItem('theme');
-      if (!s) this.set(e.matches ? 'dark' : 'light', false);
+    this._apply();   /* 初次按已存模式（或系统）渲染 */
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      /* 仅“跟随系统”模式下响应系统切换；手动选了浅/深则不打扰 */
+      if (this.mode === 'auto') this._apply();
     });
   },
   _updateIcon() {
-    const dark = this.current === 'dark';
-    document.getElementById('iconSun').style.display = dark ? 'block' : 'none';
-    document.getElementById('iconMoon').style.display = dark ? 'none' : 'block';
-    document.getElementById('btnTheme').title = dark ? '切换到浅色模式' : '切换到深色模式';
+    /* 只显示 ☀/☾：按“实际生效主题”切换，auto 档下随系统显示对应图标 */
+    const dark = this.effective === 'dark';
+    document.getElementById('iconSun').style.display = dark ? 'none' : 'block';
+    document.getElementById('iconMoon').style.display = dark ? 'block' : 'none';
+    const mode = this.mode;
+    document.getElementById('btnTheme').title =
+      mode === 'light' ? '浅色模式（单击→深色，长按/双击恢复跟随系统）'
+      : mode === 'dark' ? '深色模式（单击→浅色，长按/双击恢复跟随系统）'
+      : '跟随系统（单击→锁定相反主题）';
   }
 };
 theme.init();
-document.getElementById('btnTheme').onclick = () => theme.toggle();
+
+/* 主题按钮交互：单击切换明暗；长按（≥600ms）或双击恢复跟随系统 */
+const btnTheme = document.getElementById('btnTheme');
+let themePressTimer = null;
+let themeClickTimer = null;
+
+function themeReset() {
+  theme.reset();
+  toast('已恢复跟随系统主题', 'success');
+}
+
+function startThemePress(e) {
+  if (e.type === 'mousedown' && e.button !== 0) return;
+  clearTimeout(themePressTimer);
+  themePressTimer = setTimeout(() => {
+    themeReset();
+    btnTheme.dataset.pressReset = '1'; /* 阻止本次长按松手后的 click 再触发 toggle */
+  }, 600);
+}
+function cancelThemePress() {
+  clearTimeout(themePressTimer);
+}
+
+btnTheme.addEventListener('mousedown', startThemePress);
+btnTheme.addEventListener('touchstart', startThemePress, { passive: true });
+btnTheme.addEventListener('mouseup', cancelThemePress);
+btnTheme.addEventListener('mouseleave', cancelThemePress);
+btnTheme.addEventListener('touchend', cancelThemePress);
+btnTheme.addEventListener('touchcancel', cancelThemePress);
+
+btnTheme.addEventListener('click', () => {
+  if (btnTheme.dataset.pressReset === '1') {
+    delete btnTheme.dataset.pressReset;
+    return;
+  }
+  if (themeClickTimer) {
+    clearTimeout(themeClickTimer);
+    themeClickTimer = null;
+    themeReset();
+    return;
+  }
+  /* 延迟 200ms 执行单击，以便识别双击；200ms 内第二次点击视为双击恢复 */
+  themeClickTimer = setTimeout(() => {
+    themeClickTimer = null;
+    theme.toggle();
+  }, 200);
+});
 
 /* ================== Toast ================== */
 function toast(msg, type = '') {
