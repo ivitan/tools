@@ -87,7 +87,7 @@
     transition: background-color 0.15s, color 0.15s;
   }
 
-  /* ===== Header ===== */
+  /* Header */
   .header {
     height: 52px;
     background: var(--panel);
@@ -193,7 +193,7 @@
   }
   .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
 
-  /* ===== Layout ===== */
+  /* Layout */
   .layout {
     display: flex;
     /* dvh 随移动端地址栏收起/展开动态变化；100vh 是地址栏收起时的最大值，
@@ -387,7 +387,7 @@
   }
   .table-item.active .table-count { color: color-mix(in srgb, var(--primary-on) 88%, transparent); font-weight: 600; }
 
-  /* ===== Main ===== */
+  /* Main */
   .main {
     flex: 1;
     display: flex;
@@ -396,7 +396,7 @@
     min-width: 0;
   }
 
-  /* ===== Dropzone ===== */
+  /* Dropzone */
   .dropzone {
     flex: 1;
     display: flex;
@@ -446,7 +446,7 @@
   }
   .dropzone button:hover { background: var(--primary-hover); }
 
-  /* ===== Toolbar ===== */
+  /* Toolbar */
   .toolbar {
     height: 44px;
     padding: 0 14px;
@@ -474,7 +474,7 @@
     min-width: 0;
     overflow: hidden;
   }
-  /* ===== 工具栏内的统计信息 =====
+  /* 工具栏内的统计信息
      原本「表 / 已加载 / 用时 / 列数」是内容区里独立的一行（.status-bar，高 34px 且右侧大片空白），
      既浪费一整行高度，信息也和顶部工具栏重复。这里并到工具栏中紧跟面包屑，省掉整行。 */
   .toolbar-stats {
@@ -525,7 +525,7 @@
   .toolbar-input:focus { border-color: var(--primary); }
   .toolbar-input::placeholder { color: var(--text-muted); font-weight: 400; }
 
-  /* ===== 模式切换 ===== */
+  /* 模式切换 */
   /* 分页 / 无限 合并为单个图标按钮：显示当前模式图标，点击切到另一种（title 提示目标模式）。 */
   .mode-toggle {
     width: 32px;
@@ -545,7 +545,7 @@
   .mode-toggle:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border); }
   .mode-toggle svg { flex-shrink: 0; }
 
-  /* ===== 自定义 hover 提示 =====
+  /* 自定义 hover 提示
      不用原生 title：它的延迟约 1 秒、样式完全不可控、触屏设备不显示，用户几乎感知不到。
      也不用纯 CSS :hover：在触屏 / 触控设备上 :hover 是「sticky hover」——
      手指点了才出现、且粘住不消失，必须再点别处才释放，体验很差。
@@ -582,7 +582,7 @@
     max-width: 46vw;
   }
 
-  /* ===== Tabs ===== */
+  /* Tabs */
   .tabs {
     /* 不能用固定 height：标签页是「表名 + 数据库名」上下两行，固定高度会让
        .tab 被 stretch 压缩，row1/row2 各被 flex-shrink 削掉一半，文字被截半且两行重叠。
@@ -704,7 +704,7 @@
     color: #f87171;
   }
 
-  /* ===== Content area ===== */
+  /* Content area */
   .content-area {
     flex: 1;
     overflow: hidden;
@@ -722,7 +722,7 @@
     font-weight: 500;
   }
 
-  /* ===== Schema view ===== */
+  /* Schema view */
   .schema-view {
     flex: 1;
     overflow: auto;
@@ -784,7 +784,7 @@
   .badge-pk { background: var(--warning-light); color: var(--warning); }
   .badge-nn { background: var(--success-light); color: var(--success); }
 
-  /* ===== 数据网格 ===== */
+  /* 数据网格 */
   .data-wrap {
     flex: 1;
     display: flex;
@@ -831,7 +831,7 @@
     letter-spacing: 0.2px;
   }
 
-  /* ===== 表头列筛选 ===== */
+  /* 表头列筛选 */
   .col-head { cursor: pointer; }
   /* 表头列内容改为上下两行：上行字段名 + 筛选按钮，下行数据类型（小字） */
   .col-head-main {
@@ -1152,7 +1152,7 @@
     background: var(--danger-light);
   }
 
-  /* ===== 字段管理弹窗（显示/隐藏列） ===== */
+  /* 字段管理弹窗（显示/隐藏列） */
   .col-manager {
     position: fixed;
     z-index: 99998;
@@ -1280,7 +1280,7 @@
   .data-table td.bool { text-align: center; }
   .data-table td.json { color: var(--primary); font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 11.5px; }
 
-  /* ===== 列宽自适应（Excel 式）=====
+  /* 列宽自适应（Excel 式）
      目标：一行里每列按「该列最长内容」撑开列宽，短列就窄、不留空白；
      行高保持单行（不折行），长内容列宽撑到上限后用省略号 + 悬停看全文。
      实现：JS 实测「表头 + 单元格文本」宽度写入每个 td/th 的 style.width，
@@ -1342,7 +1342,7 @@
   }
   .data-table thead th.row-num { z-index: 3; }
 
-  /* ===== 无限滚动 Sentinel ===== */
+  /* 无限滚动 Sentinel */
   .infinite-sentinel {
     height: 60px;
     display: flex;
@@ -1358,7 +1358,7 @@
     font-weight: 600;
   }
 
-  /* ===== Footer ===== */
+  /* Footer */
   .footer-bar {
     height: 34px;
     padding: 0 14px;
@@ -1435,7 +1435,7 @@
     outline: none;
   }
   .pager-text { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
-  /* ===== Toast ===== */
+  /* Toast */
   /* 容器：同屏多个 toast（例如「导入成功」与「导入失败」同时出现）纵向堆叠、右对齐，
      不再各自 fixed 在同一坐标上互相重叠。 */
   .toast-container {
@@ -1489,7 +1489,7 @@
     to { transform: translateX(0); opacity: 1; }
   }
 
-  /* ===== 悬浮到底按钮 ===== */
+  /* 悬浮到底按钮 */
   .fab-end {
     position: fixed;
     right: 22px;
@@ -1533,7 +1533,7 @@
     .fab-end { right: 16px; bottom: 16px; width: 44px; height: 44px; }
   }
 
-  /* ===== Dialog 弹窗（替代原生浏览器 dialog，深色友好） ===== */
+  /* Dialog 弹窗（替代原生浏览器 dialog，深色友好） */
   .dialog-mask {
     position: fixed;
     inset: 0;
@@ -1579,7 +1579,7 @@
     to   { transform: translateY(0) scale(1); opacity: 1; }
   }
 
-  /* ===== Loading spinner ===== */
+  /* Loading spinner */
   .spinner {
     width: 14px;
     height: 14px;
@@ -1597,14 +1597,14 @@
   ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
-  /* ===== Responsive: 平板 ===== */
+  /* Responsive: 平板 */
   /* 与 PC、手机抽屉统一为 320px（原 200px 比手机还窄，已修）。
      若觉得 800px 左右的小窗口下主区偏挤，可把这档单独降到 280px。 */
   @media (max-width: 1024px) {
     .sidebar { width: 320px; }
   }
 
-  /* ===== Responsive: 手机 ===== */
+  /* Responsive: 手机 */
   @media (max-width: 768px) {
     body { font-size: 13.5px; }
     [data-theme="dark"] body { font-size: 13.5px; }
@@ -1832,7 +1832,7 @@
 /* UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面 */
 const UI_BUILD = '2026-09-12-theme-follow-hint';
 
-/* ================== 全局状态 ================== */
+/* 全局状态 */
 const state = {
   databases: [],
   activeDbId: null,
@@ -1844,7 +1844,7 @@ const state = {
   infiniteObserver: null,
 };
 
-/* ================== 工具函数 ================== */
+/* 工具函数 */
 const $ = (id) => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -1924,7 +1924,7 @@ function escapeHtml(s) {
 
 function isMobile() { return state.isMobile; }
 
-/* ================== 主题管理 ================== */
+/* 主题管理 */
 const theme = {
   // 模式：'light' 浅色 | 'dark' 深色 | 'system' 跟随系统（默认）
   get mode() { return localStorage.getItem('sqlite-theme') || 'system'; },
@@ -1969,14 +1969,14 @@ const theme = {
   },
 };
 
-/* ================== sql.js 初始化 ================== */
+/* sql.js 初始化 */
 async function initSQL() {
   state.SQL = await initSqlJs({
     locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
   });
 }
 
-/* ================== 文件指纹（用于重复上传去重） ================== */
+/* 文件指纹（用于重复上传去重） */
 // 优先 SHA-256（准确）；非安全上下文等不可用时回退到「体积 + 均匀采样 FNV-1a」，保证导入不被阻塞
 async function computeFingerprint(buf) {
   try {
@@ -1994,7 +1994,7 @@ async function computeFingerprint(buf) {
   return `fb-${buf.length.toString(16)}-${(h >>> 0).toString(16)}`;
 }
 
-/* ================== 加载数据库 ================== */
+/* 加载数据库 */
 async function loadDatabase(file) {
   try {
     const buf = new Uint8Array(await file.arrayBuffer());
@@ -2091,7 +2091,7 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
   return { kind: replaced ? 'replaced' : 'added', db: dbObj, replaced };
 }
 
-/* ================== 抽屉控制 ================== */
+/* 抽屉控制 */
 function openDrawer() {
   document.body.classList.add('sidebar-open');
 }
@@ -2102,7 +2102,7 @@ function toggleDrawer() {
   document.body.classList.toggle('sidebar-open');
 }
 
-/* ================== 侧栏渲染 ================== */
+/* 侧栏渲染 */
 // 判断某张表是否为「右侧当前正在查看」的表（用于在左侧列表高亮）
 function isActiveTable(dbId, tableName) {
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
@@ -2228,7 +2228,7 @@ function removeDatabase(id) {
 
 function tabKey(t) { return `${t.dbId}::${t.table}::${t.view}`; }
 
-/* ================== Tab 管理 ================== */
+/* Tab 管理 */
 function openTab(dbId, tableName) {
   const existing = state.openTabs.find(t => t.dbId === dbId && t.table === tableName);
   if (existing) {
@@ -2257,7 +2257,7 @@ function openTab(dbId, tableName) {
   }
   state.activeDbId = dbId;
   showDropzone(false);
-  renderSidebar();          // 同步左侧表名高亮
+  renderSidebar();
   renderTabs();
   renderContent();
   // 移动端：选完表关闭抽屉
@@ -2272,7 +2272,7 @@ function closeTab(key) {
     state.activeTabKey = state.openTabs[idx] ? tabKey(state.openTabs[idx]) :
                          state.openTabs[idx-1] ? tabKey(state.openTabs[idx-1]) : null;
   }
-  renderSidebar();          // 同步左侧表名高亮
+  renderSidebar();
   renderTabs();
   renderContent();
   // 上传区只在「一个数据库都没有」时出现：关闭标签但数据库还在时，
@@ -2280,7 +2280,7 @@ function closeTab(key) {
   if (state.databases.length === 0) showDropzone(true);
 }
 
-/* ================== 工具栏统计信息 ==================
+/* 工具栏统计信息
    原先「表 / 已加载 / 用时 / 列数」是内容区里独立的一行 .status-bar（高约 34px，
    右侧还有一大片空白）。现在并进顶部工具栏、紧跟面包屑，把整行高度还给数据表格。
    - tab 为 null 时清空（未打开任何表）。
@@ -2370,7 +2370,7 @@ function renderTabs() {
     el.onclick = (e) => {
       if (e.target.closest('[data-close]')) return;
       state.activeTabKey = el.dataset.key;
-      renderSidebar();      // 同步左侧表名高亮
+      renderSidebar();
       renderTabs();
       renderContent();
     };
@@ -2400,7 +2400,7 @@ function renderTabs() {
   }
 }
 
-/* ================== 内容渲染 ================== */
+/* 内容渲染 */
 function renderContent() {
   // 清理旧的 IntersectionObserver
   if (state.infiniteObserver) {
@@ -2525,7 +2525,7 @@ function renderSchemaView(db) {
   area.innerHTML = `<div class="schema-view">${cards}</div>`;
 }
 
-/* ================== 分页模式 ================== */
+/* 分页模式 */
 function renderDataGrid(db, tab) {
   const t = db.tables.find(x => x.name === tab.table);
   if (!t) {
@@ -2625,7 +2625,7 @@ function renderDataGrid(db, tab) {
   applyColFit();   // 按内容实测列宽
 }
 
-/* ================== 无限滚动模式 ================== */
+/* 无限滚动模式 */
 function renderInfiniteGrid(db, tab) {
   // 重置累积状态
   tab.infinitePage = 0;
@@ -2671,7 +2671,6 @@ function renderInfiniteGrid(db, tab) {
   tab._columns = columns;
   tab._colTypes = colTypes;
 
-  // 渲染骨架
   const headHtml = buildHeadHtml(columns, colTypes, tab);
 
   $('contentArea').innerHTML = `
@@ -2694,10 +2693,8 @@ function renderInfiniteGrid(db, tab) {
 
   applyColFit();   // 先按表头定出初始列宽，后续追加行时增量修正
 
-  // 启动 observer
   setupInfiniteObserver(db, tab);
 
-  // 立即加载第一批
   loadInfiniteBatch(db, tab);
 }
 
@@ -2771,7 +2768,7 @@ function buildWhereClause(tab, table) {
   return { sql: parts.join(' AND '), params };
 }
 
-/* ================== 列筛选：高频候选词 ================== */
+/* 列筛选：高频候选词 */
 const COL_STATS_LIMIT = 30;   // 候选词最多展示数（多取 1 条用于探测是否还有更多）
 
 // 当前激活的数据表 tab（schema 视图返回 null）
@@ -2880,7 +2877,7 @@ function buildFilterPanelHtml(tab, colName) {
     </div>`;
 }
 
-/* ================== 列显隐 ================== */
+/* 列显隐 */
 function allColumnsOf(tab, db) {
   const t = db && db.tables.find(x => x.name === tab.table);
   return t ? t.cols.map(c => c.name) : [];
@@ -3067,7 +3064,7 @@ function buildRowsHtml(rows, columns, startIndex) {
   return out.join('');
 }
 
-/* ================== 列宽自适应 ==================
+/* 列宽自适应
    两种模式：
    - 自适应（默认）：列宽 = 该列文字一行显示完整所需的宽度，配合 table-layout:fixed 精确贴合，
      不折行、不截断、无省略号；宽度直写到每个 th/td 的 inline style（不用 colgroup：
@@ -3363,7 +3360,7 @@ function loadInfiniteBatch(db, tab) {
   updateFabEnd();
 }
 
-/* ================== Dropzone 控制 ================== */
+/* Dropzone 控制 */
 function showDropzone(show) {
   $('dropzone').style.display = show ? 'flex' : 'none';
   $('dataView').style.display = show ? 'none' : 'flex';
@@ -3371,7 +3368,7 @@ function showDropzone(show) {
   updateFabEnd();
 }
 
-/* ================== 导入失败提示 ================== */
+/* 导入失败提示 */
 // 复用页面原有 toast，只换文案与配色：统一「文件名 不是 SQLite 数据库文件」，红粉字体（.toast.fail）。
 // 多个失败文件逐行显示。失败不影响右侧视图：视图状态由调用方决定是否刷新，这里只负责提示。
 function toastImportFailed(failedList) {
@@ -3379,7 +3376,7 @@ function toastImportFailed(failedList) {
   toast(failedList.map(f => `${f.fileName} 不是 SQLite 数据库文件`).join('\n'), 'fail', 4000);
 }
 
-/* ================== 悬浮到底按钮 ================== */
+/* 悬浮到底按钮 */
 const fab = $('fabEnd');
 
 // 显隐控制：仅「无限模式数据表」显示；已全部加载完毕时置灰
@@ -3597,7 +3594,7 @@ document.addEventListener('scroll', (e) => {
   }
 }, true);
 
-/* ================== 导出 CSV ================== */
+/* 导出 CSV */
 // CSV 字段转义：含逗号/引号/换行/回车则整段用双引号包裹，并转义内部引号
 function csvField(v) {
   if (v === null || v === undefined) return '';
@@ -3656,7 +3653,7 @@ function exportCSV() {
   toast(`已导出 ${formatNum(rowCount)} 行`, 'success');
 }
 
-/* ================== 模式切换按钮（分页 / 无限 合并为单图标按钮） ================== */
+/* 模式切换按钮（分页 / 无限 合并为单图标按钮） */
 // 按钮显示当前模式的图标（分页=表格、无限=∞ 符号），点击切到另一种；title 提示目标模式。
 function syncModeToggle(mode) {
   const btn = $('modeToggle');
@@ -3675,7 +3672,7 @@ function syncModeToggle(mode) {
   btn.setAttribute('aria-label', tip);
 }
 
-/* ================== 切换加载模式 ================== */
+/* 切换加载模式 */
 function switchLoadMode(tab, mode) {
   if (tab.loadMode === mode) return;
   tab.loadMode = mode;
@@ -3691,7 +3688,7 @@ function switchLoadMode(tab, mode) {
   renderContent();
 }
 
-/* ================== 事件绑定 ================== */
+/* 事件绑定 */
 async function handleFiles(files) {
   const arr = [...files];
   if (!arr.length) return;
@@ -3971,7 +3968,7 @@ document.addEventListener('scroll', (e) => {
   if ($('colManager')) closeColumnsPopover();
 }, true);
 
-/* ================== 双击单元格复制 ================== */
+/* 双击单元格复制 */
 // 复制文本到剪贴板（兼容旧浏览器回退）
 async function copyToClipboard(text) {
   try {
@@ -4012,7 +4009,7 @@ $('contentArea').addEventListener('dblclick', async (e) => {
   }
 });
 
-/* ================== 表头列筛选交互 ==================
+/* 表头列筛选交互
    模式：面板内交互全部操作 pending 副本（_pendingChecks/_pendingLike），
    不触发表格重渲染；点「确认」才一次性写入 columnChecks/columnFilters 并重渲染。
    关闭路径（ESC / 点击外部 / 再次点 ⌕）= 丢弃 pending，保留原筛选。
@@ -4333,7 +4330,7 @@ document.addEventListener('click', (e) => {
   closeFilterPanelDiscard(getActiveDataTab());
 });
 
-/* ================== 按钮 hover 提示（data-tip） ==================
+/* 按钮 hover 提示（data-tip）
    纯 CSS :hover 在触屏 / 触控设备上是 sticky hover：手指点了才出现、且粘住不消失，
    必须再点别处才释放。这里改用 JS 显式加 .tip-on 类，行为规则很简单：
      · 提示只服务于「点击之前」——告诉你这个按钮是干什么的
@@ -4506,7 +4503,7 @@ window.addEventListener('resize', () => {
   }
 });
 
-/* ================== 启动 ================== */
+/* 启动 */
 if (localStorage.getItem('sqlite-sidebar-collapsed') === '1' && !state.isMobile) {
   document.body.classList.add('sidebar-collapsed');
 }

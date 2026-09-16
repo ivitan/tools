@@ -120,7 +120,7 @@
     transition: background-color 0.15s, color 0.15s;
   }
 
-  /* ===== Header ===== */
+  /* Header */
   .header {
     height: 52px;
     background: var(--panel);
@@ -181,7 +181,7 @@
   }
   .icon-btn:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border); }
 
-  /* ===== Layout ===== */
+  /* Layout */
   .page {
     max-width: 1180px;
     margin: 0 auto;
@@ -209,7 +209,7 @@
   .panel-title i { color: var(--primary); font-size: 13px; }
   .panel-body { padding: 14px; }
 
-  /* ===== 输入 ===== */
+  /* 输入 */
   .input-group { margin-bottom: 14px; }
   label {
     display: block;
@@ -251,7 +251,7 @@
   .section-title i { color: var(--primary); font-size: 12px; }
   .section-title:first-of-type { margin-top: 4px; }
 
-  /* ===== 按钮 ===== */
+  /* 按钮 */
   .btn {
     height: 32px;
     padding: 0 12px;
@@ -313,7 +313,7 @@
   #toOctal      { --c: var(--indigo);  --c-soft: var(--indigo-soft); }
   #toHex        { --c: var(--slate);   --c-soft: var(--slate-soft); }
 
-  /* ===== 结果 ===== */
+  /* 结果 */
   #resultText {
     font-size: clamp(1.05rem, 3.2vw, 1.35rem);
     color: var(--success);
@@ -324,7 +324,7 @@
   }
   #resultText:empty::before { content: "等待输入..."; color: var(--text-muted); font-weight: 400; }
 
-  /* ===== 历史记录 ===== */
+  /* 历史记录 */
   .history-list { list-style: none; max-height: 180px; overflow-y: auto; }
   .history-list li {
     font-size: 12.5px;
@@ -339,7 +339,7 @@
   .history-list li > span:last-child { flex-shrink: 0; color: var(--text-muted); font-size: 11.5px; }
   .history-list li b { color: var(--text); font-weight: 600; }
 
-  /* ===== Toast ===== */
+  /* Toast */
   .toast {
     position: fixed;
     top: 16px;
@@ -367,7 +367,7 @@
   ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
-  /* ===== 响应式 ===== */
+  /* 响应式 */
   @media (max-width: 1024px) {
     .grid { grid-template-columns: 1fr; }
     .side-panel { position: static; }
@@ -482,7 +482,7 @@
 <div class="toast" id="toast">已复制到剪贴板</div>
 
 <script>
-/* ================== 主题管理 ================== */
+/* 主题管理 */
 const theme = {
   get current() { return document.documentElement.dataset.theme || 'light'; },
   set(t, manual = true) {
@@ -511,7 +511,7 @@ theme.init();
 document.getElementById('themeToggle').onclick = () => theme.toggle();
 
 document.addEventListener("DOMContentLoaded", function () {
-  // ================= 核心工具逻辑 =================
+  // 核心工具逻辑
   const inputValue = document.getElementById("inputValue");
   const resultText = document.getElementById("resultText");
   const historyList = document.getElementById("historyList");
@@ -571,7 +571,7 @@ document.addEventListener("DOMContentLoaded", function () {
     addHistory(originalInput, result, typeName);
   }
 
-  // 万能解析器 (新增 0x, 0b, 0o 进制解析)
+  // 万能解析器（支持 0x/0b/0o 进制前缀）
   function parseInput() {
     let val = inputValue.value.trim().replace(/\s+/g, "");
     if (!val) {
@@ -579,7 +579,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return null;
     }
 
-    // 1. 识别内置进制前缀 (0x十六进制, 0b二进制, 0o八进制)
+    // 1. 识别进制前缀
     let lowerVal = val.toLowerCase();
     if (
       lowerVal.startsWith("0x") ||
@@ -645,9 +645,9 @@ document.addEventListener("DOMContentLoaded", function () {
     return k1 === 1 ? sign + h1 : sign + h1 + "/" + k1;
   }
 
-  // ================= 按钮事件绑定 =================
+  // 按钮事件绑定
 
-  // 【常规转换】
+  // 常规转换
   document
     .getElementById("toDecimal")
     .addEventListener("click", () =>
@@ -705,7 +705,7 @@ document.addEventListener("DOMContentLoaded", function () {
       ),
     );
 
-  // 【进制转换】
+  // 进制转换
   // 注：JS toString(radix) 完美支持整数与浮点数转换为特定进制字符串
   document
     .getElementById("toBinary")
@@ -740,7 +740,7 @@ document.addEventListener("DOMContentLoaded", function () {
       ),
     );
 
-  // 【清空输入】
+  // 清空输入
   document.getElementById("clearBtn").addEventListener("click", () => {
     inputValue.value = "";
     resultText.textContent = "等待输入...";

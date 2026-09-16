@@ -127,7 +127,7 @@
     transition: background-color 0.15s, color 0.15s;
   }
 
-  /* ===== Header ===== */
+  /* Header */
   .header {
     height: 52px;
     background: var(--panel);
@@ -188,7 +188,7 @@
   }
   .icon-btn:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border); }
 
-  /* ===== Layout ===== */
+  /* Layout */
   .page {
     max-width: 1180px;
     margin: 0 auto;
@@ -204,7 +204,7 @@
     gap: 14px;
   }
 
-  /* ===== 卡片 / 步骤 ===== */
+  /* 卡片 / 步骤 */
   .card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -239,7 +239,7 @@
   }
   .step-badge.done { background: var(--success-light); color: var(--success); }
 
-  /* ===== 按钮 ===== */
+  /* 按钮 */
   .btn {
     height: 32px;
     padding: 0 12px;
@@ -282,7 +282,7 @@
   .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
   #cardStep3 .btn-group { margin-top: 14px; }
 
-  /* ===== 设备信息 ===== */
+  /* 设备信息 */
   .device-info {
     display: none;
     margin-top: 12px;
@@ -312,7 +312,7 @@
   }
   .info-value.capacity { font-weight: 700; color: var(--primary); }
 
-  /* ===== 拖放区 ===== */
+  /* 拖放区 */
   .drop-zone {
     border: 2px dashed var(--border-hover);
     border-radius: var(--r);
@@ -369,7 +369,7 @@
   .file-type-badge.bin { background: var(--success-light); color: var(--success); }
   .file-type-badge.raw { background: var(--panel-hover); color: var(--text-secondary); }
 
-  /* ===== 进度 ===== */
+  /* 进度 */
   .progress-section { display: none; margin-top: 14px; }
   .progress-section.show { display: block; }
   .progress-bar-outer {
@@ -414,7 +414,7 @@
     50% { opacity: 0.6; box-shadow: 0 0 0 7px rgba(16,185,129,0); }
   }
 
-  /* ===== 提示条 ===== */
+  /* 提示条 */
   .alert {
     display: flex;
     align-items: baseline;
@@ -434,7 +434,7 @@
 
   .fas, .far, .fab { vertical-align: -0.125em; }
 
-  /* ===== 日志 ===== */
+  /* 日志 */
   .log-panel {
     margin-top: 12px;
     border: 1px solid var(--border);
@@ -470,7 +470,7 @@
   .log-entry.warn { color: var(--warn); }
   .log-entry.info { color: var(--text-secondary); }
 
-  /* ===== 勾选框 ===== */
+  /* 勾选框 */
   .checkbox-group { position: relative; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
   .checkbox-group input[type="checkbox"] { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
   .checkbox-group label {
@@ -509,7 +509,7 @@
   .checkbox-group label i { display: none; }
   .checkbox-group:hover label::before { border-color: var(--primary); }
 
-  /* ===== 多阶段指示器 ===== */
+  /* 多阶段指示器 */
   .stage-indicator {
     display: flex;
     align-items: center;
@@ -560,7 +560,7 @@
   ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
-  /* ===== 响应式：≥1024px 两栏 ===== */
+  /* 响应式：≥1024px 两栏 */
   @media (min-width: 1024px) {
     .container {
       max-width: 1180px;
@@ -626,7 +626,6 @@
 <div class="page">
   <div class="container">
 
-    <!-- 步骤1 -->
     <div class="card" id="cardStep1">
       <div class="card-title">
         <span class="step-badge" id="badgeStep1">1</span> 连接 USB 设备
@@ -664,7 +663,6 @@
       </div>
     </div>
 
-    <!-- 步骤2 -->
     <div class="card" id="cardStep2">
       <div class="card-title">
         <span class="step-badge" id="badgeStep2">2</span> 选择镜像文件
@@ -691,7 +689,6 @@
       </div>
     </div>
 
-    <!-- 步骤3 -->
     <div class="card" id="cardStep3">
       <div class="card-title">
         <span class="step-badge" id="badgeStep3">3</span> 写入镜像
@@ -1000,7 +997,6 @@
             await testUnitReady();
           } catch (_) {}
         }
-        // 检测 USB 连接速率
         function detectUsbSpeed(device) {
           if (device.usbVersionMajor === 3) {
             if (device.usbVersionMinor >= 1) return "USB 3.1";
@@ -1438,7 +1434,6 @@
             const remain = total - offset,
               curBytes = Math.min(chunk, remain);
             const curSectors = Math.ceil(curBytes / sectorSize);
-            // 读取设备上的数据
             let readBuf = null;
             for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
               try {
@@ -1485,7 +1480,6 @@
             // 读取原始文件对应区块
             const blob = file.slice(offset, offset + curBytes);
             const fileBuf = await new Response(blob).arrayBuffer();
-            // 逐字节比较
             const readData = new Uint8Array(readBuf, 0, curBytes);
             const fileData = new Uint8Array(fileBuf);
             let mismatch = false;

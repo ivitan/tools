@@ -147,7 +147,7 @@
     transition: background-color 0.15s, color 0.15s;
   }
 
-  /* ===== Header ===== */
+  /* Header */
   .header {
     height: 52px;
     background: var(--panel);
@@ -230,7 +230,7 @@
     border-color: var(--border);
   }
 
-  /* ===== Layout ===== */
+  /* Layout */
   .page {
     max-width: 1180px;
     margin: 0 auto;
@@ -269,11 +269,10 @@
   .panel-title i { color: var(--primary); font-size: 13px; }
   .panel-body { padding: 14px; }
 
-  /* ===== 机位卡片 ===== */
+  /* 机位卡片 */
   .stand-card {
     background: var(--panel);
-    /* 整圈轮廓：四边同粗同色。
-       注意：border: 1.5px 会被 Chrome 取整成 1px，改用 inset 阴影才有真正的 1.5px 细线 */
+    /* border: 1.5px 会被 Chrome 取整成 1px，故用 inset 阴影实现真正的 1.5px 细线 */
     border: none;
     box-shadow: inset 0 0 0 1.5px var(--accent);
     border-radius: var(--r);
@@ -331,7 +330,7 @@
     color: var(--accent-ink);
   }
 
-  /* ===== 输入控件 ===== */
+  /* 输入控件 */
   input, textarea {
     width: 100%;
     padding: 7px 10px;
@@ -371,7 +370,7 @@
   .item-row .multi-select-container:nth-of-type(2) { grid-column: 2; min-width: 0; }
   .item-row .icon-del { grid-column: 3; align-self: center; justify-self: end; }
 
-  /* ===== 按钮 ===== */
+  /* 按钮 */
   .btn {
     height: 32px;
     padding: 0 12px;
@@ -491,7 +490,7 @@
   .stand-card:hover .icon-del, .item-row:hover .icon-del { opacity: 0.9; }
   .icon-del:hover { background: var(--danger-light); color: var(--danger); opacity: 1; }
 
-  /* ===== 预览 ===== */
+  /* 预览 */
   .preview-panel { position: sticky; top: 68px; }
   #preview-box {
     width: 100%;
@@ -515,7 +514,7 @@
   }
   .copy-btn { width: 100%; height: 34px; margin-top: 10px; }
 
-  /* ===== 多选下拉 ===== */
+  /* 多选下拉 */
   .multi-select-container { position: relative; width: 100%; }
   .input-with-arrow {
     background-image: url('data:image/svg+xml;utf8,<svg fill="%2394a3b8" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
@@ -567,7 +566,7 @@
   }
   .match-text { color: var(--primary); font-weight: 700; }
 
-  /* ===== Toast ===== */
+  /* Toast */
   .toast {
     position: fixed;
     top: 16px;
@@ -595,7 +594,7 @@
     to { transform: translateX(0); opacity: 1; }
   }
 
-  /* ===== 确认弹窗（替代原生 confirm，深色友好） ===== */
+  /* 确认弹窗（替代原生 confirm，深色友好） */
   .dialog-mask {
     position: fixed;
     inset: 0;
@@ -632,7 +631,7 @@
   ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
-  /* ===== 响应式 ===== */
+  /* 响应式 */
   @media (max-width: 900px) {
     .grid { grid-template-columns: 1fr; }
     .preview-panel { position: static; }
@@ -809,7 +808,7 @@
 </div>
 
 <script>
-/* ================== 主题管理（三态：浅色 / 深色 / 跟随系统） ================== */
+/* 主题管理（三态：浅色 / 深色 / 跟随系统） */
 const THEME_KEY = 'daily-theme-v2';
 const theme = {
   /* 当前模式：light / dark / auto（默认跟随系统，未写入时按系统走） */
@@ -912,7 +911,7 @@ btnTheme.addEventListener('click', () => {
   }, 200);
 });
 
-/* ================== Toast ================== */
+/* Toast */
 function toast(msg, type = '') {
   const el = document.createElement('div');
   el.className = 'toast ' + type;
@@ -922,7 +921,7 @@ function toast(msg, type = '') {
   setTimeout(() => el.remove(), 2200);
 }
 
-/* ================== 自定义确认弹窗 ================== */
+/* 自定义确认弹窗 */
 const ESC_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
 function escapeHtml(s) {
   return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, c => ESC_MAP[c]);
@@ -953,7 +952,7 @@ function confirmDialog({ title = '确认', message = '', okText = '确定', canc
   });
 }
 
-/* ================== 业务状态 ================== */
+/* 业务状态 */
 const cnNums = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十",
   "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"];
 let baseOptions = {};
@@ -994,7 +993,7 @@ function useCommaSep(input, listId, items) {
   return input.dataset.sep === SEP_COMMA;
 }
 
-/* ====== 文本框自动增高：随内容向下扩展，到上限后才内部滚动 ====== */
+/* 文本框自动增高 */
 function autoResize(el) {
   if (!el || !el.classList || !el.classList.contains("auto-grow")) return;
   // 测量前临时摘掉 placeholder：窄屏上提示文字会折行并被计入 scrollHeight，
@@ -1065,7 +1064,7 @@ window.onload = () => {
   });
 };
 
-/* ====== 下拉框与智能搜索核心逻辑 ====== */
+/* 下拉框与智能搜索 */
 function parseInput(val, validOptions, isNode) {
   const rawParts = String(val || "").split(SEP_SPLIT_RE).map((v) => v.trim());
   const selected = [];
@@ -1223,7 +1222,7 @@ function closeAllDropdowns() {
   }
 }
 
-/* ====== 卡片与明细行 ====== */
+/* 卡片与明细行 */
 function createEventRowHTML(type) {
   const listId = type === "远机位" ? "event-list-far" : "event-list-near";
   return `
@@ -1313,7 +1312,7 @@ async function clearAllCards() {
   toast('已清空', 'success');
 }
 
-/* ====== 预览与复制 ====== */
+/* 预览与复制 */
 function generatePreview() {
   const cards = document.querySelectorAll(".stand-card");
   let data = { 远机位: [], 近机位: [] };

@@ -127,7 +127,7 @@
     transition: background-color 0.15s, color 0.15s;
   }
 
-  /* ===== Header ===== */
+  /* Header */
   .header {
     height: 52px;
     background: var(--panel);
@@ -188,7 +188,7 @@
   }
   .icon-btn:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border); }
 
-  /* ===== Tabs ===== */
+  /* Tabs */
   .tabs {
     min-height: 44px;
     padding: 0 16px;
@@ -224,7 +224,7 @@
   [data-theme="dark"] .tab.active { color: var(--primary-hover); border-bottom-color: var(--primary-hover); }
   .tab i { font-size: 13px; }
 
-  /* ===== Layout ===== */
+  /* Layout */
   .page {
     max-width: 1180px;
     margin: 0 auto;
@@ -256,7 +256,7 @@
   .panel-title i { color: var(--primary); font-size: 13px; }
   .panel-body { padding: 14px; }
 
-  /* ===== 上传区 ===== */
+  /* 上传区 */
   .dropzone {
     border: 2px dashed var(--border-hover);
     border-radius: var(--r);
@@ -295,7 +295,7 @@
   .file-info p { margin: 2px 0; }
   .file-info strong { color: var(--text-secondary); font-weight: 600; }
 
-  /* ===== 输入控件 ===== */
+  /* 输入控件 */
   .input-group { margin-bottom: 14px; }
   label {
     display: block;
@@ -322,7 +322,7 @@
   textarea:focus, input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
   #numberInput { min-height: 88px; }
 
-  /* ===== 按钮 ===== */
+  /* 按钮 */
   .btn {
     min-height: 32px;
     height: 32px;
@@ -349,7 +349,7 @@
   .btn-group { display: flex; gap: 8px; }
   .btn-group .btn { flex: 1 1 auto; min-height: 32px; }
 
-  /* ===== 结果区 ===== */
+  /* 结果区 */
   .empty-content, .result-placeholder {
     display: flex;
     flex-direction: column;
@@ -439,7 +439,7 @@
   }
   .copy-guide i { color: var(--primary); }
 
-  /* ===== Type 提取工具 ===== */
+  /* Type 提取工具 */
   #type-tool textarea { min-height: 200px; font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace; font-size: 12.5px; }
   #type-tool .stats {
     display: flex;
@@ -459,7 +459,7 @@
   .workflow-btn { margin-top: 12px; }
   .workflow-btn .btn { width: 100%; height: 34px; }
 
-  /* ===== 查询结果统计条（Type 提取工具底部） ===== */
+  /* 查询结果统计条 */
   #results .stats-bar {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -583,7 +583,7 @@
     font-weight: 700;
   }
 
-  /* ===== Toast ===== */
+  /* Toast */
   .toast {
     position: fixed;
     top: 16px;
@@ -611,7 +611,7 @@
     to { transform: translateX(0); opacity: 1; }
   }
 
-  /* ===== Footer ===== */
+  /* Footer */
   footer {
     margin-top: 18px;
     padding: 12px 16px;
@@ -632,7 +632,7 @@
   textarea::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
   textarea { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
 
-  /* ===== 响应式 ===== */
+  /* 响应式 */
   @media (max-width: 900px) {
     .grid-2 { grid-template-columns: 1fr; }
   }
@@ -691,7 +691,7 @@
 
 <main class="page">
 
-  <!-- ============ Excel 数据查询工具 ============ -->
+  <!-- Excel 数据查询工具 -->
   <div id="excel-tool" class="tab-content active">
     <div class="grid-2">
       <section class="panel">
@@ -758,7 +758,7 @@
     </div>
   </div>
 
-  <!-- ============ Type 数字提取工具 ============ -->
+  <!-- Type 数字提取工具 -->
   <div id="type-tool" class="tab-content">
     <div class="grid-2">
       <section class="panel">
@@ -844,7 +844,7 @@ type: 1000 - 有效（空格不影响）
 </main>
 
 <script>
-    /* ================== 主题管理 ================== */
+    /* 主题管理 */
     const theme = {
       get current() { return document.documentElement.dataset.theme || 'light'; },
       set(t, manual = true) {
@@ -870,22 +870,19 @@ type: 1000 - 有效（空格不影响）
       }
     };
 
-    // =============== 通用功能 ===============
+    // 通用功能
     // 初始化主题（data-theme 方案，与工具套件其他页面一致）
     function initTheme() {
       theme.init();
     }
 
-    // 切换主题
     function toggleTheme() {
       theme.toggle();
       showNotification(theme.current === "dark" ? "已切换至夜间模式" : "已切换至日间模式");
     }
 
-    // 选项卡切换
     document.querySelectorAll(".tab").forEach((tab) => {
       tab.addEventListener("click", function () {
-        // 移除所有活动标签
         document
           .querySelectorAll(".tab")
           .forEach((t) => t.classList.remove("active"));
@@ -893,7 +890,6 @@ type: 1000 - 有效（空格不影响）
           .querySelectorAll(".tab-content")
           .forEach((c) => c.classList.remove("active"));
 
-        // 激活当前标签
         this.classList.add("active");
         const tabId = this.getAttribute("data-tab");
         document.getElementById(tabId).classList.add("active");
@@ -913,7 +909,7 @@ type: 1000 - 有效（空格不影响）
       setTimeout(() => el.remove(), 2600);
     }
 
-    // =============== Excel数据查询工具功能 ===============
+    // Excel数据查询工具功能
     // 全局变量
     let excelData = null;
     let fileName = "";
@@ -933,7 +929,6 @@ type: 1000 - 有效（空格不影响）
     const errorMsg = document.getElementById("errorMsg");
     const errorText = document.getElementById("errorText");
 
-    // 新增的复制选项元素
     const copyTypeOption = document.getElementById("copyTypeOption");
     const copyNameOption = document.getElementById("copyNameOption");
     const copyAllOption = document.getElementById("copyAllOption");
@@ -977,7 +972,6 @@ type: 1000 - 有效（空格不影响）
 
     queryBtn.addEventListener("click", performQuery);
 
-    // 添加复制选项事件监听
     copyTypeOption.addEventListener("click", copyTypeColumn);
     copyNameOption.addEventListener("click", copyNameColumn);
     copyAllOption.addEventListener("click", copyAllResults);
@@ -1000,9 +994,7 @@ type: 1000 - 有效（空格不影响）
       return xlsxPromise;
     }
 
-    // 处理文件上传
     async function handleFileUpload(file) {
-      // 验证文件类型
       const validExtensions = [".xlsx", ".xls"];
       const fileExtension = file.name
         .substring(file.name.lastIndexOf("."))
@@ -1013,13 +1005,11 @@ type: 1000 - 有效（空格不影响）
         return;
       }
 
-      // 显示文件信息
       fileName = file.name;
       fileNameSpan.textContent = fileName;
       fileSizeSpan.textContent = formatFileSize(file.size);
       fileInfo.classList.add("active");
 
-      // 确保 XLSX 解析库已加载（仅首次上传 Excel 时动态从 CDN 拉取，不阻塞页面打开）
       try {
         await loadXLSX();
       } catch (err) {
@@ -1027,7 +1017,6 @@ type: 1000 - 有效（空格不影响）
         return;
       }
 
-      // 读取文件
       const reader = new FileReader();
 
       reader.onload = function (e) {
@@ -1037,17 +1026,13 @@ type: 1000 - 有效（空格不影响）
             type: "array",
           });
 
-          // 获取第一个工作表
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
 
-          // 转换为JSON
           excelData = XLSX.utils.sheet_to_json(worksheet);
 
-          // 显示行数
           rowCountSpan.textContent = excelData.length;
 
-          // 重置错误和结果
           hideError();
           resultsDiv.innerHTML = `
                         <div class="result-placeholder">
@@ -1069,12 +1054,9 @@ type: 1000 - 有效（空格不影响）
       reader.readAsArrayBuffer(file);
     }
 
-    // 执行查询
     function performQuery() {
-      // 清除之前的结果和错误
       hideError();
 
-      // 验证输入
       const input = numberInput.value.trim();
       if (!input) {
         showError("请输入要查询的数字");
@@ -1086,7 +1068,6 @@ type: 1000 - 有效（空格不影响）
         return;
       }
 
-      // 解析输入的数字
       const numbersToFind = input
         .split(",")
         .map((num) => num.trim())
@@ -1109,7 +1090,6 @@ type: 1000 - 有效（空格不影响）
           const nameValue = foundItem.指标名称 || foundItem.name || "";
 
           if (nameValue.trim() === "") {
-            // 名称为空的结果
             emptyResults.push({
               type: num,
               name: "[名称为空]",
@@ -1117,7 +1097,6 @@ type: 1000 - 有效（空格不影响）
               empty: true,
             });
           } else {
-            // 正常找到的结果
             foundResults.push({
               type: num,
               name: nameValue,
@@ -1126,7 +1105,6 @@ type: 1000 - 有效（空格不影响）
             });
           }
         } else {
-          // 未找到的结果
           notFoundResults.push({
             type: num,
             name: "未找到",
@@ -1139,30 +1117,24 @@ type: 1000 - 有效（空格不影响）
       // 合并结果：正常结果 -> 空结果 -> 未找到
       const results = [...foundResults, ...emptyResults, ...notFoundResults];
 
-      // 保存查询结果
       lastQueryResults = results;
 
-      // 显示结果
       displayResults(results);
     }
 
-    // 复制Type列
     function copyTypeColumn() {
       if (lastQueryResults.length === 0) {
         showNotification("没有可复制的查询结果", "error");
         return;
       }
 
-      // 生成复制内容
       const content = lastQueryResults.map((item) => item.type).join("\n");
 
-      // 复制到剪贴板
       navigator.clipboard
         .writeText(content)
         .then(() => {
           showNotification(`已复制 ${lastQueryResults.length} 个Type值`);
 
-          // 添加视觉反馈
           copyTypeOption.classList.add("active");
           setTimeout(() => {
             copyTypeOption.classList.remove("active");
@@ -1174,23 +1146,19 @@ type: 1000 - 有效（空格不影响）
         });
     }
 
-    // 复制名称列
     function copyNameColumn() {
       if (lastQueryResults.length === 0) {
         showNotification("没有可复制的查询结果", "error");
         return;
       }
 
-      // 生成复制内容
       const content = lastQueryResults.map((item) => item.name).join("\n");
 
-      // 复制到剪贴板
       navigator.clipboard
         .writeText(content)
         .then(() => {
           showNotification(`已复制 ${lastQueryResults.length} 个名称值`);
 
-          // 添加视觉反馈
           copyNameOption.classList.add("active");
           setTimeout(() => {
             copyNameOption.classList.remove("active");
@@ -1202,27 +1170,23 @@ type: 1000 - 有效（空格不影响）
         });
     }
 
-    // 复制全部结果
     function copyAllResults() {
       if (lastQueryResults.length === 0) {
         showNotification("没有可复制的查询结果", "error");
         return;
       }
 
-      // 生成复制内容
       const content = lastQueryResults
         .map((item) => {
           return `${item.type}/${item.name}`;
         })
         .join("\n");
 
-      // 复制到剪贴板
       navigator.clipboard
         .writeText(content)
         .then(() => {
           showNotification(`已复制 ${lastQueryResults.length} 条完整记录`);
 
-          // 添加视觉反馈
           copyAllOption.classList.add("active");
           setTimeout(() => {
             copyAllOption.classList.remove("active");
@@ -1234,7 +1198,6 @@ type: 1000 - 有效（空格不影响）
         });
     }
 
-    // 显示查询结果
     function displayResults(results) {
       if (results.length === 0) {
         resultsDiv.innerHTML = `
@@ -1247,7 +1210,6 @@ type: 1000 - 有效（空格不影响）
         return;
       }
 
-      // 创建结果表格
       let tableHTML = `
                 <table>
                     <thead>
@@ -1295,7 +1257,6 @@ type: 1000 - 有效（空格不影响）
                 </table>
             `;
 
-      // 添加统计信息
       const foundCount = results.filter(
         (item) => item.found && !item.empty,
       ).length;
@@ -1331,7 +1292,6 @@ type: 1000 - 有效（空格不影响）
                 </div>
             `;
 
-      // 添加状态通知
       let statusMessages = [];
 
       if (emptyItems.length > 0) {
@@ -1372,8 +1332,7 @@ type: 1000 - 有效（空格不影响）
       errorMsg.classList.remove("active");
     }
 
-    // =============== Type数字提取工具功能 ===============
-    // 存储提取结果
+    // Type数字提取工具功能
     let extractionResults = [];
 
     // DOM元素
@@ -1395,14 +1354,11 @@ type: 1000 - 有效（空格不影响）
       const inputTextValue = inputText.value;
       const resultDiv = document.getElementById("result");
 
-      // 更新文本长度统计
       document.getElementById("textLength").textContent =
         inputTextValue.length;
 
-      // 清空结果区域
       resultDiv.innerHTML = "";
 
-      // 重置结果数组
       extractionResults = [];
 
       // 正则表达式：匹配 "type:" 后跟至少4位数字
@@ -1410,7 +1366,6 @@ type: 1000 - 有效（空格不影响）
       let match;
       const matches = [];
 
-      // 使用循环获取所有匹配项和捕获组
       while ((match = regex.exec(inputTextValue)) !== null) {
         matches.push({
           fullText: match[0],
@@ -1418,7 +1373,6 @@ type: 1000 - 有效（空格不影响）
         });
       }
 
-      // 更新匹配统计
       document.getElementById("matchCount").textContent = matches.length;
 
       if (matches.length === 0) {
@@ -1439,19 +1393,16 @@ type: 1000 - 有效（空格不影响）
           seen.add(digits);
           uniqueMatches.push(match);
 
-          // 存储到结果数组
-          extractionResults.push({
+              extractionResults.push({
             text: match.fullText,
             digits: digits,
           });
         }
       }
 
-      // 更新去重统计
       document.getElementById("uniqueCount").textContent =
         uniqueMatches.length;
 
-      // 显示去重后的结果
       uniqueMatches.forEach((match, index) => {
         const item = document.createElement("div");
         item.className = "match-item";
@@ -1472,51 +1423,39 @@ type: 1000 - 有效（空格不影响）
         resultDiv.appendChild(item);
       });
 
-      // 更新数字统计
       updateDigitStats(uniqueMatches.map((m) => m.digits));
     }
 
     // 更新数字统计（保留函数但不使用，避免引用不存在的DOM元素）
     function updateDigitStats(digitsArray) {
-      // 统计功能已简化，直接返回
-      // 如果需要统计信息，可以在这里添加自定义实现
       console.log("提取了 " + digitsArray.length + " 个有效数字");
     }
 
-    // 查询单个数字
     function querySingleDigit(digits) {
-      // 切换到Excel查询工具标签页
       document.querySelector('.tab[data-tab="excel-tool"]').click();
 
-      // 设置输入框的值
       document.getElementById("numberInput").value = digits;
 
-      // 执行查询
       setTimeout(() => {
         document.getElementById("queryBtn").click();
         showNotification(`正在查询数字: ${digits}`);
       }, 300);
     }
 
-    // 查询所有提取的数字
     function queryAllDigits() {
       if (extractionResults.length === 0) {
         showNotification("没有可查询的数字", "error");
         return;
       }
 
-      // 获取所有提取的数字
       const allDigits = extractionResults
         .map((item) => item.digits)
         .join(", ");
 
-      // 切换到Excel查询工具标签页
       document.querySelector('.tab[data-tab="excel-tool"]').click();
 
-      // 设置输入框的值
       document.getElementById("numberInput").value = allDigits;
 
-      // 执行查询
       setTimeout(() => {
         document.getElementById("queryBtn").click();
         showNotification(`正在查询 ${extractionResults.length} 个提取的数字`);
@@ -1593,17 +1532,13 @@ type: 1000 - 有效（空格不影响）
       extractionResults = [];
     }
 
-    // 初始提取示例文本
     document.addEventListener("DOMContentLoaded", () => {
-      // 初始化主题
       initTheme();
 
-      // 设置主题切换监听
       document
         .getElementById("themeToggle")
         .addEventListener("click", toggleTheme);
 
-      // 设置Excel工具的示例输入
       numberInput.value =
         "110747, 42277, 112579, 40215, 40332, 99999, 88888, 77777, 55555";
 
@@ -1658,8 +1593,7 @@ type: 1000 - 有效（空格不影响）
           },
         ];
 
-        // 初始提取Type工具示例文本
-        setTimeout(extractTypes, 500);
+          setTimeout(extractTypes, 500);
       }, 1000);
     });
   
