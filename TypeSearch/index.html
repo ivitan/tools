@@ -861,6 +861,7 @@ type: 1000 - 有效（空格不影响）
         const t = this.effective;
         document.documentElement.dataset.theme = t;
         document.documentElement.style.colorScheme = t;
+        document.documentElement.style.background = 'var(--bg)';
         this._updateIcon();
         if (this.onApply) this.onApply(t === 'dark');
       },

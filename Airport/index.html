@@ -621,6 +621,7 @@
         const t = this.effective;
         document.documentElement.dataset.theme = t;
         document.documentElement.style.colorScheme = t; // 同步原生滚动条/控件配色
+        document.documentElement.style.background = 'var(--bg)';
         this._updateIcon();
       },
       toggle() {

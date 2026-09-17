@@ -826,6 +826,7 @@
             const t = this.effective;
             document.documentElement.dataset.theme = t;
             document.documentElement.style.colorScheme = t;
+            document.documentElement.style.background = 'var(--bg)';
             this._updateIcon();
           },
           toggle() {

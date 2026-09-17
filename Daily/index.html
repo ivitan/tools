@@ -824,6 +824,9 @@ const theme = {
   /* 应用当前生效主题到页面，并刷新图标 */
   _apply() {
     document.documentElement.dataset.theme = this.effective;
+    document.documentElement.style.colorScheme = this.effective;
+    /* 同步 <html> 背景，避免大屏内容不足时从底部透出默认底色造成色差 */
+    document.documentElement.style.background = 'var(--bg)';
     this._updateIcon();
   },
   /* 选择模式并持久化（点按钮 / 循环切换时调用） */
