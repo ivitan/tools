@@ -13,20 +13,17 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>
+    /* 首屏防闪白：提前同步主题并联动代码高亮主题，避免刷新时闪白。
+       默认（无偏好或偏好为「跟随系统」）按浏览器 prefers-color-scheme 计算；
+       与 SQLite 工具统一采用 system/light/dark 三态方案。 */
     (function () {
-      function isDark() {
-        try {
-          var saved = localStorage.getItem("md-editor-theme");
-          if (saved === "dark") return true;
-          if (saved === "light") return false;
-          saved = localStorage.getItem("theme");
-          if (saved === "dark") return true;
-          if (saved === "light") return false;
-        } catch (e) { }
-        return window.matchMedia("(prefers-color-scheme: dark)").matches;
-      }
-      var dark = isDark();
+      var saved = localStorage.getItem("md-editor-theme");
+      var dark = (saved && saved !== "system")
+        ? saved === "dark"
+        : window.matchMedia("(prefers-color-scheme: dark)").matches;
       document.documentElement.dataset.theme = dark ? "dark" : "light";
+      document.documentElement.style.colorScheme = dark ? "dark" : "light";
+      if (dark) document.documentElement.style.background = "#0b1220";
       var hl = document.getElementById("hljs-theme");
       if (hl) {
         hl.href = dark
@@ -737,15 +734,12 @@
       </a>
     </div>
     <div class="header-actions">
-      <button class="icon-btn" id="themeToggle" title="切换主题">
-        <svg id="iconSun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+      <button class="icon-btn" id="btnTheme" title="切换主题">
+        <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
-        <svg id="iconMoon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       </button>
     </div>
@@ -803,7 +797,7 @@
         .getElementById("preview")
         .querySelector(".markdown-body");
       const previewScroller = document.getElementById("preview");
-      const themeToggle = document.getElementById("themeToggle");
+      const themeToggle = document.getElementById("btnTheme");
       const charCount = document.getElementById("charCount");
       const wordCount = document.getElementById("wordCount");
       const dividerBar = document.getElementById("dividerBar");
@@ -987,31 +981,74 @@ print(fibonacci(10))  # 55
         wordCount.textContent = `${chinese + words} 字`;
       }
 
-      // 暗色模式
-      function applyTheme(dark) {
-        isDarkMode = dark;
-        document.documentElement.dataset.theme = dark ? "dark" : "light";
-        var iSun = document.getElementById("iconSun");
-        var iMoon = document.getElementById("iconMoon");
-        if (iSun) iSun.style.display = dark ? "block" : "none";
-        if (iMoon) iMoon.style.display = dark ? "none" : "block";
-        themeToggle.title = dark ? "切换到浅色模式" : "切换到深色模式";
+      // 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态）
+      function applyHljs(dark) {
         hljsThemeLink.href = dark
           ? "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
           : "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
-        localStorage.setItem(STORAGE_THEME, dark ? "dark" : "light");
         updatePreview();
       }
-      themeToggle.addEventListener("click", () => applyTheme(!isDarkMode));
 
-      function loadTheme() {
-        const saved = localStorage.getItem(STORAGE_THEME);
-        if (saved === "dark") applyTheme(true);
-        else if (saved === "light") applyTheme(false);
-        else if (window.matchMedia("(prefers-color-scheme: dark)").matches)
-          applyTheme(true);
-        else applyTheme(false);
+      const theme = {
+        KEY: 'md-editor-theme',
+        get mode() { return localStorage.getItem(this.KEY) || 'system'; },
+        get effective() {
+          if (this.mode === 'system')
+            return (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          return this.mode;
+        },
+        apply() {
+          const t = this.effective;
+          document.documentElement.dataset.theme = t;
+          document.documentElement.style.colorScheme = t;
+          this._updateIcon();
+          if (this.onApply) this.onApply(t === 'dark');
+        },
+        toggle() {
+          const next = this.effective === 'dark' ? 'light' : 'dark';
+          localStorage.setItem(this.KEY, next);
+          this.apply();
+          toast(`已切换为${this.effective === 'dark' ? '深色' : '浅色'}模式（双击按钮恢复跟随系统）`, 'success');
+        },
+        init() {
+          this.apply();
+          matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (this.mode === 'system') this.apply();
+          });
+        },
+        _updateIcon() {
+          const eff = this.effective;
+          const sun = document.getElementById('iconSun');
+          const moon = document.getElementById('iconMoon');
+          if (sun) sun.style.display = eff === 'light' ? 'block' : 'none';
+          if (moon) moon.style.display = eff === 'dark' ? 'block' : 'none';
+        }
+      };
+
+      theme.onApply = (dark) => { applyHljs(dark); };
+
+      function toast(msg, type = '', duration = 1800) {
+        const el = document.createElement('div');
+        el.textContent = msg;
+        el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;max-width:80vw;' +
+          'padding:8px 14px;border-radius:8px;font:500 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;' +
+          'background:var(--text);color:var(--panel);box-shadow:0 4px 12px rgba(0,0,0,.15);' +
+          'opacity:0;transform:translateY(-6px);transition:opacity .2s ease,transform .2s ease;pointer-events:none;';
+        document.body.appendChild(el);
+        requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
+        setTimeout(() => {
+          el.style.opacity = '0'; el.style.transform = 'translateY(-6px)';
+          setTimeout(() => el.remove(), 250);
+        }, duration);
       }
+
+      const themeBtn = document.getElementById('btnTheme');
+      themeBtn.onclick = () => theme.toggle();
+      themeBtn.addEventListener('dblclick', () => {
+        localStorage.removeItem(theme.KEY);
+        theme.apply();
+        toast('已恢复跟随系统', 'success');
+      });
 
       // 移动端标签
       function switchMobileTab(tab) {
@@ -1256,7 +1293,7 @@ print(fibonacci(10))  # 55
         updatePreview();
       });
 
-      loadTheme();
+      theme.init();
       editor.value = loadContent();
       updatePreview();
       initDivider();
