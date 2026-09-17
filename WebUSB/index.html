@@ -7,14 +7,18 @@
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <title>USB启动盘制作工具</title>
 <script>
-  /* 提前应用主题，避免刷新时闪白（沿用 SQLite 工具的 data-theme 方案，
-     同时兼容旧版 localStorage 键名 "theme"） */
+  /* 首屏防闪白：提前同步主题，避免刷新时闪白。
+     默认（无偏好或偏好为「跟随系统」）按浏览器 prefers-color-scheme 计算；
+     与 SQLite 工具统一采用 system/light/dark 三态方案。 */
   (function () {
     try {
-      var saved = localStorage.getItem('webusb-theme') || localStorage.getItem('theme');
-      var dark = saved ? saved === 'dark'
-        : window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      var saved = localStorage.getItem('webusb-theme');
+      var t = (saved && saved !== 'system')
+        ? saved
+        : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.dataset.theme = t;
+      document.documentElement.style.colorScheme = t;      // 同步滚动条/原生控件配色
+      if (t === 'dark') document.documentElement.style.background = '#0b1220';  // 兜底，防 CSS 解析前露白
     } catch (e) {}
   })();
 </script>
@@ -611,7 +615,7 @@
     </div>
     <div class="header-spacer"></div>
     <div class="header-actions">
-      <button class="icon-btn" id="themeToggle" title="切换主题">
+      <button class="icon-btn" id="btnTheme" title="切换主题">
         <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
           <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
@@ -766,8 +770,6 @@
         const alertSizeCheck = $("#alertSizeCheck");
         const alertSizeCheckText = $("#alertSizeCheckText");
         const alertSizeCheckIcon = $("#alertSizeCheckIcon");
-        const themeToggle = $("#themeToggle");
-        const themeLabel = $("#themeLabel");
         const badgeStep1 = $("#badgeStep1"),
           badgeStep2 = $("#badgeStep2"),
           badgeStep3 = $("#badgeStep3");
@@ -811,26 +813,67 @@
           logToggle.textContent = isOpen ? "收起" : "展开";
         });
 
-        function applyTheme(t) {
-          document.documentElement.dataset.theme = t;
-          localStorage.setItem("webusb-theme", t);
-          const dark = t === "dark";
-          document.getElementById("iconSun").style.display = dark ? "block" : "none";
-          document.getElementById("iconMoon").style.display = dark ? "none" : "block";
-          themeToggle.title = dark ? "切换到浅色模式" : "切换到深色模式";
+        /* 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态） */
+        const theme = {
+          KEY: 'webusb-theme',
+          get mode() { return localStorage.getItem(this.KEY) || 'system'; },
+          get effective() {
+            if (this.mode === 'system')
+              return (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            return this.mode;
+          },
+          apply() {
+            const t = this.effective;
+            document.documentElement.dataset.theme = t;
+            document.documentElement.style.colorScheme = t;
+            this._updateIcon();
+          },
+          toggle() {
+            const next = this.effective === 'dark' ? 'light' : 'dark';
+            localStorage.setItem(this.KEY, next);
+            this.apply();
+            toast(`已切换为${this.effective === 'dark' ? '深色' : '浅色'}模式（双击按钮恢复跟随系统）`, 'success');
+          },
+          init() {
+            this.apply();
+            matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+              if (this.mode === 'system') this.apply();
+            });
+          },
+          _updateIcon() {
+            const eff = this.effective;
+            const sun = document.getElementById('iconSun');
+            const moon = document.getElementById('iconMoon');
+            if (sun) sun.style.display = eff === 'light' ? 'block' : 'none';
+            if (moon) moon.style.display = eff === 'dark' ? 'block' : 'none';
+          }
+        };
+
+        function toast(msg, type = '', duration = 1800) {
+          const el = document.createElement('div');
+          el.textContent = msg;
+          el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;max-width:80vw;' +
+            'padding:8px 14px;border-radius:8px;font:500 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;' +
+            'background:var(--text);color:var(--panel);box-shadow:0 4px 12px rgba(0,0,0,.15);' +
+            'opacity:0;transform:translateY(-6px);transition:opacity .2s ease,transform .2s ease;pointer-events:none;';
+          document.body.appendChild(el);
+          requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
+          setTimeout(() => {
+            el.style.opacity = '0'; el.style.transform = 'translateY(-6px)';
+            setTimeout(() => el.remove(), 250);
+          }, duration);
         }
-        const saved = localStorage.getItem("webusb-theme") || localStorage.getItem("theme");
-        const prefersDark = window.matchMedia(
-          "(prefers-color-scheme: dark)",
-        ).matches;
-        applyTheme(
-          saved === "dark" || (!saved && prefersDark) ? "dark" : "light",
-        );
-        themeToggle.addEventListener("click", () => {
-          applyTheme(
-            document.documentElement.dataset.theme === "dark" ? "light" : "dark",
-          );
-        });
+
+        (function bindTheme() {
+          const btn = document.getElementById('btnTheme');
+          btn.onclick = () => theme.toggle();
+          btn.addEventListener('dblclick', () => {
+            localStorage.removeItem(theme.KEY);
+            theme.apply();
+            toast('已恢复跟随系统', 'success');
+          });
+          theme.init();
+        })();
 
         // 查找大容量存储接口（兼容各种子类）
         function findMassInterface(device) {
