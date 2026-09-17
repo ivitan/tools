@@ -827,6 +827,7 @@
       let programmaticScroll = false;
       let editingProgrammaticScroll = false;
       let userScrollingPreview = false;
+      let isSampleContent = false;
 
       // Marked 配置
       marked.use({ breaks: true, gfm: true });
@@ -908,10 +909,10 @@ print(fibonacci(10))  # 55
       function loadContent() {
         try {
           const saved = localStorage.getItem(STORAGE_CONTENT);
-          return saved && saved.trim() ? saved : defaultContent;
-        } catch (e) {
-          return defaultContent;
-        }
+          if (saved && saved.trim()) return saved;
+        } catch (e) { }
+        isSampleContent = true;
+        return defaultContent;
       }
 
       function saveContent() {
@@ -1219,6 +1220,11 @@ print(fibonacci(10))  # 55
         syncEditorScrollToPreview();
       });
       editor.addEventListener("click", () => {
+        if (isSampleContent) {
+          isSampleContent = false;
+          editor.value = "";
+          updatePreview();
+        }
         userScrollingPreview = false;
         syncCursorToPreview();
       });
