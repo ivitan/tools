@@ -854,6 +854,9 @@ const theme = {
      想恢复跟随系统，用长按（≥600ms）或双击主题按钮，触发 theme.reset()。 */
   toggle() {
     this.set(this.effective === 'dark' ? 'light' : 'dark');
+    // 单击后的状态反馈走 toast，与 SQLite 一致（不再用 title 预测「下一步」）
+    const label = this.effective === 'dark' ? '深色' : '浅色';
+    toast(`已切换为${label}模式（长按/双击恢复跟随系统）`, 'success');
   },
   init() {
     this._apply();   /* 初次按已存模式（或系统）渲染 */
