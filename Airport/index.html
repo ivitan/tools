@@ -24,240 +24,191 @@
   <title>节点信息提取</title>
   <link rel="icon" type="image/svg+xml" href="/img/Airport.svg" />
   <!-- 纯静态 CSS（由 Tailwind 编译，已内联，不再依赖运行时 CDN） -->
-  <style id="static-tailwind">
-*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.container{width:100%}@media (min-width:640px){.container{max-width:640px}}@media (min-width:768px){.container{max-width:768px}}@media (min-width:1024px){.container{max-width:1024px}}@media (min-width:1280px){.container{max-width:1280px}}@media (min-width:1536px){.container{max-width:1536px}}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.bottom-6{bottom:1.5rem}.left-1\/2{left:50%}.top-0{top:0}.z-10{z-index:10}.z-50{z-index:50}.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-2{margin-top:.5rem}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-3\.5{height:.875rem}.h-4{height:1rem}.h-48{height:12rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-7{height:1.75rem}.h-8{height:2rem}.h-full{height:100%}.max-h-48{max-height:12rem}.max-h-\[60vh\]{max-height:60vh}.min-h-\[140px\]{min-height:140px}.min-h-screen{min-height:100vh}.w-3\.5{width:.875rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-7{width:1.75rem}.w-full{width:100%}.min-w-0{min-width:0}.min-w-\[100px\]{min-width:100px}.min-w-full{min-width:100%}.flex-1{flex:1 1 0%}.flex-shrink{flex-shrink:1}.shrink-0{flex-shrink:0}.border-collapse{border-collapse:collapse}.-translate-x-1\/2{--tw-translate-x:-50%}.-rotate-90,.-translate-x-1\/2{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-rotate-90{--tw-rotate:-90deg}.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-pointer{cursor:pointer}.cursor-text{cursor:text}.select-none{-webkit-user-select:none;-moz-user-select:none;user-select:none}.list-none{list-style-type:none}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.flex-col{flex-direction:column}.items-center{align-items:center}.items-stretch{align-items:stretch}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.space-x-1>:not([hidden])~:not([hidden]){--tw-space-x-reverse:0;margin-right:calc(.25rem*var(--tw-space-x-reverse));margin-left:calc(.25rem*(1 - var(--tw-space-x-reverse)))}.space-x-6>:not([hidden])~:not([hidden]){--tw-space-x-reverse:0;margin-right:calc(1.5rem*var(--tw-space-x-reverse));margin-left:calc(1.5rem*(1 - var(--tw-space-x-reverse)))}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse))}.divide-gray-100>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(243 244 246/var(--tw-divide-opacity,1))}.divide-gray-200>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(229 231 235/var(--tw-divide-opacity,1))}.divide-gray-700>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(55 65 81/var(--tw-divide-opacity,1))}.overflow-auto{overflow:auto}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:.25rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-md{border-radius:.375rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-r{border-right-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-amber-600{--tw-border-opacity:1;border-color:rgb(217 119 6/var(--tw-border-opacity,1))}.border-amber-700{--tw-border-opacity:1;border-color:rgb(180 83 9/var(--tw-border-opacity,1))}.border-blue-100{--tw-border-opacity:1;border-color:rgb(219 234 254/var(--tw-border-opacity,1))}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254/var(--tw-border-opacity,1))}.border-blue-500{--tw-border-opacity:1;border-color:rgb(59 130 246/var(--tw-border-opacity,1))}.border-blue-700{--tw-border-opacity:1;border-color:rgb(37 99 235/var(--tw-border-opacity,1))}.border-blue-800{--tw-border-opacity:1;border-color:rgb(29 78 216/var(--tw-border-opacity,1))}.border-emerald-600{--tw-border-opacity:1;border-color:rgb(5 150 105/var(--tw-border-opacity,1))}.border-emerald-700{--tw-border-opacity:1;border-color:rgb(4 120 87/var(--tw-border-opacity,1))}.border-gray-100{--tw-border-opacity:1;border-color:rgb(243 244 246/var(--tw-border-opacity,1))}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235/var(--tw-border-opacity,1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219/var(--tw-border-opacity,1))}.border-gray-400{--tw-border-opacity:1;border-color:rgb(156 163 175/var(--tw-border-opacity,1))}.border-gray-500{--tw-border-opacity:1;border-color:rgb(107 114 128/var(--tw-border-opacity,1))}.border-gray-600{--tw-border-opacity:1;border-color:rgb(75 85 99/var(--tw-border-opacity,1))}.border-gray-700{--tw-border-opacity:1;border-color:rgb(55 65 81/var(--tw-border-opacity,1))}.border-purple-500{--tw-border-opacity:1;border-color:rgb(168 85 247/var(--tw-border-opacity,1))}.border-purple-700{--tw-border-opacity:1;border-color:rgb(126 34 206/var(--tw-border-opacity,1))}.border-sky-500{--tw-border-opacity:1;border-color:rgb(14 165 233/var(--tw-border-opacity,1))}.border-sky-700{--tw-border-opacity:1;border-color:rgb(3 105 161/var(--tw-border-opacity,1))}.bg-amber-300{--tw-bg-opacity:1;background-color:rgb(252 211 77/var(--tw-bg-opacity,1))}.bg-amber-900{--tw-bg-opacity:1;background-color:rgb(120 53 15/var(--tw-bg-opacity,1))}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254/var(--tw-bg-opacity,1))}.bg-blue-300{--tw-bg-opacity:1;background-color:rgb(147 197 253/var(--tw-bg-opacity,1))}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255/var(--tw-bg-opacity,1))}.bg-blue-800{--tw-bg-opacity:1;background-color:rgb(29 78 216/var(--tw-bg-opacity,1))}.bg-blue-900{--tw-bg-opacity:1;background-color:rgb(30 64 175/var(--tw-bg-opacity,1))}.bg-emerald-300{--tw-bg-opacity:1;background-color:rgb(110 231 183/var(--tw-bg-opacity,1))}.bg-emerald-900{--tw-bg-opacity:1;background-color:rgb(6 78 59/var(--tw-bg-opacity,1))}.bg-gray-100{--tw-bg-opacity:1;background-color:rgb(243 244 246/var(--tw-bg-opacity,1))}.bg-gray-300{--tw-bg-opacity:1;background-color:rgb(209 213 219/var(--tw-bg-opacity,1))}.bg-gray-50{--tw-bg-opacity:1;background-color:rgb(249 250 251/var(--tw-bg-opacity,1))}.bg-gray-50\/50{background-color:rgba(249,250,251,.5)}.bg-gray-700{--tw-bg-opacity:1;background-color:rgb(55 65 81/var(--tw-bg-opacity,1))}.bg-gray-800{--tw-bg-opacity:1;background-color:rgb(31 41 55/var(--tw-bg-opacity,1))}.bg-gray-900\/85{background-color:rgba(17,24,39,.85)}.bg-purple-300{--tw-bg-opacity:1;background-color:rgb(216 180 254/var(--tw-bg-opacity,1))}.bg-purple-900{--tw-bg-opacity:1;background-color:rgb(88 28 135/var(--tw-bg-opacity,1))}.bg-sky-300{--tw-bg-opacity:1;background-color:rgb(125 211 252/var(--tw-bg-opacity,1))}.bg-sky-900{--tw-bg-opacity:1;background-color:rgb(12 74 110/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.p-2{padding:.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.pb-2{padding-bottom:.5rem}.pl-1{padding-left:.25rem}.pt-1{padding-top:.25rem}.pt-3{padding-top:.75rem}.text-left{text-align:left}.text-center{text-align:center}.align-middle{vertical-align:middle}.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace}.font-sans{font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[12px\]{font-size:12px}.text-\[13px\]{font-size:13px}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.leading-5{line-height:1.25rem}.leading-relaxed{line-height:1.625}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77/var(--tw-text-opacity,1))}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36/var(--tw-text-opacity,1))}.text-amber-500{--tw-text-opacity:1;color:rgb(245 158 11/var(--tw-text-opacity,1))}.text-amber-600{--tw-text-opacity:1;color:rgb(217 119 6/var(--tw-text-opacity,1))}.text-amber-900{--tw-text-opacity:1;color:rgb(120 53 15/var(--tw-text-opacity,1))}.text-blue-300{--tw-text-opacity:1;color:rgb(147 197 253/var(--tw-text-opacity,1))}.text-blue-400{--tw-text-opacity:1;color:rgb(96 165 250/var(--tw-text-opacity,1))}.text-blue-500,.text-blue-600{--tw-text-opacity:1;color:rgb(59 130 246/var(--tw-text-opacity,1))}.text-blue-700{--tw-text-opacity:1;color:rgb(37 99 235/var(--tw-text-opacity,1))}.text-blue-800{--tw-text-opacity:1;color:rgb(29 78 216/var(--tw-text-opacity,1))}.text-blue-900{--tw-text-opacity:1;color:rgb(30 64 175/var(--tw-text-opacity,1))}.text-emerald-300{--tw-text-opacity:1;color:rgb(110 231 183/var(--tw-text-opacity,1))}.text-emerald-900{--tw-text-opacity:1;color:rgb(6 78 59/var(--tw-text-opacity,1))}.text-gray-200{--tw-text-opacity:1;color:rgb(229 231 235/var(--tw-text-opacity,1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219/var(--tw-text-opacity,1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175/var(--tw-text-opacity,1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128/var(--tw-text-opacity,1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99/var(--tw-text-opacity,1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81/var(--tw-text-opacity,1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55/var(--tw-text-opacity,1))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39/var(--tw-text-opacity,1))}.text-green-400{--tw-text-opacity:1;color:rgb(74 222 128/var(--tw-text-opacity,1))}.text-green-500{--tw-text-opacity:1;color:rgb(34 197 94/var(--tw-text-opacity,1))}.text-green-600{--tw-text-opacity:1;color:rgb(22 163 74/var(--tw-text-opacity,1))}.text-orange-500{--tw-text-opacity:1;color:rgb(249 115 22/var(--tw-text-opacity,1))}.text-purple-300{--tw-text-opacity:1;color:rgb(216 180 254/var(--tw-text-opacity,1))}.text-purple-400{--tw-text-opacity:1;color:rgb(192 132 252/var(--tw-text-opacity,1))}.text-purple-600{--tw-text-opacity:1;color:rgb(147 51 234/var(--tw-text-opacity,1))}.text-purple-900{--tw-text-opacity:1;color:rgb(88 28 135/var(--tw-text-opacity,1))}.text-red-400{--tw-text-opacity:1;color:rgb(248 113 113/var(--tw-text-opacity,1))}.text-red-500{--tw-text-opacity:1;color:rgb(239 68 68/var(--tw-text-opacity,1))}.text-red-600{--tw-text-opacity:1;color:rgb(220 38 38/var(--tw-text-opacity,1))}.text-sky-300{--tw-text-opacity:1;color:rgb(125 211 252/var(--tw-text-opacity,1))}.text-sky-600{--tw-text-opacity:1;color:rgb(2 132 199/var(--tw-text-opacity,1))}.text-sky-900{--tw-text-opacity:1;color:rgb(12 74 110/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.opacity-0{opacity:0}.opacity-80{opacity:.8}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-lg,.shadow-sm{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.outline-none{outline:2px solid transparent;outline-offset:2px}.outline{outline-style:solid}.blur{--tw-blur:blur(8px)}.blur,.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-colors{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-opacity{transition-property:opacity;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-shadow{transition-property:box-shadow;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-200{transition-duration:.2s}.duration-300{transition-duration:.3s}.hover\:bg-amber-400:hover{--tw-bg-opacity:1;background-color:rgb(251 191 36/var(--tw-bg-opacity,1))}.hover\:bg-blue-100:hover{--tw-bg-opacity:1;background-color:rgb(219 234 254/var(--tw-bg-opacity,1))}.hover\:bg-blue-400:hover{--tw-bg-opacity:1;background-color:rgb(96 165 250/var(--tw-bg-opacity,1))}.hover\:bg-blue-50:hover{--tw-bg-opacity:1;background-color:rgb(239 246 255/var(--tw-bg-opacity,1))}.hover\:bg-blue-50\/50:hover{background-color:rgba(239,246,255,.5)}.hover\:bg-emerald-400:hover{--tw-bg-opacity:1;background-color:rgb(52 211 153/var(--tw-bg-opacity,1))}.hover\:bg-gray-100:hover{--tw-bg-opacity:1;background-color:rgb(243 244 246/var(--tw-bg-opacity,1))}.hover\:bg-gray-400:hover{--tw-bg-opacity:1;background-color:rgb(156 163 175/var(--tw-bg-opacity,1))}.hover\:bg-purple-400:hover{--tw-bg-opacity:1;background-color:rgb(192 132 252/var(--tw-bg-opacity,1))}.hover\:bg-sky-400:hover{--tw-bg-opacity:1;background-color:rgb(56 189 248/var(--tw-bg-opacity,1))}.hover\:bg-white:hover{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.hover\:text-blue-800:hover{--tw-text-opacity:1;color:rgb(29 78 216/var(--tw-text-opacity,1))}.focus\:ring-1:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.focus\:ring-blue-500:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(59 130 246/var(--tw-ring-opacity,1))}.group[open] .group-open\:hidden{display:none}.group:hover .group-hover\:opacity-100{opacity:1}@media (min-width:640px){.sm\:h-9{height:2.25rem}.sm\:min-w-\[120px\]{min-width:120px}.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm\:p-4{padding:1rem}.sm\:px-4{padding-left:1rem;padding-right:1rem}.sm\:text-\[11px\]{font-size:11px}.sm\:text-\[13px\]{font-size:13px}.sm\:text-sm{font-size:.875rem;line-height:1.25rem}.sm\:text-xs{font-size:.75rem;line-height:1rem}}@media (min-width:1024px){.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:gap-4{gap:1rem}}.dark\:divide-gray-700:where([data-theme=dark],[data-theme=dark] *)>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(55 65 81/var(--tw-divide-opacity,1))}.dark\:border-amber-700:where([data-theme=dark],[data-theme=dark] *){--tw-border-opacity:1;border-color:rgb(180 83 9/var(--tw-border-opacity,1))}.dark\:border-blue-700:where([data-theme=dark],[data-theme=dark] *){--tw-border-opacity:1;border-color:rgb(37 99 235/var(--tw-border-opacity,1))}.dark\:border-blue-800\/50:where([data-theme=dark],[data-theme=dark] *){border-color:rgba(29,78,216,.5)}.dark\:border-emerald-700:where([data-theme=dark],[data-theme=dark] *){--tw-border-opacity:1;border-color:rgb(4 120 87/var(--tw-border-opacity,1))}.dark\:border-gray-500:where([data-theme=dark],[data-theme=dark] *){--tw-border-opacity:1;border-color:rgb(107 114 128/var(--tw-border-opacity,1))}.dark\:border-gray-600:where([data-theme=dark],[data-theme=dark] *){--tw-border-opacity:1;border-color:rgb(75 85 99/var(--tw-border-opacity,1))}.dark\:border-gray-700:where([data-theme=dark],[data-theme=dark] *){--tw-border-opacity:1;border-color:rgb(55 65 81/var(--tw-border-opacity,1))}.dark\:border-purple-700:where([data-theme=dark],[data-theme=dark] *){--tw-border-opacity:1;border-color:rgb(126 34 206/var(--tw-border-opacity,1))}.dark\:border-sky-700:where([data-theme=dark],[data-theme=dark] *){--tw-border-opacity:1;border-color:rgb(3 105 161/var(--tw-border-opacity,1))}.dark\:bg-amber-900\/30:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(120,53,15,.3)}.dark\:bg-blue-900:where([data-theme=dark],[data-theme=dark] *){--tw-bg-opacity:1;background-color:rgb(30 64 175/var(--tw-bg-opacity,1))}.dark\:bg-blue-900\/30:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(30,64,175,.3)}.dark\:bg-blue-900\/50:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(30,64,175,.5)}.dark\:bg-emerald-900\/30:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(6,78,59,.3)}.dark\:bg-gray-700:where([data-theme=dark],[data-theme=dark] *){--tw-bg-opacity:1;background-color:rgb(55 65 81/var(--tw-bg-opacity,1))}.dark\:bg-gray-700\/50:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(55,65,81,.5)}.dark\:bg-gray-800:where([data-theme=dark],[data-theme=dark] *){--tw-bg-opacity:1;background-color:rgb(31 41 55/var(--tw-bg-opacity,1))}.dark\:bg-gray-800\/50:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(31,41,55,.5)}.dark\:bg-purple-900\/30:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(88,28,135,.3)}.dark\:bg-sky-900\/30:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(12,74,110,.3)}.dark\:text-amber-300:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(252 211 77/var(--tw-text-opacity,1))}.dark\:text-amber-400:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(251 191 36/var(--tw-text-opacity,1))}.dark\:text-blue-300:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(147 197 253/var(--tw-text-opacity,1))}.dark\:text-blue-400:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(96 165 250/var(--tw-text-opacity,1))}.dark\:text-emerald-300:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(110 231 183/var(--tw-text-opacity,1))}.dark\:text-gray-200:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(229 231 235/var(--tw-text-opacity,1))}.dark\:text-gray-300:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(209 213 219/var(--tw-text-opacity,1))}.dark\:text-gray-400:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(156 163 175/var(--tw-text-opacity,1))}.dark\:text-gray-500:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(107 114 128/var(--tw-text-opacity,1))}.dark\:text-gray-600:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(75 85 99/var(--tw-text-opacity,1))}.dark\:text-green-400:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(74 222 128/var(--tw-text-opacity,1))}.dark\:text-purple-300:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(216 180 254/var(--tw-text-opacity,1))}.dark\:text-purple-400:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(192 132 252/var(--tw-text-opacity,1))}.dark\:text-red-400:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(248 113 113/var(--tw-text-opacity,1))}.dark\:text-sky-300:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(125 211 252/var(--tw-text-opacity,1))}.dark\:text-sky-400:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(56 189 248/var(--tw-text-opacity,1))}.dark\:hover\:bg-amber-900\/50:hover:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(120,53,15,.5)}.dark\:hover\:bg-blue-800:hover:where([data-theme=dark],[data-theme=dark] *){--tw-bg-opacity:1;background-color:rgb(29 78 216/var(--tw-bg-opacity,1))}.dark\:hover\:bg-blue-900\/50:hover:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(30,64,175,.5)}.dark\:hover\:bg-emerald-900\/50:hover:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(6,78,59,.5)}.dark\:hover\:bg-gray-700:hover:where([data-theme=dark],[data-theme=dark] *){--tw-bg-opacity:1;background-color:rgb(55 65 81/var(--tw-bg-opacity,1))}.dark\:hover\:bg-gray-700\/50:hover:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(55,65,81,.5)}.dark\:hover\:bg-purple-900\/50:hover:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(88,28,135,.5)}.dark\:hover\:bg-sky-900\/50:hover:where([data-theme=dark],[data-theme=dark] *){background-color:rgba(12,74,110,.5)}.dark\:hover\:text-blue-300:hover:where([data-theme=dark],[data-theme=dark] *){--tw-text-opacity:1;color:rgb(147 197 253/var(--tw-text-opacity,1))}
-  </style>
+  <!-- Tailwind 已移除：全部样式改为纯手写 CSS + CSS 变量（见下方 <style>），无编译产物、无 CDN 依赖 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    .custom-scrollbar::-webkit-scrollbar {
-      height: 6px;
-      width: 6px;
-    }
+    /* ============================================================
+       设计系统：纯手写 CSS + CSS 变量（无 Tailwind，无运行时 CDN）
+       主题切换只改 :root / [data-theme="dark"] 两组变量值，
+       组件样式里不出现任何硬编码颜色，暗色无需重写一遍规则。
+       ============================================================ */
 
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f1f5f9;
-      border-radius: 3px;
-    }
-
-    [data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-track {
-      background: #1e293b;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 3px;
-    }
-
-    [data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #475569;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-
-    .node-table th,
-    .node-table td,
-    .raw-table th,
-    .raw-table td,
-    .paste-table th,
-    .paste-table td {
-      white-space: nowrap;
-    }
-
-    /* 原始数据来源明细表格：文字居中，与上方各展示区保持一致 */
-    .raw-table th,
-    .raw-table td {
-      text-align: center;
-    }
-
-    /* 数据粘贴与展示区表格：文字居中，与节点提取表视觉一致 */
-    .paste-table th,
-    .paste-table td {
-      text-align: center;
-    }
-
-    .paste-table {
-      user-select: none;
-    }
-
-    #pasteGridWrapper.focus-glow {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 1px #3b82f6;
-    }
-
-    .drag-active {
-      border-color: #3b82f6 !important;
-      background-color: #eff6ff !important;
-    }
-
-    [data-theme="dark"] .drag-active {
-      background-color: #1e3a8a !important;
-    }
-
-    /* 上传区点击激活态：边框虚线变蓝、内部浅蓝，与拖拽高亮同色系；
-       :active 负责按下瞬间的即时反馈，.drop-focus 负责点击后的持续激活 */
-    .drop-focus,
-    #dropZoneLarge:active,
-    #dropZoneSmall:active {
-      border-color: #3b82f6 !important;
-      background-color: #eff6ff !important;
-    }
-
-    [data-theme="dark"] .drop-focus,
-    [data-theme="dark"] #dropZoneLarge:active,
-    [data-theme="dark"] #dropZoneSmall:active {
-      background-color: #1e3a8a !important;
-    }
-
-    /* 统一设计系统（以 SQLite 工具为蓝本） */
+    /* ---------- 1. 变量：浅色 ---------- */
     :root {
       --bg: #f8fafc;
       --panel: #ffffff;
       --panel-hover: #f1f5f9;
+      --surface: #f1f5f9;          /* 卡片柔和底（A 区、B 区容器） */
+      --surface-soft: #f8fafc;     /* 卡片内的次级底（B 区容器） */
       --border: #e2e8f0;
       --border-hover: #cbd5e1;
       --text: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #64748b;
+      --text-strong: #1f2937;      /* gray-800：表头主标题 */
+      --text-secondary: #374151;   /* gray-700：区块标题 */
+      --text-muted: #475569;       /* gray-500：状态 / 说明文字 */
+      --weak: #64748b;             /* gray-400：占位符 / 空单元格 / 折叠箭头 */
+      --text-dim: #475569;         /* 表头副标题（节点编码） */
       --primary: #3b82f6;
       --primary-hover: #2563eb;
       --primary-on: #ffffff;
       --primary-light: #eff6ff;
-      --primary-soft: rgba(59,130,246,0.10);
-      --success: #10b981;
-      --danger: #ef4444;
-      --shadow: 0 1px 3px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.03);
+      --primary-soft: rgba(59, 130, 246, .12);
+      --accent-blue: #1d4ed8;
+      --accent-sky: #0369a1;
+      --accent-purple: #6d28d9;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warn: #d97706;
+      --orange: #ea580c;
+
+      --header-row: #f1f5f9;
+      --row-hover: #eff6ff;
+      --table-border: #e2e8f0;
+      --badge-bg: #dbeafe;
+      --badge-ink: #2563eb;
+
+      --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 3px rgba(15, 23, 42, .08);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, .08), 0 4px 6px -2px rgba(0, 0, 0, .04);
+      --scrollbar-track: #f1f5f9;
+      --scrollbar-thumb: #cbd5e1;
+      --scrollbar-thumb-hover: #94a3b8;
+
+      /* 操作按钮配色（浅色：*-300 底 + *-500 边 + *-900 字） */
+      --btn-blue-bg: #93c5fd;     --btn-blue-bg-hover: #60a5fa;  --btn-blue-ink: #1e3a8a;   --btn-blue-border: #3b82f6;
+      --btn-sky-bg: #7dd3fc;      --btn-sky-bg-hover: #38bdf8;   --btn-sky-ink: #0c4a6e;    --btn-sky-border: #0ea5e9;
+      --btn-purple-bg: #c4b5fd;   --btn-purple-bg-hover: #a78bfa; --btn-purple-ink: #581c87; --btn-purple-border: #a855f7;
+      --btn-emerald-bg: #6ee7b7;  --btn-emerald-bg-hover: #34d399; --btn-emerald-ink: #064e3b; --btn-emerald-border: #059669;
+      --btn-amber-bg: #fcd34d;    --btn-amber-bg-hover: #fbbf24;  --btn-amber-ink: #78350f;  --btn-amber-border: #d97706;
+      --btn-gray-bg: #d1d5db;     --btn-gray-bg-hover: #9ca3af;   --btn-gray-ink: #111827;   --btn-gray-border: #9ca3af;
     }
+
+    /* ---------- 2. 变量：深色 ---------- */
     [data-theme="dark"] {
       --bg: #0b1220;
       --panel: #111827;
       --panel-hover: #1e293b;
+      --surface: #1f2937;
+      --surface-soft: rgba(31, 41, 55, .5);
       --border: #1f2937;
       --border-hover: #475569;
       --text: #f1f5f9;
-      --text-secondary: #cbd5e1;
-      --text-muted: #94a3b8;
+      --text-strong: #e5e7eb;
+      --text-secondary: #e5e7eb;
+      --text-muted: #9ca3af;
+      --weak: #6b7280;
+      --text-dim: #d1d5db;
       --primary: #60a5fa;
       --primary-hover: #93c5fd;
       --primary-on: #0b1220;
-      --primary-light: #172554;
-      --primary-soft: rgba(96,165,250,0.12);
-      --success: #34d399;
+      --primary-light: rgba(96, 165, 250, .14);
+      --primary-soft: rgba(96, 165, 250, .22);
+      --accent-blue: #93c5fd;
+      --accent-sky: #7dd3fc;
+      --accent-purple: #c4b5fd;
+      --success: #4ade80;
       --danger: #f87171;
+      --warn: #fbbf24;
+      --orange: #fb923c;
+
+      --header-row: #1f2937;
+      --row-hover: #1e293b;
+      --table-border: #1f2937;
+      --badge-bg: rgba(30, 64, 175, .45);
+      --badge-ink: #93c5fd;
+
+      --shadow: 0 1px 3px rgba(0, 0, 0, .5);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, .5);
+      --scrollbar-track: #1e293b;
+      --scrollbar-thumb: #475569;
+      --scrollbar-thumb-hover: #64748b;
+
+      /* 操作按钮配色（深色：半透明底 + 亮字） */
+      --btn-blue-bg: rgba(30, 64, 175, .3);     --btn-blue-bg-hover: rgba(30, 64, 175, .5);   --btn-blue-ink: #93c5fd;    --btn-blue-border: #1d4ed8;
+      --btn-sky-bg: rgba(12, 74, 110, .3);      --btn-sky-bg-hover: rgba(12, 74, 110, .5);    --btn-sky-ink: #7dd3fc;     --btn-sky-border: #0369a1;
+      --btn-purple-bg: rgba(88, 28, 135, .3);   --btn-purple-bg-hover: rgba(88, 28, 135, .5); --btn-purple-ink: #d8b4fe;  --btn-purple-border: #7e22ce;
+      --btn-emerald-bg: rgba(6, 78, 59, .3);    --btn-emerald-bg-hover: rgba(6, 78, 59, .5);  --btn-emerald-ink: #6ee7b7; --btn-emerald-border: #059669;
+      --btn-amber-bg: rgba(120, 53, 15, .3);    --btn-amber-bg-hover: rgba(120, 53, 15, .5);  --btn-amber-ink: #fcd34d;   --btn-amber-border: #d97706;
+      --btn-gray-bg: #1f2937;                   --btn-gray-bg-hover: #374151;                 --btn-gray-ink: #d1d5db;    --btn-gray-border: #6b7280;
     }
 
-    /* 纯 CSS 暗色主题层（不依赖 Tailwind JIT，确保各环境一致）：直接写明 dark: 变体暗色值，
-       配合 [data-theme="dark"] 即时生效；!important 优先于 Tailwind 生成的同类规则 */
-    [data-theme="dark"] .dark\:bg-gray-800 { background-color: #1f2937 !important; }
-    [data-theme="dark"] .dark\:bg-gray-800\/50 { background-color: rgba(31,41,55,.5) !important; }
-    [data-theme="dark"] .dark\:bg-gray-700 { background-color: #374151 !important; }
-    [data-theme="dark"] .dark\:bg-gray-700\/50 { background-color: rgba(55,65,81,.5) !important; }
-    [data-theme="dark"] .dark\:bg-blue-900 { background-color: #1e40af !important; }
-    [data-theme="dark"] .dark\:bg-blue-900\/30 { background-color: rgba(30,64,175,.3) !important; }
-    [data-theme="dark"] .dark\:bg-blue-900\/50 { background-color: rgba(30,64,175,.5) !important; }
-    [data-theme="dark"] .dark\:bg-sky-900\/30 { background-color: rgba(12,74,110,.3) !important; }
-    [data-theme="dark"] .dark\:bg-sky-900\/50 { background-color: rgba(12,74,110,.5) !important; }
-    [data-theme="dark"] .dark\:bg-purple-900\/30 { background-color: rgba(88,28,135,.3) !important; }
-    [data-theme="dark"] .dark\:bg-purple-900\/50 { background-color: rgba(88,28,135,.5) !important; }
-    [data-theme="dark"] .dark\:bg-emerald-900\/30 { background-color: rgba(6,78,59,.3) !important; }
-    [data-theme="dark"] .dark\:bg-emerald-900\/50 { background-color: rgba(6,78,59,.5) !important; }
-    [data-theme="dark"] .dark\:bg-amber-900\/30 { background-color: rgba(120,53,15,.3) !important; }
-    [data-theme="dark"] .dark\:bg-amber-900\/50 { background-color: rgba(120,53,15,.5) !important; }
-
-    [data-theme="dark"] .dark\:text-gray-200 { color: #e5e7eb !important; }
-    [data-theme="dark"] .dark\:text-gray-300 { color: #d1d5db !important; }
-    [data-theme="dark"] .dark\:text-gray-400 { color: #9ca3af !important; }
-    [data-theme="dark"] .dark\:text-gray-500 { color: #6b7280 !important; }
-    [data-theme="dark"] .dark\:text-gray-600 { color: #4b5563 !important; }
-    [data-theme="dark"] .dark\:text-blue-300 { color: #93c5fd !important; }
-    [data-theme="dark"] .dark\:text-blue-400 { color: #60a5fa !important; }
-    [data-theme="dark"] .dark\:text-sky-300 { color: #7dd3fc !important; }
-    [data-theme="dark"] .dark\:text-purple-300 { color: #d8b4fe !important; }
-    [data-theme="dark"] .dark\:text-emerald-300 { color: #6ee7b7 !important; }
-    [data-theme="dark"] .dark\:text-amber-300 { color: #fcd34d !important; }
-    [data-theme="dark"] .dark\:text-green-400 { color: #4ade80 !important; }
-    [data-theme="dark"] .dark\:text-red-400 { color: #f87171 !important; }
-    [data-theme="dark"] .dark\:text-purple-400 { color: #c084fc !important; }
-    [data-theme="dark"] .dark\:text-amber-400 { color: #fbbf24 !important; }
-
-    [data-theme="dark"] .dark\:border-gray-500 { border-color: #6b7280 !important; }
-    [data-theme="dark"] .dark\:border-gray-600 { border-color: #4b5563 !important; }
-    [data-theme="dark"] .dark\:border-gray-700 { border-color: #374151 !important; }
-    [data-theme="dark"] .dark\:border-blue-700 { border-color: #2563eb !important; }
-    [data-theme="dark"] .dark\:border-blue-800\/50 { border-color: rgba(29,77,216,.5) !important; }
-    [data-theme="dark"] .dark\:border-sky-700 { border-color: #0369a1 !important; }
-    [data-theme="dark"] .dark\:border-purple-700 { border-color: #7e22ce !important; }
-    [data-theme="dark"] .dark\:border-emerald-700 { border-color: #059669 !important; }
-    [data-theme="dark"] .dark\:border-amber-700 { border-color: #d97706 !important; }
-
-    [data-theme="dark"] .dark\:divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #f3f4f6 !important; }
-    [data-theme="dark"] .dark\:divide-gray-700 > :not([hidden]) ~ :not([hidden]) { border-color: #374151 !important; }
-
-    [data-theme="dark"] .dark\:hover\:bg-gray-700:hover { background-color: #374151 !important; }
-    [data-theme="dark"] .dark\:hover\:bg-gray-100:hover { background-color: #f3f4f6 !important; }
-    [data-theme="dark"] .dark\:hover\:bg-blue-100:hover { background-color: #dbeafe !important; }
-    [data-theme="dark"] .dark\:hover\:bg-blue-800:hover { background-color: #1d4ed8 !important; }
-    [data-theme="dark"] .dark\:hover\:bg-blue-900\/50:hover { background-color: rgba(30,64,175,.5) !important; }
-    [data-theme="dark"] .dark\:hover\:bg-sky-900\/50:hover { background-color: rgba(12,74,110,.5) !important; }
-    [data-theme="dark"] .dark\:hover\:bg-purple-900\/50:hover { background-color: rgba(88,28,135,.5) !important; }
-    [data-theme="dark"] .dark\:hover\:bg-emerald-900\/50:hover { background-color: rgba(6,78,59,.5) !important; }
-    [data-theme="dark"] .dark\:hover\:bg-amber-900\/50:hover { background-color: rgba(120,53,15,.5) !important; }
-    [data-theme="dark"] .dark\:hover\:bg-gray-700\/50:hover { background-color: rgba(55,65,81,.5) !important; }
-    [data-theme="dark"] .dark\:hover\:bg-blue-800\/50:hover { background-color: rgba(29,77,216,.5) !important; }
-    [data-theme="dark"] .dark\:hover\:text-blue-300:hover { color: #93c5fd !important; }
-    [data-theme="dark"] .dark\:hover\:text-blue-800:hover { color: #1d4ed8 !important; }
-
-    /* 日间模式可读性优化：
-       Tailwind 原生 gray-300/400/500 在白底上的对比度仅约 1.5:1 / 2.6:1 / 4.8:1，
-       低于 WCAG AA 门槛（正文 4.5:1、非文本 3:1），在 10~12px 小字号下发虚发飘。
-       这里只在「非暗色主题」下把浅灰档位整体上提一档，并统一到与 --bg(#f8fafc)
-       同源的 slate 色系，避免灰中泛黄与页面底色割裂。
-       选择器带 html:not([data-theme="dark"])，暗色主题完全不受影响。 */
-    html:not([data-theme="dark"]) .text-gray-300 { color: #94a3b8; }  /* 纯装饰图标 → 约 3:1 */
-    html:not([data-theme="dark"]) .text-gray-400 { color: #64748b; }  /* 2.6:1 → 4.8:1 */
-    html:not([data-theme="dark"]) .text-gray-500 { color: #475569; }  /* 4.8:1 → 7.4:1 */
-    html:not([data-theme="dark"]) .text-gray-600 { color: #334155; }  /* 7.5:1 → 10.9:1 */
-
-    /* 轮廓与分隔线：白底上原 gray-100/200 近乎隐形，卡片边界糊成一片。
-       divide-* 需沿用 Tailwind 自身的选择器结构，否则特异性不足会被覆盖 */
-    html:not([data-theme="dark"]) .border-gray-100 { border-color: #e2e8f0; }
-    html:not([data-theme="dark"]) .border-gray-200 { border-color: #cbd5e1; }
-    html:not([data-theme="dark"]) .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
-      border-color: #e2e8f0;
-    }
-    html:not([data-theme="dark"]) .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
-      border-color: #cbd5e1;
-    }
-
-    /* 面板层次：原 gray-50(#f9fafb) 与页面底色 #f8fafc 几乎同色，面板浮不起来 */
-    html:not([data-theme="dark"]) .bg-gray-50 { background-color: #f1f5f9; }
-
-    /* 卡片投影：日间下默认 shadow-sm 过淡，补一点带蓝调的阴影让白卡片立起来 */
-    html:not([data-theme="dark"]) .shadow-sm {
-      box-shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 3px rgba(15, 23, 42, .08);
-    }
-
-    /* 输入框占位符：浏览器默认色偏淡且各浏览器不一致，统一到 slate-500 */
-    html:not([data-theme="dark"]) input::placeholder,
-    html:not([data-theme="dark"]) textarea::placeholder {
-      color: #64748b;
-      opacity: 1;
-    }
-
-    /* 表格行悬停高亮：长表格逐行比对时给出明确的视线锚点 */
-    html:not([data-theme="dark"]) .node-table tbody tr:hover,
-    html:not([data-theme="dark"]) .paste-table tbody tr:hover,
-    html:not([data-theme="dark"]) .raw-table tbody tr:hover {
-      background-color: #eff6ff;
-    }
-
+    /* ---------- 3. 基础 ---------- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
     body {
-      background: var(--bg) !important;
-      color: var(--text) !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+      transition: background-color .15s, color .15s;
     }
+    input, button, textarea { font: inherit; color: inherit; }
+    a { color: inherit; text-decoration: none; }
+    summary::-webkit-details-marker { display: none; }
+
+    /* ---------- 4. 布局工具 ---------- */
+    .stack { display: flex; flex-direction: column; gap: 12px; }
+    .col   { display: flex; flex-direction: column; }
+    .col-full { height: 100%; }
+    .row   { display: flex; align-items: center; }
+    .row-between { display: flex; align-items: center; justify-content: space-between; }
+    .row-center  { display: flex; align-items: center; justify-content: center; }
+    .grow  { flex: 1; min-height: 0; }
+    .spacer { margin-left: auto; }
+    /* 间距：语义档位，不沿用原子类命名 */
+    .g-xs { gap: 4px; } .g-sm { gap: 8px; } .g-md { gap: 12px; } .g-lg { gap: 24px; }
+    /* 纵向撑满并两端对齐（A 区右侧：输入框组在上、状态提示在下） */
+    .col-between { display: flex; flex-direction: column; justify-content: space-between; }
+    .hidden { display: none !important; }
+    .relative { position: relative; }
+
+    .grid { display: grid; }
+    /* 两栏：≥1024px 分栏，与 1180px 容器配套 */
+    .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    @media (min-width: 1024px) { .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+    /* 三栏输入 / 按钮组：≥640px 三列，否则两列或一列 */
+    .grid-3 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    @media (min-width: 640px) { .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .grid-fixed-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    /* 条件输入组：小屏单列，≥640px 三列 */
+    .grid-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    @media (min-width: 640px) { .grid-form { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+    /* ---------- 5. 文字 ---------- */
+    .fs-10 { font-size: 10px; } .fs-11 { font-size: 11px; line-height: 16px; }
+    .fs-12 { font-size: 12px; line-height: 16px; } .fs-13 { font-size: 13px; } .fs-14 { font-size: 14px; }
+    .fw-normal { font-weight: 400; } .fw-medium { font-weight: 500; }
+    .fw-semibold { font-weight: 600; } .fw-bold { font-weight: 700; }
+    .c-primary  { color: var(--primary); }
+    .c-strong   { color: var(--text); }
+    .c-secondary{ color: var(--text-secondary); }
+    .c-muted    { color: var(--text-muted); }
+    .c-weak     { color: var(--weak); }
+    .c-success  { color: var(--success); }
+    .c-danger   { color: var(--danger); }
+    .c-warn     { color: var(--warn); }
+    .c-orange   { color: var(--orange); }
+    .c-blue     { color: var(--accent-blue); }
+    .c-sky      { color: var(--accent-sky); }
+    .c-purple   { color: var(--accent-purple); }
+    .ta-left   { text-align: left; }
+    .ta-center { text-align: center; }
+    .truncate { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nowrap { white-space: nowrap; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .select-none { user-select: none; -webkit-user-select: none; }
+    .cursor-pointer { cursor: pointer; }
+
+    /* ---------- 6. 图标 ---------- */
+    .ic { width: 14px; height: 14px; flex-shrink: 0; }
+    .ic-16 { width: 16px; height: 16px; flex-shrink: 0; }
+    .ic-24 { width: 24px; height: 24px; flex-shrink: 0; }
+
+    /* ---------- 7. 顶栏 ---------- */
     .header {
       height: 52px;
       background: var(--panel);
@@ -269,7 +220,8 @@
       top: 0;
       z-index: 100;
       box-shadow: var(--shadow);
-      transition: background .2s, border-color .2s;
+      flex-shrink: 0;
+      transition: background-color .2s, border-color .2s;
     }
     .header-inner {
       width: 100%;
@@ -310,11 +262,16 @@
       color: var(--primary);
       border: 1px solid transparent;
       background: var(--panel-hover);
-      transition: all .15s;
+      transition: background-color .15s, color .15s, border-color .15s, transform .15s;
       flex-shrink: 0;
       margin-left: 4px;
     }
-    .home-btn:hover { background: var(--primary); color: var(--primary-on); border-color: var(--primary); }
+    .home-btn:hover {
+      background: var(--primary);
+      color: var(--primary-on);
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
     .home-btn svg { width: 15px; height: 15px; }
     .icon-btn {
       width: 34px;
@@ -327,11 +284,12 @@
       border: 1px solid transparent;
       background: transparent;
       cursor: pointer;
-      transition: all .15s;
+      transition: background-color .15s, color .15s, border-color .15s;
     }
     .icon-btn:hover { background: var(--panel-hover); color: var(--primary); border-color: var(--border); }
     .icon-btn svg { width: 18px; height: 18px; }
     #iconMoon { display: none; }
+
     .page {
       max-width: 1180px;
       width: 100%;
@@ -345,13 +303,365 @@
       .page { padding: 12px 10px; }
     }
 
-    summary::-webkit-details-marker {
-      display: none;
+    /* ---------- 8. 卡片 ---------- */
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: background-color .2s, border-color .2s;
     }
+    .card--soft { background: var(--surface); }
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    @media (min-width: 640px) { .card-head { padding: 8px 16px; } }
+    .card-head--primary { background: var(--primary-light); border-bottom-color: var(--primary-soft); }
+    .card-head--neutral {
+      background: var(--surface);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color .15s;
+    }
+    .card-head--neutral:hover { background: var(--panel-hover); }
+    .card-body { padding: 8px; }
+    .card-body--lg { padding: 12px; }
+    @media (min-width: 640px) { .card-body--lg { padding: 16px; } }
+    .card-body--soft { padding: 12px; background: var(--surface-soft); }
+    .card-title { display: flex; align-items: center; font-size: 12px; font-weight: 700; line-height: 16px; }
+    /* 区块小标题（卡片正文内的独立标题行，自带下间距） */
+    .section-title {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 20px;
+      margin-bottom: 8px;
+    }
+    /* 与上传框同处一行时不需要下间距 */
+    .section-title--inline { margin-bottom: 0; }
+    /* 卡片正文里的辅助说明文字 */
+    .hint { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; padding-left: 4px; }
+    /* C 区截断提示 */
+    .trunc-note { padding: 12px 12px 8px; font-size: 11px; color: var(--text-muted); }
+    .card-title svg, .section-title svg, .btn-act svg { margin-right: 4px; }
+    .section-title .badge, .card-head--neutral .badge { margin-right: 4px; }
+
+    /* 圆形序号徽标 A / B / C */
+    .badge {
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 16px;
+      flex-shrink: 0;
+      background: var(--badge-bg);
+      color: var(--badge-ink);
+    }
+
+    /* ---------- 9. 表单控件 ---------- */
+    .input {
+      width: 100%;
+      height: 32px;
+      padding: 0 8px;
+      border: 1px solid var(--border-hover);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      font-size: 12px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    @media (min-width: 640px) { .input { height: 36px; } }
+    .input:focus { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+    .input::placeholder { color: var(--weak); opacity: 1; }
+
+    .btn-act {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color .15s, border-color .15s, color .15s;
+    }
+    @media (min-width: 640px) { .btn-act { font-size: 14px; line-height: 20px; } }
+    .btn-act:active { transform: translateY(1px); }
+    .btn-blue    { background: var(--btn-blue-bg);    border-color: var(--btn-blue-border);    color: var(--btn-blue-ink); }
+    .btn-blue:hover    { background: var(--btn-blue-bg-hover); }
+    .btn-sky     { background: var(--btn-sky-bg);     border-color: var(--btn-sky-border);     color: var(--btn-sky-ink); }
+    .btn-sky:hover     { background: var(--btn-sky-bg-hover); }
+    .btn-purple  { background: var(--btn-purple-bg);  border-color: var(--btn-purple-border);  color: var(--btn-purple-ink); }
+    .btn-purple:hover  { background: var(--btn-purple-bg-hover); }
+    .btn-emerald { background: var(--btn-emerald-bg); border-color: var(--btn-emerald-border); color: var(--btn-emerald-ink); }
+    .btn-emerald:hover { background: var(--btn-emerald-bg-hover); }
+    .btn-amber   { background: var(--btn-amber-bg);   border-color: var(--btn-amber-border);   color: var(--btn-amber-ink); }
+    .btn-amber:hover   { background: var(--btn-amber-bg-hover); }
+    .btn-gray    { background: var(--btn-gray-bg);    border-color: var(--btn-gray-border);    color: var(--btn-gray-ink); }
+    .btn-gray:hover    { background: var(--btn-gray-bg-hover); }
+
+    /* ---------- 10. 上传区 ---------- */
+    .dropzone {
+      position: relative;
+      height: 192px;
+      border: 2px dashed var(--border-hover);
+      border-radius: 6px;
+      padding: 12px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      cursor: pointer;
+      transition: background-color .15s, border-color .15s;
+    }
+    .dropzone:hover { background: var(--panel); }
+    .dropzone { margin-bottom: 8px; }
+    .dropzone--sm {
+      position: relative;
+      width: 28px;
+      height: 28px;
+      border: 1px dashed var(--border-hover);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background-color .15s, border-color .15s;
+    }
+    .dropzone--sm:hover { background: var(--panel); }
+    .file-input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .dropzone-text {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    /* 拖拽 / 点击激活态 */
+    .drag-active,
+    .drop-focus,
+    #dropZoneLarge:active,
+    #dropZoneSmall:active {
+      border-color: var(--primary) !important;
+      background-color: var(--primary-light) !important;
+    }
+
+    /* 表选择面板 */
+    .table-panel {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      border-radius: 4px;
+      padding: 8px;
+      overflow-y: auto;
+      max-height: 192px;
+    }
+    .panel-title { font-size: 12px; line-height: 16px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+    .table-item { display: flex; align-items: center; gap: 4px; min-width: 0; }
+    .table-checkbox { width: 14px; height: 14px; accent-color: var(--primary); border-radius: 4px; flex-shrink: 0; }
+    .table-item label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ---------- 11. 表格 ---------- */
+    .tbl { width: 100%; min-width: 100%; border-collapse: collapse; font-size: 12px; line-height: 16px; }
+    .tbl th, .tbl td {
+      padding: 6px 12px;
+      white-space: nowrap;
+      text-align: center;
+    }
+    /* 边框只保留「右侧竖线 + 表头下横线」，与旧版一致：
+       多画上下/左边框会让表格整体高出 2px，并改变首列起始位置 */
+    .tbl th { border: 0 solid var(--table-border); border-width: 0 1px 1px 0; }
+    .tbl td { border: 0 solid var(--table-border); border-width: 0 1px 0 0; }
+    .tbl th {
+      background: var(--header-row);
+      color: var(--text);
+      font-weight: 600;
+    }
+    .tbl td { color: var(--text-secondary); }
+    .tbl thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      box-shadow: var(--shadow);
+    }
+    .tbl tbody tr { transition: background-color .15s; }
+    .tbl tbody tr:hover { background: var(--row-hover); }
+    .tbl td.is-empty { color: var(--weak); }
+    @media (min-width: 640px) { .tbl { font-size: 13px; } }
+
+    /* 节点提取表：窄列 + 上下双行表头 */
+    .tbl--nodes th { min-width: 100px; padding: 8px 12px; font-weight: 400; }
+    @media (min-width: 640px) { .tbl--nodes th { min-width: 120px; } }
+    .th-main { font-weight: 700; color: var(--text-strong); }
+    .th-sub  { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+    @media (min-width: 640px) { .th-sub { font-size: 11px; } }
+    .tbl--nodes td { padding: 8px 12px; vertical-align: middle; }
+    .cell-time { color: var(--text); font-weight: 500; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    /* 粘贴展示表：表头左对齐 */
+    .tbl--paste { font-size: 12px; line-height: 1.5; }
+    .tbl--paste th { text-align: left; padding: 6px 12px; font-weight: 600; color: var(--text); }
+    .tbl--paste td { padding: 6px 12px; border-bottom-width: 1px; }
+
+    /* 原始数据明细表：更小字号 */
+    .tbl--raw { font-size: 11px; line-height: 1.5; }
+    @media (min-width: 640px) { .tbl--raw { font-size: 12px; line-height: 16px; } }
+    .tbl--raw th { padding: 8px 12px; }
+    .tbl--raw td { text-align: center; border-width: 0; }
+    .tbl--raw tbody tr + tr td { border-top-width: 1px; }
+
+    .table-scroll { overflow: auto; }
+
+    /* 展开「余下 N 条」按钮 */
+    .more-btn {
+      display: block;
+      margin-top: 4px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      text-align: center;
+      background: var(--primary-light);
+      color: var(--primary);
+      transition: background-color .15s;
+    }
+    .more-btn:hover { background: var(--primary-soft); }
+    details.more-row > summary { outline: none; list-style: none; text-align: center; cursor: pointer; }
+    .more-divider {
+      margin-top: 4px;
+      padding-top: 4px;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ---------- 12. 状态提示 / 日期复制 ---------- */
+    .status {
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      text-align: center;
+      line-height: 16px;
+      color: var(--text-muted);
+    }
+    .date-display {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      cursor: pointer;
+      user-select: none;
+      transition: color .15s;
+    }
+    .date-display:hover { color: var(--primary-hover); }
+    .copy-icon { opacity: .8; transition: opacity .15s; }
+    .date-display:hover .copy-icon { opacity: 1; }
+    .check-icon { color: var(--success); }
+
+    /* ---------- 13. 粘贴网格 ---------- */
+    .paste-box {
+      position: relative;
+      width: 100%;
+      min-height: 140px;
+      max-height: 60vh;
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--border-hover);
+      border-radius: 6px;
+      cursor: text;
+      transition: box-shadow .15s, border-color .15s;
+    }
+    .paste-box.focus-glow {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+    .paste-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px;
+      font-size: 12px;
+      color: var(--weak);
+      pointer-events: none;
+      user-select: none;
+    }
+    .paste-placeholder svg { margin-bottom: 8px; color: var(--weak); }
+
+    /* ---------- 14. 折叠箭头 / 轻提示 ---------- */
+    .chev {
+      display: inline-block;
+      font-size: 12px;
+      line-height: 16px;
+      color: var(--weak);
+      transition: transform .2s;
+    }
+    .chev--up { transform: rotate(-90deg); }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 50;
+      padding: 6px 12px;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, .85);
+      color: #fff;
+      font-size: 12px;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transform: translateX(-50%);
+      transition: opacity .2s;
+      pointer-events: none;
+    }
+    [data-theme="dark"] .toast { background: rgba(226, 232, 240, .92); color: #0b1220; }
+
+    /* ---------- 15. 滚动条 ---------- */
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
   </style>
 </head>
 
-<body class="font-sans min-h-screen flex flex-col transition-colors duration-300">
+<body>
   <header class="header">
     <div class="header-inner">
       <div class="logo">
@@ -376,157 +686,135 @@
   </header>
   <main class="page">
 
-    <div class="flex flex-col gap-3">
+    <div class="stack">
       <!-- 通道 A：数据库源输入区 -->
-      <div
-        class="border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 sm:p-4 shadow-sm flex flex-col transition-colors duration-300">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 items-stretch">
-          <div class="flex flex-col h-full">
-            <div class="flex items-center gap-1 mb-2">
-              <span
-                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold shrink-0">A</span>
-              <span class="text-sm font-bold text-gray-700 dark:text-gray-200 leading-5 shrink-0 whitespace-nowrap">导入数据库 (可选)</span>
-              <div id="dropZoneSmall"
-                class="hidden relative h-7 w-7 border border-dashed border-gray-400 dark:border-gray-500 rounded flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 shrink-0"
-                title="点击选择 .db 文件，或将文件拖拽至此导入">
-                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 pointer-events-none" fill="none"
-                  stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <input type="file" id="dbFilesSmall" multiple accept=".db,.sqlite"
-                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+      <div class="card card--soft">
+        <div class="card-body--lg">
+          <div class="grid-2">
+            <div class="col col-full">
+              <div class="row g-xs section-title">
+                <span class="badge">A</span>
+                <span class="section-title section-title--inline c-secondary nowrap">导入数据库 (可选)</span>
+                <div id="dropZoneSmall" class="dropzone--sm hidden"
+                  title="点击选择 .db 文件，或将文件拖拽至此导入">
+                  <svg class="ic-16 c-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <input type="file" id="dbFilesSmall" multiple accept=".db,.sqlite" class="file-input" />
+                </div>
+                <span id="fileInfo" class="spacer truncate fs-12 fw-bold c-primary hidden"></span>
               </div>
-              <span id="fileInfo" class="ml-auto min-w-0 truncate text-xs text-blue-600 dark:text-blue-400 font-bold hidden"></span>
-            </div>
-            <div id="dropZoneLarge"
-              class="relative h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded px-2 py-3 flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800 mb-2">
-              <span class="text-xs text-gray-600 dark:text-gray-400 font-medium inline-flex items-center gap-1">
-                <svg class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor"
-                  viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                  aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                点击选择 .db 文件，或将文件拖拽至此导入</span>
-              <input type="file" id="dbFilesLarge" multiple accept=".db,.sqlite"
-                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-            </div>
-            <div id="tableSelectionSection"
-              class="hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded p-2 overflow-y-auto max-h-48 custom-scrollbar">
-              <p class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">
-                勾选要提取的表:
-              </p>
-              <div id="tableList" class="grid grid-cols-3 gap-1.5"></div>
-            </div>
-          </div>
-          <div class="flex flex-col h-full">
-            <p class="text-sm font-bold text-gray-600 dark:text-gray-300 mb-2 leading-5 flex items-center"><svg
-                class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>节点提取条件与操作</p>
-            <div class="flex-1 flex flex-col justify-between gap-3">
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <input type="text" id="startTime" placeholder="开始:2026-06-08 08:08:08"
-                  title="开始时间格式:2026-06-08 08:08:08"
-                  class="w-full h-8 sm:h-9 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
-                <input type="text" id="endTime" placeholder="结束:2026-09-09 09:09:09" title="结束时间格式:2026-09-09 09:09:09"
-                  class="w-full h-8 sm:h-9 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
-                <input type="text" id="aproCode" placeholder="机位号:933" title="输入 aproCode"
-                  class="w-full h-8 sm:h-9 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
+              <div id="dropZoneLarge" class="dropzone">
+                <span class="dropzone-text">
+                  <svg class="ic c-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  点击选择 .db 文件，或将文件拖拽至此导入</span>
+                <input type="file" id="dbFilesLarge" multiple accept=".db,.sqlite" class="file-input" />
               </div>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <button id="btnParseNear"
-                  class="bg-blue-300 hover:bg-blue-400 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-900 dark:text-blue-300 border border-blue-500 dark:border-blue-700 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                    </path>
-                  </svg>近机位提取
-                </button>
-                <button id="btnParseRemote"
-                  class="bg-sky-300 hover:bg-sky-400 dark:bg-sky-900/30 dark:hover:bg-sky-900/50 text-sky-900 dark:text-sky-300 border border-sky-500 dark:border-sky-700 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                    </path>
-                  </svg>远机位提取
-                </button>
-                <button id="btnExport"
-                  class="bg-purple-300 hover:bg-purple-400 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-900 dark:text-purple-300 border border-purple-500 dark:border-purple-700 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                  </svg>导出结果表
-                </button>
-                <button id="btnCopy"
-                  class="bg-emerald-300 hover:bg-emerald-400 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 text-emerald-900 dark:text-emerald-300 border border-emerald-600 dark:border-emerald-700 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-                    </path>
-                  </svg>复制时间点
-                </button>
-                <button id="btnCopyTableNums"
-                  class="bg-amber-300 hover:bg-amber-400 dark:bg-amber-900/30 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-300 border border-amber-600 dark:border-amber-700 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center"
-                  title="复制镜头号">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                    </path>
-                  </svg>复制镜头号
-                </button>
-                <button id="btnClear"
-                  class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-300 border border-gray-400 dark:border-gray-500 text-xs sm:text-sm font-medium py-2 px-3 rounded transition-colors flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                    </path>
-                  </svg>清空结果集
-                </button>
+              <div id="tableSelectionSection" class="table-panel custom-scrollbar hidden">
+                <p class="panel-title">勾选要提取的表:</p>
+                <div id="tableList" class="grid-fixed-3"></div>
               </div>
-              <div id="queryStatus" class="mb-2 text-xs text-gray-500 dark:text-gray-400 font-medium text-center">
-                请配置数据并选择提取模式
+            </div>
+            <div class="col col-full">
+              <p class="section-title c-secondary">
+                <svg class="ic" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>节点提取条件与操作</p>
+              <div class="grow col-between g-md">
+                <div class="grid-form">
+                  <input type="text" id="startTime" placeholder="开始:2026-06-08 08:08:08"
+                    title="开始时间格式:2026-06-08 08:08:08" class="input" />
+                  <input type="text" id="endTime" placeholder="结束:2026-09-09 09:09:09" title="结束时间格式:2026-09-09 09:09:09"
+                    class="input" />
+                  <input type="text" id="aproCode" placeholder="机位号:933" title="输入 aproCode" class="input" />
+                </div>
+                <div class="grid-3">
+                  <button id="btnParseNear" class="btn-act btn-blue">
+                    <svg class="ic" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                      </path>
+                    </svg>近机位提取
+                  </button>
+                  <button id="btnParseRemote" class="btn-act btn-sky">
+                    <svg class="ic" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                      </path>
+                    </svg>远机位提取
+                  </button>
+                  <button id="btnExport" class="btn-act btn-purple">
+                    <svg class="ic" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                    </svg>导出结果表
+                  </button>
+                  <button id="btnCopy" class="btn-act btn-emerald">
+                    <svg class="ic" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                      </path>
+                    </svg>复制时间点
+                  </button>
+                  <button id="btnCopyTableNums" class="btn-act btn-amber" title="复制镜头号">
+                    <svg class="ic" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                      </path>
+                    </svg>复制镜头号
+                  </button>
+                  <button id="btnClear" class="btn-act btn-gray">
+                    <svg class="ic" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                      </path>
+                    </svg>清空结果集
+                  </button>
+                </div>
+                <div id="queryStatus" class="status">
+                  请配置数据并选择提取模式
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-col gap-3">
+      <div class="stack">
         <!-- 解析节点提取表 (固定展开) -->
-        <div
-          class="border border-blue-200 dark:border-blue-800/50 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
-          <div
-            class="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 border-b border-blue-100 dark:border-blue-800/50 flex justify-between items-center">
-            <div class="flex items-center space-x-6">
-              <span class="text-xs font-bold text-blue-800 dark:text-blue-300 inline-flex items-center"><svg
-                  class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="card">
+          <div class="card-head card-head--primary">
+            <div class="row g-lg">
+              <span class="card-title c-blue">
+                <svg class="ic" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                 </svg>各节点时间提取结果 (左右滑动查看)</span>
-              <span id="extractedDateDisplay"
-                class="group inline-flex items-center gap-1 text-[13px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hidden hover:text-blue-800 dark:hover:text-blue-300 transition-colors select-none"
-                title="单击复制日期">
+              <span id="extractedDateDisplay" class="date-display hidden" title="单击复制日期">
                 <span class="date-text"></span>
-                <svg class="copy-icon w-3.5 h-3.5 opacity-80 group-hover:opacity-100" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="copy-icon ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                 </svg>
-                <svg class="check-icon hidden w-3.5 h-3.5 text-green-500 dark:text-green-400" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="check-icon ic hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                  stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
               </span>
             </div>
           </div>
-          <div class="overflow-x-auto custom-scrollbar p-2">
-            <table class="node-table min-w-full border-collapse text-center text-xs sm:text-[13px]">
+          <div class="table-scroll custom-scrollbar card-body">
+            <table class="tbl tbl--nodes" id="nodeTable">
               <thead id="exactTableHeader"></thead>
               <tbody id="exactTableBody"></tbody>
             </table>
@@ -534,74 +822,58 @@
         </div>
 
         <!-- 通道 B：数据粘贴与回显展示区（默认展开） -->
-        <div
-          class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
-          <div id="pasteToggleBtn"
-            class="bg-gray-50 dark:bg-gray-700/50 px-3 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            <div class="flex items-center">
-              <span
-                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-1">B</span>
-              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">数据粘贴与回显展示区 (<span
-                  id="filteredTextCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>行)</span>
+        <div class="card">
+          <div id="pasteToggleBtn" class="card-head card-head--neutral">
+            <div class="row">
+              <span class="badge">B</span>
+              <span class="fs-12 fw-bold c-secondary">数据粘贴与回显展示区 (<span id="filteredTextCount"
+                  class="c-primary fw-bold">0</span>行)</span>
             </div>
-            <span id="pasteToggleIcon"
-              class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200">▼</span>
+            <span id="pasteToggleIcon" class="chev">▼</span>
           </div>
-          <div id="pasteContainer" class="flex flex-col p-3 bg-gray-50/50 dark:bg-gray-800/50">
-            <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2 pl-1">
+          <div id="pasteContainer" class="col card-body--lg card-body--soft">
+            <p class="hint">
               点击下方网格区域粘贴测试数据，或查看数据库提取后的回显结果
             </p>
             <textarea id="pasteArea" class="hidden"></textarea>
 
-            <div id="pasteGridWrapper" tabindex="0"
-              class="w-full min-h-[140px] max-h-[60vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded overflow-auto custom-scrollbar relative cursor-text transition-shadow">
-              <div id="pastePlaceholder"
-                class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 text-xs text-center p-4 pointer-events-none select-none">
-                <svg class="w-6 h-6 mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor"
-                  viewBox="0 0 24 24">
+            <div id="pasteGridWrapper" tabindex="0" class="paste-box custom-scrollbar">
+              <div id="pastePlaceholder" class="paste-placeholder">
+                <svg class="ic-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
                   </path>
                 </svg>
                 点击此处激活<br />按 Ctrl+V 粘贴数据
               </div>
-              <table id="pasteVisualTable" class="paste-table min-w-full text-[12px] border-collapse hidden">
-                <thead id="pasteVisualThead" class="bg-gray-50 dark:bg-gray-700 sticky top-0 shadow-sm z-10"></thead>
-                <tbody id="pasteVisualTbody" class="divide-y divide-gray-100 dark:divide-gray-700"></tbody>
+              <table id="pasteVisualTable" class="tbl tbl--paste hidden">
+                <thead id="pasteVisualThead"></thead>
+                <tbody id="pasteVisualTbody"></tbody>
               </table>
             </div>
           </div>
         </div>
 
         <!-- 原始查询数据明细 (默认折叠) -->
-        <div
-          class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
-          <div id="rawToggleBtn"
-            class="bg-gray-50 dark:bg-gray-700/50 px-3 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            <span class="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center">
-              <span
-                class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold mr-1">C</span>
-              查看原始数据来源明细 (<span id="rawCount" class="text-blue-600 dark:text-blue-400 font-bold">0</span>
-              条)
+        <div class="card">
+          <div id="rawToggleBtn" class="card-head card-head--neutral">
+            <span class="fs-12 fw-bold c-secondary row">
+              <span class="badge">C</span>
+              查看原始数据来源明细 (<span id="rawCount" class="c-primary fw-bold">0</span> 条)
             </span>
-            <span id="rawToggleIcon"
-              class="text-gray-400 dark:text-gray-500 text-xs transform transition-transform duration-200 -rotate-90">▼</span>
+            <span id="rawToggleIcon" class="chev chev--up">▼</span>
           </div>
-          <div id="rawContainer" class="hidden overflow-auto custom-scrollbar">
-            <p id="rawTruncNote" class="hidden text-[11px] text-gray-500 dark:text-gray-400 px-3 pt-3 pb-2"></p>
-            <table
-              class="raw-table min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-[11px] sm:text-xs border-collapse"
-              id="rawTable">
-              <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10 shadow-sm" id="rawTableHeader"></thead>
-              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700" id="rawTableBody">
-              </tbody>
+          <div id="rawContainer" class="table-scroll custom-scrollbar hidden">
+            <p id="rawTruncNote" class="trunc-note hidden"></p>
+            <table class="tbl tbl--raw" id="rawTable">
+              <thead id="rawTableHeader"></thead>
+              <tbody id="rawTableBody"></tbody>
             </table>
           </div>
         </div>
       </div>
     </div>
   </main>
-
   <script>
     // 常量与正则预编译
     const TIME_REGEX = /(?:\d{4}-\d{2}-\d{2}\s)?\d{2}:\d{2}:\d{2}/;
@@ -834,10 +1106,10 @@
         sqlEngine = await initSqlJs(config);
         renderEmptyTable("near");
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-green-600 dark:text-green-400 font-bold">系统引擎已就绪</span>`;
+          `<span class="c-success fw-bold">系统引擎已就绪</span>`;
       } catch (e) {
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-red-500 font-bold">引擎加载失败，请检查网络环境</span>`;
+          `<span class="c-danger fw-bold">引擎加载失败，请检查网络环境</span>`;
       }
     }
     init();
@@ -910,8 +1182,8 @@
       // 避免长文本把左侧标题挤扁
       el.title = msg;
       el.className = isError
-        ? "ml-auto min-w-0 truncate text-xs font-bold text-red-500 dark:text-red-400"
-        : "ml-auto min-w-0 truncate text-xs font-bold text-blue-600 dark:text-blue-400";
+        ? "spacer truncate fs-12 fw-bold c-danger"
+        : "spacer truncate fs-12 fw-bold c-primary";
     }
 
     async function handleFiles(files) {
@@ -968,9 +1240,9 @@
       // 一次性拼接后写入 innerHTML，避免逐项 appendChild 触发多次重排
       let listHtml = "";
       tableMap.forEach((files, tableName) => {
-        listHtml += `<div class="flex items-center space-x-1">
-        <input type="checkbox" value="${tableName}" class="table-checkbox w-3.5 h-3.5 text-blue-600 rounded" checked>
-        <label class="text-xs text-gray-700 dark:text-gray-300 cursor-pointer truncate" title="${tableName}" onclick="this.previousElementSibling.click()">
+        listHtml += `<div class="table-item">
+        <input type="checkbox" value="${tableName}" class="table-checkbox" checked>
+        <label class="cursor-pointer truncate" title="${tableName}" onclick="this.previousElementSibling.click()">
           ${tableName}
         </label>
       </div>`;
@@ -1019,12 +1291,12 @@
       for (let i = 0; i < order.length; i++) {
         const code = order[i];
         theadRows.push(`
-          <th class="border-r border-b border-gray-200 dark:border-gray-600 px-3 py-2 font-normal bg-gray-50 dark:bg-gray-700 min-w-[100px] sm:min-w-[120px]">
-          <div class="font-bold text-gray-800 dark:text-gray-200">${dict[code]}</div>
-          <div class="text-gray-500 dark:text-gray-300 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
-        </th>`);
+          <th>
+            <div class="th-main">${dict[code]}</div>
+            <div class="th-sub">${code}</div>
+          </th>`);
         tbodyRows.push(
-          `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-400 dark:text-gray-500">-</td>`,
+          `<td class="is-empty">-</td>`,
         );
       }
       theadRows.push("</tr>");
@@ -1047,15 +1319,14 @@
         const container = document.getElementById("pasteContainer");
         const icon = document.getElementById("pasteToggleIcon");
         container.classList.toggle("hidden");
-        container.classList.toggle("flex");
-        icon.classList.toggle("-rotate-90");
+        icon.classList.toggle("chev--up");
       });
 
     document.getElementById("rawToggleBtn").addEventListener("click", () => {
       const container = document.getElementById("rawContainer");
       const icon = document.getElementById("rawToggleIcon");
       container.classList.toggle("hidden");
-      icon.classList.toggle("-rotate-90");
+      icon.classList.toggle("chev--up");
     });
 
     // B 区是否正处于「数据库提取结果」展示状态（此状态下禁用粘贴，清空后恢复）
@@ -1080,7 +1351,7 @@
       // 数据库数据展示期间不触发粘贴，需先点击「清空结果集」恢复
       if (bAreaDbDataActive) {
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-amber-500 dark:text-amber-400">当前为数据库提取结果，请先点击「清空结果集」后再粘贴</span>`;
+          `<span class="c-warn">当前为数据库提取结果，请先点击「清空结果集」后再粘贴</span>`;
         return;
       }
       const text = (e.clipboardData || window.clipboardData).getData(
@@ -1094,13 +1365,13 @@
           : text;
 
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-blue-500 dark:text-blue-400">正在渲染数据，请稍候</span>`;
+          `<span class="c-primary">正在渲染数据，请稍候</span>`;
 
         // 异步释放主线程，防止浏览器卡死
         setTimeout(() => {
           renderPasteTableGrid();
           document.getElementById("queryStatus").innerHTML =
-            `<span class="text-green-600 dark:text-green-400">数据已粘贴至网格，请点击提取按钮</span>`;
+            `<span class="c-success">数据已粘贴至网格，请点击提取按钮</span>`;
         }, 50);
       });
 
@@ -1119,7 +1390,7 @@
         t = document.createElement("div");
         t.id = "copyToast";
         t.className =
-          "fixed left-1/2 bottom-6 -translate-x-1/2 z-50 px-3 py-1.5 rounded-md bg-gray-900/85 text-white text-xs shadow-lg transition-opacity duration-200 pointer-events-none";
+          "toast";
         document.body.appendChild(t);
       }
       t.textContent = msg;
@@ -1245,7 +1516,7 @@
       for (let k = 0; k < colKeep.length; k++) {
         const h = colKeep[k];
         theadRows.push(
-          `<th class="border-b border-r border-gray-200 dark:border-gray-600 px-3 py-1.5 font-semibold text-gray-700 dark:text-gray-200 text-left bg-gray-50 dark:bg-gray-700 shadow-sm sticky top-0">${headers[h]}</th>`,
+          `<th>${headers[h]}</th>`,
         );
       }
       theadRows.push("</tr>");
@@ -1263,11 +1534,11 @@
       for (let i = startRowIdx; i < displayLines.length; i++) {
         const cols = displayLines[i].split("\t");
         let trHtml =
-          '<tr class="hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors">';
+          '<tr>';
         for (let k = 0; k < colKeep.length; k++) {
           const j = colKeep[k];
           const cellVal = cols[j] !== undefined ? cols[j].trim() : "";
-          trHtml += `<td class="border-b border-r border-gray-100 dark:border-gray-700 px-3 py-1.5 text-gray-700 dark:text-gray-200 whitespace-nowrap">${cellVal}</td>`;
+          trHtml += `<td>${cellVal}</td>`;
         }
         trHtml += "</tr>";
         tbodyLines[i - startRowIdx] = trHtml;
@@ -1346,7 +1617,7 @@
       // 第一道门：无数据来源（未勾选数据表 且 未手动粘贴）时，直接提示，不再继续
       if (selectedTables.length === 0 && !pasteText) {
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-red-500 font-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
+          `<span class="c-danger fw-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
         renderEmptyTable(currentMode);
         return;
       }
@@ -1354,7 +1625,7 @@
       // 查询条件必填：开始时间 / 结束时间 / 机位号 三者都需填写，缺一不可
       if (!startTime || !endTime || !aproCode) {
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-red-500 font-bold">请完整填写查询条件（开始时间、结束时间、机位号 均需填写）</span>`;
+          `<span class="c-danger fw-bold">请完整填写查询条件（开始时间、结束时间、机位号 均需填写）</span>`;
         renderEmptyTable(currentMode);
         return;
       }
@@ -1364,7 +1635,7 @@
       lastExtractionFilter = { startTime, endTime, aproCode };
 
       document.getElementById("queryStatus").innerHTML =
-        `<span class="text-blue-500 dark:text-blue-400">正在解析并合并数据流，请稍候</span>`;
+        `<span class="c-primary">正在解析并合并数据流，请稍候</span>`;
 
       // 使用 setTimeout 释放主线程以渲染 loading 状态
       setTimeout(() => {
@@ -1579,10 +1850,10 @@
         if (!hasDataParsed) {
           if (selectedTables.length === 0 && !pasteText) {
             document.getElementById("queryStatus").innerHTML =
-              `<span class="text-red-500 font-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
+              `<span class="c-danger fw-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
           } else {
             document.getElementById("queryStatus").innerHTML =
-              `<span class="text-orange-500 font-bold">未在数据中提取到匹配【${label}】的有效节点</span>`;
+              `<span class="c-orange fw-bold">未在数据中提取到匹配【${label}】的有效节点</span>`;
           }
           // 无数据时清空结果表，避免“未输入却仍显示上一次内容”的观感
           renderEmptyTable(currentMode);
@@ -1635,15 +1906,14 @@
               displayHtml = timesToDisplay.join("<br>");
             } else {
               displayHtml = `
-              <details class="cursor-pointer group">
-                <summary class="outline-none list-none text-center" style="list-style: none;">
+              <details class="more-row">
+                <summary>
                   <div>${timesToDisplay[0]}</div>
-                  <div class="text-[10px] text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 rounded px-1.5 py-0.5 mt-1 block text-center group-open:hidden hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">▼ 展开余下 ${timesToDisplay.length - 1} 条</div>
+                  <div class="more-btn">▼ 展开余下 ${timesToDisplay.length - 1} 条</div>
                 </summary>
-                <div class="mt-1 pt-1 border-t border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 leading-relaxed">
+                <div class="more-divider">
                   ${timesToDisplay.slice(1).join("<br>")}
-                  <div class="text-[10px] text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 rounded px-1.5 py-0.5 mt-2 block text-center hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors"
-                       onclick="this.closest('details').removeAttribute('open')">▲ 收起</div>
+                  <div class="more-btn" onclick="this.closest('details').removeAttribute('open')">▲ 收起</div>
                 </div>
               </details>
             `;
@@ -1653,12 +1923,12 @@
           }
 
           theadRows.push(`
-          <th class="border-r border-b border-gray-200 dark:border-gray-600 px-3 py-2 font-normal bg-gray-50 dark:bg-gray-700 min-w-[100px] sm:min-w-[120px]">
-            <div class="font-bold text-gray-800 dark:text-gray-200">${dict[code]}</div>
-            <div class="text-gray-500 dark:text-gray-300 text-[10px] sm:text-[11px] mt-0.5">${code}</div>
+          <th>
+            <div class="th-main">${dict[code]}</div>
+            <div class="th-sub">${code}</div>
           </th>`);
           tbodyRows.push(
-            `<td class="border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 align-middle font-mono font-medium">${displayHtml}</td>`,
+            `<td class="cell-time">${displayHtml}</td>`,
           );
         });
 
@@ -1692,10 +1962,10 @@
 
         const appidNote =
           appidExcluded > 0
-            ? ` <span class="text-gray-500 dark:text-gray-400">（已按 appid=${mode} 过滤掉 ${appidExcluded} 行异类数据）</span>`
+            ? ` <span class="c-muted">（已按 appid=${mode} 过滤掉 ${appidExcluded} 行异类数据）</span>`
             : "";
         document.getElementById("queryStatus").innerHTML =
-          `<span class="text-${mode === "near" ? "blue" : "sky"}-600 dark:text-${mode === "near" ? "blue" : "sky"}-400 font-bold">[${label}]</span> 解析完毕，提取到 <span class="text-red-600 dark:text-red-400 font-bold">${hitCount}</span> 个节点${appidNote}`;
+          `<span class="c-${mode === "near" ? "blue" : "sky"} fw-bold">[${label}]</span> 解析完毕，提取到 <span class="c-danger fw-bold">${hitCount}</span> 个节点${appidNote}`;
       }, 50); // 让出主线程完毕
     }
 
@@ -1756,7 +2026,7 @@
               ? "表名"
               : col;
         theadRows.push(
-          `<th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 whitespace-nowrap border-b border-gray-200 dark:border-gray-600">${title}</th>`,
+          `<th>${title}</th>`,
         );
       });
       theadRows.push("</tr>");
@@ -1766,17 +2036,17 @@
       for (let i = 0; i < displayData.length; i++) {
         const row = displayData[i];
         let trHtml =
-          '<tr class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">';
+          '<tr>';
         for (let j = 0; j < finalColumns.length; j++) {
           let cellData = row[finalColumns[j]];
           if (cellData === null || cellData === undefined) {
-            trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-400 dark:text-gray-500">-</td>`;
+            trHtml += `<td class="is-empty">-</td>`;
           } else {
             const textStr = String(cellData);
             if (textStr.length > 40) {
-              trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700 dark:text-gray-200" title="${textStr}">${textStr.substring(0, 40)}...</td>`;
+              trHtml += `<td title="${textStr}">${textStr.substring(0, 40)}...</td>`;
             } else {
-              trHtml += `<td class="px-3 py-1.5 whitespace-nowrap text-gray-700 dark:text-gray-200">${textStr}</td>`;
+              trHtml += `<td>${textStr}</td>`;
             }
           }
         }
@@ -1848,7 +2118,7 @@
         const successful = document.execCommand("copy");
         if (successful) {
           document.getElementById("queryStatus").innerHTML =
-            `<span class="text-green-600 dark:text-green-400 font-bold">时间行已成功复制，快去粘贴吧</span>`;
+            `<span class="c-success fw-bold">时间行已成功复制，快去粘贴吧</span>`;
         } else {
           alert("写入失败，请手动框选结果复制");
         }
@@ -1880,7 +2150,7 @@
       link.click();
       document.body.removeChild(link);
       document.getElementById("queryStatus").innerHTML =
-        `<span class="text-purple-600 dark:text-purple-400 font-bold">CSV数据已成功导出</span>`;
+        `<span class="c-purple fw-bold">CSV数据已成功导出</span>`;
     });
 
     // 复制镜头编号（一行一个）排序规则：
@@ -2029,7 +2299,7 @@
           const successful = document.execCommand("copy");
           if (successful) {
             document.getElementById("queryStatus").innerHTML =
-              `<span class="text-amber-600 dark:text-amber-400 font-bold">已复制 ${uniqNums.length} 个镜头编号</span>`;
+              `<span class="c-warn fw-bold">已复制 ${uniqNums.length} 个镜头编号</span>`;
           } else {
             alert("写入失败，请手动复制");
           }
@@ -2052,49 +2322,6 @@
   });
   </script>
 
-  <!-- 返回主页图标按钮样式 -->
-  <style>
-    .home-back-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      color: #fff;
-      background: rgba(255, 255, 255, 0.16);
-      border: 1px solid transparent;
-      text-decoration: none;
-      flex-shrink: 0;
-      transition:
-        background 0.2s ease,
-        transform 0.2s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .home-back-icon:hover {
-      background: rgba(255, 255, 255, 0.28);
-      transform: translateY(-1px);
-    }
-
-    .home-back-icon svg {
-      width: 18px;
-      height: 18px;
-      display: block;
-    }
-
-    .title-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 5px;
-    }
-
-    .title-row h1 {
-      margin-bottom: 0;
-    }
-  </style>
 </body>
 
 </html>
