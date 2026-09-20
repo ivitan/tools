@@ -18,10 +18,53 @@
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" id="themeColorMeta" content="#ffffff">
+<script>
+/* 移动端状态栏配色同步（mobile-native §10）：监听 data-theme 变化，写入页面实际顶部背景色 */
+(function () {
+  function upd() {
+    var meta = document.querySelector('meta[name="theme-color"]'); if (!meta) return;
+    var el = document.querySelector('.header, header') || document.body; if (!el) return;
+    var bg = getComputedStyle(el).backgroundColor;
+    if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') { el = document.body; if (el) bg = getComputedStyle(el).backgroundColor; }
+    if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') meta.content = bg;
+  }
+  upd();
+  document.addEventListener('DOMContentLoaded', upd);
+  if (window.MutationObserver) new MutationObserver(upd).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', upd);
+})();
+</script>
+
   <link rel="icon" href="/img/Logo.svg" type="image/svg+xml" />
   <title>工具箱</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
+  /* ── mobile-native 基线 + 无障碍（批量应用自 emilkowalski/skills: mobile-native / review-animations / emil-design-eng）── */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  input, textarea, select { font-size: 16px; }
+  button, a, [role="button"] {
+    touch-action: manipulation;
+    user-select: none; -webkit-user-select: none;
+  }
+  button:active, a:active, [role="button"]:active,
+  .btn:active, .icon-btn:active, .mode-toggle:active, .tab-close:active,
+  .db-remove:active, .dropzone button:active, .col-filter-toggle:active,
+  .col-filter-tool-btn:active, .pager button:active, .fab-end:active {
+    transform: scale(0.97);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition-property: opacity, color, background-color, border-color, box-shadow !important;
+      transition-duration: 0.15s !important;
+    }
+  }
+
     /* 双主题由 [data-theme="dark"] 控制 */
     :root {
       --bg: #f8fafc;
@@ -90,7 +133,9 @@
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+@media (hover: hover) and (pointer: fine) {
     ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+}
     * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
     /* 顶部 Header（对齐 SQLite） */
@@ -107,7 +152,7 @@
       align-items: center;
       gap: 10px;
       position: sticky;
-      top: 12px;
+      top: calc(12px + env(safe-area-inset-top));
       z-index: 30;
     }
     .header-inner {
@@ -135,7 +180,9 @@
       user-select: none;
       transition: background-color 0.15s;
     }
+@media (hover: hover) and (pointer: fine) {
     .logo-icon:hover { background: var(--primary-hover); }
+}
     .logo-icon:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .header-spacer { flex: 1; }
     .header-actions { display: flex; gap: 6px; align-items: center; }
@@ -148,10 +195,14 @@
       color: var(--text-secondary);
       cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
-      transition: all 0.15s;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
     }
+@media (hover: hover) and (pointer: fine) {
     .icon-btn:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border); }
+}
+@media (hover: hover) and (pointer: fine) {
     [data-theme="dark"] .icon-btn:hover { color: #fff; }
+}
 
     /* 主体布局：左风琴栏 + 右网格 */
     .layout {
@@ -204,7 +255,9 @@
       text-align: left;
       transition: background-color 0.12s, color 0.12s;
     }
+@media (hover: hover) and (pointer: fine) {
     .cat-item:hover { background: var(--panel-hover); color: var(--text); }
+}
     .cat-item.active {
       background: var(--primary-soft);
       color: var(--primary);
@@ -277,9 +330,13 @@
       transition: background-color 0.15s, transform 0.15s;
       flex-shrink: 0;
     }
+@media (hover: hover) and (pointer: fine) {
     .chip-close:hover { background: var(--primary-hover); transform: scale(1.1); }
+}
     [data-theme="dark"] .chip-close { background: var(--primary-hover); color: var(--primary-on); }
+@media (hover: hover) and (pointer: fine) {
     [data-theme="dark"] .chip-close:hover { background: var(--primary); }
+}
 
     /* 工具网格（保持原卡片平铺布局） */
     .tools-grid {
@@ -306,7 +363,9 @@
       cursor: pointer;
       transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s, background-color 0.15s;
     }
+@media (hover: hover) and (pointer: fine) {
     .tool-card:hover { border-color: var(--primary); box-shadow: var(--shadow-lg); background: var(--primary-light); transform: translateY(-2px); }
+}
     .tool-card:active { transform: translateY(0); }
     .tool-card i.tool-icon {
       font-size: 2rem;
@@ -316,9 +375,11 @@
       display: inline-flex; align-items: center; justify-content: center;
       border-radius: 12px;
       color: var(--primary);
-      transition: all 0.15s;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
     }
+@media (hover: hover) and (pointer: fine) {
     .tool-card:hover i.tool-icon { background: var(--primary); color: #fff; }
+}
     .tool-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: var(--text); letter-spacing: -0.2px; }
     .tool-card p { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
     .tool-card .card-badge {
@@ -408,7 +469,7 @@
 
       <!-- 主题切换按钮左侧的搜索框（所有端一致） -->
       <div class="search-box">
-        <input type="text" id="toolSearch" placeholder="搜索工具..." />
+        <input type="text" id="toolSearch" placeholder="搜索工具..." inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" />
         <i class="fas fa-search"></i>
       </div>
 

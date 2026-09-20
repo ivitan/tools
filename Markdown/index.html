@@ -3,7 +3,25 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+<meta name="theme-color" id="themeColorMeta" content="#ffffff">
+<script>
+/* 移动端状态栏配色同步（mobile-native §10）：监听 data-theme 变化，写入页面实际顶部背景色 */
+(function () {
+  function upd() {
+    var meta = document.querySelector('meta[name="theme-color"]'); if (!meta) return;
+    var el = document.querySelector('.header, header') || document.body; if (!el) return;
+    var bg = getComputedStyle(el).backgroundColor;
+    if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') { el = document.body; if (el) bg = getComputedStyle(el).backgroundColor; }
+    if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') meta.content = bg;
+  }
+  upd();
+  document.addEventListener('DOMContentLoaded', upd);
+  if (window.MutationObserver) new MutationObserver(upd).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', upd);
+})();
+</script>
+
   <link rel="icon" type="image/svg+xml" href="/img/Markdown.svg" />
   <title>Markdown 编辑器</title>
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -34,6 +52,31 @@
   </script>
 
   <style>
+  /* ── mobile-native 基线 + 无障碍（批量应用自 emilkowalski/skills: mobile-native / review-animations / emil-design-eng）── */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  input, textarea, select { font-size: 16px; }
+  button, a, [role="button"] {
+    touch-action: manipulation;
+    user-select: none; -webkit-user-select: none;
+  }
+  button:active, a:active, [role="button"]:active,
+  .btn:active, .icon-btn:active, .mode-toggle:active, .tab-close:active,
+  .db-remove:active, .dropzone button:active, .col-filter-toggle:active,
+  .col-filter-tool-btn:active, .pager button:active, .fab-end:active {
+    transform: scale(0.97);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition-property: opacity, color, background-color, border-color, box-shadow !important;
+      transition-duration: 0.15s !important;
+    }
+  }
+
     :root {
       --bg: #f8fafc;
       --panel: #ffffff;
@@ -159,18 +202,20 @@
       border-radius: 4px;
     }
 
+@media (hover: hover) and (pointer: fine) {
     ::-webkit-scrollbar-thumb:hover {
       background: var(--text-muted);
     }
+}
 
     /* Header */
     .header {
-      height: 52px;
+      min-height: calc(52px + env(safe-area-inset-top));
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 0 16px;
+      padding: env(safe-area-inset-top) 16px 0;
       background: var(--panel);
       border-bottom: 1px solid var(--border);
       box-shadow: var(--shadow);
@@ -242,7 +287,7 @@
       cursor: pointer;
       text-decoration: none;
       flex-shrink: 0;
-      transition: all var(--transition-fast);
+      transition: background-color, color, border-color, box-shadow, opacity, transform var(--transition-fast);
     }
 
     /* 「返回主页」按钮：与 SQLite 蓝本一致（浅底蓝图标，hover 反转为蓝底） */
@@ -253,11 +298,13 @@
       color: var(--primary);
     }
 
+@media (hover: hover) and (pointer: fine) {
     .home-btn:hover {
       background: var(--primary);
       border-color: var(--primary);
       color: var(--primary-on);
     }
+}
 
     .icon-btn {
       background: transparent;
@@ -265,11 +312,13 @@
       color: var(--text-secondary);
     }
 
+@media (hover: hover) and (pointer: fine) {
     .icon-btn:hover {
       background: var(--panel-hover);
       border-color: var(--border-hover);
       color: var(--primary);
     }
+}
 
     .home-btn svg {
       width: 15px;
@@ -316,15 +365,17 @@
       align-items: center;
       justify-content: center;
       font-family: var(--font-sans);
-      transition: all var(--transition-fast);
+      transition: background-color, color, border-color, box-shadow, opacity, transform var(--transition-fast);
       flex-shrink: 0;
     }
 
+@media (hover: hover) and (pointer: fine) {
     .toolbar-btn:hover {
       background: var(--primary-light);
       border-color: transparent;
       color: var(--primary-ink);
     }
+}
 
     .toolbar-btn:active {
       transform: scale(.94);
@@ -363,7 +414,7 @@
       font-weight: 500;
       color: var(--text-secondary);
       border-radius: 6px;
-      transition: all var(--transition-fast);
+      transition: background-color, color, border-color, box-shadow, opacity, transform var(--transition-fast);
     }
 
     .mobile-tab-btn.active {
@@ -481,10 +532,12 @@
       transition: background var(--transition-fast), height var(--transition-fast);
     }
 
+@media (hover: hover) and (pointer: fine) {
     .divider-bar:hover::before {
       background: var(--primary);
       height: 72px;
     }
+}
 
     /* Markdown body */
     .markdown-body {
@@ -548,9 +601,11 @@
       border-bottom: 1px solid transparent;
     }
 
+@media (hover: hover) and (pointer: fine) {
     .markdown-body a:hover {
       border-bottom-color: var(--primary);
     }
+}
 
     .markdown-body strong {
       font-weight: 650;
@@ -1032,7 +1087,7 @@ print(fibonacci(10))  # 55
       function toast(msg, type = '', duration = 1800) {
         const el = document.createElement('div');
         el.textContent = msg;
-        el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;max-width:80vw;' +
+        el.style.cssText = 'position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));z-index:9999;max-width:80vw;' +
           'padding:8px 14px;border-radius:8px;font:500 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;' +
           'background:var(--text);color:var(--panel);box-shadow:0 4px 12px rgba(0,0,0,.15);' +
           'opacity:0;transform:translateY(-6px);transition:opacity .2s ease,transform .2s ease;pointer-events:none;';

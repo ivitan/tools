@@ -18,13 +18,56 @@
     })();
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+<meta name="theme-color" id="themeColorMeta" content="#ffffff">
+<script>
+/* 移动端状态栏配色同步（mobile-native §10）：监听 data-theme 变化，写入页面实际顶部背景色 */
+(function () {
+  function upd() {
+    var meta = document.querySelector('meta[name="theme-color"]'); if (!meta) return;
+    var el = document.querySelector('.header, header') || document.body; if (!el) return;
+    var bg = getComputedStyle(el).backgroundColor;
+    if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') { el = document.body; if (el) bg = getComputedStyle(el).backgroundColor; }
+    if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') meta.content = bg;
+  }
+  upd();
+  document.addEventListener('DOMContentLoaded', upd);
+  if (window.MutationObserver) new MutationObserver(upd).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', upd);
+})();
+</script>
+
   <!-- 显式声明页面同时支持 light/dark color-scheme，阻止 Android Chrome 的「强制深色模式」自动反色 -->
   <meta name="color-scheme" content="light dark" />
   <title>节点信息提取</title>
   <link rel="icon" type="image/svg+xml" href="/img/Airport.svg" />
   <!-- 纯静态 CSS（由 Tailwind 编译，已内联，不再依赖运行时 CDN） -->
-  <!-- Tailwind 已移除：全部样式改为纯手写 CSS + CSS 变量（见下方 <style>），无编译产物、无 CDN 依赖 -->
+  <!-- Tailwind 已移除：全部样式改为纯手写 CSS + CSS 变量（见下方 <style>
+  /* ── mobile-native 基线 + 无障碍（批量应用自 emilkowalski/skills: mobile-native / review-animations / emil-design-eng）── */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  input, textarea, select { font-size: 16px; }
+  button, a, [role="button"] {
+    touch-action: manipulation;
+    user-select: none; -webkit-user-select: none;
+  }
+  button:active, a:active, [role="button"]:active,
+  .btn:active, .icon-btn:active, .mode-toggle:active, .tab-close:active,
+  .db-remove:active, .dropzone button:active, .col-filter-toggle:active,
+  .col-filter-tool-btn:active, .pager button:active, .fab-end:active {
+    transform: scale(0.97);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition-property: opacity, color, background-color, border-color, box-shadow !important;
+      transition-duration: 0.15s !important;
+    }
+  }
+），无编译产物、无 CDN 依赖 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
@@ -210,12 +253,12 @@
 
     /* ---------- 7. 顶栏 ---------- */
     .header {
-      height: 52px;
+      min-height: calc(52px + env(safe-area-inset-top));
       background: var(--panel);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      padding: 0 16px;
+      padding: env(safe-area-inset-top) 16px 0;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -266,12 +309,14 @@
       flex-shrink: 0;
       margin-left: 4px;
     }
+@media (hover: hover) and (pointer: fine) {
     .home-btn:hover {
       background: var(--primary);
       color: var(--primary-on);
       border-color: var(--primary);
       transform: translateY(-1px);
     }
+}
     .home-btn svg { width: 15px; height: 15px; }
     .icon-btn {
       width: 34px;
@@ -286,7 +331,9 @@
       cursor: pointer;
       transition: background-color .15s, color .15s, border-color .15s;
     }
+@media (hover: hover) and (pointer: fine) {
     .icon-btn:hover { background: var(--panel-hover); color: var(--primary); border-color: var(--border); }
+}
     .icon-btn svg { width: 18px; height: 18px; }
     #iconMoon { display: none; }
 
@@ -330,7 +377,9 @@
       user-select: none;
       transition: background-color .15s;
     }
+@media (hover: hover) and (pointer: fine) {
     .card-head--neutral:hover { background: var(--panel-hover); }
+}
     .card-body { padding: 8px; }
     .card-body--lg { padding: 12px; }
     @media (min-width: 640px) { .card-body--lg { padding: 16px; } }
@@ -404,17 +453,29 @@
     @media (min-width: 640px) { .btn-act { font-size: 14px; line-height: 20px; } }
     .btn-act:active { transform: translateY(1px); }
     .btn-blue    { background: var(--btn-blue-bg);    border-color: var(--btn-blue-border);    color: var(--btn-blue-ink); }
+@media (hover: hover) and (pointer: fine) {
     .btn-blue:hover    { background: var(--btn-blue-bg-hover); }
+}
     .btn-sky     { background: var(--btn-sky-bg);     border-color: var(--btn-sky-border);     color: var(--btn-sky-ink); }
+@media (hover: hover) and (pointer: fine) {
     .btn-sky:hover     { background: var(--btn-sky-bg-hover); }
+}
     .btn-purple  { background: var(--btn-purple-bg);  border-color: var(--btn-purple-border);  color: var(--btn-purple-ink); }
+@media (hover: hover) and (pointer: fine) {
     .btn-purple:hover  { background: var(--btn-purple-bg-hover); }
+}
     .btn-emerald { background: var(--btn-emerald-bg); border-color: var(--btn-emerald-border); color: var(--btn-emerald-ink); }
+@media (hover: hover) and (pointer: fine) {
     .btn-emerald:hover { background: var(--btn-emerald-bg-hover); }
+}
     .btn-amber   { background: var(--btn-amber-bg);   border-color: var(--btn-amber-border);   color: var(--btn-amber-ink); }
+@media (hover: hover) and (pointer: fine) {
     .btn-amber:hover   { background: var(--btn-amber-bg-hover); }
+}
     .btn-gray    { background: var(--btn-gray-bg);    border-color: var(--btn-gray-border);    color: var(--btn-gray-ink); }
+@media (hover: hover) and (pointer: fine) {
     .btn-gray:hover    { background: var(--btn-gray-bg-hover); }
+}
 
     /* ---------- 10. 上传区 ---------- */
     .dropzone {
@@ -430,7 +491,9 @@
       cursor: pointer;
       transition: background-color .15s, border-color .15s;
     }
+@media (hover: hover) and (pointer: fine) {
     .dropzone:hover { background: var(--panel); }
+}
     .dropzone { margin-bottom: 8px; }
     .dropzone--sm {
       position: relative;
@@ -446,7 +509,9 @@
       flex-shrink: 0;
       transition: background-color .15s, border-color .15s;
     }
+@media (hover: hover) and (pointer: fine) {
     .dropzone--sm:hover { background: var(--panel); }
+}
     .file-input {
       position: absolute;
       inset: 0;
@@ -517,7 +582,9 @@
       box-shadow: var(--shadow);
     }
     .tbl tbody tr { transition: background-color .15s; }
+@media (hover: hover) and (pointer: fine) {
     .tbl tbody tr:hover { background: var(--row-hover); }
+}
     .tbl td.is-empty { color: var(--weak); }
     @media (min-width: 640px) { .tbl { font-size: 13px; } }
 
@@ -542,7 +609,7 @@
     .tbl--raw td { text-align: center; border-width: 0; }
     .tbl--raw tbody tr + tr td { border-top-width: 1px; }
 
-    .table-scroll { overflow: auto; }
+    .table-scroll { overflow: auto; overscroll-behavior: contain; }
 
     /* 展开「余下 N 条」按钮 */
     .more-btn {
@@ -556,7 +623,9 @@
       color: var(--primary);
       transition: background-color .15s;
     }
+@media (hover: hover) and (pointer: fine) {
     .more-btn:hover { background: var(--primary-soft); }
+}
     details.more-row > summary { outline: none; list-style: none; text-align: center; cursor: pointer; }
     .more-divider {
       margin-top: 4px;
@@ -586,9 +655,13 @@
       user-select: none;
       transition: color .15s;
     }
+@media (hover: hover) and (pointer: fine) {
     .date-display:hover { color: var(--primary-hover); }
+}
     .copy-icon { opacity: .8; transition: opacity .15s; }
+@media (hover: hover) and (pointer: fine) {
     .date-display:hover .copy-icon { opacity: 1; }
+}
     .check-icon { color: var(--success); }
 
     /* ---------- 13. 粘贴网格 ---------- */
@@ -598,6 +671,7 @@
       min-height: 140px;
       max-height: 60vh;
       overflow: auto;
+      overscroll-behavior: contain;
       background: var(--panel);
       border: 1px solid var(--border-hover);
       border-radius: 6px;
@@ -638,7 +712,7 @@
     .toast {
       position: fixed;
       left: 50%;
-      bottom: 24px;
+      bottom: calc(24px + env(safe-area-inset-bottom));
       z-index: 50;
       padding: 6px 12px;
       border-radius: 6px;
@@ -657,7 +731,9 @@
     .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 3px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+@media (hover: hover) and (pointer: fine) {
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+}
   </style>
 </head>
 

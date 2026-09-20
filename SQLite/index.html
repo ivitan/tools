@@ -2,12 +2,46 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" id="themeColorMeta" content="#ffffff">
 <title>SQLite 读取工具</title>
 <link rel="icon" type="image/svg+xml" href="/img/SQLite.svg" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── mobile-native 基线：让网页在手机上像原生 App（而非浏览器里的网页）── */
+  html {
+    -webkit-tap-highlight-color: transparent;       /* 去掉点击时的灰/蓝高亮——移动端「这是网站」头号信号 */
+    -webkit-text-size-adjust: 100%;                  /* 横屏不放大字体 */
+    overscroll-behavior: none;                       /* 阻止整页下拉刷新/橡皮筋抢占 App 内滚动容器 */
+  }
+  input, textarea, select { font-size: 16px; }       /* 输入框 ≥16px，避免 iOS 聚焦时整页缩放 */
+  button, a, [role="button"] {
+    touch-action: manipulation;                      /* 去掉 300ms 点击延迟，立即响应 */
+    user-select: none; -webkit-user-select: none;    /* 控件文本不可被长按选中 */
+  }
+  /* 触屏无 :hover：用 :active 提供按压反馈（mobile-native §5，100~160ms ease-out） */
+  .btn:active, .btn-primary:active, .icon-btn:active,
+  .mode-toggle:active, .tab-close:active, .db-remove:active,
+  .dropzone button:active, .col-filter-toggle:active, .col-filter-tool-btn:active,
+  .pager button:active {
+    transform: scale(0.97);
+  }
+  /* 内层滚动容器：阻止滚动链到页面（避免整页下拉刷新/橡皮筋抢占 App 内滚动；mobile-native §6） */
+  .db-list, .schema-view, .grid-container, .col-filter-options,
+  .col-manager-list, .tabs, .sql-box {
+    overscroll-behavior: contain;
+  }
+  /* 无障碍：尊重「减少动态效果」偏好——保留 opacity/color 等理解性过渡，去掉位移/缩放等运动与 keyframe
+     （emil-design-eng Accessibility / review-animations 标准#8 / mobile-native） */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition-property: opacity, color, background-color, border-color, box-shadow !important;
+      transition-duration: 0.15s !important;
+    }
+  }
   :root {
     --bg: #f8fafc;
     --panel: #ffffff;
@@ -94,7 +128,7 @@
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    padding: 0 16px;
+    padding: env(safe-area-inset-top, 0px) 16px;   /* 避开刘海/灵动岛（mobile-native §7） */
     box-shadow: var(--shadow);
     z-index: 20;
     gap: 8px;
@@ -122,7 +156,9 @@
     user-select: none;
     transition: background-color 0.15s, color 0.15s;
   }
+@media (hover: hover) and (pointer: fine) {
   .logo-icon:hover { background: var(--primary-hover); }
+}
   .logo-icon:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   /* 标题旁的「返回主页」圆形按钮（参照参考图的样式） */
   .home-btn {
@@ -139,14 +175,18 @@
     justify-content: center;
     transition: background-color 0.15s, transform 0.15s, color 0.15s;
   }
+@media (hover: hover) and (pointer: fine) {
   .home-btn:hover {
     background: var(--primary);
     color: #fff;
     transform: translateY(-1px);
   }
+}
   .home-btn:active { transform: translateY(0); }
   [data-theme="dark"] .home-btn { background: var(--panel-hover); }
+@media (hover: hover) and (pointer: fine) {
   [data-theme="dark"] .home-btn:hover { color: #fff; }
+}
   .header-spacer { flex: 1; }
   .header-actions {
     display: flex;
@@ -164,13 +204,15 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
   }
+@media (hover: hover) and (pointer: fine) {
   .icon-btn:hover {
     background: var(--panel-hover);
     color: var(--text);
     border-color: var(--border);
   }
+}
   .btn {
     height: 32px;
     padding: 0 12px;
@@ -183,15 +225,19 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.15s;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
   }
+@media (hover: hover) and (pointer: fine) {
   .btn:hover { border-color: var(--border-hover); background: var(--panel-hover); }
+}
   .btn-primary {
     background: var(--primary);
     border-color: var(--primary);
     color: var(--primary-on);
   }
+@media (hover: hover) and (pointer: fine) {
   .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+}
 
   /* Layout */
   .layout {
@@ -294,9 +340,15 @@
     transition: background-color 0.12s;
     min-height: 28px;
   }
+@media (hover: hover) and (pointer: fine) {
   .db-header:hover { background: var(--panel-hover); }
+}
+@media (hover: hover) and (pointer: fine) {
   .db-item.active > .db-header:hover { background: color-mix(in srgb, var(--primary) 22%, transparent); }
+}
+@media (hover: hover) and (pointer: fine) {
   [data-theme="dark"] .db-item.active > .db-header:hover { background: color-mix(in srgb, var(--primary) 34%, transparent); }
+}
   .db-chevron {
     width: 12px;
     height: 12px;
@@ -339,11 +391,15 @@
     justify-content: center;
     /* 常显：默认给一个较低透明度，不抢眼但始终可见，hover 时变清晰 */
     opacity: 0.55;
-    transition: all 0.15s;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
     flex-shrink: 0;
   }
+@media (hover: hover) and (pointer: fine) {
   .db-header:hover .db-remove { opacity: 0.9; }
+}
+@media (hover: hover) and (pointer: fine) {
   .db-remove:hover { background: var(--danger-light); color: var(--danger); opacity: 1; }
+}
   .table-list {
     /* 左缩进 20px（原 22px）：使表名文字起点与数据库名文字起点精确对齐（同为 52px）。
        原来差 2px，数据库名加粗后这个错位更明显，看起来像表名「往后挪」、侧栏变窄。 */
@@ -360,10 +416,12 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.12s;
+    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease, transform 0.12s ease;
     min-height: 26px;
   }
+@media (hover: hover) and (pointer: fine) {
   .table-item:hover { background: var(--panel-hover); color: var(--text); }
+}
   .table-item.active { background: var(--primary); color: var(--primary-on); }
   .table-item.active .table-count { color: color-mix(in srgb, var(--primary-on) 82%, transparent); }
   .table-icon {
@@ -407,13 +465,15 @@
     border: 2px dashed var(--border-hover);
     border-radius: 12px;
     background: var(--dropzone-bg);
-    transition: all 0.2s;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
     cursor: pointer;
   }
+@media (hover: hover) and (pointer: fine) {
   .dropzone:hover, .dropzone.drag-over {
     border-color: var(--primary);
     background: var(--primary-light);
   }
+}
   .dropzone-icon {
     width: 38px;
     height: 38px;
@@ -442,9 +502,11 @@
     font-size: 12.5px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
   }
+@media (hover: hover) and (pointer: fine) {
   .dropzone button:hover { background: var(--primary-hover); }
+}
 
   /* Toolbar */
   .toolbar {
@@ -540,9 +602,11 @@
     justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
-    transition: all 0.15s;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
   }
+@media (hover: hover) and (pointer: fine) {
   .mode-toggle:hover { background: var(--panel-hover); color: var(--text); border-color: var(--border); }
+}
   .mode-toggle svg { flex-shrink: 0; }
 
   /* 自定义 hover 提示
@@ -606,7 +670,9 @@
   .tabs::-webkit-scrollbar { height: 6px; }
   .tabs::-webkit-scrollbar-track { background: transparent; }
   .tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+@media (hover: hover) and (pointer: fine) {
   .tabs::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+}
   /* 标签页：上下两行显示——上行表名（突出），下行数据库名（小字灰色）。
      数据库名宽度上限由 JS 在 renderTabs 里按「不超过表名宽度」规则设置 */
   .tab {
@@ -621,7 +687,7 @@
     color: var(--text-secondary);
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    transition: all 0.12s;
+    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease, transform 0.12s ease;
     position: relative;
     min-width: 60px;
     max-width: 220px;
@@ -663,7 +729,9 @@
     white-space: nowrap;
     vertical-align: bottom;
   }
+@media (hover: hover) and (pointer: fine) {
   .tab:hover { color: var(--text); background: var(--panel-hover); }
+}
   .tab.active {
     color: var(--primary);
     border-bottom-color: var(--primary);
@@ -693,16 +761,22 @@
     transition: background 0.12s, color 0.12s, opacity 0.12s;
   }
   /* 整行 hover 时 × 也提亮，提示可点 */
+@media (hover: hover) and (pointer: fine) {
   .tab:hover .tab-close { opacity: 1; }
+}
+@media (hover: hover) and (pointer: fine) {
   .tab-close:hover {
     background: rgba(239,68,68,0.14);
     color: #ef4444;
     opacity: 1;
   }
+}
+@media (hover: hover) and (pointer: fine) {
   [data-theme="dark"] .tab-close:hover {
     background: rgba(248,113,113,0.20);
     color: #f87171;
   }
+}
 
   /* Content area */
   .content-area {
@@ -867,7 +941,7 @@
     font-weight: 600;
     line-height: 1;
     opacity: 0.6;
-    transition: all 0.12s;
+    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease, transform 0.12s ease;
     /* 绝对定位浮在右上角，不再占 col-name 的横向空间 */
     position: absolute;
     right: 4px;
@@ -875,8 +949,12 @@
     transform: translateY(-50%);
     z-index: 2;
   }
+@media (hover: hover) and (pointer: fine) {
   .col-head:hover .col-filter-toggle { opacity: 0.9; }
+}
+@media (hover: hover) and (pointer: fine) {
   .col-filter-toggle:hover { background: var(--primary-soft); color: var(--primary); opacity: 1; }
+}
   /* 已筛选：隐藏 ⌕，仅显示同位置的 ×（视觉上"放大镜变 X"） */
   .col-head.is-filtered .col-filter-toggle { opacity: 0; pointer-events: none; }
   .col-filter-toggle.is-open { opacity: 1; background: var(--primary-soft); color: var(--primary); }
@@ -903,14 +981,20 @@
     /* 默认透明，避免长期叠加在居中字段名上；
        只有该列已筛选或 hover 才显示 */
     opacity: 0;
-    transition: all 0.12s;
+    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease, transform 0.12s ease;
   }
+@media (hover: hover) and (pointer: fine) {
   .col-filter-clear:hover { background: var(--danger-light); opacity: 1; }
+}
   /* 已筛选状态：× 可见、垂直居中、紧贴右侧 ⌕ 按钮左边 */
   .col-head.is-filtered .col-filter-clear { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
   .col-head.is-filtered:hover .col-filter-clear { background: var(--danger-light); }
+}
   /* hover 列头时也显示，让用户能看到清除入口 */
+@media (hover: hover) and (pointer: fine) {
   .col-head:hover .col-filter-clear { opacity: 0.85; }
+}
   .col-filter-val {
     margin-top: 2px;
     font-size: 10.5px;
@@ -1001,11 +1085,13 @@
   }
   /* 输入框内有内容时才显示 ×（不再默认压在输入框线上） */
   .col-filter-input-row.has-value .col-filter-close { opacity: 0.7; }
+@media (hover: hover) and (pointer: fine) {
   .col-filter-close:hover {
     background: var(--danger-light);
     color: var(--danger);
     opacity: 1;
   }
+}
   /* 输入框自身：右侧给 × 留出 22px 内边距，避免文字压到按钮 */
   .col-filter-input {
     width: 100%;
@@ -1020,7 +1106,9 @@
     outline: none;
     user-select: text;
   }
+@media (hover: hover) and (pointer: fine) {
   .col-filter-input:hover { border-color: var(--primary); }
+}
   .col-filter-input:focus { border-color: var(--primary); }
   .col-filter-input::placeholder { color: var(--text-muted); font-size: 11px; }
   .col-filter-tools {
@@ -1037,10 +1125,12 @@
     color: var(--text-secondary);
     font-size: 11px;
     cursor: pointer;
-    transition: all 0.12s;
+    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease, transform 0.12s ease;
     white-space: nowrap;
   }
+@media (hover: hover) and (pointer: fine) {
   .col-filter-tool-btn:hover { border-color: var(--primary); color: var(--primary); }
+}
   /* 确认按钮：主色突出，面板中最重要的操作 */
   .col-filter-tool-btn.col-filter-confirm {
     margin-left: auto;
@@ -1049,11 +1139,13 @@
     color: #fff;
     font-weight: 600;
   }
+@media (hover: hover) and (pointer: fine) {
   .col-filter-tool-btn.col-filter-confirm:hover {
     background: var(--primary-hover);
     border-color: var(--primary-hover);
     color: #fff;
   }
+}
   .col-filter-count {
     font-size: 10.5px;
     font-weight: 600;
@@ -1094,7 +1186,9 @@
     background: var(--panel) !important;
   }
   .col-filter-option:nth-child(even) { background: var(--bg) !important; }
+@media (hover: hover) and (pointer: fine) {
   .col-filter-option:hover { background: var(--primary-soft); color: var(--primary); }
+}
   .col-filter-option:has(input:checked) {
     background: var(--primary-soft);
     color: var(--primary);
@@ -1146,11 +1240,13 @@
   .col-filter-tool-btn.col-hide-col {
     color: var(--text-secondary);
   }
+@media (hover: hover) and (pointer: fine) {
   .col-filter-tool-btn.col-hide-col:hover {
     border-color: var(--danger);
     color: var(--danger);
     background: var(--danger-light);
   }
+}
 
   /* 字段管理弹窗（显示/隐藏列） */
   .col-manager {
@@ -1196,7 +1292,9 @@
     color: var(--text);
     min-width: 0;
   }
+@media (hover: hover) and (pointer: fine) {
   .col-manager-item:hover { background: var(--primary-soft); }
+}
   .col-manager-item input[type="checkbox"] {
     flex: none;
     margin: 0;
@@ -1269,8 +1367,12 @@
   }
   /* 数据单元格提示可双击复制（排除行号列与表头） */
   .data-table tbody td:not(.row-num) { cursor: copy; }
+@media (hover: hover) and (pointer: fine) {
   .data-table tbody tr:hover td { background: var(--row-hover); }
+}
+@media (hover: hover) and (pointer: fine) {
   [data-theme="dark"] .data-table tbody tr:hover td { background: #243044; }
+}
   .data-table td.null {
     color: var(--text-secondary);
     font-style: italic;
@@ -1407,9 +1509,11 @@
     color: var(--text);
     cursor: pointer;
     font-size: 11px;
-    transition: all 0.12s;
+    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease, transform 0.12s ease;
   }
+@media (hover: hover) and (pointer: fine) {
   .pager button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+}
   .pager button:disabled { opacity: 0.35; cursor: not-allowed; }
   .pager input {
     width: 40px;
@@ -1440,8 +1544,8 @@
      不再各自 fixed 在同一坐标上互相重叠。 */
   .toast-container {
     position: fixed;
-    top: 16px;
-    right: 16px;
+    top: calc(16px + env(safe-area-inset-top, 0px));     /* 状态栏/灵动岛 */
+    right: calc(16px + env(safe-area-inset-right, 0px));  /* 侧边安全区（mobile-native §7） */
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -1458,7 +1562,15 @@
     font-weight: 500;
     letter-spacing: 0.1px;
     box-shadow: var(--shadow-lg);
-    animation: slideIn 0.18s ease;
+    /* 入场用 transition（可中断、可从当前值重定向），替代 keyframes slideIn
+       （review-animations 升级触发项 / emil-design-eng：动态 UI 用 transition 而非 keyframes） */
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    @starting-style {
+      opacity: 0;
+      transform: translateX(20px);
+    }
     display: flex;
     align-items: center;
     gap: 6px;
@@ -1484,16 +1596,12 @@
   }
   [data-theme="dark"] .toast.success { color: #02261a; }
   [data-theme="dark"] .toast.error { color: #3b0808; }
-  @keyframes slideIn {
-    from { transform: translateX(20px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
 
   /* 悬浮到底按钮 */
   .fab-end {
     position: fixed;
-    right: 22px;
-    bottom: 22px;
+    right: calc(22px + env(safe-area-inset-right, 0px));    /* 侧边安全区 */
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));  /* 主页指示条（mobile-native §7） */
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -1509,12 +1617,14 @@
     transition: transform 0.15s, background-color 0.15s, color 0.15s;
   }
   .fab-end.show { display: flex; }
+@media (hover: hover) and (pointer: fine) {
   .fab-end:hover {
     background: var(--primary);
     color: #fff;
     transform: translateY(-2px);
     border-color: var(--primary);
   }
+}
   .fab-end:active { transform: translateY(0); }
   .fab-end:disabled { opacity: 0.4; cursor: not-allowed; }
   [data-theme="dark"] .fab-end { border-color: var(--border-hover); }
@@ -1537,12 +1647,16 @@
   .dialog-mask {
     position: fixed;
     inset: 0;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);  /* 全屏弹窗内容避开安全区（mobile-native §7） */
     background: rgba(0,0,0,0.55);
     z-index: 300;
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.15s ease;
+    transition: opacity 0.15s ease;
+    @starting-style {
+      opacity: 0;
+    }
   }
   [data-theme="dark"] .dialog-mask { background: rgba(0,0,0,0.7); }
   .dialog {
@@ -1553,7 +1667,11 @@
     box-shadow: var(--shadow-lg);
     padding: 20px 22px;
     width: min(420px, calc(100vw - 32px));
-    animation: dialogIn 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+    transition: opacity 0.18s cubic-bezier(0.2, 0.8, 0.3, 1), transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+    @starting-style {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.96);
+    }
   }
   .dialog-title {
     font-size: 15px;
@@ -1573,11 +1691,6 @@
     gap: 8px;
   }
   .dialog-actions .btn { font-weight: 500; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes dialogIn {
-    from { transform: translateY(-8px) scale(0.96); opacity: 0; }
-    to   { transform: translateY(0) scale(1); opacity: 1; }
-  }
 
   /* Loading spinner */
   .spinner {
@@ -1595,7 +1708,9 @@
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+@media (hover: hover) and (pointer: fine) {
   ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+}
 
   /* Responsive: 平板 */
   /* 与 PC、手机抽屉统一为 320px（原 200px 比手机还窄，已修）。
@@ -1608,7 +1723,7 @@
   @media (max-width: 768px) {
     body { font-size: 13.5px; }
     [data-theme="dark"] body { font-size: 13.5px; }
-    .header { height: 48px; padding: 0 10px; gap: 4px; }
+    .header { height: 48px; padding: env(safe-area-inset-top, 0px) 10px; gap: 4px; }
     /* 手机端也显示标题：小字号 + 超出截断（窄屏设备兜底） */
     .logo span { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 44vw; }
 
@@ -1616,16 +1731,16 @@
     .layout { height: calc(100vh - 48px); height: calc(100dvh - 48px); }
     .sidebar {
       position: fixed;
-      top: 48px;
-      left: 0;
-      bottom: 0;
-      width: 84vw;
+      top: calc(48px + env(safe-area-inset-top, 0px));       /* 避开刘海/灵动岛 */
+      left: env(safe-area-inset-left, 0px);
+      bottom: env(safe-area-inset-bottom, 0px);             /* 避开主页指示条 */
+      width: calc(84vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
       max-width: 320px;
       z-index: 50;
       transform: translateX(-100%);
       box-shadow: 0 8px 24px rgba(0,0,0,0.18);
       /* 高度也用 dvh：抽屉底部不被地址栏挡住（bottom:0 在 iOS 上会延伸到地址栏后面） */
-      height: calc(100dvh - 48px);
+      height: calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     }
     body.sidebar-open .sidebar { transform: translateX(0); }
 
@@ -1695,6 +1810,8 @@
       document.documentElement.dataset.theme = t;
       document.documentElement.style.colorScheme = t;      // 同步滚动条/原生控件配色
       if (t === 'dark') document.documentElement.style.background = '#0b1220';  // 兜底，防 CSS 解析前露白
+      var _mc = document.querySelector('meta[name="theme-color"]');
+      if (_mc) _mc.content = (t === 'dark') ? '#111827' : '#ffffff';  // 同步移动端状态栏配色（mobile-native 基线）
     } catch (e) {}
   })();
 </script>
@@ -1771,7 +1888,7 @@
         <div class="breadcrumb" id="breadcrumb"></div>
         <!-- 统计信息由 renderToolbarStats() 填充，替代原先内容区里独立的 .status-bar 行 -->
         <div class="toolbar-stats" id="toolbarStats"></div>
-        <input type="text" class="toolbar-input" id="searchInput" placeholder="筛选所有列…">
+        <input type="text" class="toolbar-input" id="searchInput" placeholder="筛选所有列…" inputmode="search" enterkeyhint="search" autocapitalize="none" autocorrect="off">
         <div class="toolbar-actions">
         <button class="mode-toggle" id="modeToggle" data-tip="切换到分页模式" aria-label="切换加载模式">
           <!-- 默认 loadMode 为 infinite，这里初始就显示 ∞，避免 JS 未执行时图标与模式不符 -->
@@ -1942,6 +2059,9 @@ const theme = {
     // 同步 <html> 背景：覆盖首屏在深色时写死的内联底色，
     // 避免「深色→浅色」后内联黑色残留、PC 大屏内容不足时底部透出黑块
     document.documentElement.style.background = 'var(--bg)';
+    // 同步移动端状态栏配色（class 化主题切换，由 JS 跟随 data-theme 更新；mobile-native 基线）
+    var _mc = document.querySelector('meta[name="theme-color"]');
+    if (_mc) _mc.content = (t === 'dark') ? '#111827' : '#ffffff';
     this._updateIcon();
   },
   // 点击 = 在当前「实际外观」基础上直接反转日/夜并锁定，始终 1 下到位。
@@ -2862,7 +2982,7 @@ function buildFilterPanelHtml(tab, colName) {
     <div class="col-filter-input-wrap" data-col-input="${escapeHtml(colName)}">
       <div class="col-filter-panel">
         <div class="col-filter-input-row${pendingLike ? ' has-value' : ''}">
-          <input type="text" class="col-filter-input" placeholder="模糊筛选 / 过滤候选…" value="${escapeHtml(pendingLike)}" data-col-input-field="${escapeHtml(colName)}">
+          <input type="text" class="col-filter-input" placeholder="模糊筛选 / 过滤候选…" value="${escapeHtml(pendingLike)}" data-col-input-field="${escapeHtml(colName)}" inputmode="text" enterkeyhint="search" autocapitalize="none" autocorrect="off">
           <button type="button" class="col-filter-close" data-col-clear-input="${escapeHtml(colName)}" data-tip="清空输入" aria-label="清空输入">×</button>
         </div>
         <div class="col-filter-tools">

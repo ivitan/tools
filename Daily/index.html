@@ -3,6 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" id="themeColorMeta" content="#ffffff">
+<script>
+/* 移动端状态栏配色同步（mobile-native §10）：监听 data-theme 变化，写入页面实际顶部背景色 */
+(function () {
+  function upd() {
+    var meta = document.querySelector('meta[name="theme-color"]'); if (!meta) return;
+    var el = document.querySelector('.header, header') || document.body; if (!el) return;
+    var bg = getComputedStyle(el).backgroundColor;
+    if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') { el = document.body; if (el) bg = getComputedStyle(el).backgroundColor; }
+    if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') meta.content = bg;
+  }
+  upd();
+  document.addEventListener('DOMContentLoaded', upd);
+  if (window.MutationObserver) new MutationObserver(upd).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', upd);
+})();
+</script>
+
 <link rel="icon" type="image/svg+xml" href="/img/Daily.svg" sizes="any">
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <title>日报生成工具</title>
@@ -21,6 +39,31 @@
   })();
 </script>
 <style>
+  /* ── mobile-native 基线 + 无障碍（批量应用自 emilkowalski/skills: mobile-native / review-animations / emil-design-eng）── */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  input, textarea, select { font-size: 16px; }
+  button, a, [role="button"] {
+    touch-action: manipulation;
+    user-select: none; -webkit-user-select: none;
+  }
+  button:active, a:active, [role="button"]:active,
+  .btn:active, .icon-btn:active, .mode-toggle:active, .tab-close:active,
+  .db-remove:active, .dropzone button:active, .col-filter-toggle:active,
+  .col-filter-tool-btn:active, .pager button:active, .fab-end:active {
+    transform: scale(0.97);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition-property: opacity, color, background-color, border-color, box-shadow !important;
+      transition-duration: 0.15s !important;
+    }
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
@@ -149,12 +192,12 @@
 
   /* Header */
   .header {
-    height: 52px;
+    min-height: calc(52px + env(safe-area-inset-top));
     background: var(--panel);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    padding: 0 16px;
+    padding: env(safe-area-inset-top) 16px 0;
     box-shadow: var(--shadow);
     position: sticky;
     top: 0;
@@ -207,7 +250,9 @@
     flex-shrink: 0;
     transition: background-color 0.15s, transform 0.15s, color 0.15s;
   }
+@media (hover: hover) and (pointer: fine) {
   .home-btn:hover { background: var(--primary); color: #fff; transform: translateY(-1px); }
+}
   .home-btn:active { transform: translateY(0); }
   .header-spacer { flex: 1; }
   .header-actions { display: flex; gap: 6px; align-items: center; }
@@ -222,13 +267,15 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
   }
+@media (hover: hover) and (pointer: fine) {
   .icon-btn:hover {
     background: var(--panel-hover);
     color: var(--text);
     border-color: var(--border);
   }
+}
 
   /* Layout */
   .page {
@@ -387,10 +434,12 @@
     justify-content: center;
     gap: 6px;
     white-space: nowrap;
-    transition: all 0.15s;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
     -webkit-tap-highlight-color: transparent;
   }
+@media (hover: hover) and (pointer: fine) {
   .btn:hover { border-color: var(--border-hover); background: var(--border-hover); }
+}
   .btn i { font-size: 12px; }
   /* 主操作也沿用浅色填充 + 同系描边 + 深色文字，与其余按钮同一模式 */
   .btn-primary {
@@ -399,13 +448,17 @@
     color: var(--btn-far-ink);
     font-weight: 600;
   }
+@media (hover: hover) and (pointer: fine) {
   .btn-primary:hover {
     background: var(--btn-far-bg-hover);
     border-color: var(--btn-far-border-hover);
     color: var(--btn-far-ink);
   }
+}
   .btn-danger { background: var(--danger); border-color: var(--danger); color: var(--danger-on); font-weight: 600; }
+@media (hover: hover) and (pointer: fine) {
   .btn-danger:hover { background: var(--danger); border-color: var(--danger); color: var(--danger-on); filter: brightness(0.94); }
+}
   /* 危险操作：浅红填充 + 红描边，hover 才填实底红（与工具组清空按钮一致） */
   .btn-danger-ghost {
     background: var(--btn-danger-bg);
@@ -416,7 +469,9 @@
     font-size: 12.5px;
     font-weight: 600;
   }
+@media (hover: hover) and (pointer: fine) {
   .btn-danger-ghost:hover { background: var(--danger); border-color: var(--danger); color: var(--danger-on); }
+}
 
   .add-stand-group { display: flex; gap: 10px; margin-top: 12px; }
   /* 浅色填充 + 同系描边 + 深色文字，常显彩色（不再等 hover 才上色） */
@@ -430,21 +485,25 @@
     border-color: var(--btn-far-border);
     color: var(--btn-far-ink);
   }
+@media (hover: hover) and (pointer: fine) {
   .btn-add.far:hover {
     background: var(--btn-far-bg-hover);
     border-color: var(--btn-far-border-hover);
     color: var(--btn-far-ink-hover);
   }
+}
   .btn-add.near {
     background: var(--btn-near-bg);
     border-color: var(--btn-near-border);
     color: var(--btn-near-ink);
   }
+@media (hover: hover) and (pointer: fine) {
   .btn-add.near:hover {
     background: var(--btn-near-bg-hover);
     border-color: var(--btn-near-border-hover);
     color: var(--btn-near-ink);
   }
+}
 
   .btn-dashed {
     width: 100%;
@@ -461,14 +520,16 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    transition: all 0.15s;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
     -webkit-tap-highlight-color: transparent;
   }
+@media (hover: hover) and (pointer: fine) {
   .btn-dashed:hover {
     border-color: var(--btn-far-border-hover);
     color: var(--btn-far-ink);
     background: var(--btn-far-bg-hover);
   }
+}
 
   /* 删除：默认低调，hover 才显红 */
   .icon-del {
@@ -484,11 +545,15 @@
     justify-content: center;
     font-size: 13px;
     opacity: 0.6;
-    transition: all 0.15s;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
     flex: none;
   }
+@media (hover: hover) and (pointer: fine) {
   .stand-card:hover .icon-del, .item-row:hover .icon-del { opacity: 0.9; }
+}
+@media (hover: hover) and (pointer: fine) {
   .icon-del:hover { background: var(--danger-light); color: var(--danger); opacity: 1; }
+}
 
   /* 预览 */
   .preview-panel { position: sticky; top: 68px; }
@@ -550,7 +615,9 @@
     text-align: left;
     transition: background 0.12s, color 0.12s;
   }
+@media (hover: hover) and (pointer: fine) {
   .multi-select-option:hover { background: var(--primary-soft); color: var(--primary); }
+}
   .multi-select-option.selected {
     background: var(--primary-soft);
     color: var(--primary);
@@ -570,8 +637,8 @@
   /* 容器：同屏多个 toast 纵向堆叠、右对齐，不再各自 fixed 在同一坐标上互相重叠。 */
   .toast-container {
     position: fixed;
-    top: 16px;
-    right: 16px;
+    top: calc(16px + env(safe-area-inset-top));
+    right: calc(16px + env(safe-area-inset-right));
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -587,7 +654,11 @@
     font-size: 13px;
     font-weight: 500;
     box-shadow: var(--shadow-lg);
-    animation: slideIn 0.18s ease;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    @starting-style {
+      opacity: 0;
+      transform: translateX(20px);
+    }
     display: flex;
     align-items: center;
     gap: 6px;
@@ -597,10 +668,6 @@
   .toast.error { background: var(--danger); color: #450a0a; }
   [data-theme="dark"] .toast.success { color: #02261a; }
   [data-theme="dark"] .toast.error { color: #3b0808; }
-  @keyframes slideIn {
-    from { transform: translateX(20px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
 
   /* 确认弹窗（替代原生 confirm，深色友好） */
   .dialog-mask {
@@ -611,7 +678,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.15s ease;
+    transition: opacity 0.15s ease;
+    @starting-style {
+      opacity: 0;
+    }
   }
   [data-theme="dark"] .dialog-mask { background: rgba(0,0,0,0.7); }
   .dialog {
@@ -622,22 +692,23 @@
     box-shadow: var(--shadow-lg);
     padding: 20px 22px;
     width: min(420px, calc(100vw - 32px));
-    animation: dialogIn 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+    transition: opacity 0.18s cubic-bezier(0.2, 0.8, 0.3, 1), transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+    @starting-style {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.96);
+    }
   }
   .dialog-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
   .dialog-message { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 18px; }
   .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes dialogIn {
-    from { transform: translateY(-8px) scale(0.96); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
-  }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+@media (hover: hover) and (pointer: fine) {
   ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+}
 
   /* 响应式 */
   @media (max-width: 900px) {
