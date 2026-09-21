@@ -2139,6 +2139,16 @@ async function loadDatabase(file) {
 async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
   const silent = !!(opts && opts.silent);
 
+  // 空文件 / 非 SQLite 文件前置拦截：SQL.js 收到空 buffer 不会报错，
+  // 而是直接新建一个空白内存库（无表、无异常），导致空 .sig/.txt 等被「成功」导入；
+  // 这里先按文件头魔数 "SQLite format 3\0" 严格校验，空文件与非 SQLite 一并拒掉。
+  // 逻辑与 Airport 工具保持一致（见 Airport/index.html 的 isSqliteBuffer）。
+  const SQLITE_MAGIC = [0x53,0x51,0x4c,0x69,0x74,0x65,0x20,0x66,0x6f,0x72,0x6d,0x61,0x74,0x20,0x33,0x00];
+  if (!buf || buf.length < SQLITE_MAGIC.length ||
+      !SQLITE_MAGIC.every((b, i) => buf[i] === b)) {
+    throw new Error('不是 SQLite 数据库文件');
+  }
+
   // ① 内容完全一致 → 已加载过，直接跳过，保证同一个数据库只显示一个
   const dup = state.databases.find(d => d.hash === hash);
   if (dup) {
