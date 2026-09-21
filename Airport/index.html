@@ -43,7 +43,6 @@
   <link rel="icon" type="image/svg+xml" href="/img/Airport.svg" />
   <!-- 纯静态 CSS（由 Tailwind 编译，已内联，不再依赖运行时 CDN） -->
   <!-- Tailwind 已移除：全部样式改为纯手写 CSS + CSS 变量（见下方 <style>
-  /* ── mobile-native 基线 + 无障碍（批量应用自 emilkowalski/skills: mobile-native / review-animations / emil-design-eng）── */
   html {
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
@@ -507,7 +506,15 @@
       background: var(--surface);
       cursor: pointer;
       flex-shrink: 0;
+      align-self: center;
       transition: background-color .15s, border-color .15s;
+    }
+    /* 用绝对定位把图标精确居中，避免 SVG 作为 flex 子项时个别浏览器不居中的情况 */
+    .dropzone--sm svg.ic-16 {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
 @media (hover: hover) and (pointer: fine) {
     .dropzone--sm:hover { background: var(--panel); }
