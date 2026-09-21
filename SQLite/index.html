@@ -2068,10 +2068,8 @@ const theme = {
     if (_mc) _mc.content = (t === 'dark') ? '#111827' : '#ffffff';
     this._updateIcon();
   },
-  // 点击 = 在当前「实际外观」基础上直接反转日/夜并锁定，始终 1 下到位。
-  // 关键：不再经过与外观相同的 'system' 中间态（旧循环在 system+系统深色时，
-  // 第一下会跳到外观相同、看似无效的锁定深色，要再点一下才变色 → 用户感知「要点两次」）。
-  // 'system' 仅作为默认初态与可恢复态（双击按钮恢复跟随），不进入点击循环。
+  // 单击直接在当前外观基础上反转日/夜并锁定（不走 system 中间态，
+  // 否则 system+系统深色时第一下看似无效，用户会以为「要点两次」）。
   toggle() {
     const next = this.effective === 'dark' ? 'light' : 'dark';
     localStorage.setItem('sqlite-theme', next);
@@ -2217,9 +2215,7 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
   if (!silent) {
     renderSidebar();
     renderTabs();
-    // 导入成功后收起上传区，进入「已就绪，等待选表」状态。
-    // 早期版本靠自动 openTab 顺带触发 showDropzone(false)，需求「导入后不自动打开表」
-    // 改掉后这条路径断了，导致上传区一直显示、表格区一直隐藏。
+    // 导入成功后收起上传区（旧版靠自动 openTab 顺带触发，现不再自动开表，故显式收起）。
     showDropzone(false);
     renderContent();     // 未打开任何表时，刷新主区为「从左侧选择一张表查看数据」
     if (isMobile()) closeDrawer();
@@ -2690,7 +2686,7 @@ function renderDataGrid(db, tab) {
     while (stmt.step()) rows.push(stmt.getAsObject());
     stmt.free();
     if (rows.length) columns = Object.keys(rows[0]);
-    columns = visibleColumnsOf(tab, columns);   // 过滤隐藏列，HEAD/BODY 一致
+    columns = visibleColumnsOf(tab, columns);
     const cntStmt = db.db.prepare(countSql);
     cntStmt.bind(params);
     if (cntStmt.step()) total = cntStmt.get()[0];
@@ -3035,7 +3031,7 @@ function setColumnHidden(tab, col, hidden) {
   if (hidden && idx === -1) tab.hiddenCols.push(col);
   else if (!hidden && idx !== -1) tab.hiddenCols.splice(idx, 1);
   if (hidden && tab._openFilterCol === col) closeFilterPanelDiscard(tab);
-  tab._colWidths = null;          // 列数变化，原按位置缓存失效，强制重新测量
+  tab._colWidths = null;
   renderContent();
   updateColumnsBadge();
 }
@@ -3478,7 +3474,6 @@ function loadInfiniteBatch(db, tab) {
   // 更新工具栏统计（只改文本，避免整块重绘）
   updateStatsNumbers(tab);
 
-  // 判断是否加载完
   if (rows.length < tab.pageSize || (tab.infiniteCount || 0) >= tab.infiniteTotal) {
     tab.infiniteFinished = true;
     const sentinel = $('infiniteSentinel');

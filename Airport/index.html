@@ -965,7 +965,7 @@
 
     /* 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态） */
     const theme = {
-      KEY: 'airport-theme-v2', // 换新键，避开旧版锁定残留
+      KEY: 'airport-theme-v2',
       get mode() { return localStorage.getItem(this.KEY) || 'system'; },
       get effective() {
         if (this.mode === 'system')
@@ -975,7 +975,7 @@
       apply() {
         const t = this.effective;
         document.documentElement.dataset.theme = t;
-        document.documentElement.style.colorScheme = t; // 同步原生滚动条/控件配色
+        document.documentElement.style.colorScheme = t;
         document.documentElement.style.background = 'var(--bg)';
         this._updateIcon();
       },
@@ -2236,11 +2236,8 @@
         `<span class="c-purple fw-bold">CSV数据已成功导出</span>`;
     });
 
-    // 复制镜头编号（一行一个）排序规则：
-    //   含 "03" 且同表还有摆渡车(052/27)或客舱门(06/29) → 最前；仅含 "03"（无摆渡车/客舱门）→ 次前（有 03 其他规则一律不生效）
-    //   有摆渡车(052/27)、客舱门(06/29) 或 客梯车(051/272) 且【没有 03】的表 → 排最后
-    //   其余表 → 排在中间
-    // 各组内部保持表的原始顺序，不做任何时间排序。
+    // 复制镜头编号排序：含 03 的表最前（同表还有摆渡车/客舱门则最最前），
+    // 其次其余表，最后是有摆渡车/客舱门/客梯车但无 03 的表；组内保持原序。
     document
       .getElementById("btnCopyTableNums")
       .addEventListener("click", () => {

@@ -1006,13 +1006,10 @@ type: 1000 - 有效（空格不影响）
       setTimeout(() => el.remove(), 2600);
     }
 
-    // Excel数据查询工具功能
-    // 全局变量
     let excelData = null;
     let fileName = "";
     let lastQueryResults = [];
 
-    // DOM元素
     const dropArea = document.getElementById("dropArea");
     const fileInput = document.getElementById("fileInput");
     const fileInfo = document.getElementById("fileInfo");
@@ -1030,7 +1027,6 @@ type: 1000 - 有效（空格不影响）
     const copyNameOption = document.getElementById("copyNameOption");
     const copyAllOption = document.getElementById("copyAllOption");
 
-    // 事件监听器
     dropArea.addEventListener("click", () => fileInput.click());
 
     dropArea.addEventListener("dragover", (e) => {
@@ -1175,10 +1171,8 @@ type: 1000 - 有效（空格不影响）
         return;
       }
 
-      // 创建三个数组分别存储不同类型的结果
-      const foundResults = []; // 找到且名称不为空
-      const emptyResults = []; // 找到但名称为空
-      const notFoundResults = []; // 未找到
+      // 三类结果：命中且有名称 / 命中但名称为空 / 未命中
+      const foundResults = [], emptyResults = [], notFoundResults = [];
 
       numbersToFind.forEach((num) => {
         const foundItem = excelData.find((item) => String(item.type) === num);
@@ -1411,7 +1405,6 @@ type: 1000 - 有效（空格不影响）
       resultsDiv.innerHTML = tableHTML;
     }
 
-    // 辅助函数
     function formatFileSize(bytes) {
       if (bytes === 0) return "0 Bytes";
       const k = 1024;
@@ -1429,7 +1422,6 @@ type: 1000 - 有效（空格不影响）
       errorMsg.classList.remove("active");
     }
 
-    // Type数字提取工具功能
     let extractionResults = [];
 
     // DOM元素
