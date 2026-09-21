@@ -474,6 +474,12 @@
     background: var(--primary-light);
   }
 }
+  /* 点击激活态：点击上传区后虚线边框变蓝、内部浅蓝（.drop-focus），
+     点击上传区以外的任意位置恢复原状；与 hover / 拖拽高亮互不冲突 */
+  .dropzone.drop-focus {
+    border-color: var(--primary) !important;
+    background: var(--primary-light) !important;
+  }
   .dropzone-icon {
     width: 38px;
     height: 38px;
@@ -3892,6 +3898,14 @@ $('btnAddDb').onclick = () => { window.suspendTips && window.suspendTips(true); 
 // 点击虚线区域任意位置均可触发选择文件（按钮自身由冒泡统一处理，避免重复触发）
 $('dropzone').addEventListener('click', () => { window.suspendTips && window.suspendTips(true); $('fileInput').click(); setTimeout(() => window.resetTips && window.resetTips(), 2000); });
 $('fileInput').onchange = (e) => handleFiles([...e.target.files]);
+
+// 上传区点击激活态：点击后虚线边框变蓝、内部浅蓝（.drop-focus），
+// 点击上传区以外任意位置即恢复原状（与 Airport 工具行为一致）
+document.addEventListener('click', (e) => {
+  const dz = $('dropzone');
+  if (dz.contains(e.target)) dz.classList.add('drop-focus');
+  else dz.classList.remove('drop-focus');
+});
 
 $('btnClear').onclick = async () => {
   const ok = await confirmDialog({
