@@ -127,6 +127,8 @@
       font-size: 14px;
       line-height: 1.5;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
       transition: background-color 0.15s, color 0.15s;
     }
 
@@ -141,6 +143,7 @@
     /* 顶部 Header（对齐 SQLite） */
     .header {
       max-width: 1180px;
+      width: 100%;
       margin: 0 auto;
       background: var(--panel);
       border: 1px solid var(--border);
@@ -207,7 +210,9 @@
     /* 主体布局：左风琴栏 + 右网格 */
     .layout {
       max-width: 1180px;
-      margin: 16px auto 0;
+      width: 100%;
+      margin: 28px auto 0;
+      flex: 1 0 auto;
       display: flex;
       gap: 16px;
       align-items: flex-start;
@@ -404,12 +409,14 @@
 
     footer {
       max-width: 1180px;
+      width: 100%;
       margin: 24px auto 0;
+      flex-shrink: 0;
       text-align: center;
       font-size: 0.75rem;
       color: var(--text-muted);
       border-top: 1px solid var(--border);
-      padding: 20px 16px 0;
+      padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
     }
 
     /* 移动端抽屉遮罩：盖住内容区，点击空白收起（桌面端无效） */
