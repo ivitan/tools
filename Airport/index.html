@@ -1279,44 +1279,60 @@
       const tableMap = new Map();
       const failed = [];
 
-      for (let file of files) {
-        let buf = null;
-        try {
-          buf = new Uint8Array(await file.arrayBuffer());
-        } catch (e) {
-          failed.push({ name: file.name, reason: "无法读取文件" });
+      // 阶段 1：并行读取全部文件并做 SQLite 头校验（纯 IO / 字节比较，互不阻塞）。
+      // 旧实现是 for 循环里逐个 await file.arrayBuffer()，N 个文件要串行等 N 次读取；
+      // 改成 Promise.all 一次并行读后，多文件导入耗时从「累加」变为「取最慢单个」，
+      // 这也是 SQLite 工具比本工具快很多的根因。
+      const arr = [...files];
+      const prepared = await Promise.all(
+        arr.map(async (file) => {
+          try {
+            const buf = new Uint8Array(await file.arrayBuffer());
+            return { file, buf, ok: isSqliteBuffer(buf), error: null };
+          } catch (e) {
+            return { file, error: e };
+          }
+        }),
+      );
+
+      // 阶段 2：串行执行 CPU 重的建库逻辑，每完成一个让出主线程（setTimeout 0），
+      // 避免一次性卡死 UI；坏文件逐个捕获，保证整批不会因为一个出错而中断。
+      // ① 文件头校验已在阶段 1 完成（SQLite 打开是惰性的，非数据库文件到执行查询时才报错，
+      //    那样 UI 早已显示「已载入」，造成假成功错觉，故提前拦截）。
+      for (let i = 0; i < prepared.length; i++) {
+        const p = prepared[i];
+        if (p.error) {
+          failed.push({ name: p.file.name, reason: "无法读取文件" });
           continue;
         }
-
-        // ① 文件头校验：SQLite 打开是惰性的，非数据库文件要到执行查询时才报错，
-        //    那时 UI 早已显示「已载入」，给用户假成功的错觉，所以这里提前拦截
-        if (!isSqliteBuffer(buf)) {
-          failed.push({ name: file.name, reason: "不是 SQLite 数据库文件" });
+        if (!p.ok) {
+          failed.push({ name: p.file.name, reason: "不是 SQLite 数据库文件" });
           continue;
         }
 
         let db = null;
         try {
-          db = new sqlEngine.Database(buf);
+          db = new sqlEngine.Database(p.buf);
           const res = db.exec(
             "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
           );
-          databases.push({ name: file.name, db: db });
+          databases.push({ name: p.file.name, db: db });
           if (res.length > 0) {
             res[0].values.forEach((row) => {
               const tableName = row[0];
               if (!tableMap.has(tableName)) {
                 tableMap.set(tableName, []);
               }
-              tableMap.get(tableName).push(file.name);
+              tableMap.get(tableName).push(p.file.name);
             });
           }
         } catch (e) {
           if (db) {
             try { db.close(); } catch (_) {}
           }
-          failed.push({ name: file.name, reason: "数据库损坏或格式不支持" });
+          failed.push({ name: p.file.name, reason: "数据库损坏或格式不支持" });
         }
+        if (i < prepared.length - 1) await new Promise((r) => setTimeout(r, 0));
       }
 
       const tableListDiv = document.getElementById("tableList");
