@@ -1399,7 +1399,8 @@
       ],
     };
 
-    // 节点编码 → 帮助内容；未登记的节点（如靠桥 / 撤桥）气泡内提示暂无说明
+    // 节点编码 → 帮助内容；未登记的节点（如 79 飞机推出、客舱门、行李拖车、近机位靠桥/撤桥）
+    // 气泡内提示暂无说明 —— 只呈现文档中确有的内容，不做推断映射
     const NODE_HELP = {
       "03": HELP_FOLLOWME,
       followme_end: HELP_FOLLOWME,
@@ -1407,7 +1408,6 @@
       airplane_in_end: HELP_AIRPLANE_IN_END,
       airplane_out_start: HELP_AIRPLANE_OUT_START,
       airplane_out_end: HELP_AIRPLANE_IN_START,
-      "79": HELP_AIRPLANE_OUT_START,
       "04": HELP_LUNDANG,
       "32": HELP_LUNDANG,
       "052": HELP_SHUTTLE,
