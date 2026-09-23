@@ -96,7 +96,7 @@
       --primary-on: #ffffff;
       --primary-light: #eff6ff;
       --primary-soft: rgba(59, 130, 246, .12);
-      --nh-head-bg: #eff6ff;       /* 节点气泡标题栏实底色（primary-light 的不透明版，防滚动透字） */
+      --nh-head-bg: #eff6ff;       /* 气泡标题栏实底色（primary-light 的不透明版） */
       --accent-blue: #1d4ed8;
       --accent-sky: #0369a1;
       --accent-purple: #6d28d9;
@@ -146,7 +146,7 @@
       --primary-on: #0b1220;
       --primary-light: rgba(96, 165, 250, .14);
       --primary-soft: rgba(96, 165, 250, .22);
-      --nh-head-bg: #1c2c45;       /* rgba(96,165,250,.14) 叠加 panel #111827 后的等效实色 */
+      --nh-head-bg: #1c2c45;       /* 上者叠加 panel 后的等效实色 */
       --accent-blue: #93c5fd;
       --accent-sky: #7dd3fc;
       --accent-purple: #c4b5fd;
@@ -795,7 +795,7 @@
       align-items: center;
       gap: 6px;
       padding: 7px 12px;
-      background: var(--nh-head-bg); /* 必须为实色：半透明色在 sticky 滚动时会透出下层文字 */
+      background: var(--nh-head-bg); /* 实底：半透明色 sticky 滚动会透字 */
       border-bottom: 1px solid var(--primary-soft);
     }
     .nh-name { font-size: 12px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1789,8 +1789,9 @@
     let sqlEngine;
     let databases = [];
     let finalCleanedTimes = {};
-    let lastUsedTables = []; // 记录本次提取实际用到的数据表名（供"复制镜头编号"使用）
     let lastExtractionFilter = null; // 记录本次提取时的过滤条件快照（startTime/endTime/aproCode）
+    // B 区回显表格数据（renderPasteTableGrid 渲染时同步保存），供「复制镜头号」按 camera 列取值
+    let bAreaTableData = { headers: [], rows: [] };
 
     async function init() {
       try {
@@ -2179,6 +2180,7 @@
         tbody.innerHTML = "";
         wrapper.style.maxHeight = "";
         document.getElementById("filteredTextCount").innerText = "0";
+        bAreaTableData = { headers: [], rows: [] };
         return;
       }
 
@@ -2221,6 +2223,17 @@
       for (let h = 0; h < headers.length; h++) {
         if (!skipCols.has(headers[h])) colKeep.push(h);
       }
+
+      // 同步保存 B 区表格数据（按显示列过滤），供「复制镜头号」使用
+      const baRows = [];
+      for (let i = startRowIdx; i < lines.length; i++) {
+        const cols = lines[i].split("\t");
+        baRows.push(colKeep.map((j) => (cols[j] !== undefined ? cols[j].trim() : "")));
+      }
+      bAreaTableData = {
+        headers: colKeep.map((h) => headers[h]),
+        rows: baRows,
+      };
 
       // 使用数组拼接替代字符串累加
       let theadRows = ["<tr>"];
@@ -2341,8 +2354,7 @@
         return;
       }
 
-      // 记录本次提取实际用到的数据表名与过滤条件（供"复制镜头编号"按钮使用）
-      lastUsedTables = selectedTables.slice();
+      // 记录本次提取的过滤条件快照
       lastExtractionFilter = { startTime, endTime, aproCode };
 
       document.getElementById("queryStatus").innerHTML =
@@ -2355,6 +2367,8 @@
         let allColumns = new Set();
         let hasDataParsed = false;
         let appidExcluded = 0; // 因 appid 与当前提取模式矛盾而被排除的行数
+        let appidMatched = 0; // appid 命中当前模式的行数（为 0 说明数据里没有该模式的数据）
+        let hasAppidCol = false; // 数据首行是否含 appid 列（parseText 块内更新）
         let dbFilteredRawDataForTextarea = [];
         let dbFilteredColumns = new Set();
 
@@ -2453,6 +2467,7 @@
           // 数据特性：数据库导入时 appid 必为 near/remote（不会为空）→ 等同于严格过滤；
           // 仅下方粘贴区手工粘贴的数据 appid 可能为空 → 空值时回退原字典匹配，避免提取不到
           let globalAppidIdx = headers.indexOf("appid");
+          hasAppidCol = globalAppidIdx !== -1;
 
           let inferredCodeIdx = -1;
           let inferredTimeIdx = -1;
@@ -2508,6 +2523,7 @@
                       appidExcluded++;
                       continue;
                     }
+                    appidMatched++;
                   }
                 }
                 let code = cols[globalCodeIdx].trim();
@@ -2558,7 +2574,9 @@
           }
         }
 
-        if (!hasDataParsed) {
+        // 数据中有 appid 列但没有任何一行命中当前模式时，视同无有效数据——
+        // appid 为空的行会回退字典匹配产生结果，此处一并拦下
+        if (!hasDataParsed || (hasAppidCol && appidMatched === 0)) {
           if (selectedTables.length === 0 && !pasteText) {
             document.getElementById("queryStatus").innerHTML =
               `<span class="c-danger fw-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
@@ -2566,7 +2584,8 @@
             document.getElementById("queryStatus").innerHTML =
               `<span class="c-orange fw-bold">未在数据中提取到匹配【${label}】的有效节点</span>`;
           }
-          // 无数据时清空结果表，避免“未输入却仍显示上一次内容”的观感
+          // 清空结果表与上次提取残留，避免“输错模式仍显示旧结果”
+          finalCleanedTimes = {};
           renderEmptyTable(currentMode);
           return;
         }
@@ -2770,8 +2789,8 @@
     // 清空重置
     document.getElementById("btnClear").addEventListener("click", () => {
       finalCleanedTimes = {};
-      lastUsedTables = []; // 同步清空本次提取用到的表记录
-      lastExtractionFilter = null; // 同步清空过滤条件快照
+      lastExtractionFilter = null;
+      bAreaTableData = { headers: [], rows: [] };
       document.getElementById("pasteArea").value = "";
       bAreaDbDataActive = false; // 恢复 B 区粘贴能力
 
@@ -2864,131 +2883,63 @@
         `<span class="c-purple fw-bold">CSV数据已成功导出</span>`;
     });
 
-    // 复制镜头编号排序：含 03 的表最前（同表还有摆渡车/客舱门则最最前），
-    // 其次其余表，最后是有摆渡车/客舱门/客梯车但无 03 的表；组内保持原序。
+    // 复制镜头号：取 B 区回显表格 camera 列去重（保序）。
+    // 排序：① 含 03（引导车）第一；② 仅摆渡车(052/27)/客舱门(06/29) 最后；③ 其余居中。
     document
       .getElementById("btnCopyTableNums")
       .addEventListener("click", () => {
-        if (!lastUsedTables || lastUsedTables.length === 0) {
-          return alert("请先执行节点提取，再复制镜头编号");
-        }
-        if (!sqlEngine) return alert("引擎尚未就绪，请稍候");
-
-        const aproCodeVal = document.getElementById("aproCode").value.trim();
-
-        // 命名规则：xxx_aproCode_xxxxx。aproCode 是下划线分隔的「整段」，必须精确相等匹配，
-        // 严禁子串匹配（否则 90903 会被 903 误匹配进来）。复制的镜头编号必须严格来自该 aproCode 的表。
-        let matchedTables = [];
-        if (aproCodeVal) {
-          matchedTables = lastUsedTables.filter((tn) =>
-            tn.split("_").some((seg) => seg.trim() === aproCodeVal),
-          );
-        } else {
-          // 无 aproCode 输入时，按命名规则 xxx_aproCode_xxxxx 兜底匹配（至少两段下划线）
-          matchedTables = lastUsedTables.filter(
-            (tn) => (tn.match(/_/g) || []).length >= 2,
-          );
+        const { headers, rows } = bAreaTableData;
+        if (!rows || rows.length === 0) {
+          return alert("B 区暂无回显数据，请先执行节点提取或粘贴数据");
         }
 
-        if (matchedTables.length === 0) {
-          return alert(
-            "未找到包含 aproCode 的数据表，请检查表名命名或 aproCode 输入",
-          );
+        const camIdx = headers.findIndex(
+          (h) => h.trim().toLowerCase() === "camera",
+        );
+        if (camIdx === -1) {
+          return alert("B 区数据中未找到 camera 字段，请确认数据含表头行");
         }
+        const codeIdx = headers.findIndex(
+          (h) => h.trim().toLowerCase() === "nodecode",
+        );
 
-        // 扫描整张表收集 nodeCode 特征（不再套用提取时间过滤，避免摆渡车/客舱门/客梯车节点因时间超出范围而被漏判）
-        const infos = matchedTables.map((tn) => {
-          let has03 = false,
-            hasBus = false,
-            hasDoor = false,
-            hasStair = false;
-          databases.forEach(({ db }) => {
-            try {
-              const res = db.exec(`SELECT nodeCode FROM "${tn}"`);
-              if (res.length > 0) {
-                const cols = res[0].columns;
-                const iCode = cols.indexOf("nodeCode");
-                if (iCode === -1) return;
-                res[0].values.forEach((row) => {
-                  const code = String(
-                    row[iCode] === null || row[iCode] === undefined
-                      ? ""
-                      : row[iCode],
-                  ).trim();
-                  // 03：永远排第一（无论同表是否还有摆渡车/客舱门，其他规则对其不生效）
-                  if (code === "03" || code.split("/").includes("03"))
-                    has03 = true;
-                  // 摆渡车：052（到港摆渡车到位）/ 27（离港摆渡车到位）
-                  if (
-                    ["052", "27", "52"].some((t) =>
-                      code.split("/").includes(t),
-                    )
-                  )
-                    hasBus = true;
-                  // 客舱门：06（开客舱门）/ 29（关客舱门）
-                  if (["06", "29"].some((t) => code.split("/").includes(t)))
-                    hasDoor = true;
-                  // 客梯车：051（客梯车对接）/ 272（客梯车撤离），并入尾组特征
-                  if (["051", "272"].some((t) => code.split("/").includes(t)))
-                    hasStair = true;
-                });
-              }
-            } catch (e) {
-              /* 该库中无此表等情况，忽略 */
-            }
-          });
-          return { tn, has03, hasTailFeat: hasBus || hasDoor || hasStair };
+        // camera → nodeCode 特征聚合（同镜头多行取并集），order 保序去重
+        const feats = new Map();
+        const order = [];
+        rows.forEach((row) => {
+          const cam = (row[camIdx] || "").trim();
+          if (!cam) return;
+          let f = feats.get(cam);
+          if (!f) {
+            f = { has03: false, hasBus: false, hasDoor: false };
+            feats.set(cam, f);
+            order.push(cam);
+          }
+          if (codeIdx === -1) return;
+          const code = String(row[codeIdx] || "").trim();
+          if (!code) return;
+          // 按 "/" 分段做数值等价匹配（数字列会丢前导零：052→52、03→3、06→6）
+          const segs = code.split("/").map((s) => String(parseInt(s, 10)));
+          if (segs.includes("3")) f.has03 = true;   // 03 引导车进入
+          if (segs.includes("52") || segs.includes("27")) f.hasBus = true; // 052/27 摆渡车
+          if (segs.includes("6") || segs.includes("29")) f.hasDoor = true; // 06/29 客舱门
         });
 
-        const firstBusGroup = [],
-          firstGroup = [],
+        if (order.length === 0) {
+          return alert("B 区数据的 camera 字段均为空，无镜头编号可复制");
+        }
+
+        const firstGroup = [],
           middleGroup = [],
           lastGroup = [];
-        infos.forEach((it) => {
-          if (it.has03 && it.hasTailFeat)
-            firstBusGroup.push(it); // 03 + 摆渡车/客舱门 同表 → 最最前
-          else if (it.has03)
-            firstGroup.push(it); // 仅 03（同表无摆渡车/客舱门）→ 次前
-          else if (it.hasTailFeat) lastGroup.push(it);
-          else middleGroup.push(it);
+        order.forEach((cam) => {
+          const f = feats.get(cam);
+          if (f.has03) firstGroup.push(cam);
+          else if (f.hasBus || f.hasDoor) lastGroup.push(cam);
+          else middleGroup.push(cam);
         });
 
-        const ordered = [
-          ...firstBusGroup,
-          ...firstGroup,
-          ...middleGroup,
-          ...lastGroup,
-        ];
-
-        // 提取每个表名末尾的数字（取最后一个下划线后的连续数字段；若无下划线则取表名末尾连续数字）
-        const tailNums = [];
-        ordered.forEach((it) => {
-          const tn = it.tn;
-          const parts = tn.split("_");
-          let tail = parts[parts.length - 1];
-          const m = tail.match(/\d+/);
-          if (m) {
-            tailNums.push(m[0]);
-          } else {
-            // 兜底：从整个表名末尾抓连续数字
-            const fm = tn.match(/(\d+)$/);
-            if (fm) tailNums.push(fm[1]);
-          }
-        });
-
-        if (tailNums.length === 0) {
-          return alert("已匹配到表，但未在表名末尾解析出数字");
-        }
-
-        // 去重保序
-        const uniqNums = [];
-        const seen = new Set();
-        for (const n of tailNums) {
-          if (!seen.has(n)) {
-            seen.add(n);
-            uniqNums.push(n);
-          }
-        }
+        const uniqNums = [...firstGroup, ...middleGroup, ...lastGroup];
 
         // 一行一个，换行分隔，便于粘贴到 Excel 单列
         const text = uniqNums.join("\n");
