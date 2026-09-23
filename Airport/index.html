@@ -757,10 +757,10 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      cursor: help;
+      cursor: pointer;
       transition: color .15s, background-color .15s, box-shadow .15s;
     }
-    .th-help i { font-size: 14px; line-height: 1; }
+    .th-help i { font-size: 15px; line-height: 1; }
 @media (hover: hover) and (pointer: fine) {
     .th-help:hover { color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 3px var(--primary-light); }
 }
@@ -1443,9 +1443,9 @@
       );
     }
 
-    // 表头「?」按钮：Font Awesome 描边问号（far fa-circle-question，与页面同一套图标库）
+    // 表头「?」按钮：Font Awesome 提示图标（far fa-lightbulb：小贴士 / 提示）
     function helpBtnHtml(code) {
-      return `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="查看该节点的问题排查与视频下载"><i class="far fa-circle-question" aria-hidden="true"></i></button>`;
+      return `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="查看该节点的问题排查与视频下载"><i class="far fa-lightbulb" aria-hidden="true"></i></button>`;
     }
 
     function buildNodeHelpHtml(code) {
