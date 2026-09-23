@@ -96,6 +96,7 @@
       --primary-on: #ffffff;
       --primary-light: #eff6ff;
       --primary-soft: rgba(59, 130, 246, .12);
+      --nh-head-bg: #eff6ff;       /* 节点气泡标题栏实底色（primary-light 的不透明版，防滚动透字） */
       --accent-blue: #1d4ed8;
       --accent-sky: #0369a1;
       --accent-purple: #6d28d9;
@@ -145,6 +146,7 @@
       --primary-on: #0b1220;
       --primary-light: rgba(96, 165, 250, .14);
       --primary-soft: rgba(96, 165, 250, .22);
+      --nh-head-bg: #1c2c45;       /* rgba(96,165,250,.14) 叠加 panel #111827 后的等效实色 */
       --accent-blue: #93c5fd;
       --accent-sky: #7dd3fc;
       --accent-purple: #c4b5fd;
@@ -793,7 +795,7 @@
       align-items: center;
       gap: 6px;
       padding: 7px 12px;
-      background: var(--primary-light);
+      background: var(--nh-head-bg); /* 必须为实色：半透明色在 sticky 滚动时会透出下层文字 */
       border-bottom: 1px solid var(--primary-soft);
     }
     .nh-name { font-size: 12px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1291,8 +1293,8 @@
         "只是路过（非真正引导车）：引导车开始入位 -10 秒 到 引导车离位完成 +10 秒。",
       ],
     };
-    // 引导车离场：文档该节的两条下载范围均以「引导车开始入位」为起点，属于到位判定场景，故此处不列
-    const HELP_FOLLOWME_END = { ref: "3.5.2", params: P_FOLLOWME, trouble: T_FOLLOWME, video: [] };
+    // 引导车离场：视频下载要求与进入保持一致
+    const HELP_FOLLOWME_END = { ref: "3.5.2", params: P_FOLLOWME, trouble: T_FOLLOWME, video: HELP_FOLLOWME.video };
 
     const HELP_AIRPLANE_IN_END = {
       ref: "3.5.3",
