@@ -741,6 +741,74 @@
 @media (hover: hover) and (pointer: fine) {
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 }
+
+    /* ---------- 16. 节点字段帮助（表头「?」+ 悬浮气泡） ---------- */
+    /* 主标题行改为「中文名 + ?」行内居中；按钮为裸图标，不额外占布局高度 */
+    .tbl--nodes .th-main { display: inline-flex; align-items: center; gap: 4px; }
+    .th-help {
+      width: 15px;
+      height: 15px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      border-radius: 50%;
+      color: var(--text-dim);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: help;
+      transition: color .15s, background-color .15s, box-shadow .15s;
+    }
+    .th-help svg { width: 15px; height: 15px; display: block; }
+@media (hover: hover) and (pointer: fine) {
+    .th-help:hover { color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 3px var(--primary-light); }
+}
+    .th-help.is-open { color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 3px var(--primary-light); }
+
+    /* 气泡：沿用卡片语言（浅蓝标题栏 + 正文分区），变量取色，深浅色自动适配 */
+    .node-help-pop {
+      position: fixed;
+      z-index: 300;
+      display: none;
+      width: min(340px, calc(100vw - 16px));
+      max-height: min(70vh, 460px);
+      overflow: auto;
+      overscroll-behavior: contain;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      text-align: left;
+      white-space: normal;
+    }
+    .nh-head {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      background: var(--primary-light);
+      border-bottom: 1px solid var(--primary-soft);
+    }
+    .nh-name { font-size: 12px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nh-code { font-size: 10px; color: var(--text-dim); flex-shrink: 0; }
+    .nh-ref { margin-left: auto; font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+    .nh-body { padding: 10px 12px; }
+    .nh-sec + .nh-sec { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .nh-sec-title { display: flex; align-items: center; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+    .nh-sec-title svg { width: 13px; height: 13px; flex-shrink: 0; margin-right: 4px; }
+    .nh-sec-title--trouble { color: var(--warn); }
+    .nh-sec-title--video { color: var(--primary); }
+    .nh-list { margin: 0; padding-left: 16px; }
+    .nh-list li { color: var(--text-muted); }
+    .nh-list li + li { margin-top: 4px; }
+    .nh-empty { color: var(--weak); }
   </style>
 </head>
 
@@ -1173,6 +1241,374 @@
       remote: { dict: DICT_REMOTE, order: ORDER_REMOTE, label: "远机位" },
     };
 
+    /* ============================================================
+       节点字段帮助：表头「?」悬浮展示该节点的问题排查 / 视频下载
+       内容来源：《T3 航班保障节点视频采集算法项目关键参数配置说明（远机位）V3.0》
+       ref 为该内容在文档中的章节号
+       ============================================================ */
+    const HELP_FOLLOWME = {
+      ref: "3.5.2",
+      trouble: [
+        "有无配置引导车节点，followme_mask 绘制是否正确；",
+        "有无取流失败；有无检测到引导车；",
+        "飞机入位是否正确；",
+        "离线运行是否能检测到引导车；",
+        "以上逐条确认后，再调整判定参数。",
+      ],
+      video: [
+        "真正的引导车：引导车开始入位 -10 秒 到 飞机开始入位 +20 秒；",
+        "只是路过（非真正引导车）：引导车开始入位 -10 秒 到 引导车离位完成 +10 秒。",
+      ],
+    };
+
+    const HELP_AIRPLANE_IN_END = {
+      ref: "3.5.3",
+      trouble: [
+        "有无正确设置飞机指向（left / right）；",
+        "有无正确绘制 area_mask；",
+        "有无正确设置最小停机位值；",
+        "线上取流是否正常；",
+        "飞机是否能正确检测，检测框 x 值部分是否抖动严重，是则调整 moving_dis 的值。",
+      ],
+      video: ["飞机开始入位 -10 秒 到 飞机入位完成 +20 秒。"],
+    };
+
+    const HELP_AIRPLANE_IN_START = {
+      ref: "3.5.4",
+      trouble: [
+        "有无正确绘制 area_mask、mask；组合机位需要额外查看；",
+        "线上取流是否正常；",
+        "飞机是否能正确检测、是否有检测丢失：丢失不严重可调大 item_length 或 has_ratio，丢失严重则加标。",
+      ],
+      video: [
+        "飞机入位开始：飞机入位开始 -20 秒 到 +20 秒；",
+        "飞机离位完成：飞机离位完成 -20 秒 到 +20 秒。",
+      ],
+    };
+
+    const HELP_AIRPLANE_OUT_START = {
+      ref: "3.5.5",
+      trouble: [
+        "有无正确配置飞机离位开始；",
+        "有无正确配置 main_view_list；",
+        "检测框最前面的 x 或 y 边是否持续抖动。",
+      ],
+      video: ["飞机离位开始 -20 秒 到 飞机离位开始 +20 秒。"],
+    };
+
+    const HELP_LUNDANG = {
+      ref: "3.5.6",
+      trouble: [
+        "上轮挡：与飞机入位完成绑定，参照「飞机入位完成」的排查流程；",
+        "撤轮挡：与牵引车对接、飞机开始离位绑定，参照「牵引车对接」与「飞机离位开始」的排查流程。",
+      ],
+      video: [],
+    };
+
+    const HELP_SHUTTLE = {
+      ref: "3.5.7",
+      trouble: [
+        "有无配置摆渡车节点；shuttle_bus_mask 是否正确；",
+        "该视角能否判断到飞机入位开始；",
+        "摆渡车的检测是否正确；离港摆渡车需看有无加油开始。",
+      ],
+      video: [
+        "路过 / 非真正摆渡车：下载车辆进入到离开即可；",
+        "真正的进港摆渡车：需要下载到飞机开始入位；",
+        "离港摆渡车：从到位到离位；停留时间很长时，下载到位到到位后 30 秒。",
+      ],
+    };
+
+    const HELP_PAS_CAR = {
+      ref: "3.5.8",
+      trouble: [
+        "有无配置客梯车节点；",
+        "有无画 pas_car_mask；有无检测到客梯车；",
+        "有无取流失败。",
+      ],
+      video: [
+        "客梯车对接：对接完成时间 -20 秒 到 +20 秒；",
+        "客梯车撤离：撤离时间 -30 秒 到 撤离完成 +20 秒。",
+      ],
+    };
+
+    const HELP_GARBAGE = {
+      ref: "3.5.9",
+      trouble: [
+        "有无配置垃圾车节点；",
+        "有无画 garbage_mask；有无检测到垃圾车；有无检测到垃圾车作业（garbage2）；",
+        "有无取流失败。",
+      ],
+      video: ["垃圾车到位 -20 秒 到 垃圾车离位 +20 秒。"],
+    };
+
+    const HELP_FOOD = {
+      ref: "3.5.10",
+      trouble: [
+        "有无配置配餐节点；",
+        "food_car 底边中点是否在 area_mask 中；有无检测到配餐车相应标签（food_car1 / food_car2）；",
+        "有无取流失败。",
+      ],
+      video: [
+        "配餐开始错误：配餐开始 -20 秒 到 +30 秒；",
+        "配餐结束错误：配餐结束 -20 秒 到 +30 秒。",
+      ],
+    };
+
+    const HELP_OIL = {
+      ref: "3.5.11",
+      trouble: [
+        "有无配置加油节点；",
+        "oil_car 中点是否在 oil_mask 中；有无检测到加油车；",
+        "有无取流失败；",
+        "加油开始晚了：加油车停止后检测框是否明显抖动；",
+        "加油开始早了：检测框是否提前不动；",
+        "加油完成晚了：检测框动得不明显；",
+        "加油完成早了：检查 oil_mask。",
+      ],
+      video: [
+        "加油开始错误：加油开始 -20 秒 到 +30 秒；",
+        "加油结束错误：加油结束 -30 秒 到 加油完成 +30 秒。",
+      ],
+    };
+
+    const HELP_WATER = {
+      ref: "3.5.14",
+      trouble: [
+        "有无配置清水 / 污水节点；",
+        "清水 / 污水车的检测框中点是否在 water_mask 中；有无检测到清水 / 污水车；",
+        "有无取流失败；",
+        "清水 / 污水开始时，车辆检测框与飞机检测框的 IOU 是否大于设定的 in_iou；",
+        "作业持续时间是否大于 run_time。",
+      ],
+      video: ["清水 / 污水开始 -20 秒 到 清水 / 污水结束 +20 秒。"],
+    };
+
+    const HELP_PUSH_CAR = {
+      ref: "3.5.15",
+      trouble: [
+        "有无配置牵引车节点；飞机离位开始有无正确识别——未正确识别则先排查飞机离位开始；",
+        "牵引车检测框的中点是否在 area_mask 中；有无检测到牵引车；",
+        "有无取流失败；",
+        "main_view_list 中对应的飞机朝向是否配置正确；airplane_in_end 中设置的是否正确（x 还是 y）；",
+        "牵引车在 x / y 上的距离是否小于设定的 airplane_dis。",
+      ],
+      video: [
+        "真正的牵引车对接没识别到：牵引车对接 -20 秒 到 飞机开始离位 +10 秒；",
+        "非真正牵引车（路过）：路过的牵引车进来 -10 秒 到 +10 秒。",
+      ],
+    };
+
+    // 节点编码 → 帮助内容；未登记的节点（如靠桥 / 撤桥）气泡内提示暂无说明
+    const NODE_HELP = {
+      "03": HELP_FOLLOWME,
+      followme_end: HELP_FOLLOWME,
+      airplane_in_start: HELP_AIRPLANE_IN_START,
+      airplane_in_end: HELP_AIRPLANE_IN_END,
+      airplane_out_start: HELP_AIRPLANE_OUT_START,
+      airplane_out_end: HELP_AIRPLANE_IN_START,
+      "79": HELP_AIRPLANE_OUT_START,
+      "04": HELP_LUNDANG,
+      "32": HELP_LUNDANG,
+      "052": HELP_SHUTTLE,
+      "27": HELP_SHUTTLE,
+      "051": HELP_PAS_CAR,
+      "272": HELP_PAS_CAR,
+      garbage_start: HELP_GARBAGE,
+      garbage_end: HELP_GARBAGE,
+      "14": HELP_FOOD,
+      "15": HELP_FOOD,
+      "16": HELP_OIL,
+      "17": HELP_OIL,
+      "121": HELP_WATER,
+      "13": HELP_WATER,
+      "112": HELP_WATER,
+      "12": HELP_WATER,
+      "33": HELP_PUSH_CAR,
+    };
+
+    const ICON_TROUBLE =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>' +
+      '<line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+    const ICON_VIDEO =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M12 3v10"></path><path d="m8.5 9.5 3.5 3.5 3.5-3.5"></path>' +
+      '<path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>';
+
+    function escapeHtml(str) {
+      return String(str === null || str === undefined ? "" : str).replace(
+        /[&<>"']/g,
+        (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+      );
+    }
+
+    // 表头「?」按钮：圆环问号图标（内置 SVG，不依赖图标字体）；不额外占布局高度
+    function helpBtnHtml(code) {
+      return (
+        `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="查看该节点的问题排查与视频下载">` +
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
+        `<circle cx="12" cy="12" r="10"></circle>` +
+        `<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>` +
+        `<path d="M12 17h.01"></path></svg>` +
+        `</button>`
+      );
+    }
+
+    function buildNodeHelpHtml(code) {
+      const info = NODE_HELP[code];
+      const name = (CONFIG[currentMode].dict || {})[code] || code;
+      const head =
+        `<div class="nh-head">` +
+        `<span class="nh-name">${escapeHtml(name)}</span>` +
+        `<span class="nh-code">${escapeHtml(code)}</span>` +
+        (info && info.ref ? `<span class="nh-ref">详见 ${escapeHtml(info.ref)}</span>` : "") +
+        `</div>`;
+
+      const hasTrouble = info && info.trouble && info.trouble.length;
+      const hasVideo = info && info.video && info.video.length;
+      if (!hasTrouble && !hasVideo) {
+        return head + `<div class="nh-body"><p class="nh-empty">该节点暂无独立的问题排查 / 视频下载说明。</p></div>`;
+      }
+
+      let body = `<div class="nh-body">`;
+      if (hasTrouble) {
+        body +=
+          `<div class="nh-sec"><div class="nh-sec-title nh-sec-title--trouble">${ICON_TROUBLE}问题排查</div>` +
+          `<ul class="nh-list">${info.trouble.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul></div>`;
+      }
+      if (hasVideo) {
+        body +=
+          `<div class="nh-sec"><div class="nh-sec-title nh-sec-title--video">${ICON_VIDEO}视频下载</div>` +
+          `<ul class="nh-list">${info.video.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul></div>`;
+      }
+      return head + body + `</div>`;
+    }
+
+    // 悬浮气泡：桌面 hover 显示并可在气泡内滚动阅读；触屏点击可切换
+    const nodeHelp = {
+      el: null,
+      anchor: null,
+      hideTimer: 0,
+      pinned: false, // 点击固定：固定后不因鼠标移开而关闭
+      ensure() {
+        if (this.el) return this.el;
+        const el = document.createElement("div");
+        el.className = "node-help-pop custom-scrollbar";
+        el.setAttribute("role", "tooltip");
+        el.addEventListener("mouseenter", () => clearTimeout(this.hideTimer));
+        el.addEventListener("mouseleave", () => { if (!this.pinned) this.hide(); });
+        document.body.appendChild(el);
+        this.el = el;
+        return el;
+      },
+      position() {
+        const el = this.el;
+        const anchor = this.anchor;
+        if (!el || !anchor) return;
+        const gap = 8;
+        const pad = 8;
+        const r = anchor.getBoundingClientRect();
+        const w = el.offsetWidth;
+        const h = el.offsetHeight;
+        let left = r.left + r.width / 2 - w / 2;
+        left = Math.max(pad, Math.min(left, window.innerWidth - w - pad));
+        let top = r.bottom + gap;
+        if (top + h > window.innerHeight - pad) {
+          const above = r.top - gap - h;
+          top = above >= pad ? above : Math.max(pad, window.innerHeight - h - pad);
+        }
+        el.style.left = left + "px";
+        el.style.top = top + "px";
+      },
+      show(anchor, pin) {
+        if (this.anchor !== anchor) this.markOpen(false);
+        const el = this.ensure();
+        clearTimeout(this.hideTimer);
+        el.innerHTML = buildNodeHelpHtml(anchor.dataset.code);
+        el.style.visibility = "hidden";
+        el.style.display = "block";
+        this.anchor = anchor;
+        this.pinned = !!pin;
+        this.position();
+        el.scrollTop = 0;
+        el.style.visibility = "";
+        this.markOpen(true);
+      },
+      markOpen(open) {
+        if (!this.anchor) return;
+        this.anchor.classList.toggle("is-open", open);
+      },
+      hide() {
+        clearTimeout(this.hideTimer);
+        if (this.el) {
+          this.el.style.display = "none";
+          this.el.style.visibility = "";
+        }
+        this.markOpen(false);
+        this.anchor = null;
+        this.pinned = false;
+      },
+      scheduleHide(delay) {
+        if (this.pinned) return;
+        clearTimeout(this.hideTimer);
+        this.hideTimer = setTimeout(() => this.hide(), delay || 180);
+      },
+      isOpen() {
+        return !!(this.el && this.el.style.display === "block");
+      },
+    };
+
+    (function bindNodeHelp() {
+      const table = document.getElementById("nodeTable");
+      if (!table) return;
+
+      // 进入「?」即显示（临时查看）；移开后延迟关闭，留出移动到气泡内的时间
+      table.addEventListener("mouseover", (e) => {
+        const btn = e.target.closest ? e.target.closest(".th-help") : null;
+        if (btn) {
+          if (nodeHelp.anchor !== btn) nodeHelp.show(btn, false);
+        } else {
+          nodeHelp.scheduleHide();
+        }
+      });
+      table.addEventListener("mouseout", (e) => {
+        const btn = e.target.closest ? e.target.closest(".th-help") : null;
+        if (btn) nodeHelp.scheduleHide();
+      });
+
+      // 点击固定：再点一次或点击别处 / Esc 关闭（触屏用户走这条路径）
+      table.addEventListener("click", (e) => {
+        const btn = e.target.closest ? e.target.closest(".th-help") : null;
+        if (!btn) return;
+        e.preventDefault();
+        if (nodeHelp.anchor === btn && nodeHelp.isOpen() && nodeHelp.pinned) nodeHelp.hide();
+        else nodeHelp.show(btn, true);
+      });
+
+      // 点击别处、按 Esc 关闭
+      document.addEventListener("click", (e) => {
+        if (!nodeHelp.isOpen()) return;
+        if (e.target.closest && (e.target.closest(".th-help") || e.target.closest(".node-help-pop"))) return;
+        nodeHelp.hide();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") nodeHelp.hide();
+      });
+
+      // 表格横向滚动 / 窗口尺寸变化时跟随表头位置
+      let rafId = 0;
+      const follow = () => {
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => {
+          rafId = 0;
+          if (nodeHelp.isOpen()) nodeHelp.position();
+        });
+      };
+      window.addEventListener("scroll", follow, true);
+      window.addEventListener("resize", follow);
+    })();
+
     let currentMode = "near";
     let sqlEngine;
     let databases = [];
@@ -1391,7 +1827,7 @@
         const code = order[i];
         theadRows.push(`
           <th>
-            <div class="th-main">${dict[code]}</div>
+            <div class="th-main">${dict[code]}${helpBtnHtml(code)}</div>
             <div class="th-sub">${code}</div>
           </th>`);
         tbodyRows.push(
@@ -2023,7 +2459,7 @@
 
           theadRows.push(`
           <th>
-            <div class="th-main">${dict[code]}</div>
+            <div class="th-main">${dict[code]}${helpBtnHtml(code)}</div>
             <div class="th-sub">${code}</div>
           </th>`);
           tbodyRows.push(
