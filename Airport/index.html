@@ -805,9 +805,24 @@
     .nh-sec-title svg { width: 13px; height: 13px; flex-shrink: 0; margin-right: 4px; }
     .nh-sec-title--trouble { color: var(--warn); }
     .nh-sec-title--video { color: var(--primary); }
+    .nh-sec-title--param { color: var(--accent-purple); }
     .nh-list { margin: 0; padding-left: 16px; }
     .nh-list li { color: var(--text-muted); }
     .nh-list li + li { margin-top: 4px; }
+    /* 参数说明：参数名以等宽 code 徽标呈现，行内布局让文字紧跟徽标自然换行 */
+    .nh-list--params code {
+      display: inline-block;
+      margin-right: 6px;
+      padding: 0 5px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      line-height: 17px;
+      color: var(--accent-purple);
+      white-space: nowrap;
+    }
     .nh-empty { color: var(--weak); }
   </style>
 </head>
@@ -1242,14 +1257,15 @@
     };
 
     /* ============================================================
-       节点字段帮助：表头「?」悬浮展示该节点的问题排查 / 视频下载
+       节点字段帮助：表头「?」悬浮展示该节点的判定参数 / 问题排查 / 视频下载
        内容来源：《T3 航班保障节点视频采集算法项目关键参数配置说明（远机位）V3.0》
        ref 为该内容在文档中的章节号
        ============================================================ */
     /* 拆分约定：文档中 3.5.4 / 3.5.7 / 3.5.8 / 3.5.10 / 3.5.11 等章节把「开始 + 结束」
        合并在同一节说明，文档原文按节点逐条列出的（如「飞机入位开始：…」「客梯车撤离：…」）
        这里一律按节点拆开——每个节点只展示与自己相关的那一条，避免被误读成「开始和结束都要下载」。
-       文档本身未按节点区分的（垃圾车、清水/污水）则保持原文单条不动。 */
+       文档本身未按节点区分的（垃圾车、清水/污水）则保持原文单条不动。
+       params 为各节「参数说明」小节：数组项为 { k: 参数名, v: 说明 } 或纯字符串（示例 / 备注）。 */
 
     // —— 3.5.2 引导车入位 / 离开：排查条目同节共用，视频下载按节点拆开 ——
     const T_FOLLOWME = [
@@ -1259,8 +1275,16 @@
       "离线运行是否能检测到引导车；",
       "以上逐条确认后，再调整判定参数。",
     ];
+    // 判定参数：入位 / 离场共用同一组
+    const P_FOLLOWME = [
+      { k: "item_length", v: "系统缓存连续画面总帧数；" },
+      { k: "has_ratio", v: "缓存帧内识别到引导车的占比，达标判定引导车到位；" },
+      { k: "out_ratio", v: "缓存帧内完全无引导车的占比，达标判定引导车离场。" },
+      "示例：'950_95002': {'item_length': 10, 'has_ratio': 0.5, 'out_ratio': 1} —— 缓存 10 帧画面，≥5 帧识别到引导车判定到位，10 帧全部无引导车判定离场。",
+    ];
     const HELP_FOLLOWME = {
       ref: "3.5.2",
+      params: P_FOLLOWME,
       trouble: T_FOLLOWME,
       video: [
         "真正的引导车：引导车开始入位 -10 秒 到 飞机开始入位 +20 秒；",
@@ -1268,10 +1292,15 @@
       ],
     };
     // 引导车离场：文档该节的两条下载范围均以「引导车开始入位」为起点，属于到位判定场景，故此处不列
-    const HELP_FOLLOWME_END = { ref: "3.5.2", trouble: T_FOLLOWME, video: [] };
+    const HELP_FOLLOWME_END = { ref: "3.5.2", params: P_FOLLOWME, trouble: T_FOLLOWME, video: [] };
 
     const HELP_AIRPLANE_IN_END = {
       ref: "3.5.3",
+      params: [
+        { k: "airplane_in_end", v: "飞机停止基准线坐标，填写坐标轴（x / y）+ 坐标阈值，用于判断飞机是否停入 T 字停机线；" },
+        { k: "airplane_in_end_para_dict", v: "帧稳定判定参数，参数逻辑与引导车一致。" },
+        "示例：缓存 20 帧画面，20 帧全部识别到飞机，判定飞机入位完成。",
+      ],
       trouble: [
         "有无正确设置飞机指向（left / right）；",
         "有无正确绘制 area_mask；",
@@ -1290,17 +1319,26 @@
     ];
     const HELP_AIRPLANE_IN_START = {
       ref: "3.5.4",
+      params: [
+        { k: "airplane_in_start_para_dict", v: "帧稳定判定参数，参数逻辑与引导车完全一致（item_length / has_ratio / out_ratio），用于识别飞机滑入机位。" },
+      ],
       trouble: T_AIRPLANE_IN_START,
       video: ["飞机入位开始：飞机入位开始 -20 秒 到 +20 秒。"],
     };
     const HELP_AIRPLANE_OUT_END = {
       ref: "3.5.4",
+      params: [
+        { k: "airplane_in_start_para_dict", v: "同一组参数用于识别整机滑走（飞机离位完全），参数逻辑与引导车完全一致。" },
+      ],
       trouble: T_AIRPLANE_IN_START,
       video: ["飞机离位完成：飞机离位完成 -20 秒 到 +20 秒。"],
     };
 
     const HELP_AIRPLANE_OUT_START = {
       ref: "3.5.5",
+      params: [
+        { k: "airplane_start_out_para_dict", v: "连续多帧检测到飞机与机位基准距离持续增大，判定飞机开始推出作业。" },
+      ],
       trouble: [
         "有无正确配置飞机离位开始；",
         "有无正确配置 main_view_list；",
@@ -1310,13 +1348,18 @@
     };
 
     // —— 3.5.6 轮挡作业时间阈值：上轮挡 / 撤轮挡 的排查分别指向不同节点 ——
+    const P_LUNDANG = [
+      { k: "lundang_time_dis", v: "轮挡作业时间阈值，默认值 30 秒，无需修改。" },
+    ];
     const HELP_LUNDANG_IN = {
       ref: "3.5.6",
+      params: P_LUNDANG,
       trouble: ["上轮挡与飞机入位完成绑定，参照「飞机入位完成」的排查流程。"],
       video: [],
     };
     const HELP_LUNDANG_OUT = {
       ref: "3.5.6",
+      params: P_LUNDANG,
       trouble: ["撤轮挡与牵引车对接、飞机开始离位绑定，参照「牵引车对接」与「飞机离位开始」的排查流程。"],
       video: [],
     };
@@ -1327,8 +1370,13 @@
       "该视角能否判断到飞机入位开始；",
       "摆渡车的检测是否正确；离港摆渡车需看有无加油开始。",
     ];
+    const P_SHUTTLE = [
+      { k: "shuttle_bus_para_dict", v: "判定逻辑同引导车（item_length / has_ratio / out_ratio）；摆渡车画面抖动明显，默认缓存帧数更高，降低误判概率。" },
+      "示例：'950_95002': {'item_length': 80, 'has_ratio': 0.25, 'out_ratio': 1}。",
+    ];
     const HELP_SHUTTLE_ARR = {
       ref: "3.5.7",
+      params: P_SHUTTLE,
       trouble: T_SHUTTLE,
       video: [
         "路过 / 非真正摆渡车：下载车辆进入到离开即可；",
@@ -1337,29 +1385,46 @@
     };
     const HELP_SHUTTLE_DEP = {
       ref: "3.5.7",
+      params: P_SHUTTLE,
       trouble: T_SHUTTLE,
       video: ["离港摆渡车：从离港摆渡车到位 到 离位；停留时间很长时，下载到位到到位后 30 秒。"],
     };
 
-    // —— 3.5.8 客梯车对接 / 撤离 ——
+    // —— 3.5.8 客梯车对接 / 撤离（IOU 相交面积判定）——
     const T_PAS_CAR = [
       "有无配置客梯车节点；",
       "有无画 pas_car_mask；有无检测到客梯车；",
       "有无取流失败。",
     ];
+    const P_PAS_CAR_IN = [
+      { k: "in_iou", v: "客梯车检测框与机位 area_mask 相交面积阈值，超过阈值判定对接到位；" },
+      "设定的 out_iou 需小于设定的 in_iou；大机型客梯车距离机位线更远，IOU 数值会偏小，可单独调整阈值适配。",
+    ];
+    const P_PAS_CAR_OUT = [
+      { k: "out_iou", v: "与 area_mask 相交面积低于该阈值，判定客梯车撤离；" },
+      "设定的 out_iou 需小于设定的 in_iou；大机型客梯车距离机位线更远，IOU 数值会偏小，可单独调整阈值适配。",
+    ];
     const HELP_PAS_CAR_IN = {
       ref: "3.5.8",
+      params: P_PAS_CAR_IN,
       trouble: T_PAS_CAR,
       video: ["客梯车对接：对接完成时间 -20 秒 到 +20 秒。"],
     };
     const HELP_PAS_CAR_OUT = {
       ref: "3.5.8",
+      params: P_PAS_CAR_OUT,
       trouble: T_PAS_CAR,
       video: ["客梯车撤离：撤离时间 -30 秒 到 撤离完成 +20 秒。"],
     };
 
     const HELP_GARBAGE = {
       ref: "3.5.9",
+      params: [
+        { k: "item_length", v: "缓存画面总帧数；" },
+        { k: "moving_dis", v: "车辆移动距离阈值；" },
+        { k: "has_ratio", v: "缓存帧内车辆移动距离小于阈值的占比，达标判定车辆静止到位；" },
+        { k: "out_ratio", v: "缓存帧内车辆大幅移动占比，达标判定车辆离场。" },
+      ],
       trouble: [
         "有无配置垃圾车节点；",
         "有无画 garbage_mask；有无检测到垃圾车；有无检测到垃圾车作业（garbage2）；",
@@ -1376,11 +1441,17 @@
     ];
     const HELP_FOOD_START = {
       ref: "3.5.10",
+      params: [
+        { k: "food_car_para_dict", v: "识别配餐车车厢升降状态：连续多帧检测到车厢升起，判定配餐开始。" },
+      ],
       trouble: T_FOOD,
       video: ["配餐开始错误：配餐开始 -20 秒 到 +30 秒。"],
     };
     const HELP_FOOD_END = {
       ref: "3.5.10",
+      params: [
+        { k: "food_car_para_dict", v: "识别配餐车车厢升降状态：全程无车厢升起画面，判定配餐结束。" },
+      ],
       trouble: T_FOOD,
       video: ["配餐结束错误：配餐结束 -20 秒 到 +30 秒。"],
     };
@@ -1393,6 +1464,10 @@
     ];
     const HELP_OIL_START = {
       ref: "3.5.11",
+      params: [
+        { k: "oil_car_para_dict", v: "基础参数同引导车（item_length / has_ratio / out_ratio），新增 move_dis 移动阈值；" },
+        { k: "move_dis", v: "持续识别到加油车、且车辆移动距离小于该阈值，判定加油启动。" },
+      ],
       trouble: [
         ...T_OIL_BASE,
         "加油开始晚了：加油车停止后检测框是否明显抖动；",
@@ -1402,6 +1477,10 @@
     };
     const HELP_OIL_END = {
       ref: "3.5.11",
+      params: [
+        { k: "oil_car_para_dict", v: "基础参数同引导车（item_length / has_ratio / out_ratio）；" },
+        { k: "move_dis", v: "长时间画面无加油车，判定加油完成。" },
+      ],
       trouble: [
         ...T_OIL_BASE,
         "加油完成晚了：检测框动得不明显；",
@@ -1410,8 +1489,42 @@
       video: ["加油结束错误：加油结束 -30 秒 到 加油完成 +30 秒。"],
     };
 
+    // —— 3.5.12 / 3.5.13 客舱门、货舱门：文档只给判定逻辑（无排查 / 下载），仅登记参数说明 ——
+    const HELP_CABIN_OPEN = {
+      ref: "3.5.12",
+      params: [{ k: "cabin_door_para_dict", v: "连续多帧识别到舱门打开标记，判定客舱门打开。" }],
+      trouble: [],
+      video: [],
+    };
+    const HELP_CABIN_CLOSE = {
+      ref: "3.5.12",
+      params: [{ k: "cabin_door_para_dict", v: "缓存帧全程无开门标记，判定客舱门关闭。" }],
+      trouble: [],
+      video: [],
+    };
+    const HELP_CARGO_OPEN = {
+      ref: "3.5.13",
+      params: [{ k: "cargo_door_para_dict", v: "参数逻辑、判定规则与客舱门完全一致：连续多帧识别到舱门打开标记，判定货舱门打开。" }],
+      trouble: [],
+      video: [],
+    };
+    const HELP_CARGO_CLOSE = {
+      ref: "3.5.13",
+      params: [{ k: "cargo_door_para_dict", v: "参数逻辑、判定规则与客舱门完全一致：缓存帧全程无开门标记，判定货舱门关闭。" }],
+      trouble: [],
+      video: [],
+    };
+
     const HELP_WATER = {
       ref: "3.5.14",
+      params: [
+        { k: "item_length", v: "缓存画面总帧数；" },
+        { k: "has_ratio", v: "缓存帧内识别到清水 / 污水车的占比；" },
+        { k: "out_ratio", v: "缓存帧内无清水 / 污水车的占比；" },
+        { k: "in_iou", v: "清水 / 污水车检测框与飞机画面相交面积阈值；" },
+        { k: "run_time", v: "作业最低持续时长（单位：秒），时长不足不判定作业完成；" },
+        "判定逻辑：缓存帧内足够比例识别到车辆、且与飞机相交面积达标，判定开始作业；长时间无车辆且作业时长达标，判定作业结束。",
+      ],
       trouble: [
         "有无配置清水 / 污水节点；",
         "清水 / 污水车的检测框中点是否在 water_mask 中；有无检测到清水 / 污水车；",
@@ -1424,6 +1537,13 @@
 
     const HELP_PUSH_CAR = {
       ref: "3.5.15",
+      params: [
+        { k: "item_length", v: "保存的检测帧结果数量；" },
+        { k: "has_ratio", v: "有检测到牵引车的帧数比例；" },
+        { k: "out_ratio", v: "没有检测到牵引车的帧数比例；" },
+        { k: "airplane_dis", v: "牵引车与航空器的距离阈值，牵引车在 x / y 上的距离小于该值判定贴合；" },
+        "仅主视角生效：与 3.5.1 节 main_view_list 确定的主视角相关。",
+      ],
       trouble: [
         "有无配置牵引车节点；飞机离位开始有无正确识别——未正确识别则先排查飞机离位开始；",
         "牵引车检测框的中点是否在 area_mask 中；有无检测到牵引车；",
@@ -1437,7 +1557,7 @@
       ],
     };
 
-    // 节点编码 → 帮助内容；未登记的节点（如 79 飞机推出、客舱门、行李拖车、近机位靠桥/撤桥）
+    // 节点编码 → 帮助内容；未登记的节点（如 79 飞机推出、行李拖车、近机位靠桥/撤桥）
     // 气泡内提示暂无说明 —— 只呈现文档中确有的内容，不做推断映射
     const NODE_HELP = {
       "03": HELP_FOLLOWME, // 引导车到位
@@ -1458,6 +1578,10 @@
       "15": HELP_FOOD_END, // 配餐结束
       "16": HELP_OIL_START, // 加油开始
       "17": HELP_OIL_END, // 加油结束
+      "06": HELP_CABIN_OPEN, // 客舱门打开
+      "29": HELP_CABIN_CLOSE, // 客舱门关闭
+      "09": HELP_CARGO_OPEN, // 货舱门打开
+      "28": HELP_CARGO_CLOSE, // 货舱门关闭
       "121": HELP_WATER,
       "13": HELP_WATER,
       "112": HELP_WATER,
@@ -1473,6 +1597,13 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M12 3v10"></path><path d="m8.5 9.5 3.5 3.5 3.5-3.5"></path>' +
       '<path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>';
+    const ICON_PARAM =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>' +
+      '<line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>' +
+      '<line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>' +
+      '<line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line>' +
+      '<line x1="17" y1="16" x2="23" y2="16"></line></svg>';
 
     function escapeHtml(str) {
       return String(str === null || str === undefined ? "" : str).replace(
@@ -1483,7 +1614,7 @@
 
     // 表头「?」按钮：Font Awesome 提示图标（far fa-lightbulb：小贴士 / 提示）
     function helpBtnHtml(code) {
-      return `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="查看该节点的问题排查与视频下载"><i class="far fa-lightbulb" aria-hidden="true"></i></button>`;
+      return `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="查看该节点的判定参数、问题排查与视频下载"><i class="far fa-lightbulb" aria-hidden="true"></i></button>`;
     }
 
     function buildNodeHelpHtml(code) {
@@ -1496,13 +1627,25 @@
         (info && info.ref ? `<span class="nh-ref">详见 ${escapeHtml(info.ref)}</span>` : "") +
         `</div>`;
 
+      const hasParams = info && info.params && info.params.length;
       const hasTrouble = info && info.trouble && info.trouble.length;
       const hasVideo = info && info.video && info.video.length;
-      if (!hasTrouble && !hasVideo) {
+      if (!hasParams && !hasTrouble && !hasVideo) {
         return head + `<div class="nh-body"><p class="nh-empty">该节点暂无独立的问题排查 / 视频下载说明。</p></div>`;
       }
 
       let body = `<div class="nh-body">`;
+      if (hasParams) {
+        body +=
+          `<div class="nh-sec"><div class="nh-sec-title nh-sec-title--param">${ICON_PARAM}判定参数</div>` +
+          `<ul class="nh-list nh-list--params">${info.params
+            .map((p) =>
+              typeof p === "string"
+                ? `<li>${escapeHtml(p)}</li>`
+                : `<li><code>${escapeHtml(p.k)}</code><span>${escapeHtml(p.v)}</span></li>`,
+            )
+            .join("")}</ul></div>`;
+      }
       if (hasTrouble) {
         body +=
           `<div class="nh-sec"><div class="nh-sec-title nh-sec-title--trouble">${ICON_TROUBLE}问题排查</div>` +
