@@ -2903,26 +2903,38 @@
           (h) => h.trim().toLowerCase() === "nodecode",
         );
 
-        // camera → nodeCode 特征聚合（同镜头多行取并集），order 保序去重
+        // camera → nodeCode 特征聚合（同镜头多行取并集），order 保序去重。
+        // 判定只基于 B 区数据（aproCode+时间窗过滤后的回显），不扫全表——
+        // 窗口外/其他机位表的特征会污染分组。
         const feats = new Map();
+        const rawCodes = new Map(); // 排查用：镜头 → 出现过的 nodeCode 原始值
         const order = [];
+        // 摆渡车(052/27)与客舱门(06/29)的归一化编码：尾组要求镜头「只」有这些节点
+        const TAIL_CODES = new Set(["52", "27", "6", "29"]);
         rows.forEach((row) => {
           const cam = (row[camIdx] || "").trim();
           if (!cam) return;
           let f = feats.get(cam);
           if (!f) {
-            f = { has03: false, hasBus: false, hasDoor: false };
+            f = { has03: false, codes: new Set() };
             feats.set(cam, f);
             order.push(cam);
           }
           if (codeIdx === -1) return;
           const code = String(row[codeIdx] || "").trim();
           if (!code) return;
-          // 按 "/" 分段做数值等价匹配（数字列会丢前导零：052→52、03→3、06→6）
-          const segs = code.split("/").map((s) => String(parseInt(s, 10)));
-          if (segs.includes("3")) f.has03 = true;   // 03 引导车进入
-          if (segs.includes("52") || segs.includes("27")) f.hasBus = true; // 052/27 摆渡车
-          if (segs.includes("6") || segs.includes("29")) f.hasDoor = true; // 06/29 客舱门
+          let rc = rawCodes.get(cam);
+          if (!rc) rawCodes.set(cam, (rc = new Set()));
+          rc.add(code);
+          // 按 "/" 分段数值等价匹配（数字列会丢前导零：052→52、03→3、06→6）；
+          // NFKC + 提取首段连续数字，兜住引号残留('052)、全角(０５２)、小数(052.0)等杂质
+          code.split("/").forEach((s) => {
+            const m = s.normalize("NFKC").match(/\d+/);
+            if (!m) return;
+            const n = String(parseInt(m[0], 10));
+            f.codes.add(n);
+            if (n === "3") f.has03 = true; // 03 引导车进入
+          });
         });
 
         if (order.length === 0) {
@@ -2934,10 +2946,25 @@
           lastGroup = [];
         order.forEach((cam) => {
           const f = feats.get(cam);
+          // 尾组是「只」有摆渡车/客舱门：混了客梯车、配餐等其他节点的镜头按普通镜头排中间
+          let onlyTail = f.codes.size > 0;
+          f.codes.forEach((c) => {
+            if (!TAIL_CODES.has(c)) onlyTail = false;
+          });
           if (f.has03) firstGroup.push(cam);
-          else if (f.hasBus || f.hasDoor) lastGroup.push(cam);
+          else if (onlyTail) lastGroup.push(cam);
           else middleGroup.push(cam);
         });
+        // 排查辅助：排中间 = nodeCode 未命中任何特征，F12 控制台可见原始值
+        if (middleGroup.length > 0) {
+          console.log(
+            "[复制镜头号] 未命中特征(排中间)的镜头：",
+            middleGroup.map((cam) => ({
+              cam,
+              nodeCode: [...(rawCodes.get(cam) || [])].join(" / "),
+            })),
+          );
+        }
 
         const uniqNums = [...firstGroup, ...middleGroup, ...lastGroup];
 
