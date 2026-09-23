@@ -743,11 +743,11 @@
 }
 
     /* ---------- 16. 节点字段帮助（表头「?」+ 悬浮气泡） ---------- */
-    /* 主标题行改为「中文名 + ?」行内居中；按钮为裸图标，不额外占布局高度 */
+    /* 主标题行改为「中文名 + ?」行内居中；图标为 Font Awesome 描边问号，不额外占布局高度 */
     .tbl--nodes .th-main { display: inline-flex; align-items: center; gap: 4px; }
     .th-help {
-      width: 15px;
-      height: 15px;
+      width: 16px;
+      height: 16px;
       padding: 0;
       border: 0;
       background: transparent;
@@ -760,7 +760,7 @@
       cursor: help;
       transition: color .15s, background-color .15s, box-shadow .15s;
     }
-    .th-help svg { width: 15px; height: 15px; display: block; }
+    .th-help i { font-size: 14px; line-height: 1; }
 @media (hover: hover) and (pointer: fine) {
     .th-help:hover { color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 3px var(--primary-light); }
 }
@@ -1443,16 +1443,9 @@
       );
     }
 
-    // 表头「?」按钮：圆环问号图标（内置 SVG，不依赖图标字体）；不额外占布局高度
+    // 表头「?」按钮：Font Awesome 描边问号（far fa-circle-question，与页面同一套图标库）
     function helpBtnHtml(code) {
-      return (
-        `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="查看该节点的问题排查与视频下载">` +
-        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
-        `<circle cx="12" cy="12" r="10"></circle>` +
-        `<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>` +
-        `<path d="M12 17h.01"></path></svg>` +
-        `</button>`
-      );
+      return `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="查看该节点的问题排查与视频下载"><i class="far fa-circle-question" aria-hidden="true"></i></button>`;
     }
 
     function buildNodeHelpHtml(code) {
