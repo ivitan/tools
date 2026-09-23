@@ -1246,20 +1246,29 @@
        内容来源：《T3 航班保障节点视频采集算法项目关键参数配置说明（远机位）V3.0》
        ref 为该内容在文档中的章节号
        ============================================================ */
+    /* 拆分约定：文档中 3.5.4 / 3.5.7 / 3.5.8 / 3.5.10 / 3.5.11 等章节把「开始 + 结束」
+       合并在同一节说明，文档原文按节点逐条列出的（如「飞机入位开始：…」「客梯车撤离：…」）
+       这里一律按节点拆开——每个节点只展示与自己相关的那一条，避免被误读成「开始和结束都要下载」。
+       文档本身未按节点区分的（垃圾车、清水/污水）则保持原文单条不动。 */
+
+    // —— 3.5.2 引导车入位 / 离开：排查条目同节共用，视频下载按节点拆开 ——
+    const T_FOLLOWME = [
+      "有无配置引导车节点，followme_mask 绘制是否正确；",
+      "有无取流失败；有无检测到引导车；",
+      "飞机入位是否正确；",
+      "离线运行是否能检测到引导车；",
+      "以上逐条确认后，再调整判定参数。",
+    ];
     const HELP_FOLLOWME = {
       ref: "3.5.2",
-      trouble: [
-        "有无配置引导车节点，followme_mask 绘制是否正确；",
-        "有无取流失败；有无检测到引导车；",
-        "飞机入位是否正确；",
-        "离线运行是否能检测到引导车；",
-        "以上逐条确认后，再调整判定参数。",
-      ],
+      trouble: T_FOLLOWME,
       video: [
         "真正的引导车：引导车开始入位 -10 秒 到 飞机开始入位 +20 秒；",
         "只是路过（非真正引导车）：引导车开始入位 -10 秒 到 引导车离位完成 +10 秒。",
       ],
     };
+    // 引导车离场：文档该节的两条下载范围均以「引导车开始入位」为起点，属于到位判定场景，故此处不列
+    const HELP_FOLLOWME_END = { ref: "3.5.2", trouble: T_FOLLOWME, video: [] };
 
     const HELP_AIRPLANE_IN_END = {
       ref: "3.5.3",
@@ -1273,17 +1282,21 @@
       video: ["飞机开始入位 -10 秒 到 飞机入位完成 +20 秒。"],
     };
 
+    // —— 3.5.4 飞机入位开始 / 飞机离位完全：同节共用一个参数，视频下载按节点拆开 ——
+    const T_AIRPLANE_IN_START = [
+      "有无正确绘制 area_mask、mask；组合机位需要额外查看；",
+      "线上取流是否正常；",
+      "飞机是否能正确检测、是否有检测丢失：丢失不严重可调大 item_length 或 has_ratio，丢失严重则加标。",
+    ];
     const HELP_AIRPLANE_IN_START = {
       ref: "3.5.4",
-      trouble: [
-        "有无正确绘制 area_mask、mask；组合机位需要额外查看；",
-        "线上取流是否正常；",
-        "飞机是否能正确检测、是否有检测丢失：丢失不严重可调大 item_length 或 has_ratio，丢失严重则加标。",
-      ],
-      video: [
-        "飞机入位开始：飞机入位开始 -20 秒 到 +20 秒；",
-        "飞机离位完成：飞机离位完成 -20 秒 到 +20 秒。",
-      ],
+      trouble: T_AIRPLANE_IN_START,
+      video: ["飞机入位开始：飞机入位开始 -20 秒 到 +20 秒。"],
+    };
+    const HELP_AIRPLANE_OUT_END = {
+      ref: "3.5.4",
+      trouble: T_AIRPLANE_IN_START,
+      video: ["飞机离位完成：飞机离位完成 -20 秒 到 +20 秒。"],
     };
 
     const HELP_AIRPLANE_OUT_START = {
@@ -1296,40 +1309,53 @@
       video: ["飞机离位开始 -20 秒 到 飞机离位开始 +20 秒。"],
     };
 
-    const HELP_LUNDANG = {
+    // —— 3.5.6 轮挡作业时间阈值：上轮挡 / 撤轮挡 的排查分别指向不同节点 ——
+    const HELP_LUNDANG_IN = {
       ref: "3.5.6",
-      trouble: [
-        "上轮挡：与飞机入位完成绑定，参照「飞机入位完成」的排查流程；",
-        "撤轮挡：与牵引车对接、飞机开始离位绑定，参照「牵引车对接」与「飞机离位开始」的排查流程。",
-      ],
+      trouble: ["上轮挡与飞机入位完成绑定，参照「飞机入位完成」的排查流程。"],
+      video: [],
+    };
+    const HELP_LUNDANG_OUT = {
+      ref: "3.5.6",
+      trouble: ["撤轮挡与牵引车对接、飞机开始离位绑定，参照「牵引车对接」与「飞机离位开始」的排查流程。"],
       video: [],
     };
 
-    const HELP_SHUTTLE = {
+    // —— 3.5.7 摆渡车：文档已按进港 / 离港分开写下载范围，分别归到对应节点 ——
+    const T_SHUTTLE = [
+      "有无配置摆渡车节点；shuttle_bus_mask 是否正确；",
+      "该视角能否判断到飞机入位开始；",
+      "摆渡车的检测是否正确；离港摆渡车需看有无加油开始。",
+    ];
+    const HELP_SHUTTLE_ARR = {
       ref: "3.5.7",
-      trouble: [
-        "有无配置摆渡车节点；shuttle_bus_mask 是否正确；",
-        "该视角能否判断到飞机入位开始；",
-        "摆渡车的检测是否正确；离港摆渡车需看有无加油开始。",
-      ],
+      trouble: T_SHUTTLE,
       video: [
         "路过 / 非真正摆渡车：下载车辆进入到离开即可；",
-        "真正的进港摆渡车：需要下载到飞机开始入位；",
-        "离港摆渡车：从到位到离位；停留时间很长时，下载到位到到位后 30 秒。",
+        "真正的进港摆渡车：需要下载到飞机开始入位。",
       ],
     };
+    const HELP_SHUTTLE_DEP = {
+      ref: "3.5.7",
+      trouble: T_SHUTTLE,
+      video: ["离港摆渡车：从离港摆渡车到位 到 离位；停留时间很长时，下载到位到到位后 30 秒。"],
+    };
 
-    const HELP_PAS_CAR = {
+    // —— 3.5.8 客梯车对接 / 撤离 ——
+    const T_PAS_CAR = [
+      "有无配置客梯车节点；",
+      "有无画 pas_car_mask；有无检测到客梯车；",
+      "有无取流失败。",
+    ];
+    const HELP_PAS_CAR_IN = {
       ref: "3.5.8",
-      trouble: [
-        "有无配置客梯车节点；",
-        "有无画 pas_car_mask；有无检测到客梯车；",
-        "有无取流失败。",
-      ],
-      video: [
-        "客梯车对接：对接完成时间 -20 秒 到 +20 秒；",
-        "客梯车撤离：撤离时间 -30 秒 到 撤离完成 +20 秒。",
-      ],
+      trouble: T_PAS_CAR,
+      video: ["客梯车对接：对接完成时间 -20 秒 到 +20 秒。"],
+    };
+    const HELP_PAS_CAR_OUT = {
+      ref: "3.5.8",
+      trouble: T_PAS_CAR,
+      video: ["客梯车撤离：撤离时间 -30 秒 到 撤离完成 +20 秒。"],
     };
 
     const HELP_GARBAGE = {
@@ -1342,34 +1368,46 @@
       video: ["垃圾车到位 -20 秒 到 垃圾车离位 +20 秒。"],
     };
 
-    const HELP_FOOD = {
+    // —— 3.5.10 配餐开始 / 结束 ——
+    const T_FOOD = [
+      "有无配置配餐节点；",
+      "food_car 底边中点是否在 area_mask 中；有无检测到配餐车相应标签（food_car1 / food_car2）；",
+      "有无取流失败。",
+    ];
+    const HELP_FOOD_START = {
       ref: "3.5.10",
-      trouble: [
-        "有无配置配餐节点；",
-        "food_car 底边中点是否在 area_mask 中；有无检测到配餐车相应标签（food_car1 / food_car2）；",
-        "有无取流失败。",
-      ],
-      video: [
-        "配餐开始错误：配餐开始 -20 秒 到 +30 秒；",
-        "配餐结束错误：配餐结束 -20 秒 到 +30 秒。",
-      ],
+      trouble: T_FOOD,
+      video: ["配餐开始错误：配餐开始 -20 秒 到 +30 秒。"],
+    };
+    const HELP_FOOD_END = {
+      ref: "3.5.10",
+      trouble: T_FOOD,
+      video: ["配餐结束错误：配餐结束 -20 秒 到 +30 秒。"],
     };
 
-    const HELP_OIL = {
+    // —— 3.5.11 加油开始 / 结束：排查与下载范围均按开始、结束分开 ——
+    const T_OIL_BASE = [
+      "有无配置加油节点；",
+      "oil_car 中点是否在 oil_mask 中；有无检测到加油车；",
+      "有无取流失败；",
+    ];
+    const HELP_OIL_START = {
       ref: "3.5.11",
       trouble: [
-        "有无配置加油节点；",
-        "oil_car 中点是否在 oil_mask 中；有无检测到加油车；",
-        "有无取流失败；",
+        ...T_OIL_BASE,
         "加油开始晚了：加油车停止后检测框是否明显抖动；",
         "加油开始早了：检测框是否提前不动；",
+      ],
+      video: ["加油开始错误：加油开始 -20 秒 到 +30 秒。"],
+    };
+    const HELP_OIL_END = {
+      ref: "3.5.11",
+      trouble: [
+        ...T_OIL_BASE,
         "加油完成晚了：检测框动得不明显；",
         "加油完成早了：检查 oil_mask。",
       ],
-      video: [
-        "加油开始错误：加油开始 -20 秒 到 +30 秒；",
-        "加油结束错误：加油结束 -30 秒 到 加油完成 +30 秒。",
-      ],
+      video: ["加油结束错误：加油结束 -30 秒 到 加油完成 +30 秒。"],
     };
 
     const HELP_WATER = {
@@ -1402,24 +1440,24 @@
     // 节点编码 → 帮助内容；未登记的节点（如 79 飞机推出、客舱门、行李拖车、近机位靠桥/撤桥）
     // 气泡内提示暂无说明 —— 只呈现文档中确有的内容，不做推断映射
     const NODE_HELP = {
-      "03": HELP_FOLLOWME,
-      followme_end: HELP_FOLLOWME,
+      "03": HELP_FOLLOWME, // 引导车到位
+      followme_end: HELP_FOLLOWME_END, // 引导车离场
       airplane_in_start: HELP_AIRPLANE_IN_START,
       airplane_in_end: HELP_AIRPLANE_IN_END,
       airplane_out_start: HELP_AIRPLANE_OUT_START,
-      airplane_out_end: HELP_AIRPLANE_IN_START,
-      "04": HELP_LUNDANG,
-      "32": HELP_LUNDANG,
-      "052": HELP_SHUTTLE,
-      "27": HELP_SHUTTLE,
-      "051": HELP_PAS_CAR,
-      "272": HELP_PAS_CAR,
+      airplane_out_end: HELP_AIRPLANE_OUT_END,
+      "04": HELP_LUNDANG_IN, // 上轮挡
+      "32": HELP_LUNDANG_OUT, // 撤轮挡
+      "052": HELP_SHUTTLE_ARR, // 到港摆渡车到位
+      "27": HELP_SHUTTLE_DEP, // 离港摆渡车到位
+      "051": HELP_PAS_CAR_IN, // 客梯车对接
+      "272": HELP_PAS_CAR_OUT, // 客梯车撤离
       garbage_start: HELP_GARBAGE,
       garbage_end: HELP_GARBAGE,
-      "14": HELP_FOOD,
-      "15": HELP_FOOD,
-      "16": HELP_OIL,
-      "17": HELP_OIL,
+      "14": HELP_FOOD_START, // 配餐开始
+      "15": HELP_FOOD_END, // 配餐结束
+      "16": HELP_OIL_START, // 加油开始
+      "17": HELP_OIL_END, // 加油结束
       "121": HELP_WATER,
       "13": HELP_WATER,
       "112": HELP_WATER,
