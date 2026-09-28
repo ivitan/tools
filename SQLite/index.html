@@ -641,6 +641,19 @@
     z-index: 300;
   }
   [data-tip].tip-on::after { opacity: 1; transform: translateY(0); }
+  /* 显示提示时抬升控件自身层级：伪元素 ::after 的 z-index 受「父元素 stacking context」限制，
+     仅靠 ::after 自身的 z-index:300 无法越过比它触发器更高层的兄弟图层（如 Toast、遮罩、抽屉）。
+     这里在 .tip-on 时把触发器本身抬到最前，提示随之浮于所有图层之上。
+     —— 这正是「一键跳到最后一行」悬浮按钮的提示之前被压在底下的根因。 */
+  [data-tip].tip-on { z-index: 2147483647; }
+  /* 贴底 / 靠近屏幕下边缘的控件：提示改显示在控件「上方」，
+     否则会被 body 的 overflow:hidden 裁切到屏幕外而完全不可见
+     （底部悬浮按钮、分页器按钮都属此类）。 */
+  .fab-end[data-tip]::after,
+  .pager [data-tip]::after {
+    top: auto;
+    bottom: calc(100% + 7px);
+  }
   /* 侧栏标题行里的按钮只有 24px 且紧贴右侧：
      默认的 right:0 会让提示左边缘飘到按钮左外侧（实测 gap 达 39px），
      看起来像"没挨着按钮"，容易误判成没显示。
