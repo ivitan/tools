@@ -2340,7 +2340,6 @@
         let allRawResults = [];
         let allColumns = new Set();
         let hasDataParsed = false;
-        let appidExcluded = 0; // 因 appid 与当前提取模式矛盾而被排除的行数
         let appidMatched = 0; // appid 命中当前模式的行数（为 0 说明数据里没有该模式的数据）
         let hasAppidCol = false; // 数据首行是否含 appid 列（parseText 块内更新）
         let dbFilteredRawDataForTextarea = [];
@@ -2507,8 +2506,7 @@
                     .toLowerCase();
                   if (appidVal === "near" || appidVal === "remote") {
                     if (appidVal !== mode) {
-                      appidExcluded++;
-                      continue;
+                      continue; // 静默排除异类 appid 行（SQL 已精确过滤 DB 数据，此处主要兜底手工粘贴数据）
                     }
                     appidMatched++;
                   }
@@ -2677,12 +2675,8 @@
           document.getElementById("rawTruncNote").classList.add("hidden");
         }
 
-        const appidNote =
-          appidExcluded > 0
-            ? ` <span class="c-muted">（已按 appid=${mode} 过滤掉 ${appidExcluded} 行异类数据）</span>`
-            : "";
         document.getElementById("queryStatus").innerHTML =
-          `<span class="c-${mode === "near" ? "blue" : "sky"} fw-bold">[${label}]</span> 解析完毕，提取到 <span class="c-danger fw-bold">${hitCount}</span> 个节点${appidNote}`;
+          `<span class="c-${mode === "near" ? "blue" : "sky"} fw-bold">[${label}]</span> 解析完毕，提取到 <span class="c-danger fw-bold">${hitCount}</span> 个节点`;
       }, 50); // 让出主线程完毕
     }
 
