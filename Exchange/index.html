@@ -848,20 +848,10 @@ document.addEventListener("DOMContentLoaded", function () {
     inputValue.focus();
   });
 
-  // 快捷键支持
+  // 快捷键：回车默认执行「转十进制」
   inputValue.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
-      // 如果输入包含进制标识符，默认转十进制；否则默认转小数
-      const v = inputValue.value.toLowerCase();
-      if (
-        v.startsWith("0x") ||
-        v.startsWith("0b") ||
-        v.startsWith("0o")
-      ) {
-        document.getElementById("toDecimal").click();
-      } else {
-        document.getElementById("toDecimal").click();
-      }
+      document.getElementById("toDecimal").click();
     }
   });
 });
