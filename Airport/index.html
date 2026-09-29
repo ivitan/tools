@@ -2347,17 +2347,30 @@
         let dbFilteredColumns = new Set();
 
         if (selectedTables.length > 0) {
-          // 过滤条件与具体表无关，提升到循环外只构建一次
-          const conditions = [];
-          if (startTime) conditions.push(`report_time >= '${startTime}'`);
-          if (endTime) conditions.push(`report_time <= '${endTime}'`);
-          if (aproCode) conditions.push(`aproCode = '${aproCode}'`);
-          const whereClause =
-            conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-
           databases.forEach(({ name, db }) => {
             selectedTables.forEach((tableName) => {
               try {
+                // 先探测该表是否含 appid 列：含则按当前模式精确过滤（near→'near'，remote→'remote'），
+                // 避免无该列的表因 WHERE appid= 报错而整表数据丢失；无该列的表仍走解析阶段宽松匹配
+                let tableHasAppid = false;
+                try {
+                  const pragma = db.exec(`PRAGMA table_info("${tableName}")`);
+                  if (pragma.length > 0) {
+                    tableHasAppid = pragma[0].values.some(
+                      (row) => String(row[1]).toLowerCase() === "appid",
+                    );
+                  }
+                } catch (e) {}
+
+                // 过滤条件：时间 + 机位号 + （表含 appid 列时）按当前模式精确过滤
+                const conditions = [];
+                if (startTime) conditions.push(`report_time >= '${startTime}'`);
+                if (endTime) conditions.push(`report_time <= '${endTime}'`);
+                if (aproCode) conditions.push(`aproCode = '${aproCode}'`);
+                if (tableHasAppid) conditions.push(`appid = '${mode}'`);
+                const whereClause =
+                  conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
                 // 单次查询同时供 B 区展示/解析 与 C 区原始明细使用，避免重复查询建对象
                 const result = db.exec(
                   `SELECT * FROM "${tableName}" ${whereClause}`,
