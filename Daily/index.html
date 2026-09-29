@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" id="themeColorMeta" content="#ffffff">
 <script>
-/* 移动端状态栏配色同步（mobile-native §10）：监听 data-theme 变化，写入页面实际顶部背景色 */
+// 移动端状态栏配色同步（mobile-native §10）：监听 data-theme 变化，写入页面实际顶部背景色
 (function () {
   function upd() {
     var meta = document.querySelector('meta[name="theme-color"]'); if (!meta) return;
@@ -27,13 +27,13 @@
 <script>
   /* 提前应用主题，避免刷新时闪白。
      使用版本化键 daily-theme-v2：旧键 daily-theme / theme 的锁定值直接作废，
-     打开页面即默认跟随系统，解决跨版本残留锁定导致不能秒切的问题。 */
+     打开页面即默认跟随系统，解决跨版本残留锁定导致不能秒切的问题*/
   (function () {
     try {
       var saved = localStorage.getItem('daily-theme-v2');
       var dark = saved === 'dark' ? true
         : saved === 'light' ? false
-        : window.matchMedia('(prefers-color-scheme: dark)').matches; /* auto 或未设置 → 跟随系统 */
+        : window.matchMedia('(prefers-color-scheme: dark)').matches; // auto 或未设置 → 跟随系统
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     } catch (e) {}
   })();
@@ -634,7 +634,7 @@
   .match-text { color: var(--primary); font-weight: 700; }
 
   /* Toast */
-  /* 容器：同屏多个 toast 纵向堆叠、右对齐，不再各自 fixed 在同一坐标上互相重叠。 */
+  /* 容器：同屏多个 toast 纵向堆叠、右对齐，不再各自 fixed 在同一坐标上互相重叠*/
   .toast-container {
     position: fixed;
     top: calc(16px + env(safe-area-inset-top));
@@ -888,33 +888,33 @@
 </div>
 
 <script>
-/* 主题管理（三态：浅色 / 深色 / 跟随系统） */
+// 主题管理（三态：浅色 / 深色 / 跟随系统）
 const THEME_KEY = 'daily-theme-v2';
 const theme = {
-  /* 当前模式：light / dark / auto（默认跟随系统，未写入时按系统走） */
+  // 当前模式：light / dark / auto（默认跟随系统，未写入时按系统走）
   get mode() {
     const s = localStorage.getItem(THEME_KEY);
     return (s === 'light' || s === 'dark' || s === 'auto') ? s : 'auto';
   },
-  /* 实际生效主题：auto 时取系统偏好 */
+  // 实际生效主题：auto 时取系统偏好
   get effective() {
     if (this.mode !== 'auto') return this.mode;
     return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   },
-  /* 应用当前生效主题到页面，并刷新图标 */
+  // 应用当前生效主题到页面，并刷新图标
   _apply() {
     document.documentElement.dataset.theme = this.effective;
     document.documentElement.style.colorScheme = this.effective;
-    /* 同步 <html> 背景，避免大屏内容不足时从底部透出默认底色造成色差 */
+    // 同步 <html> 背景，避免大屏内容不足时从底部透出默认底色造成色差
     document.documentElement.style.background = 'var(--bg)';
     this._updateIcon();
   },
-  /* 选择模式并持久化（点按钮 / 循环切换时调用） */
+  // 选择模式并持久化（点按钮 / 循环切换时调用）
   set(mode) {
     localStorage.setItem(THEME_KEY, mode);
     this._apply();
   },
-  /* 清除锁定，恢复默认跟随系统；同时清理旧键避免残留 */
+  // 清除锁定，恢复默认跟随系统；同时清理旧键避免残留
   reset() {
     localStorage.removeItem(THEME_KEY);
     localStorage.removeItem('daily-theme');
@@ -922,7 +922,7 @@ const theme = {
     this._apply();
   },
   /* 单击直接翻转当前生效主题并锁定到相反主题，保证每次点击都有可见变化。
-     想恢复跟随系统，用长按（≥600ms）或双击主题按钮，触发 theme.reset()。 */
+     想恢复跟随系统，用长按（≥600ms）或双击主题按钮，触发 theme.reset()*/
   toggle() {
     this.set(this.effective === 'dark' ? 'light' : 'dark');
     // 单击后的状态反馈走 toast，与 SQLite 一致（不再用 title 预测「下一步」）
@@ -930,14 +930,14 @@ const theme = {
     toast(`已切换为${label}模式（长按/双击恢复跟随系统）`, 'success');
   },
   init() {
-    this._apply();   /* 初次按已存模式（或系统）渲染 */
+    this._apply();   // 初次按已存模式（或系统）渲染
     matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      /* 仅“跟随系统”模式下响应系统切换；手动选了浅/深则不打扰 */
+      // 仅“跟随系统”模式下响应系统切换；手动选了浅/深则不打扰
       if (this.mode === 'auto') this._apply();
     });
   },
   _updateIcon() {
-    /* 只显示 ☀/☾：按“实际生效主题”切换，auto 档下随系统显示对应图标 */
+    // 只显示 ☀/☾：按“实际生效主题”切换，auto 档下随系统显示对应图标
     const dark = this.effective === 'dark';
     document.getElementById('iconSun').style.display = dark ? 'none' : 'block';
     document.getElementById('iconMoon').style.display = dark ? 'block' : 'none';
@@ -950,7 +950,7 @@ const theme = {
 };
 theme.init();
 
-/* 主题按钮交互：单击切换明暗；长按（≥600ms）或双击恢复跟随系统 */
+// 主题按钮交互：单击切换明暗；长按（≥600ms）或双击恢复跟随系统
 const btnTheme = document.getElementById('btnTheme');
 let themePressTimer = null;
 let themeClickTimer = null;
@@ -965,7 +965,7 @@ function startThemePress(e) {
   clearTimeout(themePressTimer);
   themePressTimer = setTimeout(() => {
     themeReset();
-    btnTheme.dataset.pressReset = '1'; /* 阻止本次长按松手后的 click 再触发 toggle */
+    btnTheme.dataset.pressReset = '1'; // 阻止本次长按松手后的 click 再触发 toggle
   }, 600);
 }
 function cancelThemePress() {
@@ -990,14 +990,14 @@ btnTheme.addEventListener('click', () => {
     themeReset();
     return;
   }
-  /* 延迟 200ms 执行单击，以便识别双击；200ms 内第二次点击视为双击恢复 */
+  // 延迟 200ms 执行单击，以便识别双击；200ms 内第二次点击视为双击恢复
   themeClickTimer = setTimeout(() => {
     themeClickTimer = null;
     theme.toggle();
   }, 200);
 });
 
-/* Toast */
+// Toast
 // duration：停留时长（毫秒），较长提示可传更久的停留时间
 function toast(msg, type = '', duration = 1800) {
   const el = document.createElement('div');
@@ -1022,7 +1022,7 @@ function toast(msg, type = '', duration = 1800) {
   setTimeout(() => el.remove(), duration + 300);
 }
 
-/* 自定义确认弹窗 */
+// 自定义确认弹窗
 const ESC_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
 function escapeHtml(s) {
   return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, c => ESC_MAP[c]);
@@ -1053,7 +1053,7 @@ function confirmDialog({ title = '确认', message = '', okText = '确定', canc
   });
 }
 
-/* 业务状态 */
+// 业务状态
 const cnNums = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十",
   "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"];
 let baseOptions = {};
@@ -1068,11 +1068,11 @@ const MAX_TEXTAREA_H = 320;
 const VIDEO_OPT = "已下视频";
 const SEP_COMMA = "，";
 const SEP_DUN = "、";
-/* 解析时同时兼容顿号/逗号，避免切换分隔符后已填内容被误判为一整段 */
+// 解析时同时兼容顿号/逗号，避免切换分隔符后已填内容被误判为一整段
 const SEP_SPLIT_RE = /[、，,]/;
-/* 收尾时清理悬空的分隔符 */
+// 收尾时清理悬空的分隔符
 const SEP_TAIL_RE = /[、，,]+$/;
-/* 判断结尾是否已有分隔符 */
+// 判断结尾是否已有分隔符
 const SEP_TAIL_AT_END_RE = /[、，,]$/;
 
 function isNodeList(listId) {
@@ -1094,7 +1094,7 @@ function useCommaSep(input, listId, items) {
   return input.dataset.sep === SEP_COMMA;
 }
 
-/* 文本框自动增高 */
+// 文本框自动增高
 function autoResize(el) {
   if (!el || !el.classList || !el.classList.contains("auto-grow")) return;
   // 测量前临时摘掉 placeholder：窄屏上提示文字会折行并被计入 scrollHeight，
@@ -1165,7 +1165,7 @@ window.onload = () => {
   });
 };
 
-/* 下拉框与智能搜索 */
+// 下拉框与智能搜索
 function parseInput(val, validOptions, isNode) {
   const rawParts = String(val || "").split(SEP_SPLIT_RE).map((v) => v.trim());
   const selected = [];
@@ -1192,7 +1192,7 @@ function parseInput(val, validOptions, isNode) {
    行为与节点一致；「已下视频」模式用逗号。返回是否发生了变化 */
 function ensureTrailingSep(input, listId) {
   if (!input.value) {
-    delete input.dataset.sep;   /* 内容清空后恢复默认的顿号模式 */
+    delete input.dataset.sep;   // 内容清空后恢复默认的顿号模式
     return false;
   }
   if (SEP_TAIL_AT_END_RE.test(input.value)) return false;
@@ -1205,7 +1205,7 @@ function ensureTrailingSep(input, listId) {
 
   const isNode = isNodeList(listId);
   const { selected, query } = parseInput(input.value, baseOptions[listId] || [], isNode);
-  /* 末尾那段还没落定时不在 selected 里，判定模式时要算上 */
+  // 末尾那段还没落定时不在 selected 里，判定模式时要算上
   const items = query ? selected.concat(query) : selected;
 
   input.value += useCommaSep(input, listId, items) ? SEP_COMMA : SEP_DUN;
@@ -1214,7 +1214,7 @@ function ensureTrailingSep(input, listId) {
   return true;
 }
 
-/* 按当前输入重算搜索词并重绘下拉 */
+// 按当前输入重算搜索词并重绘下拉
 function refreshDropdown(input, dropdown, listId) {
   const { query } = parseInput(input.value, baseOptions[listId] || [], isNodeList(listId));
   currentSearchQuery = query;
@@ -1323,7 +1323,7 @@ function closeAllDropdowns() {
   }
 }
 
-/* 卡片与明细行 */
+// 卡片与明细行
 function createEventRowHTML(type) {
   const listId = type === "远机位" ? "event-list-far" : "event-list-near";
   return `
@@ -1413,7 +1413,7 @@ async function clearAllCards() {
   toast('已清空', 'success');
 }
 
-/* 预览与复制 */
+// 预览与复制
 function generatePreview() {
   const cards = document.querySelectorAll(".stand-card");
   let data = { 远机位: [], 近机位: [] };

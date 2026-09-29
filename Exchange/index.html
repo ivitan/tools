@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" id="themeColorMeta" content="#ffffff">
 <script>
-/* 移动端状态栏配色同步（mobile-native §10）：监听 data-theme 变化，写入页面实际顶部背景色 */
+// 移动端状态栏配色同步（mobile-native §10）：监听 data-theme 变化，写入页面实际顶部背景色
 (function () {
   function upd() {
     var meta = document.querySelector('meta[name="theme-color"]'); if (!meta) return;
@@ -27,7 +27,7 @@
 <script>
   /* 首屏防闪白：提前同步主题，避免刷新时闪白。
      默认（无偏好或偏好为「跟随系统」）按浏览器 prefers-color-scheme 计算；
-     与 SQLite 工具统一采用 system/light/dark 三态方案。 */
+     与 SQLite 工具统一采用 system/light/dark 三态方案*/
   (function () {
     try {
       var saved = localStorage.getItem('exchange-theme');
@@ -543,7 +543,7 @@
 <div class="toast" id="toast">已复制到剪贴板</div>
 
 <script>
-/* 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态） */
+// 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态）
 const theme = {
   KEY: 'exchange-theme',
   get mode() { return localStorage.getItem(this.KEY) || 'system'; },

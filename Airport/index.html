@@ -3,7 +3,7 @@
 
 <head>
   <script>
-    /* 提前应用主题，避免首屏闪白；默认「跟随系统」，仅在用户曾手动锁定浅/深时读缓存 */
+    // 提前应用主题，避免首屏闪白；默认「跟随系统」，仅在用户曾手动锁定浅/深时读缓存
     (function () {
       try {
         var KEY = 'airport-theme-v2'; // 换新键，避开旧版残留的锁定值
@@ -21,7 +21,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
 <meta name="theme-color" id="themeColorMeta" content="#ffffff">
 <script>
-/* 移动端状态栏配色同步（mobile-native §10）：监听 data-theme 变化，写入页面实际顶部背景色 */
+// 移动端状态栏配色同步（mobile-native §10）：监听 data-theme 变化，写入页面实际顶部背景色
 (function () {
   function upd() {
     var meta = document.querySelector('meta[name="theme-color"]'); if (!meta) return;
@@ -44,13 +44,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    /* ============================================================
+    /* ────────────────────────────────────────────────────────────
        设计系统：纯手写 CSS + CSS 变量（无 Tailwind，无运行时 CDN）
        主题切换只改 :root / [data-theme="dark"] 两组变量值，
        组件样式里不出现任何硬编码颜色，暗色无需重写一遍规则。
-       ============================================================ */
+       ──────────────────────────────────────────────────────────── */
 
-    /* ---------- 1. 变量：浅色 ---------- */
+    /* ── 1. 变量：浅色 ── */
     :root {
       --bg: #f8fafc;
       --panel: #ffffff;
@@ -100,7 +100,7 @@
       --btn-gray-bg: #d1d5db;     --btn-gray-bg-hover: #9ca3af;   --btn-gray-ink: #111827;   --btn-gray-border: #9ca3af;
     }
 
-    /* ---------- 2. 变量：深色 ---------- */
+    /* ── 2. 变量：深色 ── */
     [data-theme="dark"] {
       --bg: #0b1220;
       --panel: #111827;
@@ -150,7 +150,7 @@
       --btn-gray-bg: #1f2937;                   --btn-gray-bg-hover: #374151;                 --btn-gray-ink: #d1d5db;    --btn-gray-border: #6b7280;
     }
 
-    /* ---------- 3. 基础 ---------- */
+    /* ── 3. 基础 ── */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { height: 100%; }
     body {
@@ -168,7 +168,7 @@
     a { color: inherit; text-decoration: none; }
     summary::-webkit-details-marker { display: none; }
 
-    /* ---------- 4. 布局工具 ---------- */
+    /* ── 4. 布局工具 ── */
     .stack { display: flex; flex-direction: column; gap: 12px; }
     .col   { display: flex; flex-direction: column; }
     .col-full { height: 100%; }
@@ -196,7 +196,7 @@
     .grid-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
     @media (min-width: 640px) { .grid-form { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-    /* ---------- 5. 文字 ---------- */
+    /* ── 5. 文字 ── */
     .fs-10 { font-size: 10px; } .fs-11 { font-size: 11px; line-height: 16px; }
     .fs-12 { font-size: 12px; line-height: 16px; } .fs-13 { font-size: 13px; } .fs-14 { font-size: 14px; }
     .fw-normal { font-weight: 400; } .fw-medium { font-weight: 500; }
@@ -221,12 +221,12 @@
     .select-none { user-select: none; -webkit-user-select: none; }
     .cursor-pointer { cursor: pointer; }
 
-    /* ---------- 6. 图标 ---------- */
+    /* ── 6. 图标 ── */
     .ic { width: 14px; height: 14px; flex-shrink: 0; }
     .ic-16 { width: 16px; height: 16px; flex-shrink: 0; }
     .ic-24 { width: 24px; height: 24px; flex-shrink: 0; }
 
-    /* ---------- 7. 顶栏 ---------- */
+    /* ── 7. 顶栏 ── */
     .header {
       min-height: calc(52px + env(safe-area-inset-top));
       background: var(--panel);
@@ -325,7 +325,7 @@
       .page { padding: 12px 10px; }
     }
 
-    /* ---------- 8. 卡片 ---------- */
+    /* ── 8. 卡片 ── */
     .card {
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -394,7 +394,7 @@
       color: var(--badge-ink);
     }
 
-    /* ---------- 9. 表单控件 ---------- */
+    /* ── 9. 表单控件 ── */
     .input {
       width: 100%;
       height: 32px;
@@ -452,7 +452,7 @@
     .btn-gray:hover    { background: var(--btn-gray-bg-hover); }
 }
 
-    /* ---------- 10. 上传区 ---------- */
+    /* ── 10. 上传区 ── */
     .dropzone {
       position: relative;
       height: 192px;
@@ -541,7 +541,7 @@
       white-space: nowrap;
     }
 
-    /* ---------- 11. 表格 ---------- */
+    /* ── 11. 表格 ── */
     .tbl { width: 100%; min-width: 100%; border-collapse: collapse; font-size: 12px; line-height: 16px; }
     .tbl th, .tbl td {
       padding: 6px 12px;
@@ -618,7 +618,7 @@
       line-height: 1.6;
     }
 
-    /* ---------- 12. 状态提示 / 日期复制 ---------- */
+    /* ── 12. 状态提示 / 日期复制 ── */
     .status {
       margin-bottom: 8px;
       font-size: 12px;
@@ -647,7 +647,7 @@
 }
     .check-icon { color: var(--success); }
 
-    /* ---------- 13. 粘贴网格 ---------- */
+    /* ── 13. 粘贴网格 ── */
     .paste-box {
       position: relative;
       width: 100%;
@@ -682,7 +682,7 @@
     }
     .paste-placeholder svg { margin-bottom: 8px; color: var(--weak); }
 
-    /* ---------- 14. 折叠箭头 / 轻提示 ---------- */
+    /* ── 14. 折叠箭头 / 轻提示 ── */
     .chev {
       display: inline-block;
       font-size: 12px;
@@ -710,7 +710,7 @@
     }
     [data-theme="dark"] .toast { background: rgba(226, 232, 240, .92); color: #0b1220; }
 
-    /* ---------- 15. 滚动条 ---------- */
+    /* ── 15. 滚动条 ── */
     .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 3px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
@@ -718,7 +718,7 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 }
 
-    /* ---------- 16. 节点字段帮助（表头「?」+ 悬浮气泡） ---------- */
+    /* ── 16. 节点字段帮助（表头「?」+ 悬浮气泡） ── */
     /* 主标题行改为「中文名 + ?」行内居中；图标为 Font Awesome 描边问号，不额外占布局高度 */
     .tbl--nodes .th-main { display: inline-flex; align-items: center; gap: 4px; }
     .th-help {
@@ -1022,7 +1022,7 @@
     const SPLIT_REGEX = /[\t, |，]/;
     const MAX_RENDER_ROWS = 5000;
 
-    /* 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态） */
+    // 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态）
     const theme = {
       KEY: 'airport-theme-v2',
       get mode() { return localStorage.getItem(this.KEY) || 'system'; },
@@ -1051,7 +1051,7 @@
         if (mq.addEventListener) mq.addEventListener('change', sync);
         else if (mq.addListener) mq.addListener(sync); // 老浏览器兼容
         // 部分 Android WebView 在系统主题切换 / 应用切后台再回前台时不回调 change，
-        // 额外挂 visibilitychange / focus / storage 兜底（覆盖 SQLite 等仅监听 change 的不足）。
+        // 额外挂 visibilitychange / focus / storage 兜底（覆盖 SQLite 等仅监听 change 的不足）
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') sync();
         });
@@ -1085,7 +1085,7 @@
     (function bindTheme() {
       const btn = document.getElementById('btnTheme');
       btn.onclick = () => theme.toggle();
-      // 双击按钮：清除手动选择，恢复「跟随系统」（默认初态）。
+      // 双击按钮：清除手动选择，恢复「跟随系统」（默认初态）
       btn.addEventListener('dblclick', () => {
         localStorage.removeItem(theme.KEY);
         theme.apply();
@@ -1232,16 +1232,16 @@
       remote: { dict: DICT_REMOTE, order: ORDER_REMOTE, label: "远机位" },
     };
 
-    /* ============================================================
+    /* ────────────────────────────────────────────────────────────
        节点字段帮助：表头「?」悬浮展示该节点的判定参数 / 问题排查 / 视频下载
        内容来源：《T3 航班保障节点视频采集算法项目关键参数配置说明（远机位）V3.0》
        ref 为该内容在文档中的章节号
-       ============================================================ */
+       ──────────────────────────────────────────────────────────── */
     /* 拆分约定：文档中 3.5.4 / 3.5.7 / 3.5.8 / 3.5.10 / 3.5.11 等章节把「开始 + 结束」
        合并在同一节说明，文档原文按节点逐条列出的（如「飞机入位开始：…」「客梯车撤离：…」）
        这里一律按节点拆开——每个节点只展示与自己相关的那一条，避免被误读成「开始和结束都要下载」。
        文档本身未按节点区分的（垃圾车、清水/污水）则保持原文单条不动。
-       params 为各节「参数说明」小节：数组项为 { k: 参数名, v: 说明 } 或纯字符串（示例 / 备注）。 */
+       params 为各节「参数说明」小节：数组项为 { k: 参数名, v: 说明 } 或纯字符串（示例 / 备注）*/
 
     // —— 3.5.2 引导车入位 / 离开：排查条目同节共用，视频下载按节点拆开 ——
     const T_FOLLOWME = [
@@ -1866,10 +1866,10 @@
       const tableMap = new Map();
       const failed = [];
 
-      // 阶段 1：并行读取全部文件并做 SQLite 头校验（纯 IO / 字节比较，互不阻塞）。
+      // 阶段 1：并行读取全部文件并做 SQLite 头校验（纯 IO / 字节比较，互不阻塞）
       // 旧实现是 for 循环里逐个 await file.arrayBuffer()，N 个文件要串行等 N 次读取；
       // 改成 Promise.all 一次并行读后，多文件导入耗时从「累加」变为「取最慢单个」，
-      // 这也是 SQLite 工具比本工具快很多的根因。
+      // 这也是 SQLite 工具比本工具快很多的根因
       const arr = [...files];
       const prepared = await Promise.all(
         arr.map(async (file) => {
@@ -1883,9 +1883,9 @@
       );
 
       // 阶段 2：串行执行 CPU 重的建库逻辑，每完成一个让出主线程（setTimeout 0），
-      // 避免一次性卡死 UI；坏文件逐个捕获，保证整批不会因为一个出错而中断。
+      // 避免一次性卡死 UI；坏文件逐个捕获，保证整批不会因为一个出错而中断
       // ① 文件头校验已在阶段 1 完成（SQLite 打开是惰性的，非数据库文件到执行查询时才报错，
-      //    那样 UI 早已显示「已载入」，造成假成功错觉，故提前拦截）。
+      //    那样 UI 早已显示「已载入」，造成假成功错觉，故提前拦截）
       for (let i = 0; i < prepared.length; i++) {
         const p = prepared[i];
         if (p.error) {
@@ -2403,7 +2403,7 @@
         }
 
         // 把 DB 命中数据拼成 TSV：仅用于本次解析，绝不写回粘贴区，
-        // 否则取消勾选/未手动粘贴时粘贴区会残留旧数据，被误判为“有输入”而重复出内容。
+        // 否则取消勾选/未手动粘贴时粘贴区会残留旧数据，被误判为“有输入”而重复出内容
         let dbTsvString = "";
         if (dbFilteredRawDataForTextarea.length > 0) {
           // 按 report_time 时间顺序升序排列（格式 YYYY-MM-DD HH:MM:SS 或 HH:MM:SS，字典序即时间序）
@@ -2864,8 +2864,8 @@
         `<span class="c-purple fw-bold">CSV数据已成功导出</span>`;
     });
 
-    // 复制镜头号：取 B 区回显表格 camera 列去重（保序）。
-    // 排序：① 含 03（引导车）第一；② 仅摆渡车(052/27)/客舱门(06/29) 最后；③ 其余居中。
+    // 复制镜头号：取 B 区回显表格 camera 列去重（保序）
+    // 排序：① 含 03（引导车）第一；② 仅摆渡车(052/27)/客舱门(06/29) 最后；③ 其余居中
     document
       .getElementById("btnCopyTableNums")
       .addEventListener("click", () => {
@@ -2884,9 +2884,9 @@
           (h) => h.trim().toLowerCase() === "nodecode",
         );
 
-        // camera → nodeCode 特征聚合（同镜头多行取并集），order 保序去重。
+        // camera → nodeCode 特征聚合（同镜头多行取并集），order 保序去重
         // 判定只基于 B 区数据（aproCode+时间窗过滤后的回显），不扫全表——
-        // 窗口外/其他机位表的特征会污染分组。
+        // 窗口外/其他机位表的特征会污染分组
         const feats = new Map();
         const rawCodes = new Map(); // 排查用：镜头 → 出现过的 nodeCode 原始值
         const order = [];
@@ -2976,7 +2976,7 @@
         document.body.removeChild(textArea);
       });
 
-  /* 输入框双击全选（事件委托，覆盖静态与动态控件；排除 checkbox/radio/file/按钮类） */
+  // 输入框双击全选（事件委托，覆盖静态与动态控件；排除 checkbox/radio/file/按钮类）
   document.addEventListener('dblclick', function (e) {
     var el = e.target;
     if (!el || typeof el.select !== 'function') return;

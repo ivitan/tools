@@ -401,7 +401,7 @@
 }
   .table-list {
     /* 左缩进 20px（原 22px）：使表名文字起点与数据库名文字起点精确对齐（同为 52px）。
-       原来差 2px，数据库名加粗后这个错位更明显，看起来像表名「往后挪」、侧栏变窄。 */
+       原来差 2px，数据库名加粗后这个错位更明显，看起来像表名「往后挪」、侧栏变窄*/
     padding: 2px 4px 6px 20px;
     display: none;
   }
@@ -525,7 +525,7 @@
     flex-shrink: 0;
   }
   /* 右侧按钮组：主题 / 模式 / 字段 / 导出 四个图标按钮紧凑排列，
-     间距单独收窄（原来的 gap:10px 对图标按钮过宽），并与搜索框保持距离。 */
+     间距单独收窄（原来的 gap:10px 对图标按钮过宽），并与搜索框保持距离*/
   .toolbar-actions {
     display: flex;
     align-items: center;
@@ -543,7 +543,7 @@
   }
   /* 工具栏内的统计信息
      原本「表 / 已加载 / 用时 / 列数」是内容区里独立的一行（.status-bar，高 34px 且右侧大片空白），
-     既浪费一整行高度，信息也和顶部工具栏重复。这里并到工具栏中紧跟面包屑，省掉整行。 */
+     既浪费一整行高度，信息也和顶部工具栏重复。这里并到工具栏中紧跟面包屑，省掉整行*/
   .toolbar-stats {
     display: flex;
     align-items: center;
@@ -593,7 +593,7 @@
   .toolbar-input::placeholder { color: var(--text-muted); font-weight: 400; }
 
   /* 模式切换 */
-  /* 分页 / 无限 合并为单个图标按钮：显示当前模式图标，点击切到另一种（title 提示目标模式）。 */
+  /* 分页 / 无限 合并为单个图标按钮：显示当前模式图标，点击切到另一种（title 提示目标模式）*/
   .mode-toggle {
     width: 32px;
     height: 32px;
@@ -618,7 +618,7 @@
      不用原生 title：它的延迟约 1 秒、样式完全不可控、触屏设备不显示，用户几乎感知不到。
      也不用纯 CSS :hover：在触屏 / 触控设备上 :hover 是「sticky hover」——
      手指点了才出现、且粘住不消失，必须再点别处才释放，体验很差。
-     改为 JS 显式加 .tip-on 类控制，鼠标 / 触摸 / 键盘三种输入都能预期行事。 */
+     改为 JS 显式加 .tip-on 类控制，鼠标 / 触摸 / 键盘三种输入都能预期行事*/
   [data-tip] { position: relative; }
   [data-tip]::after {
     content: attr(data-tip);
@@ -643,11 +643,11 @@
   /* 显示提示时抬升控件自身层级：伪元素 ::after 的 z-index 受「父元素 stacking context」限制，
      仅靠 ::after 自身的 z-index:300 无法越过比它触发器更高层的兄弟图层（如 Toast、遮罩、抽屉）。
      这里在 .tip-on 时把触发器本身抬到最前，提示随之浮于所有图层之上。
-     —— 这正是「一键跳到最后一行」悬浮按钮的提示之前被压在底下的根因。 */
+     —— 这正是「一键跳到最后一行」悬浮按钮的提示之前被压在底下的根因*/
   [data-tip].tip-on { z-index: 2147483647; }
   /* 贴底 / 靠近屏幕下边缘的控件：提示改显示在控件「上方」，
      否则会被 body 的 overflow:hidden 裁切到屏幕外而完全不可见
-     （底部悬浮按钮、分页器按钮都属此类）。 */
+     （底部悬浮按钮、分页器按钮都属此类）*/
   .fab-end[data-tip]::after,
   .pager [data-tip]::after {
     top: auto;
@@ -656,7 +656,7 @@
   /* 侧栏标题行里的按钮只有 24px 且紧贴右侧：
      默认的 right:0 会让提示左边缘飘到按钮左外侧（实测 gap 达 39px），
      看起来像"没挨着按钮"，容易误判成没显示。
-     这里改为居中对齐到按钮，并限制最大宽度避免溢出侧栏。 */
+     这里改为居中对齐到按钮，并限制最大宽度避免溢出侧栏*/
   .sidebar-header [data-tip]::after {
     top: calc(100% + 6px);
     right: 0;
@@ -670,7 +670,7 @@
        .tab 被 stretch 压缩，row1/row2 各被 flex-shrink 削掉一半，文字被截半且两行重叠。
        改 min-height：没有标签时占位，有标签时按内容自动撑开。
        高度按实测收紧：标签两行内容 32px + 上下 padding 8px + 横向滚动条 6px ≈ 40px。
-       原先是 48px，多出的 16px 在两行文字底部形成一段可见空白，浪费了表格高度。 */
+       原先是 48px，多出的 16px 在两行文字底部形成一段可见空白，浪费了表格高度*/
     min-height: 40px;
     padding: 0 14px;
     border-bottom: 1px solid var(--border);
@@ -715,7 +715,7 @@
   }
   /* 两行都给右上角关闭按钮（16px 宽 + right:4px）预留空间，
      否则 width:100% 的文本行会被 absolute 的 .tab-close 盖住右半段。
-     flex: none + 固定 line-height：禁止被压缩，否则文字会被截掉下半截。 */
+     flex: none + 固定 line-height：禁止被压缩，否则文字会被截掉下半截*/
   .tab-row1 {
     flex: none;
     width: 100%;
@@ -884,7 +884,7 @@
     min-height: 0;
   }
   /* 原 .status-bar（内容区里独立的一行统计）已并入顶部工具栏的 .toolbar-stats：
-     省掉一整行高度，且避免和面包屑重复展示表名。 */
+     省掉一整行高度，且避免和面包屑重复展示表名*/
 
   .grid-container {
     flex: 1;
@@ -1404,14 +1404,14 @@
      目标：一行里每列按「该列最长内容」撑开列宽，短列就窄、不留空白；
      行高保持单行（不折行），长内容列宽撑到上限后用省略号 + 悬停看全文。
      实现：JS 实测「表头 + 单元格文本」宽度写入每个 td/th 的 style.width，
-     配合 fixed 布局锁死列宽；总宽用 max-content，不被 min-width:100% 平摊拉伸。 */
+     配合 fixed 布局锁死列宽；总宽用 max-content，不被 min-width:100% 平摊拉伸*/
   .data-table.col-fit {
     table-layout: fixed;
     border-collapse: collapse;
     min-width: 0;
     /* 关键：不能用 width:100% —— fixed 布局下会把各列按比例拉伸填满容器，
        导致「内容很少的列被撑得很宽、大片空白」。改为 max-content 让总宽 = 各列内容宽之和。
-       同时 JS 会给每个 td/th 直设 width（不用 colgroup，避免 Chrome 下 50px 莫名 scrollWidth）。 */
+       同时 JS 会给每个 td/th 直设 width（不用 colgroup，避免 Chrome 下 50px 莫名 scrollWidth）*/
     width: max-content;
   }
   /* 单行完整显示：列宽 = 该列文字的完整长度，不折行、不截断、无省略号 */
@@ -1433,14 +1433,14 @@
        flex:none 会让 col-name 只占自身宽度、落在行首（左对齐），
        故用 margin:0 auto 在 flex 行内重新居中，保持与「类型」同行居中。
        字段名与类型必须视觉居中，因此 padding 左右对称（各 16px），
-       为右侧绝对定位的 ⌕/× 留位，同时让文字中心与 th 中心重合。 */
+       为右侧绝对定位的 ⌕/× 留位，同时让文字中心与 th 中心重合*/
     flex: none;
     margin: 0 auto;
     text-align: center;
     padding: 0 16px;
   }
   /* col-fit 下把 ⌕/× 按钮改小并贴边，让字段名左右对称 padding 16px 就能同时
-     满足「居中」和「不遮挡按钮」。仅影响 col-fit 模式，紧凑模式保持原大小。 */
+     满足「居中」和「不遮挡按钮」。仅影响 col-fit 模式，紧凑模式保持原大小*/
   .data-table.col-fit th .col-filter-toggle,
   .data-table.col-fit th .col-filter-clear {
     width: 14px;
@@ -1559,7 +1559,7 @@
   .pager-text { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
   /* Toast */
   /* 容器：同屏多个 toast（例如「导入成功」与「导入失败」同时出现）纵向堆叠、右对齐，
-     不再各自 fixed 在同一坐标上互相重叠。 */
+     不再各自 fixed 在同一坐标上互相重叠*/
   .toast-container {
     position: fixed;
     top: calc(16px + env(safe-area-inset-top, 0px));     /* 状态栏/灵动岛 */
@@ -1598,7 +1598,7 @@
   .toast.error { background: var(--danger); color: #450a0a; }
   /* 重复导入（warn）与导入失败（fail）提示：绿底会把「够亮的红」压到 1.0:1 隐形、
      把「够深的红」压成黑色，所以改用面板底色 + 主题危险红，让红色真正显示出来，
-     并配红色描边强化警示感。用 var(--danger) 自动适配：日间 #dc2626、暗色 #f87171，无需额外 dark 覆盖。 */
+     并配红色描边强化警示感。用 var(--danger) 自动适配：日间 #dc2626、暗色 #f87171，无需额外 dark 覆盖*/
   .toast.warn,
   .toast.fail {
     background: var(--panel);
@@ -1732,7 +1732,7 @@
 
   /* Responsive: 平板 */
   /* 与 PC、手机抽屉统一为 320px（原 200px 比手机还窄，已修）。
-     若觉得 800px 左右的小窗口下主区偏挤，可把这档单独降到 280px。 */
+     若觉得 800px 左右的小窗口下主区偏挤，可把这档单独降到 280px*/
   @media (max-width: 1024px) {
     .sidebar { width: 320px; }
   }
@@ -1816,7 +1816,7 @@
 
 <!-- 首屏防闪白：在首次绘制前同步应用已保存的主题。
      原先主题只在 body 末尾的脚本里初始化，浏览器已按默认日间样式画过一帧才切成深色，
-     于是深色模式下启动会闪一下白。这里提前到 </head> 前执行，首绘即为正确主题。 -->
+     于是深色模式下启动会闪一下白。这里提前到 </head> 前执行，首绘即为正确主题-->
 <script>
   (function () {
     try {
@@ -1962,10 +1962,10 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-/* UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面 */
+// UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面
 const UI_BUILD = '2026-09-12-theme-follow-hint';
 
-/* 全局状态 */
+// 全局状态
 const state = {
   databases: [],
   activeDbId: null,
@@ -1977,7 +1977,7 @@ const state = {
   infiniteObserver: null,
 };
 
-/* 工具函数 */
+// 工具函数
 const $ = (id) => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -2005,7 +2005,7 @@ function toast(msg, type = '', duration = 1800) {
   setTimeout(() => el.remove(), duration + 300);
 }
 
-/* 自定义确认弹窗（替代浏览器原生 confirm，深色友好） */
+// 自定义确认弹窗（替代浏览器原生 confirm，深色友好）
 function confirmDialog({ title = '确认', message = '', okText = '确定', cancelText = '取消', danger = false } = {}) {
   return new Promise(resolve => {
     const mask = document.createElement('div');
@@ -2057,7 +2057,7 @@ function escapeHtml(s) {
 
 function isMobile() { return state.isMobile; }
 
-/* 主题管理 */
+// 主题管理
 const theme = {
   // 模式：'light' 浅色 | 'dark' 深色 | 'system' 跟随系统（默认）
   get mode() { return localStorage.getItem('sqlite-theme') || 'system'; },
@@ -2081,7 +2081,7 @@ const theme = {
     this._updateIcon();
   },
   // 单击直接在当前外观基础上反转日/夜并锁定（不走 system 中间态，
-  // 否则 system+系统深色时第一下看似无效，用户会以为「要点两次」）。
+  // 否则 system+系统深色时第一下看似无效，用户会以为「要点两次」）
   toggle() {
     const next = this.effective === 'dark' ? 'light' : 'dark';
     localStorage.setItem('sqlite-theme', next);
@@ -2106,14 +2106,14 @@ const theme = {
   },
 };
 
-/* sql.js 初始化 */
+// sql.js 初始化
 async function initSQL() {
   state.SQL = await initSqlJs({
     locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
   });
 }
 
-/* 文件指纹（用于重复上传去重） */
+// 文件指纹（用于重复上传去重）
 // 优先 SHA-256（准确）；非安全上下文等不可用时回退到「体积 + 均匀采样 FNV-1a」，保证导入不被阻塞
 async function computeFingerprint(buf) {
   try {
@@ -2121,7 +2121,7 @@ async function computeFingerprint(buf) {
       const d = await globalThis.crypto.subtle.digest('SHA-256', buf);
       return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
-  } catch (e) { /* 落到下面的回退实现 */ }
+  } catch (e) { // 落到下面的回退实现 }
   let h = 2166136261;
   const step = Math.max(1, Math.floor(buf.length / 4096));
   for (let i = 0; i < buf.length; i += step) {
@@ -2131,7 +2131,7 @@ async function computeFingerprint(buf) {
   return `fb-${buf.length.toString(16)}-${(h >>> 0).toString(16)}`;
 }
 
-/* 加载数据库 */
+// 加载数据库
 async function loadDatabase(file) {
   try {
     const buf = new Uint8Array(await file.arrayBuffer());
@@ -2145,14 +2145,14 @@ async function loadDatabase(file) {
   }
 }
 
-// 从已读取的 buffer 建库。silent=true 时不渲染 UI、不弹 toast（批量导入时统一处理）。
+// 从已读取的 buffer 建库。silent=true 时不渲染 UI、不弹 toast（批量导入时统一处理）
 async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
   const silent = !!(opts && opts.silent);
 
   // 空文件 / 非 SQLite 文件前置拦截：SQL.js 收到空 buffer 不会报错，
   // 而是直接新建一个空白内存库（无表、无异常），导致空 .sig/.txt 等被「成功」导入；
-  // 这里先按文件头魔数 "SQLite format 3\0" 严格校验，空文件与非 SQLite 一并拒掉。
-  // 逻辑与 Airport 工具保持一致（见 Airport/index.html 的 isSqliteBuffer）。
+  // 这里先按文件头魔数 "SQLite format 3\0" 严格校验，空文件与非 SQLite 一并拒掉
+  // 逻辑与 Airport 工具保持一致（见 Airport/index.html 的 isSqliteBuffer）
   const SQLITE_MAGIC = [0x53,0x51,0x4c,0x69,0x74,0x65,0x20,0x66,0x6f,0x72,0x6d,0x61,0x74,0x20,0x33,0x00];
   if (!buf || buf.length < SQLITE_MAGIC.length ||
       !SQLITE_MAGIC.every((b, i) => buf[i] === b)) {
@@ -2175,7 +2175,7 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
   const tables = [];
   // 非 SQLite 数据（如 zip / 文本 / 其他格式）不会在建库时暴露，而是在首次读 schema 时
   // 抛出「file is not a database」。这里统一捕获：关闭半初始化的库（释放 wasm 内存）后
-  // 原样上抛，由调用方按「导入失败」统一处理（内嵌样板提示，不动右侧视图）。
+  // 原样上抛，由调用方按「导入失败」统一处理（内嵌样板提示，不动右侧视图）
   try {
     const res = db.exec("SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name");
     if (res[0]) {
@@ -2227,7 +2227,7 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
   if (!silent) {
     renderSidebar();
     renderTabs();
-    // 导入成功后收起上传区（旧版靠自动 openTab 顺带触发，现不再自动开表，故显式收起）。
+    // 导入成功后收起上传区（旧版靠自动 openTab 顺带触发，现不再自动开表，故显式收起）
     showDropzone(false);
     renderContent();     // 未打开任何表时，刷新主区为「从左侧选择一张表查看数据」
     if (isMobile()) closeDrawer();
@@ -2236,7 +2236,7 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
   return { kind: replaced ? 'replaced' : 'added', db: dbObj, replaced };
 }
 
-/* 抽屉控制 */
+// 抽屉控制
 function openDrawer() {
   document.body.classList.add('sidebar-open');
 }
@@ -2247,7 +2247,7 @@ function toggleDrawer() {
   document.body.classList.toggle('sidebar-open');
 }
 
-/* 侧栏渲染 */
+// 侧栏渲染
 // 判断某张表是否为「右侧当前正在查看」的表（用于在左侧列表高亮）
 function isActiveTable(dbId, tableName) {
   const tab = state.openTabs.find(t => tabKey(t) === state.activeTabKey);
@@ -2373,7 +2373,7 @@ function removeDatabase(id) {
 
 function tabKey(t) { return `${t.dbId}::${t.table}::${t.view}`; }
 
-/* Tab 管理 */
+// Tab 管理
 function openTab(dbId, tableName) {
   const existing = state.openTabs.find(t => t.dbId === dbId && t.table === tableName);
   if (existing) {
@@ -2430,7 +2430,7 @@ function closeTab(key) {
    右侧还有一大片空白）。现在并进顶部工具栏、紧跟面包屑，把整行高度还给数据表格。
    - tab 为 null 时清空（未打开任何表）。
    - 无限模式滚动加载是高频操作，这里只做「文本级」增量更新，不重建 DOM：
-     见 updateStatsNumbers()。 */
+     见 updateStatsNumbers()*/
 function renderToolbarStats(tab) {
   const box = $('toolbarStats');
   if (!box) return;
@@ -2490,9 +2490,9 @@ function renderTabs() {
       </div>`;
   }).join('');
 
-  // 数据库名按「不超过表名宽度」截断（比表名长则省略后面文字）。
-  // 注意：不能用 span.scrollWidth —— inline 元素的 scrollWidth 恒为 0，会把数据库名压成 0 宽。
-  // 改用离屏探针（absolute + nowrap）测量两段文本的完整像素宽度。
+  // 数据库名按「不超过表名宽度」截断（比表名长则省略后面文字）
+  // 注意：不能用 span.scrollWidth —— inline 元素的 scrollWidth 恒为 0，会把数据库名压成 0 宽
+  // 改用离屏探针（absolute + nowrap）测量两段文本的完整像素宽度
   const probe = document.createElement('span');
   probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:0;pointer-events:none;';
   tabs.appendChild(probe);
@@ -2528,7 +2528,7 @@ function renderTabs() {
   });
 
   // 点击/打开/切换 tab 后，把当前激活的 tab 横向滚动到可视区：
-  // 标签多、激活项被挤出右侧时，滚动条自动滑到对应位置（仅在不完全可见时才滚动，避免无谓跳动）。
+  // 标签多、激活项被挤出右侧时，滚动条自动滑到对应位置（仅在不完全可见时才滚动，避免无谓跳动）
   const activeTabEl = tabs.querySelector('.tab.active');
   if (activeTabEl) {
     const tRect = activeTabEl.getBoundingClientRect();
@@ -2545,7 +2545,7 @@ function renderTabs() {
   }
 }
 
-/* 内容渲染 */
+// 内容渲染
 function renderContent() {
   // 清理旧的 IntersectionObserver
   if (state.infiniteObserver) {
@@ -2574,9 +2574,9 @@ function renderContent() {
     renderToolbarStats(null);
     $('footerBar').classList.add('hidden');
     // 按「有没有数据库」判断：只有完全没有任何数据库时（此时由 showDropzone(true)
-    // 负责显示上传区）才隐藏 dataView；否则保持显示，让「选表」提示可见。
+    // 负责显示上传区）才隐藏 dataView；否则保持显示，让「选表」提示可见
     // 若按 openTabs 判断，未打开任何表时 dataView 会被隐藏，而上传区也已被
-    // showDropzone(false) 隐藏 → 主区域一片空白。
+    // showDropzone(false) 隐藏 → 主区域一片空白
     $('dataView').style.display = state.databases.length === 0 ? 'none' : 'flex';
     return;
   }
@@ -2609,7 +2609,7 @@ function renderContent() {
       renderDataGrid(db, tab);
     }
     // 放在数据渲染之后：renderToolbarStats 需要读取 _columns / total / _elapsed，
-    // 这些值由 renderDataGrid / renderInfiniteGrid 在查询完成后写入。
+    // 这些值由 renderDataGrid / renderInfiniteGrid 在查询完成后写入
     renderToolbarStats(tab);
   }
 
@@ -2670,7 +2670,7 @@ function renderSchemaView(db) {
   area.innerHTML = `<div class="schema-view">${cards}</div>`;
 }
 
-/* 分页模式 */
+// 分页模式
 function renderDataGrid(db, tab) {
   const t = db.tables.find(x => x.name === tab.table);
   if (!t) {
@@ -2770,7 +2770,7 @@ function renderDataGrid(db, tab) {
   applyColFit();   // 按内容实测列宽
 }
 
-/* 无限滚动模式 */
+// 无限滚动模式
 function renderInfiniteGrid(db, tab) {
   // 重置累积状态
   tab.infinitePage = 0;
@@ -2863,13 +2863,13 @@ function setupInfiniteObserver(db, tab) {
 
 /* 把一批行对象渲染成 <tr> HTML 字符串（分页/无限/快速到底共用）。
    startIndex = 本批第一行对应的「已加载行数」，用于行号。
-   escape 结果在 title 与内容间复用，避免每行每列算两次。 */
+   escape 结果在 title 与内容间复用，避免每行每列算两次*/
 
 /* 构建 WHERE 子句：顶部搜索（跨列 OR） + 列筛选（精确列 AND）。
    列筛选含两种来源，同列 AND 组合：
    - columnFilters[col] = '关键词'  → LIKE 模糊匹配
    - columnChecks[col]  = [值...]   → IN 精确匹配（数组元素为 null 表示勾了 NULL）
-   返回 { sql, params }，无任何筛选时返回 null。 */
+   返回 { sql, params }，无任何筛选时返回 null*/
 function buildWhereClause(tab, table) {
   const parts = [];
   const params = [];
@@ -2913,7 +2913,7 @@ function buildWhereClause(tab, table) {
   return { sql: parts.join(' AND '), params };
 }
 
-/* 列筛选：高频候选词 */
+// 列筛选：高频候选词
 const COL_STATS_LIMIT = 30;   // 候选词最多展示数（多取 1 条用于探测是否还有更多）
 
 // 当前激活的数据表 tab（schema 视图返回 null）
@@ -2934,7 +2934,7 @@ function resetTabLoading(tab) {
 
 /* 统计某列高频值：GROUP BY 全表按计数降序取前 N。
    结果缓存到 tab._columnStats[col]（工具只读数据库，缓存不会过期）。
-   返回 { entries: [{v, c}], more, error }，v 为 null 表示 NULL 组。 */
+   返回 { entries: [{v, c}], more, error }，v 为 null 表示 NULL 组*/
 function getColumnStats(db, tab, colName) {
   if (!tab._columnStats) tab._columnStats = {};
   if (tab._columnStats[colName]) return tab._columnStats[colName];
@@ -2965,7 +2965,7 @@ function getColumnStats(db, tab, colName) {
 /* 构建列筛选面板 HTML。
    面板内的勾选/输入都操作 pending 副本（tab._pendingChecks/_pendingLike），
    不直接触发表格重渲染；点「确认」才一次性写回 tab.columnChecks/columnFilters。
-   取消关闭（ESC / 点击外部 / 再次点击 ⌕）则 pending 丢弃，保留原筛选。 */
+   取消关闭（ESC / 点击外部 / 再次点击 ⌕）则 pending 丢弃，保留原筛选*/
 function buildFilterPanelHtml(tab, colName) {
   const pendingChecks = (tab._pendingChecks && tab._pendingChecks[colName]) || [];
   const pendingLike = (tab._pendingLike && tab._pendingLike[colName]) || '';
@@ -3022,7 +3022,7 @@ function buildFilterPanelHtml(tab, colName) {
     </div>`;
 }
 
-/* 列显隐 */
+// 列显隐
 function allColumnsOf(tab, db) {
   const t = db && db.tables.find(x => x.name === tab.table);
   return t ? t.cols.map(c => c.name) : [];
@@ -3030,13 +3030,13 @@ function allColumnsOf(tab, db) {
 function isColHidden(tab, c) {
   return Array.isArray(tab.hiddenCols) && tab.hiddenCols.includes(c);
 }
-// 给定「全量列名」，返回当前可见列（过滤掉 hiddenCols）。HEAD/BODY 统一走它，保证一致。
+// 给定「全量列名」，返回当前可见列（过滤掉 hiddenCols）。HEAD/BODY 统一走它，保证一致
 function visibleColumnsOf(tab, allColNames) {
   return allColNames.filter(c => !isColHidden(tab, c));
 }
 
 // 切换某列隐藏状态：更新 tab.hiddenCols、关闭其筛选面板（若隐藏的是展开列）、
-// 清掉列宽缓存（列数变化，原按位置缓存失效），再整体重渲染。
+// 清掉列宽缓存（列数变化，原按位置缓存失效），再整体重渲染
 function setColumnHidden(tab, col, hidden) {
   tab.hiddenCols = Array.isArray(tab.hiddenCols) ? tab.hiddenCols.slice() : [];
   const idx = tab.hiddenCols.indexOf(col);
@@ -3065,7 +3065,7 @@ function updateColumnsBadge() {
   }
 }
 
-// 字段管理弹窗：列出当前表所有列，复选框控制显隐（与筛选面板同风格）。
+// 字段管理弹窗：列出当前表所有列，复选框控制显隐（与筛选面板同风格）
 function closeColumnsPopover() {
   const el = $('colManager');
   if (el) el.remove();
@@ -3147,7 +3147,7 @@ function openColumnsPopover() {
 /* 构建表头 HTML：每列可点击展开筛选面板。
    tab._openFilterCol 记录当前展开面板的列（重渲染后保持展开）。
    tab.columnFilters[col]=字符串 → LIKE；tab.columnChecks[col]=数组 → IN。
-   面板打开时使用 tab._pendingChecks/_pendingLike（独立副本），不显示在摘要里。 */
+   面板打开时使用 tab._pendingChecks/_pendingLike（独立副本），不显示在摘要里*/
 function buildHeadHtml(columns, colTypes, tab) {
   const filters = tab.columnFilters || {};
   const checks = tab.columnChecks || {};
@@ -3184,7 +3184,7 @@ function buildHeadHtml(columns, colTypes, tab) {
 }
 
 /* 把一批行对象渲染成 <tr> HTML 字符串（分页/无限/快速到底共用）。
-   startIndex = 本批第一行对应的「已加载行数」，用于行号。 */
+   startIndex = 本批第一行对应的「已加载行数」，用于行号*/
 function buildRowsHtml(rows, columns, startIndex) {
   const out = [];
   for (let i = 0; i < rows.length; i++) {
@@ -3217,10 +3217,10 @@ function buildRowsHtml(rows, columns, startIndex) {
    - 紧凑：交回浏览器自动布局，沿用 360px 上限 + 省略号。
    计算分两阶段：先 canvas.measureText 粗估（比逐个 DOM 测量快两个数量级），
    写入列宽后再按浏览器真实布局 scrollWidth 全量复检补齐——canvas 对 tabular-nums、
-   italic、中文字体回退、letter-spacing 都存在偏差，且文本越长偏差越大。 */
+   italic、中文字体回退、letter-spacing 都存在偏差，且文本越长偏差越大*/
 const COL_FIT_MIN = 64;       // 列宽下限（px，含内边距）
 // 列宽上限：只在 30000px 处做极端兜底（约 2400 个汉字 / 4300 个英文字符），
-// 防止单条几十万字符的脏数据把表格撑爆导致浏览器卡死。正常数据远达不到。
+// 防止单条几十万字符的脏数据把表格撑爆导致浏览器卡死。正常数据远达不到
 const COL_FIT_MAX = 30000;
 const COL_FIT_ROWS = 3000;    // 估算 / 实测校准阶段最多扫描的行数，防止超大表卡死
 let _fitCanvas = null;
@@ -3235,7 +3235,7 @@ function cellFont(el) {
 // 当压缩比例 < 0.5（即视口严重不足）时跳过压缩：勉强压到极限会变成不可读的小列，
 // 此时保留横向滚动条更友好（用户可手动滑动查看完整内容）
 // 仅在窄屏（手机）生效：桌面端一律不压缩——只要压缩就必然有文字显示不全，
-// 与「列宽 = 文字完整长度」的目标冲突，桌面端宁可横向滚动。
+// 与「列宽 = 文字完整长度」的目标冲突，桌面端宁可横向滚动
 function fitTextWidth(text, font) {
   if (!_fitCanvas) _fitCanvas = document.createElement('canvas');
   const ctx = _fitCanvas.getContext('2d');
@@ -3243,8 +3243,8 @@ function fitTextWidth(text, font) {
   let max = 0;
   const lines = String(text).split('\n');
   for (const line of lines) {
-    // 不再截断到 500 字符：那会低估超长文本的真实宽度，导致列宽不够、文字显示不全。
-    // measureText 很快，几万字符也就几毫秒，直接测整串。
+    // 不再截断到 500 字符：那会低估超长文本的真实宽度，导致列宽不够、文字显示不全
+    // measureText 很快，几万字符也就几毫秒，直接测整串
     const w = ctx.measureText(line).width;
     if (w > max) max = w;
   }
@@ -3259,7 +3259,7 @@ function fitHeadWidth(th, fonts) {
   const valEl = th.querySelector('.col-filter-val');
   let w = 0;
   // 字段名 + 32 是因为 .col-name 在 col-fit 下左右各 16px padding（给右侧 ⌕/× 留位，
-  // 同时让文字视觉居中）。对应 CSS 的 padding:0 16px，短数据列不会被表头虚高撑宽。
+  // 同时让文字视觉居中）。对应 CSS 的 padding:0 16px，短数据列不会被表头虚高撑宽
   if (nameEl) w = Math.max(w, fitTextWidth(nameEl.textContent, fonts.name) + 32);
   if (typeEl) w = Math.max(w, fitTextWidth(typeEl.textContent, fonts.type));
   if (valEl) w = Math.max(w, fitTextWidth(valEl.textContent, fonts.val));
@@ -3274,8 +3274,8 @@ function autoFitColumns(table, opts) {
   if (!ths.length) return;
 
   const incremental = !!(opts && opts.incremental);
-  // 优先用调用方传入的持久缓存（tab._colWidths，跨分页/跨模式复用），否则回退到本 DOM 节点的临时缓存。
-  // 翻页时表格节点会重建，table._colWidths 会丢失，但 tab._colWidths 仍在，所以翻页不必每页从头全量测量。
+  // 优先用调用方传入的持久缓存（tab._colWidths，跨分页/跨模式复用），否则回退到本 DOM 节点的临时缓存
+  // 翻页时表格节点会重建，table._colWidths 会丢失，但 tab._colWidths 仍在，所以翻页不必每页从头全量测量
   const cached = (opts && opts.cache && opts.cache.length === ths.length) ? opts.cache
                : (table._colWidths && table._colWidths.length === ths.length ? table._colWidths : null);
   if (incremental && !cached) { autoFitColumns(table, { tab: opts && opts.tab }); return; }  // 没有基准就退回全量（并写入 tab 缓存）
@@ -3331,9 +3331,9 @@ function autoFitColumns(table, opts) {
   table._colWidths = widths;
   writeCellWidths(table, widths);
 
-  // ② 全量实测校准（不再做任何视口压缩）：用户明确要求「不压缩、不省略」。
+  // ② 全量实测校准（不再做任何视口压缩）：用户明确要求「不压缩、不省略」
   //    无论桌面还是手机端，列宽一律等于该列文字一行显示的完整长度；
-  //    总宽超出视口时由外层 .grid-container 的 overflow-x:auto 提供横向滚动，绝不截断。
+  //    总宽超出视口时由外层 .grid-container 的 overflow-x:auto 提供横向滚动，绝不截断
   const refined = refineByRealWidth(table, widths, ths, trs);
   if (refined) {
     if (opts && opts.tab) opts.tab._colWidths = widths;
@@ -3345,7 +3345,7 @@ function autoFitColumns(table, opts) {
 // 把 widths 写进每个 td/th 的 inline style，并锁死 table 总宽
 // （不用 colgroup：Chrome 下 colgroup + fixed + border-spacing 会多出 50+px 莫名 scrollWidth）
 // 性能：① 与上一轮完全一致则直接跳过（无限滚动追加行时，绝大多数批次不会改变任何列宽，省去整表 style 写入与重排）；
-//       ② 仅少数列变化时只重写这些列（其余列上一轮已写好），大幅减少 style 写入量。
+//       ② 仅少数列变化时只重写这些列（其余列上一轮已写好），大幅减少 style 写入量
 function writeCellWidths(table, widths) {
   const prev = table._lastWidths;
   let changed = null;
@@ -3383,7 +3383,7 @@ function writeCellWidths(table, widths) {
   table.style.width = widths.reduce((a, b) => a + b, 0) + 'px';
 }
 
-// 写入列宽后，用浏览器真实布局复检，宽度不够就补到刚好容纳内容。返回是否调整过。
+// 写入列宽后，用浏览器真实布局复检，宽度不够就补到刚好容纳内容。返回是否调整过
 function refineByRealWidth(table, widths, ths, trs) {
   let changed = false;
   // ① 表头：字段名 + 类型必须完整显示（col-name 有 overflow:hidden，宽度不够会被 ellipsis 裁掉）
@@ -3393,24 +3393,24 @@ function refineByRealWidth(table, widths, ths, trs) {
     const nameEl = th.querySelector('.col-name');
     const typeEl = th.querySelector('.col-type');
     let need = 0;
-    // scrollWidth 已包含元素自身 padding（nameEl 左右各 16px、typeEl 自身 padding），直接取即可。
+    // scrollWidth 已包含元素自身 padding（nameEl 左右各 16px、typeEl 自身 padding），直接取即可
     if (nameEl) need = Math.max(need, nameEl.scrollWidth);
     if (typeEl) need = Math.max(need, typeEl.scrollWidth);
     // 补 th 自身的左右 padding(各 10px) + 真实边框宽。边框用 offsetWidth-clientWidth 实测，
-    // 因为 border-collapse 下边框会折叠成 1px，硬编码 +2 会每轮多算 1px、列宽持续累加膨胀。
+    // 因为 border-collapse 下边框会折叠成 1px，硬编码 +2 会每轮多算 1px、列宽持续累加膨胀
     const thBorder = th.offsetWidth - th.clientWidth;
     need += 20 + thBorder;
     if (need > widths[i]) { widths[i] = Math.min(need, COL_FIT_MAX); changed = true; }
   }
   // ② 数据单元格：全量实测。canvas 对超长文本估算偏差更大，只查「估算最宽」那一格
-  //    很可能选错对象，导致真正最长的单元格被漏掉、显示不全，所以逐格读 scrollWidth。
+  //    很可能选错对象，导致真正最长的单元格被漏掉、显示不全，所以逐格读 scrollWidth
   for (const tr of trs) {
     const tds = tr.children;
     for (let i = 1; i < tds.length && i < widths.length; i++) {
       const td = tds[i];
       if (!td.textContent) continue;
       // scrollWidth 不含边框，补上真实边框宽(offsetWidth-clientWidth)才是刚好容纳的 border-box 宽度；
-      // 这样内容恰好放得下时 need === 当前宽度，测量幂等、不会每轮 +1px 累加。
+      // 这样内容恰好放得下时 need === 当前宽度，测量幂等、不会每轮 +1px 累加
       const need = td.scrollWidth + (td.offsetWidth - td.clientWidth);
       if (need > widths[i]) { widths[i] = Math.min(need, COL_FIT_MAX); changed = true; }
     }
@@ -3422,7 +3422,7 @@ function refineByRealWidth(table, widths, ths, trs) {
 function applyColFit(opts) {
   const table = document.querySelector('#contentArea .data-table');
   if (!table) return;
-  // 列宽自适应改为唯一模式：总是按内容完整长度显示，不压缩、不省略、不截断。
+  // 列宽自适应改为唯一模式：总是按内容完整长度显示，不压缩、不省略、不截断
   table.classList.add('col-fit');
   const tab = getActiveDataTab();
   // 复用 tab 上已测的列宽缓存（跨分页/跨模式），skipCache 时强制重新测量
@@ -3504,7 +3504,7 @@ function loadInfiniteBatch(db, tab) {
   updateFabEnd();
 }
 
-/* Dropzone 控制 */
+// Dropzone 控制
 function showDropzone(show) {
   $('dropzone').style.display = show ? 'flex' : 'none';
   $('dataView').style.display = show ? 'none' : 'flex';
@@ -3512,15 +3512,15 @@ function showDropzone(show) {
   updateFabEnd();
 }
 
-/* 导入失败提示 */
-// 复用页面原有 toast，只换文案与配色：统一「文件名 不是 SQLite 数据库文件」，红粉字体（.toast.fail）。
-// 多个失败文件逐行显示。失败不影响右侧视图：视图状态由调用方决定是否刷新，这里只负责提示。
+// 导入失败提示
+// 复用页面原有 toast，只换文案与配色：统一「文件名 不是 SQLite 数据库文件」，红粉字体（.toast.fail）
+// 多个失败文件逐行显示。失败不影响右侧视图：视图状态由调用方决定是否刷新，这里只负责提示
 function toastImportFailed(failedList) {
   if (!failedList || !failedList.length) return;
   toast(failedList.map(f => `${f.fileName} 不是 SQLite 数据库文件`).join('\n'), 'fail', 4000);
 }
 
-/* 悬浮到底按钮 */
+// 悬浮到底按钮
 const fab = $('fabEnd');
 
 // 显隐控制：仅「无限模式数据表」显示；已全部加载完毕时置灰
@@ -3536,7 +3536,7 @@ function updateFabEnd() {
   }
   fab.classList.add('show');
   // 仅「正在跳转中」禁用（防连点重入）；底到了也允许再次点击直达底部
-  // （例如向上回溯翻阅前面行后，再一键跳回末尾）。
+  // （例如向上回溯翻阅前面行后，再一键跳回末尾）
   fab.disabled = !!tab._jumping;
   fab.classList.toggle('loading', !!tab._jumping);
 }
@@ -3544,11 +3544,10 @@ function updateFabEnd() {
 /* 快速到底：大块查询 + 批量构建 HTML + 批量插入 DOM。
    相比逐页调用 loadInfiniteBatch（每页 1 次查询 + 1 次 DOM 插入 + 1 次 rAF），
    这里把每页 100 行放大到每次 5000 行，并把 DOM 插入按阈值合并，
-   10 万行的批次数从 1000 降到 20，rAF 等待从 ~16 秒降到 ~0.3 秒。 */
-// 一键到底统一路径：仅取最后一页（pageSize 行）渲染，等价于分页「末页」。
+   10 万行的批次数从 1000 降到 20，rAF 等待从 ~16 秒降到 ~0.3 秒*/
+// 一键到底统一路径：仅取最后一页（pageSize 行）渲染，等价于分页「末页」
 // 不论表大小都走这条快速路径，避免小表也把全部行全量塞进 DOM 导致加载变慢；
-// 点击后 DOM 恒为 ~pageSize 行，向上回溯仍可逐页加载前面的行。
-
+// 点击后 DOM 恒为 ~pageSize 行，向上回溯仍可逐页加载前面的行
 async function jumpToEndViaLastPage(db, tab) {
   const t = db.tables.find(x => x.name === tab.table);
   if (!t) return false;
@@ -3599,8 +3598,8 @@ async function jumpToEndViaLastPage(db, tab) {
 }
 
 // 反向无限滚动：在「一键到底（末页）」状态下，向上翻到顶时补加载上一页
-// （倒数 101-200 行…），如此既保持 DOM 体量可控（每次仅 ~pageSize 行），又能逐级向上回溯。
-// 关键：prepend 后用 scrollTop 补偿新增高度，使原视图内容不发生跳动。
+// （倒数 101-200 行…），如此既保持 DOM 体量可控（每次仅 ~pageSize 行），又能逐级向上回溯
+// 关键：prepend 后用 scrollTop 补偿新增高度，使原视图内容不发生跳动
 function loadPreviousBatch(db, tab) {
   if (tab._loadingUp || tab._topFinished) return;
   const t = db.tables.find(x => x.name === tab.table);
@@ -3677,7 +3676,7 @@ async function jumpToEnd() {
   updateFabEnd();                            // 立刻切到 loading 态
 
   // 统一走「巨量行数表」快速路径：不论表大小，仅渲染末页 ~pageSize 行，
-  // 避免小表也把全部行全量塞进 DOM 导致加载变慢；向上回溯仍可逐页加载前面的行。
+  // 避免小表也把全部行全量塞进 DOM 导致加载变慢；向上回溯仍可逐页加载前面的行
   const ok = await jumpToEndViaLastPage(db, tab);
 
   // 加载完成后收尾：更新 sentinel 文案、断开 observer
@@ -3696,8 +3695,8 @@ async function jumpToEnd() {
   // ① 慢设备大表插入后布局完成时间不可预测（可能超过 1 秒），补滚可能全部
   //    赶在布局完成前执行，scrollHeight 是旧值，之后布局变高也无人再滚；
   // ② 触摸惯性滚动可持续 1~2 秒，期间程序化 scrollTop 赋值可能被忽略/覆盖
-  //    （PC 鼠标滚动几乎无惯性，所以 PC 上没暴露）。
-  // 因此轮询检测「真正到底 且 scrollHeight 连续两轮稳定」才停止，上限 5 秒。
+  //    （PC 鼠标滚动几乎无惯性，所以 PC 上没暴露）
+  // 因此轮询检测「真正到底 且 scrollHeight 连续两轮稳定」才停止，上限 5 秒
   let tries = 0;
   let lastSh = -1;
   const keepBottom = () => {
@@ -3725,7 +3724,7 @@ async function jumpToEnd() {
 fab.addEventListener('click', jumpToEnd);
 
 // 反向无限滚动：#infiniteContainer 向上翻到顶（scrollTop 接近 0）时，
-// 若处于「一键到底（末页）」状态，自动补加载上一页（捕获阶段，#infiniteContainer 重建也不丢失）。
+// 若处于「一键到底（末页）」状态，自动补加载上一页（捕获阶段，#infiniteContainer 重建也不丢失）
 document.addEventListener('scroll', (e) => {
   const c = e.target;
   if (!(c instanceof Element) || c.id !== 'infiniteContainer') return;
@@ -3738,7 +3737,7 @@ document.addEventListener('scroll', (e) => {
   }
 }, true);
 
-/* 导出 CSV */
+// 导出 CSV
 // CSV 字段转义：含逗号/引号/换行/回车则整段用双引号包裹，并转义内部引号
 function csvField(v) {
   if (v === null || v === undefined) return '';
@@ -3768,8 +3767,8 @@ function exportCSV() {
 
   const cols = t.cols.map(c => c.name);
   const colCount = cols.length;
-  // 流式导出：逐行读取 + 分块拼接，避免把整张表一次性塞进内存（大表不会卡死/爆内存）。
-  // 用位置数组 stmt.get() 替代 getAsObject()，省去每行建对象与键查找的开销。
+  // 流式导出：逐行读取 + 分块拼接，避免把整张表一次性塞进内存（大表不会卡死/爆内存）
+  // 用位置数组 stmt.get() 替代 getAsObject()，省去每行建对象与键查找的开销
   const chunks = [cols.map(csvField).join(',')];
   const CHUNK = 2000;
   let buf = [];
@@ -3797,15 +3796,15 @@ function exportCSV() {
   toast(`已导出 ${formatNum(rowCount)} 行`, 'success');
 }
 
-/* 模式切换按钮（分页 / 无限 合并为单图标按钮） */
-// 按钮显示当前模式的图标（分页=表格、无限=∞ 符号），点击切到另一种；title 提示目标模式。
+// 模式切换按钮（分页 / 无限 合并为单图标按钮）
+// 按钮显示当前模式的图标（分页=表格、无限=∞ 符号），点击切到另一种；title 提示目标模式
 function syncModeToggle(mode) {
   const btn = $('modeToggle');
   if (!btn) return;
   const isPage = mode !== 'infinite';
-  // 用 style.display 切换，与主题按钮（日/月图标）做法一致。
+  // 用 style.display 切换，与主题按钮（日/月图标）做法一致
   // 注意：不能用 svg.hidden —— hidden 是 HTML 属性，SVG 元素不识别，
-  // 设 svg.hidden 只会挂个普通 JS 属性，CSS 的 svg[hidden] 匹配不到，两个图标会同时显示。
+  // 设 svg.hidden 只会挂个普通 JS 属性，CSS 的 svg[hidden] 匹配不到，两个图标会同时显示
   btn.querySelectorAll('[data-mode-icon]').forEach(svg => {
     const on = svg.dataset.modeIcon === (isPage ? 'page' : 'infinite');
     svg.style.display = on ? '' : 'none';
@@ -3816,7 +3815,7 @@ function syncModeToggle(mode) {
   btn.setAttribute('aria-label', tip);
 }
 
-/* 切换加载模式 */
+// 切换加载模式
 function switchLoadMode(tab, mode) {
   if (tab.loadMode === mode) return;
   tab.loadMode = mode;
@@ -3832,7 +3831,7 @@ function switchLoadMode(tab, mode) {
   renderContent();
 }
 
-/* 事件绑定 */
+// 事件绑定
 async function handleFiles(files) {
   const arr = [...files];
   if (!arr.length) return;
@@ -3848,9 +3847,9 @@ async function handleFiles(files) {
     }
   }));
 
-  // 阶段 2：串行执行 CPU 重的建库逻辑，每完成一个让出主线程，避免一次性卡死。
+  // 阶段 2：串行执行 CPU 重的建库逻辑，每完成一个让出主线程，避免一次性卡死
   // 非 SQLite 数据（zip / 文本 / 损坏文件）会在建库读 schema 时抛「file is not a database」，
-  // 必须逐个捕获记为失败，否则一个坏文件会让整批导入中断且没有任何提示。
+  // 必须逐个捕获记为失败，否则一个坏文件会让整批导入中断且没有任何提示
   const results = [];
   for (let i = 0; i < prepared.length; i++) {
     const p = prepared[i];
@@ -3870,7 +3869,7 @@ async function handleFiles(files) {
   }
 
   // 阶段 3：渲染。只有真正「新增 / 更新」了数据库才刷新并收起上传区；
-  // 全部失败（或仅重复跳过）时右侧严格保持导入前状态，只弹出失败 toast。
+  // 全部失败（或仅重复跳过）时右侧严格保持导入前状态，只弹出失败 toast
   const failedResults = results.filter(r => r.kind === 'error');
   const changed = results.some(r => r.kind === 'added' || r.kind === 'replaced');
   if (changed) {
@@ -3883,7 +3882,7 @@ async function handleFiles(files) {
     renderSidebar();   // 仅同步重复库的展开与高亮，右侧视图不动
   }
 
-  // 阶段 4：提示。失败统一按样板走 toast（红粉字体），成功/重复沿用原有 toast。
+  // 阶段 4：提示。失败统一按样板走 toast（红粉字体），成功/重复沿用原有 toast
   const added = results.filter(r => r.kind === 'added').length;
   const replaced = results.filter(r => r.kind === 'replaced').length;
   const skipped = results.filter(r => r.kind === 'duplicate').length;
@@ -3906,8 +3905,8 @@ async function handleFiles(files) {
     if (results.length === 1) toast(`「${results[0].db.name}」已加载，已跳过重复导入`, 'warn');
     else toast(`数据库导入：跳过 ${skipped} 个重复`, 'warn');
   }
-  // 导入流程结束：清冷却残留（不动挂起，以免漏掉对话框关闭后迟到的合成 over）。
-  // 覆盖「点击清空后冷却残留」等极端时序，确保下次 hover 能正常显示提示（详见 note 30）。
+  // 导入流程结束：清冷却残留（不动挂起，以免漏掉对话框关闭后迟到的合成 over）
+  // 覆盖「点击清空后冷却残留」等极端时序，确保下次 hover 能正常显示提示（详见 note 30）
   window.resetCooldown && window.resetCooldown();
 }
 
@@ -3944,14 +3943,14 @@ $('btnClear').onclick = async () => {
 
 $('btnTheme').onclick = () => theme.toggle();
 // 双击主题按钮：恢复「跟随系统」（默认初态）。单击恒为日/夜反转，
-// 故双击时两次单击的副作用会被此处 removeItem 后的 apply() 抵消，最终干净回到 system。
+// 故双击时两次单击的副作用会被此处 removeItem 后的 apply() 抵消，最终干净回到 system
 $('btnTheme').addEventListener('dblclick', () => {
   localStorage.removeItem('sqlite-theme');
   theme.apply();
   toast('已恢复跟随系统', 'success');
 });
 
-/* 返回主页：跳转到站点根目录（工具门户页） */
+// 返回主页：跳转到站点根目录（工具门户页）
 $('btnHome').onclick = async () => {
   if (state.databases.length === 0) {
     location.href = '/';
@@ -4060,8 +4059,8 @@ $('btnLast').onclick = () => {
   const totalPages = parseInt($('totalPages').textContent);
   if (tab.page < totalPages) { tab.page = totalPages; renderContent(); }
 };
-// 输入页数：失焦/回车均跳转，自动夹取到 [1, 总页数]，非法输入回写为当前页。
-// 内联逻辑（仅依赖全局 getActiveTabSafe / renderContent，避免外部函数作用域问题）。
+// 输入页数：失焦/回车均跳转，自动夹取到 [1, 总页数]，非法输入回写为当前页
+// 内联逻辑（仅依赖全局 getActiveTabSafe / renderContent，避免外部函数作用域问题）
 function clampPageInput(tab, inputEl) {
   const totalPages = parseInt($('totalPages').textContent) || 1;
   let p = parseInt(inputEl.value, 10);
@@ -4120,7 +4119,7 @@ document.addEventListener('scroll', (e) => {
   if ($('colManager')) closeColumnsPopover();
 }, true);
 
-/* 双击单元格复制 */
+// 双击单元格复制
 // 复制文本到剪贴板（兼容旧浏览器回退）
 async function copyToClipboard(text) {
   try {
@@ -4165,7 +4164,7 @@ $('contentArea').addEventListener('dblclick', async (e) => {
    模式：面板内交互全部操作 pending 副本（_pendingChecks/_pendingLike），
    不触发表格重渲染；点「确认」才一次性写入 columnChecks/columnFilters 并重渲染。
    关闭路径（ESC / 点击外部 / 再次点 ⌕）= 丢弃 pending，保留原筛选。
-   × 直接清已提交状态（不打开面板的快捷路径）。 */
+   × 直接清已提交状态（不打开面板的快捷路径）*/
 
 // 表格滚动容器位置保持：面板打开/关闭/确认前后视图不窜位
 // （renderContent 重建 innerHTML 会让 .grid-container 滚动重置为 0，
@@ -4204,7 +4203,7 @@ function mountFilterPanelFixed(colName) {
   const ph = wrap.offsetHeight || 300;
   let left = r.left;
   // 列头可能只有右侧露在视口内（left 为负），面板不能跟着跑到屏幕外；
-  // 同时也不能贴右边缘溢出。左右各留 8px 安全边距。
+  // 同时也不能贴右边缘溢出。左右各留 8px 安全边距
   left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
   let top = r.bottom + 4;
   if (top + ph > window.innerHeight - 8) {
@@ -4234,9 +4233,9 @@ function closeFilterPanelDiscard(tab) {
   return true;
 }
 
-// 轻量关闭：只移除悬浮面板节点 + 复位 ⌕ 图标，不重渲染表格。
+// 轻量关闭：只移除悬浮面板节点 + 复位 ⌕ 图标，不重渲染表格
 // 用于滚动/resize 场景——fixed 面板不跟随列头，位置已错位必须关，
-// 但滚动是高频事件，走全表重渲染（无限模式可能几千行）会卡顿。
+// 但滚动是高频事件，走全表重渲染（无限模式可能几千行）会卡顿
 function closeFilterPanelLight() {
   const tab = getActiveDataTab();
   const wraps = document.querySelectorAll('body > .col-filter-input-wrap');
@@ -4489,7 +4488,7 @@ document.addEventListener('click', (e) => {
      · 鼠标悬停立即显示，移开立即消失（不依赖浏览器 hover 语义）
      · 一旦点击，立即收起；鼠标在该按钮上停留期间不再弹出（冷却），移开后恢复正常
      · 键盘 Tab 聚焦（未点击）也显示，失焦隐藏
-   事件委托到 document：动态插入的按钮（如侧栏）无需重新绑定。 */
+   事件委托到 document：动态插入的按钮（如侧栏）无需重新绑定*/
 (function setupTooltips() {
   const hideAll = () => {
     document.querySelectorAll('[data-tip].tip-on').forEach(el => el.classList.remove('tip-on'));
@@ -4497,45 +4496,45 @@ document.addEventListener('click', (e) => {
   const tipOf = (e) => (e.target.closest && e.target.closest('[data-tip]')) || null;
   // 鼠标点击会让按钮获得焦点，focusin 又排在 click 之前（冷却尚未建立），
   // 结果「点击后立刻隐藏」被 focusin 反过来点亮。这里记住鼠标按下的目标，
-  // 由鼠标带来的焦点不显示提示，纯键盘 Tab 才显示。
+  // 由鼠标带来的焦点不显示提示，纯键盘 Tab 才显示
   let pointerDownEl = null;
   document.addEventListener('pointerdown', (e) => { pointerDownEl = tipOf(e); }, true);
 
-  // 提示只用于「点击之前」告诉用户这个按钮是干什么的——用户既然已经点了，就不该再浮着挡视线。
-  // 因此点击后立即收起并进入冷却，指针真正移开前不再弹出。
+  // 提示只用于「点击之前」告诉用户这个按钮是干什么的——用户既然已经点了，就不该再浮着挡视线
+  // 因此点击后立即收起并进入冷却，指针真正移开前不再弹出
   //
   // 冷却为什么不能靠鼠标坐标判断：点击后浏览器会补发 mouseover / focusin
-  // （典型场景：btnAddDb 弹出文件选择器，取消或选完后窗口重新聚焦）。
+  // （典型场景：btnAddDb 弹出文件选择器，取消或选完后窗口重新聚焦）
   // 实测这种合成事件的 clientX/clientY **都是 0**，而按钮在 (257,62)~(281,86)，
-  // 按坐标算会被判成「指针已离开」→ 冷却解除 → 提示残留（就是用户看到的现象）。
+  // 按坐标算会被判成「指针已离开」→ 冷却解除 → 提示残留（就是用户看到的现象）
   //
   // 所以改用「指针是否真的动过」来解锁：点击时记下当时的真实坐标，
   // 只有收到一个坐标与它不同的**真实** mousemove/pointermove，才认为用户动了鼠标，
   // 此时再判断是否已移出按钮，移出才解锁。合成事件坐标恒为 0，
-  // 除非用户真把鼠标拖到 (0,0)，否则无法骗过这个判断。
+  // 除非用户真把鼠标拖到 (0,0)，否则无法骗过这个判断
   let cooled = null;                       // 处于冷却中（锁定）的按钮
   let cdX = null, cdY = null;              // 点击瞬间的真实指针坐标
   // 文件选择器（系统模态）打开期间挂起 tooltip：对话框关闭后浏览器会补发合成
-  // over/focus，其坐标落在刚重显的按钮上并点亮提示、且永不派发真实 mouseout → 永久卡住。
-  // 挂起期间一律不点亮，导入完成后再恢复（详见 note 30）。
+  // over/focus，其坐标落在刚重显的按钮上并点亮提示、且永不派发真实 mouseout → 永久卡住
+  // 挂起期间一律不点亮，导入完成后再恢复（详见 note 30）
   let tipSuspended = false;
   window.suspendTips = (v) => { tipSuspended = v; if (v) hideAll(); };
   // 导入完成（含文件选择器关闭后补发的合成事件平息）后强制复位 tooltip：
   // 收起所有提示并清冷却。用于接管「合成 over 点亮提示后永不派发真实 mouseout」的场景——
-  // 那种提示无法靠后续事件收掉，只能主动收（详见 note 30）。
+  // 那种提示无法靠后续事件收掉，只能主动收（详见 note 30）
   window.resetTips = () => { tipSuspended = false; hideAll(); cooled = null; cdX = cdY = null; };
   // 仅清冷却、不动「挂起」：供导入完成时调用。若一并清掉挂起，会让对话框关闭后迟到的
-  // 合成 over 漏网点亮（chooser 路径由此翻车），故合成 over 的拦截仍交给挂起负责。
+  // 合成 over 漏网点亮（chooser 路径由此翻车），故合成 over 的拦截仍交给挂起负责
   window.resetCooldown = () => { cooled = null; cdX = cdY = null; };
   const samePoint = (x, y) => cdX !== null && x === cdX && y === cdY;
   const onPointerMove = (e) => {
     // 收到一次真实移动即解除「文件选择器挂起」：对话框关闭后浏览器补发的合成 over 必然
-    // 早于用户下一次真实移动，故挂起能拦掉它；用户一旦动鼠标即恢复正常（详见 note 30）。
+    // 早于用户下一次真实移动，故挂起能拦掉它；用户一旦动鼠标即恢复正常（详见 note 30）
     if (tipSuspended) tipSuspended = false;
     if (!cooled) return;
     // 确认框遮罩存在时，鼠标在遮罩（取消/确定按钮）上移动看似「移出了原按钮」，
     // 但这是遮罩造成的假象，不应解除冷却——否则遮罩关闭后鼠标回到按钮上，
-    // 提示会复活（就是「点击清空后一直显示」）。遮罩期间一律忽略移动。
+    // 提示会复活（就是「点击清空后一直显示」）。遮罩期间一律忽略移动
     if (document.querySelector('.dialog-mask')) return;
     // 位置和点击时一模一样 → 视为「没动」，不解锁（防合成事件）
     if (samePoint(e.clientX, e.clientY)) return;
@@ -4566,27 +4565,27 @@ document.addEventListener('click', (e) => {
     el.classList.remove('tip-on');
     // 解锁条件（二者满足其一即可，缺一不可）：
     //  a) relatedTarget 非空 —— 明确知道指针移到了哪个元素，是真实移出；
-    //  b) 按钮已不带 :hover —— 说明指针确实不在它上面了。
-    //     指针移出视口时 relatedTarget 会是 null，但 :hover 也同时消失，靠 b) 兜底。
+    //  b) 按钮已不带 :hover —— 说明指针确实不在它上面了
+    //     指针移出视口时 relatedTarget 会是 null，但 :hover 也同时消失，靠 b) 兜底
     // 反过来，脚本合成的 mouseout 既没有 relatedTarget、:hover 又依然成立
-    // （指针其实还停在按钮上），两个条件都不满足 → 不解锁 → 提示不会复活。
+    // （指针其实还停在按钮上），两个条件都不满足 → 不解锁 → 提示不会复活
     // 出现 .dialog-mask（确认框）时，遮罩盖住按钮会让 :hover 丢失、并补发
     // mouseout（relatedTarget 指向遮罩）。若据此解锁，确认框关闭后鼠标回到按钮上，
     // 提示就会复活——正是「点击清空后一直显示」的现象。遮罩期间的 hover 丢失是假象，
-    // 所以只要遮罩还在，就不解除冷却（解锁只会在遮罩关闭后、真实移出按钮时发生）。
+    // 所以只要遮罩还在，就不解除冷却（解锁只会在遮罩关闭后、真实移出按钮时发生）
     if (cooled === el && (to || !el.matches(':hover')) && !document.querySelector('.dialog-mask')) { cooled = null; cdX = cdY = null; }
   };
   document.addEventListener('mouseout', onMouseOut);
-  // 点击 = 已经知道用途 → 立刻隐藏，并在指针移开前不再出现。
+  // 点击 = 已经知道用途 → 立刻隐藏，并在指针移开前不再出现
   // 必须用捕获阶段：部分按钮（如 btnColumns）的 onclick 里有 e.stopPropagation()，
-  // 冒泡阶段根本到不了这里，会导致「点了照样显示提示」。
-  // 同时记下点击瞬间的真实坐标，作为后续「指针有没有动过」的基准。
+  // 冒泡阶段根本到不了这里，会导致「点了照样显示提示」
+  // 同时记下点击瞬间的真实坐标，作为后续「指针有没有动过」的基准
   document.addEventListener('click', (e) => {
     const el = tipOf(e);
     // 点在非提示元素上时只收起气泡，**不清除冷却**：
     // btnAddDb 点击后会用脚本去点隐藏的 fileInput，那次点击的 e.target 是 input
-    // （没有 data-tip），若在这里清掉冷却，随后的补发 mouseover 就会让提示复活。
-    // 冷却的解除只有一个出口：指针真的移动并离开该按钮。
+    // （没有 data-tip），若在这里清掉冷却，随后的补发 mouseover 就会让提示复活
+    // 冷却的解除只有一个出口：指针真的移动并离开该按钮
     if (!el) { pointerDownEl = null; hideAll(); return; }
     hideAll();
     cooled = el;
@@ -4602,10 +4601,10 @@ document.addEventListener('click', (e) => {
     el.classList.add('tip-on');
   };
   document.addEventListener('focusin', onFocusIn);
-  // 注意：mouseover / focusin 都注册在冒泡阶段。
+  // 注意：mouseover / focusin 都注册在冒泡阶段
   // 这两个处理器内部用 `if (cooled === el) return;` 拦住冷却中的按钮，
   // 比"额外加一个捕获阶段的擦除监听"更可靠——
-  // 捕获监听会先执行并摘掉 .tip-on，紧接着冒泡监听又把它加回来，等于没拦。
+  // 捕获监听会先执行并摘掉 .tip-on，紧接着冒泡监听又把它加回来，等于没拦
   document.addEventListener('focusout', (e) => {
     const el = tipOf(e);
     if (el) el.classList.remove('tip-on');
@@ -4621,10 +4620,10 @@ function cssEscape(s) {
   return String(s).replace(/[^a-zA-Z0-9_-]/g, c => '\\' + c);
 }
 
-// 悬浮筛选面板是 fixed 定位、不跟随列头：滚动导致列头移位后把面板重新对齐到列头当前位置。
+// 悬浮筛选面板是 fixed 定位、不跟随列头：滚动导致列头移位后把面板重新对齐到列头当前位置
 // 不能在错位时直接关闭：手机软键盘弹出会引发 resize + 页面滚动，面板若被关闭，
-// 用户会「还没来得及勾选/输入」就消失。重新对齐后面板持续可用（类似 Excel 筛选体验）。
-// scroll 事件不冒泡，必须用捕获阶段监听；面板内部滚动（候选列表）除外。
+// 用户会「还没来得及勾选/输入」就消失。重新对齐后面板持续可用（类似 Excel 筛选体验）
+// scroll 事件不冒泡，必须用捕获阶段监听；面板内部滚动（候选列表）除外
 document.addEventListener('scroll', (e) => {
   const t = e.target;
   if (t instanceof Element && t.closest('.col-filter-input-wrap')) return;
@@ -4644,8 +4643,8 @@ document.addEventListener('scroll', (e) => {
 
 // 响应窗口尺寸变化
 window.addEventListener('resize', () => {
-  // 手机/平板上打开面板会 focus 输入框 → 软键盘弹出 → 视口 resize。
-  // 此时不能关闭面板（用户还没来得及勾选），而是把面板重新对齐到列头当前位置。
+  // 手机/平板上打开面板会 focus 输入框 → 软键盘弹出 → 视口 resize
+  // 此时不能关闭面板（用户还没来得及勾选），而是把面板重新对齐到列头当前位置
   const tab = getActiveDataTab();
   if (tab && tab._openFilterCol) mountFilterPanelFixed(tab._openFilterCol);
   const nowMobile = matchMedia('(max-width: 768px)').matches;
@@ -4655,7 +4654,7 @@ window.addEventListener('resize', () => {
   }
 });
 
-/* 启动 */
+// 启动
 if (localStorage.getItem('sqlite-sidebar-collapsed') === '1' && !state.isMobile) {
   document.body.classList.add('sidebar-collapsed');
 }
