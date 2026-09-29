@@ -2121,7 +2121,7 @@ async function computeFingerprint(buf) {
       const d = await globalThis.crypto.subtle.digest('SHA-256', buf);
       return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
-  } catch (e) { // 落到下面的回退实现 }
+  } catch (e) { /* 落到下面的回退实现 */ }
   let h = 2166136261;
   const step = Math.max(1, Math.floor(buf.length / 4096));
   for (let i = 0; i < buf.length; i += step) {
