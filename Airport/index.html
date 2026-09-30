@@ -2033,7 +2033,8 @@
         .getElementById("tableSelectionSection")
         .classList.remove("hidden");
 
-      // 汇总提示：新增 / 更新 / 跳过重复 / 失败
+      // 汇总提示：新增 / 更新 / 跳过重复 / 失败，并始终带出已载入库的总数，
+      // 避免每轮只报本批变化（如追加 1 个文件恒显示「新增 1 个库」）而看不出累计
       const parts = [];
       if (added.length) parts.push(`新增 ${added.length} 个库`);
       if (replaced.length) parts.push(`更新 ${replaced.length} 个库`);
@@ -2042,9 +2043,11 @@
       const hasTable = tableMap.size > 0;
       let msg;
       if (!hasTable) {
-        msg = `${parts.join("，") || "已载入"}，但未找到数据表`;
+        msg = `${parts.join("，") || "已载入"}，但未找到数据表（已载入共 ${databases.length} 个库）`;
+      } else if (parts.length > 0) {
+        msg = `${parts.join("，")}（已载入共 ${databases.length} 个库）`;
       } else {
-        msg = parts.join("，") || `已载入 ${databases.length} 个库`;
+        msg = `已载入 ${databases.length} 个库`;
       }
       showFileStatus(msg, failed.length > 0 || !hasTable);
     }
