@@ -620,6 +620,8 @@
     .more-btn:hover { background: var(--primary-soft); }
 }
     details.more-row > summary { outline: none; list-style: none; text-align: center; cursor: pointer; }
+    /* 展开后隐藏 summary 内的「展开余下 N 条」按钮，收起（移除 open）后自动恢复显示 */
+    details.more-row[open] > summary .more-btn { display: none; }
     .more-divider {
       margin-top: 4px;
       padding-top: 4px;
