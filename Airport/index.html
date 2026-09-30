@@ -467,7 +467,13 @@
       transition: background-color .15s, border-color .15s;
     }
 @media (hover: hover) and (pointer: fine) {
-    .dropzone:hover { background: var(--panel); }
+    .dropzone:hover {
+      background: var(--panel);
+      border-color: var(--primary);
+    }
+    /* hover 时把图标与文案染成主色，给出明确的「可点击」提示 */
+    .dropzone:hover .dropzone-text { color: var(--primary); }
+    .dropzone:hover .dropzone-text svg { color: var(--primary); }
 }
     .dropzone { margin-bottom: 8px; }
     .dropzone--sm {
@@ -493,7 +499,11 @@
       transform: translate(-50%, -50%);
     }
 @media (hover: hover) and (pointer: fine) {
-    .dropzone--sm:hover { background: var(--panel); }
+    .dropzone--sm:hover {
+      background: var(--panel);
+      border-color: var(--primary);
+    }
+    .dropzone--sm:hover svg { color: var(--primary); }
 }
     .file-input {
       position: absolute;
