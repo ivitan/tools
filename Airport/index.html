@@ -2036,8 +2036,8 @@
         .getElementById("tableSelectionSection")
         .classList.remove("hidden");
 
-      // 汇总提示：新增 / 更新 / 跳过重复 / 失败，并始终带出已载入库的总数。
-      // 仅「后续追加」（导入前已有库）才用「新增」措辞；首次导入用「已载入」
+      // 汇总提示：新增 / 更新 / 跳过重复 / 失败；累计总数仅在「后续追加」时附带括号，
+      // 首次导入时 per-batch 数与总数相等，避免「已载入 1 个库（已载入共 1 个库）」式重复
       const isAppend = priorCount > 0;
       const parts = [];
       if (added.length) parts.push(`${isAppend ? "新增" : "已载入"} ${added.length} 个库`);
@@ -2045,11 +2045,12 @@
       if (skipped.length) parts.push(`跳过 ${skipped.length} 个重复`);
       if (failed.length) parts.push(`${failed.length} 个失败`);
       const hasTable = tableMap.size > 0;
+      const totalSuffix = isAppend ? `（已载入共 ${databases.length} 个库）` : "";
       let msg;
       if (!hasTable) {
-        msg = `${parts.join("，") || "已载入"}，但未找到数据表（已载入共 ${databases.length} 个库）`;
+        msg = `${parts.join("，") || "已载入"}，但未找到数据表`;
       } else if (parts.length > 0) {
-        msg = `${parts.join("，")}（已载入共 ${databases.length} 个库）`;
+        msg = `${parts.join("，")}${totalSuffix}`;
       } else {
         msg = `已载入 ${databases.length} 个库`;
       }
