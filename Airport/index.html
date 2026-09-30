@@ -1854,6 +1854,31 @@
       return true;
     }
 
+    // 文件内容指纹：优先 SHA-256，回退 FNV-1a。用于内容级去重（与 SQLite 工具对齐），
+    // 比单纯比对文件名更可靠——同名不同内容视为新版本，内容完全一致则跳过重复导入
+    async function computeFingerprint(buf) {
+      try {
+        if (
+          globalThis.crypto &&
+          globalThis.crypto.subtle &&
+          globalThis.crypto.subtle.digest
+        ) {
+          const d = await globalThis.crypto.subtle.digest("SHA-256", buf);
+          return Array.from(new Uint8Array(d))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+        }
+      } catch (e) {}
+      // 回退方案：体积 + 均匀采样 FNV-1a
+      let h = 2166136261;
+      const step = Math.max(1, Math.floor(buf.length / 4096));
+      for (let i = 0; i < buf.length; i += step) {
+        h ^= buf[i];
+        h = Math.imul(h, 16777619);
+      }
+      return `fb-${buf.length.toString(16)}-${(h >>> 0).toString(16)}`;
+    }
+
     // 用 textContent 而非 innerHTML，避免文件名中的 HTML 被解析
     function showFileStatus(msg, isError) {
       const el = document.getElementById("fileInfo");
@@ -1872,20 +1897,22 @@
         return;
       }
 
-      databases = [];
+      // 与 SQLite 工具对齐：不再整体清空 databases，改为「追加 + 内容去重 + 同名替换」模型，
+      // 多次导入的数据可合并参与提取，而非每次导入覆盖掉之前已载入的库
       const tableMap = new Map();
       const failed = [];
+      const added = [];
+      const replaced = [];
+      const skipped = [];
 
-      // 阶段 1：并行读取全部文件并做 SQLite 头校验（纯 IO / 字节比较，互不阻塞）
-      // 旧实现是 for 循环里逐个 await file.arrayBuffer()，N 个文件要串行等 N 次读取；
-      // 改成 Promise.all 一次并行读后，多文件导入耗时从「累加」变为「取最慢单个」，
-      // 这也是 SQLite 工具比本工具快很多的根因
+      // 阶段 1：并行读取全部文件、算内容指纹并做 SQLite 头校验（纯 IO / 字节比较，互不阻塞）
       const arr = [...files];
       const prepared = await Promise.all(
         arr.map(async (file) => {
           try {
             const buf = new Uint8Array(await file.arrayBuffer());
-            return { file, buf, ok: isSqliteBuffer(buf), error: null };
+            const hash = await computeFingerprint(buf);
+            return { file, buf, hash, ok: isSqliteBuffer(buf), error: null };
           } catch (e) {
             return { file, error: e };
           }
@@ -1896,6 +1923,7 @@
       // 避免一次性卡死 UI；坏文件逐个捕获，保证整批不会因为一个出错而中断
       // ① 文件头校验已在阶段 1 完成（SQLite 打开是惰性的，非数据库文件到执行查询时才报错，
       //    那样 UI 早已显示「已载入」，造成假成功错觉，故提前拦截）
+      // ② 内容相同（指纹一致）→ 视为重复导入，跳过；同名但内容不同 → 原位替换旧库
       for (let i = 0; i < prepared.length; i++) {
         const p = prepared[i];
         if (p.error) {
@@ -1907,37 +1935,75 @@
           continue;
         }
 
+        // 内容级去重：指纹已存在于已载入库中（无论文件名是否相同）一律跳过
+        if (databases.some((d) => d.hash === p.hash)) {
+          skipped.push(p.file.name);
+          continue;
+        }
+
+        // 同名不同内容 → 关闭旧库并原位替换；否则作为新库追加
+        const sameIdx = databases.findIndex((d) => d.name === p.file.name);
+
         let db = null;
         try {
           db = new sqlEngine.Database(p.buf);
           const res = db.exec(
             "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
           );
-          databases.push({ name: p.file.name, db: db });
-          if (res.length > 0) {
-            res[0].values.forEach((row) => {
-              const tableName = row[0];
-              if (!tableMap.has(tableName)) {
-                tableMap.set(tableName, []);
-              }
-              tableMap.get(tableName).push(p.file.name);
-            });
+          const tables =
+            res.length > 0 ? res[0].values.map((row) => row[0]) : [];
+          const dbObj = {
+            name: p.file.name,
+            db: db,
+            hash: p.hash,
+            tables: tables,
+          };
+          if (sameIdx !== -1) {
+            try {
+              databases[sameIdx].db.close();
+            } catch (_) {}
+            databases[sameIdx] = dbObj;
+            replaced.push(p.file.name);
+          } else {
+            databases.push(dbObj);
+            added.push(p.file.name);
           }
         } catch (e) {
           if (db) {
-            try { db.close(); } catch (_) {}
+            try {
+              db.close();
+            } catch (_) {}
           }
           failed.push({ name: p.file.name, reason: "数据库损坏或格式不支持" });
         }
         if (i < prepared.length - 1) await new Promise((r) => setTimeout(r, 0));
       }
 
+      // 保留用户之前的表勾选状态：追加导入时不应重置已选表
+      const prevState = new Map();
+      document.querySelectorAll(".table-checkbox").forEach((cb) => {
+        prevState.set(cb.value, cb.checked);
+      });
+
+      // 从全部已载入库聚合表清单（跨库合并表名，可全选），而非仅本次批次
       const tableListDiv = document.getElementById("tableList");
-      // 一次性拼接后写入 innerHTML，避免逐项 appendChild 触发多次重排
+      databases.forEach(({ name, tables }) => {
+        (tables || []).forEach((tableName) => {
+          if (!tableMap.has(tableName)) {
+            tableMap.set(tableName, []);
+          }
+          tableMap.get(tableName).push(name);
+        });
+      });
       let listHtml = "";
       tableMap.forEach((files, tableName) => {
+        const checked = prevState.has(tableName)
+          ? prevState.get(tableName)
+            ? "checked"
+            : ""
+          : "checked";
         listHtml += `<div class="table-item">
-        <input type="checkbox" value="${tableName}" class="table-checkbox" checked>
+        <input type="checkbox" value="${tableName}" class="table-checkbox" ${checked}>
         <label class="cursor-pointer truncate" title="${tableName}" onclick="this.previousElementSibling.click()">
           ${tableName}
         </label>
@@ -1945,10 +2011,9 @@
       });
       tableListDiv.innerHTML = listHtml;
 
-      const okCount = databases.length;
-
-      // ② 全部失败时回滚到上传前状态，绝不留下「已载入」的假象
-      if (okCount === 0) {
+      // 全部导入失败时：若此前本就无任何库，则回滚到上传前状态，绝不留下「已载入」的假象；
+      // 若之前已有库，仅给出失败提示，保留原有库与界面
+      if (databases.length === 0) {
         dropZoneLarge.classList.remove("hidden");
         dropZoneSmall.classList.add("hidden");
         document.getElementById("tableSelectionSection").classList.add("hidden");
@@ -1966,16 +2031,20 @@
         .getElementById("tableSelectionSection")
         .classList.remove("hidden");
 
-      if (failed.length > 0) {
-        showFileStatus(
-          `已载入 ${okCount} 个库，${failed.length} 个失败：${failed.map((f) => f.name).join("、")}`,
-          true,
-        );
-      } else if (tableMap.size === 0) {
-        showFileStatus(`已载入 ${okCount} 个库，但未找到数据表`, true);
+      // 汇总提示：新增 / 更新 / 跳过重复 / 失败
+      const parts = [];
+      if (added.length) parts.push(`新增 ${added.length} 个库`);
+      if (replaced.length) parts.push(`更新 ${replaced.length} 个库`);
+      if (skipped.length) parts.push(`跳过 ${skipped.length} 个重复`);
+      if (failed.length) parts.push(`${failed.length} 个失败`);
+      const hasTable = tableMap.size > 0;
+      let msg;
+      if (!hasTable) {
+        msg = `${parts.join("，") || "已载入"}，但未找到数据表`;
       } else {
-        showFileStatus(`已载入 ${okCount} 个库`, false);
+        msg = parts.join("，") || `已载入 ${databases.length} 个库`;
       }
+      showFileStatus(msg, failed.length > 0 || !hasTable);
     }
 
     function renderEmptyTable(mode) {
