@@ -2314,6 +2314,15 @@
       currentMode = mode;
       const { dict, order, label } = CONFIG[currentMode];
 
+      // 近机位(near)数据分散在 appid='near' 与 appid='cabin' 两种标记中
+      // （cabin 来自新增的机位数据表），提取近机位时需将两者一并纳入；
+      // 远机位(remote)仍仅用 appid='remote'。两者均在时间开始/结束窗口内判定。
+      const APPID_ACCEPT = {
+        near: ["near", "cabin"],
+        remote: ["remote"],
+      };
+      const acceptAppids = APPID_ACCEPT[currentMode] || [currentMode];
+
       const selectedTables = Array.from(
         document.querySelectorAll(".table-checkbox:checked"),
       ).map((cb) => cb.value);
@@ -2359,7 +2368,8 @@
           databases.forEach(({ name, db }) => {
             selectedTables.forEach((tableName) => {
               try {
-                // 先探测该表是否含 appid 列：含则按当前模式精确过滤（near→'near'，remote→'remote'），
+                // 先探测该表是否含 appid 列：含则按当前模式接受的 appid 集合精确过滤
+                // （near 接受 near/cabin，remote 接受 remote），
                 // 避免无该列的表因 WHERE appid= 报错而整表数据丢失；无该列的表仍走解析阶段宽松匹配
                 let tableHasAppid = false;
                 try {
@@ -2371,12 +2381,23 @@
                   }
                 } catch (e) {}
 
-                // 过滤条件：时间 + 机位号 + （表含 appid 列时）按当前模式精确过滤
+                // 过滤条件：时间 + 机位号 + （表含 appid 列时）按当前模式接受的 appid 集合精确过滤
                 const conditions = [];
                 if (startTime) conditions.push(`report_time >= '${startTime}'`);
                 if (endTime) conditions.push(`report_time <= '${endTime}'`);
                 if (aproCode) conditions.push(`aproCode = '${aproCode}'`);
-                if (tableHasAppid) conditions.push(`appid = '${mode}'`);
+                if (tableHasAppid) {
+                  // 单一取值用 =，多取值（near 含 cabin）用 IN，避免遗漏新增表的近机位数据
+                  if (acceptAppids.length === 1) {
+                    conditions.push(`appid = '${acceptAppids[0]}'`);
+                  } else {
+                    conditions.push(
+                      `appid IN (${acceptAppids
+                        .map((v) => `'${v}'`)
+                        .join(", ")})`,
+                    );
+                  }
+                }
                 const whereClause =
                   conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -2459,8 +2480,10 @@
           const headers = lines[0].split("\t").map((h) => h.trim());
           let globalCodeIdx = headers.indexOf("nodeCode");
           let globalTimeIdx = headers.indexOf("report_time");
-          // appid 列：remote=远机位，near=近机位（权威判定依据）
-          // 数据特性：数据库导入时 appid 必为 near/remote（不会为空）→ 等同于严格过滤；
+          // appid 列：remote=远机位，near=近机位（权威判定依据）。
+          // 近机位的 appid 取值为 near 与 cabin 二者（cabin 为新增机位数据表的标记），
+          // 由上方 acceptAppids 统一决定本模式接受哪些取值。
+          // 数据特性：数据库导入时 appid 必为 near/remote/cabin（不会为空）→ 等同于严格过滤；
           // 仅下方粘贴区手工粘贴的数据 appid 可能为空 → 空值时回退原字典匹配，避免提取不到
           let globalAppidIdx = headers.indexOf("appid");
           hasAppidCol = globalAppidIdx !== -1;
@@ -2514,9 +2537,16 @@
                   )
                     .trim()
                     .toLowerCase();
-                  if (appidVal === "near" || appidVal === "remote") {
-                    if (appidVal !== mode) {
-                      continue; // 静默排除异类 appid 行（SQL 已精确过滤 DB 数据，此处主要兜底手工粘贴数据）
+                  // 仅对已知机位标记（near/remote/cabin）做权威判定：
+                  // 近机位模式同时接受 near 与 cabin（新增表以 cabin 标记近机位），
+                  // 其余标记视为异类静默排除；appid 为空/未知值则回退下方字典匹配
+                  if (
+                    appidVal === "near" ||
+                    appidVal === "remote" ||
+                    appidVal === "cabin"
+                  ) {
+                    if (!acceptAppids.includes(appidVal)) {
+                      continue; // 异类 appid 行静默排除（SQL 已精确过滤 DB 数据，此处主要兜底手工粘贴数据）
                     }
                     appidMatched++;
                   }
