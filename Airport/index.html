@@ -2085,6 +2085,10 @@
       document.getElementById("rawTableBody").innerHTML = "";
       document.getElementById("rawCount").innerText = "0";
       document.getElementById("rawTruncNote").classList.add("hidden");
+      // 同步清空 B 区「数据粘贴与展示区」中上次的数据库回显：本次无命中时若只清主表与 C 区、
+      // 残留 B 区旧回显，会造成三区不一致。这里恢复为仅展示用户手动粘贴内容（无则占位），
+      // 并复位 bAreaDbDataActive，使 B 区粘贴能力恢复正常
+      renderPasteTableGrid("");
     }
 
     // 折叠区域事件绑定
