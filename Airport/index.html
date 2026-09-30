@@ -1906,6 +1906,9 @@
       const added = [];
       const replaced = [];
       const skipped = [];
+      // 导入前已载入的库数量：用于区分「首次导入」与「后续追加」，
+      // 仅后续追加（priorCount > 0）才用「新增」措辞，首次导入用「已载入」
+      const priorCount = databases.length;
 
       // 阶段 1：并行读取全部文件、算内容指纹并做 SQLite 头校验（纯 IO / 字节比较，互不阻塞）
       const arr = [...files];
@@ -2033,10 +2036,11 @@
         .getElementById("tableSelectionSection")
         .classList.remove("hidden");
 
-      // 汇总提示：新增 / 更新 / 跳过重复 / 失败，并始终带出已载入库的总数，
-      // 避免每轮只报本批变化（如追加 1 个文件恒显示「新增 1 个库」）而看不出累计
+      // 汇总提示：新增 / 更新 / 跳过重复 / 失败，并始终带出已载入库的总数。
+      // 仅「后续追加」（导入前已有库）才用「新增」措辞；首次导入用「已载入」
+      const isAppend = priorCount > 0;
       const parts = [];
-      if (added.length) parts.push(`新增 ${added.length} 个库`);
+      if (added.length) parts.push(`${isAppend ? "新增" : "已载入"} ${added.length} 个库`);
       if (replaced.length) parts.push(`更新 ${replaced.length} 个库`);
       if (skipped.length) parts.push(`跳过 ${skipped.length} 个重复`);
       if (failed.length) parts.push(`${failed.length} 个失败`);
