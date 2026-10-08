@@ -853,6 +853,8 @@
   <option value="无异常"></option>
   <option value="已下视频"></option>
   <option value="算法无数据"></option>
+  <option value="算法时间早了"></option>
+  <option value="算法时间晚了"></option>
 </datalist>
 
 <div class="page">
@@ -1208,7 +1210,7 @@ function ensureTrailingSep(input, listId) {
   // 末尾那段还没落定时不在 selected 里，判定模式时要算上
   const items = query ? selected.concat(query) : selected;
 
-  input.value += useCommaSep(input, listId, items) ? SEP_COMMA : SEP_DUN;
+  input.value += (useCommaSep(input, listId, items) || listId === "reason-list") ? SEP_COMMA : SEP_DUN;
   autoResize(input);
   generatePreview();
   return true;
@@ -1297,9 +1299,10 @@ function toggleSelection(input, opt, dropdown, listId) {
   }
 
   /* 节点：顿号拼接 + 尾部补位，便于连续搜索；
-     异常原因：默认顿号拼接且不补位，一旦选中「已下视频」则切换为逗号拼接 + 尾部补位 */
+     异常原因：逗号拼接且不补位（不再用顿号拼接），一旦选中「已下视频」则切换为逗号拼接 + 尾部补位 */
+  const isReason = listId === "reason-list";
   const videoMode = useCommaSep(input, listId, selected);
-  const sep = videoMode ? SEP_COMMA : SEP_DUN;
+  const sep = (videoMode || isReason) ? SEP_COMMA : SEP_DUN;
   const keepTail = isNode || videoMode;
 
   input.value = selected.join(sep) + (keepTail && selected.length > 0 ? sep : "");
