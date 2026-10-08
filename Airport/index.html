@@ -588,7 +588,7 @@
     .th-sub  { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
     @media (min-width: 640px) { .th-sub { font-size: 11px; } }
     .tbl--nodes td { padding: 8px 12px; vertical-align: middle; }
-    .cell-time { color: var(--text); font-weight: 500; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .cell-time { color: var(--text); font-weight: 500; line-height: 1.6; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
     /* 粘贴展示表：表头左对齐 */
     .tbl--paste { font-size: 12px; line-height: 1.5; }
@@ -619,13 +619,10 @@
 @media (hover: hover) and (pointer: fine) {
     .more-btn:hover { background: var(--primary-soft); }
 }
-    details.more-row > summary { outline: none; list-style: none; text-align: center; cursor: pointer; }
+    details.more-row > summary { outline: none; list-style: none; text-align: center; cursor: pointer; line-height: 1.6; }
     /* 展开后隐藏 summary 内的「展开余下 N 条」按钮，收起（移除 open）后自动恢复显示 */
     details.more-row[open] > summary .more-btn { display: none; }
     .more-divider {
-      margin-top: 4px;
-      padding-top: 4px;
-      border-top: 1px solid var(--border);
       color: var(--text-secondary);
       line-height: 1.6;
     }
