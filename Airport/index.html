@@ -845,7 +845,7 @@
             <div class="col col-full">
               <div class="row g-xs section-title">
                 <span class="badge">A</span>
-                <span class="section-title section-title--inline c-secondary nowrap">导入数据库 (可选)</span>
+                <span class="section-title section-title--inline c-secondary nowrap">数据库导入</span>
                 <div id="dropZoneSmall" class="dropzone--sm hidden"
                   title="点击选择 SQLite 文件，或将文件拖拽到此导入">
                   <svg class="ic-16 c-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
@@ -879,7 +879,7 @@
                 <svg class="ic" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>节点提取条件与操作</p>
+                </svg>提取条件</p>
               <div class="grow col-between g-md">
                 <div class="grid-form">
                   <input type="text" id="startTime" placeholder="开始:2026-06-08 08:08:08"
@@ -972,31 +972,22 @@
           </div>
         </div>
 
-        <!-- 通道 B：数据粘贴与回显展示区（默认展开） -->
+        <!-- 通道 B：数据回显展示区（默认展开） -->
         <div class="card">
           <div id="pasteToggleBtn" class="card-head card-head--neutral">
             <div class="row">
               <span class="badge">B</span>
-              <span class="fs-12 fw-bold c-secondary">数据粘贴与回显展示区 (<span id="filteredTextCount"
+              <span class="fs-12 fw-bold c-secondary">数据回显 (<span id="filteredTextCount"
                   class="c-primary fw-bold">0</span>行)</span>
             </div>
             <span id="pasteToggleIcon" class="chev">▼</span>
           </div>
           <div id="pasteContainer" class="col card-body--lg card-body--soft">
             <p class="hint">
-              点击下方网格区域粘贴测试数据，或查看数据库提取后的回显结果
+              以下为数据库提取后的回显结果<span id="bAreaTruncNote"></span>
             </p>
-            <textarea id="pasteArea" class="hidden"></textarea>
 
-            <div id="pasteGridWrapper" tabindex="0" class="paste-box custom-scrollbar">
-              <div id="pastePlaceholder" class="paste-placeholder">
-                <svg class="ic-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                  </path>
-                </svg>
-                点击此处激活<br />按 Ctrl+V 粘贴数据
-              </div>
+            <div id="pasteGridWrapper" class="paste-box custom-scrollbar">
               <table id="pasteVisualTable" class="tbl tbl--paste hidden">
                 <thead id="pasteVisualThead"></thead>
                 <tbody id="pasteVisualTbody"></tbody>
@@ -1005,12 +996,12 @@
           </div>
         </div>
 
-        <!-- 原始查询数据明细 (默认折叠) -->
+        <!-- 数据来源明细 (默认折叠) -->
         <div class="card">
           <div id="rawToggleBtn" class="card-head card-head--neutral">
             <span class="fs-12 fw-bold c-secondary row">
               <span class="badge">C</span>
-              查看原始数据来源明细 (<span id="rawCount" class="c-primary fw-bold">0</span> 条)
+              数据来源 (<span id="rawCount" class="c-primary fw-bold">0</span> 条)
             </span>
             <span id="rawToggleIcon" class="chev chev--up">▼</span>
           </div>
@@ -2082,9 +2073,8 @@
       document.getElementById("rawTableBody").innerHTML = "";
       document.getElementById("rawCount").innerText = "0";
       document.getElementById("rawTruncNote").classList.add("hidden");
-      // 同步清空 B 区「数据粘贴与展示区」中上次的数据库回显：本次无命中时若只清主表与 C 区、
-      // 残留 B 区旧回显，会造成三区不一致。这里恢复为仅展示用户手动粘贴内容（无则占位），
-      // 并复位 bAreaDbDataActive，使 B 区粘贴能力恢复正常
+      // 同步清空 B 区「数据回显」中上次的数据库回显：本次无命中时若只清主表与 C 区、
+      // 残留 B 区旧回显，会造成三区不一致。这里复位 B 区为无数据占位状态
       renderPasteTableGrid("");
     }
 
@@ -2103,61 +2093,6 @@
       const icon = document.getElementById("rawToggleIcon");
       container.classList.toggle("hidden");
       icon.classList.toggle("chev--up");
-    });
-
-    // B 区是否正处于「数据库提取结果」展示状态（此状态下禁用粘贴，清空后恢复）
-    let bAreaDbDataActive = false;
-
-    // 辅助网格：接收用户粘贴文本并渲染表格（监听挂到 document，
-    // 避免「清空结果集」后焦点仍在按钮上导致粘贴事件收不到）
-    document.addEventListener("paste", (e) => {
-      // 粘贴目标若为输入框（开始/结束时间、机位号等条件区），保持浏览器默认行为：
-      // 不拦截、不写入 B 区网格，粘贴内容仅作为筛选条件参与提取
-      const pasteTarget = e.target;
-      if (
-        pasteTarget &&
-        (pasteTarget.tagName === "INPUT" ||
-          pasteTarget.tagName === "TEXTAREA" ||
-          pasteTarget.isContentEditable)
-      ) {
-        return;
-      }
-
-      e.preventDefault();
-      // 数据库数据展示期间不触发粘贴，需先点击「清空结果集」恢复
-      if (bAreaDbDataActive) {
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="c-warn">当前为数据库提取结果，请先点击「清空结果集」后再粘贴</span>`;
-        return;
-      }
-      const text = (e.clipboardData || window.clipboardData).getData(
-        "text",
-      );
-      if (!text) return;
-
-        const pasteArea = document.getElementById("pasteArea");
-        pasteArea.value = pasteArea.value
-          ? pasteArea.value + "\n" + text
-          : text;
-
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="c-primary">正在渲染数据，请稍候</span>`;
-
-        // 异步释放主线程，防止浏览器卡死
-        setTimeout(() => {
-          renderPasteTableGrid();
-          document.getElementById("queryStatus").innerHTML =
-            `<span class="c-success">数据已粘贴至网格，请点击提取按钮</span>`;
-        }, 50);
-      });
-
-    // 焦点蓝边（激活指示）仅在非数据库展示状态下显示
-    const pasteGridEl = document.getElementById("pasteGridWrapper");
-    pasteGridEl.addEventListener("focus", () => {
-      if (!bAreaDbDataActive) pasteGridEl.classList.add("focus-glow");
-    });
-    pasteGridEl.addEventListener("blur", () => {
-      pasteGridEl.classList.remove("focus-glow");
     });
 
     function showToast(msg) {
@@ -2223,37 +2158,25 @@
       });
 
     function renderPasteTableGrid(extraText) {
-      const base = document.getElementById("pasteArea").value.trim();
-      let extra = extraText || "";
-      // 用户已粘贴时，去掉 DB TSV 首行表头避免与粘贴表头重复
-      if (base && extra) {
-        const idx = extra.indexOf("\n");
-        extra = idx >= 0 ? extra.slice(idx + 1) : "";
-      }
-      const text = (base ? base + "\n" : "") + extra;
+      // B 区现仅用于「数据回显」：直接渲染传入的数据（来自数据库提取结果），不再接收手动粘贴
+      const text = extraText || "";
       const table = document.getElementById("pasteVisualTable");
       const thead = document.getElementById("pasteVisualThead");
       const tbody = document.getElementById("pasteVisualTbody");
-      const placeholder = document.getElementById("pastePlaceholder");
       const wrapper = document.getElementById("pasteGridWrapper");
 
       if (!text) {
-        placeholder.classList.remove("hidden");
         table.classList.add("hidden");
         thead.innerHTML = "";
         tbody.innerHTML = "";
         wrapper.style.maxHeight = "";
         document.getElementById("filteredTextCount").innerText = "0";
+        document.getElementById("bAreaTruncNote").innerText = "";
         bAreaTableData = { headers: [], rows: [] };
         return;
       }
 
-      placeholder.classList.add("hidden");
       table.classList.remove("hidden");
-      // 来自数据库的数据展示时置位标志，禁用粘贴直至「清空结果集」
-      bAreaDbDataActive = !!extraText;
-      // 数据库展示期间不显示蓝色激活光晕
-      if (extraText) wrapper.classList.remove("focus-glow");
 
       const lines = text.split("\n").filter((l) => l.trim() !== "");
       if (lines.length === 0) return;
@@ -2334,16 +2257,15 @@
 
       tbody.innerHTML = tbodyLines.join("");
 
-      // B 区高度自适应：无论来自数据库还是手动粘贴，行数少则贴合内容，
+      // B 区高度自适应：回显数据行数少则贴合内容，
       // 行数多则限制为视口高度并在内部滚动，避免整页被撑得过长
       const rowCount = displayLines.length - startRowIdx;
       wrapper.style.maxHeight = rowCount > 50 ? "60vh" : "";
 
-      const truncNote = isTruncated
-        ? ` (为保证性能，仅渲染前${MAX_RENDER_ROWS}行)`
+      document.getElementById("filteredTextCount").innerText = `${validRows}`;
+      document.getElementById("bAreaTruncNote").innerText = isTruncated
+        ? `（为保证性能，仅渲染前${MAX_RENDER_ROWS}行）`
         : "";
-      document.getElementById("filteredTextCount").innerText =
-        `${validRows}${truncNote}`;
     }
 
     // 事件绑定
@@ -2409,12 +2331,10 @@
       const startTime = document.getElementById("startTime").value.trim();
       const endTime = document.getElementById("endTime").value.trim();
       const aproCode = document.getElementById("aproCode").value.trim();
-      let pasteText = document.getElementById("pasteArea").value.trim();
-
-      // 第一道门：无数据来源（未勾选数据表 且 未手动粘贴）时，直接提示，不再继续
-      if (selectedTables.length === 0 && !pasteText) {
+      // 第一道门：未勾选任何数据表时，直接提示，不再继续
+      if (selectedTables.length === 0) {
         document.getElementById("queryStatus").innerHTML =
-          `<span class="c-danger fw-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
+          `<span class="c-danger fw-bold">请导入并勾选数据表</span>`;
         renderEmptyTable(currentMode);
         return;
       }
@@ -2513,8 +2433,7 @@
           });
         }
 
-        // 把 DB 命中数据拼成 TSV：仅用于本次解析，绝不写回粘贴区，
-        // 否则取消勾选/未手动粘贴时粘贴区会残留旧数据，被误判为“有输入”而重复出内容
+        // 把 DB 命中数据拼成 TSV：仅用于本次解析
         let dbTsvString = "";
         if (dbFilteredRawDataForTextarea.length > 0) {
           // 按 report_time 时间顺序升序排列（格式 YYYY-MM-DD HH:MM:SS 或 HH:MM:SS，字典序即时间序）
@@ -2534,7 +2453,7 @@
             ...filteredColsArr,
           ];
 
-          // 首列放置「来源表」：标识该行命中自哪个库表（仅 DB 数据有值，手工粘贴行为空）
+          // 首列放置「来源表」：标识该行命中自哪个库表
           const SOURCE_COL = "来源表";
           let dbTsvLines = [[SOURCE_COL, ...finalColsArr].join("\t")];
           for (let i = 0; i < dbFilteredRawDataForTextarea.length; i++) {
@@ -2548,12 +2467,12 @@
           }
 
           dbTsvString = dbTsvLines.join("\n") + "\n";
-          // 把 DB 命中数据一并回显到“数据粘贴与展示区”（仅展示，不写回 pasteArea）
+          // 把 DB 命中数据一并回显到“数据回显”区（仅展示，不写回任何输入区）
           renderPasteTableGrid(dbTsvString);
         }
 
-        // 解析文本 = 用户粘贴内容 + DB 命中数据；DB 数据只在内存参与本次解析，不污染粘贴区
-        const parseText = (pasteText ? pasteText + "\n" : "") + dbTsvString;
+        // 解析文本 = DB 命中数据（B 区粘贴功能已移除，数据仅来自数据库提取）
+        const parseText = dbTsvString;
 
         if (parseText) {
           const lines = parseText.split("\n");
@@ -2564,7 +2483,7 @@
           // 近机位的 appid 取值为 near 与 cabin 二者（cabin 为新增机位数据表的标记），
           // 由上方 acceptAppids 统一决定本模式接受哪些取值。
           // 数据特性：数据库导入时 appid 必为 near/remote/cabin（不会为空）→ 等同于严格过滤；
-          // 仅下方粘贴区手工粘贴的数据 appid 可能为空 → 空值时回退原字典匹配，避免提取不到
+          // 空值时回退原字典匹配，避免提取不到
           let globalAppidIdx = headers.indexOf("appid");
           hasAppidCol = globalAppidIdx !== -1;
 
@@ -2626,7 +2545,7 @@
                     appidVal === "cabin"
                   ) {
                     if (!acceptAppids.includes(appidVal)) {
-                      continue; // 异类 appid 行静默排除（SQL 已精确过滤 DB 数据，此处主要兜底手工粘贴数据）
+                      continue; // 异类 appid 行静默排除（SQL 已精确过滤 DB 数据，此处兜底）
                     }
                     appidMatched++;
                   }
@@ -2682,9 +2601,9 @@
         // 数据中有 appid 列但没有任何一行命中当前模式时，视同无有效数据——
         // appid 为空的行会回退字典匹配产生结果，此处一并拦下
         if (!hasDataParsed || (hasAppidCol && appidMatched === 0)) {
-          if (selectedTables.length === 0 && !pasteText) {
+          if (selectedTables.length === 0) {
             document.getElementById("queryStatus").innerHTML =
-              `<span class="c-danger fw-bold">请导入并勾选数据表，或在工作网格粘贴数据</span>`;
+              `<span class="c-danger fw-bold">请导入并勾选数据表</span>`;
           } else {
             document.getElementById("queryStatus").innerHTML =
               `<span class="c-orange fw-bold">未在数据中提取到匹配【${label}】的有效节点</span>`;
@@ -2892,8 +2811,6 @@
       finalCleanedTimes = {};
       lastExtractionFilter = null;
       bAreaTableData = { headers: [], rows: [] };
-      document.getElementById("pasteArea").value = "";
-      bAreaDbDataActive = false; // 恢复 B 区粘贴能力
 
       document.querySelectorAll(".table-checkbox").forEach((cb) => {
         cb.checked = true;
@@ -2901,7 +2818,6 @@
 
       renderEmptyTable();
 
-      document.getElementById("pastePlaceholder").classList.remove("hidden");
       document.getElementById("pasteVisualTable").classList.add("hidden");
       document.getElementById("pasteVisualThead").innerHTML = "";
       document.getElementById("pasteVisualTbody").innerHTML = "";
@@ -2991,7 +2907,7 @@
       .addEventListener("click", () => {
         const { headers, rows } = bAreaTableData;
         if (!rows || rows.length === 0) {
-          return alert("B 区暂无回显数据，请先执行节点提取或粘贴数据");
+          return alert("B 区暂无回显数据，请先执行节点提取");
         }
 
         const camIdx = headers.findIndex(
