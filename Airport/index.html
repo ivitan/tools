@@ -602,7 +602,7 @@
     .tbl--raw td { text-align: center; border-width: 0; }
     .tbl--raw tbody tr + tr td { border-top-width: 1px; }
 
-    .table-scroll { overflow: auto; overscroll-behavior: contain; }
+    .table-scroll { overflow: auto; overscroll-behavior-x: contain; overscroll-behavior-y: auto; }
 
     /* 展开「余下 N 条」按钮 */
     .more-btn {
@@ -663,7 +663,8 @@
       min-height: 140px;
       max-height: 60vh;
       overflow: auto;
-      overscroll-behavior: contain;
+      overscroll-behavior-x: contain;
+      overscroll-behavior-y: auto;
       background: var(--panel);
       border: 1px solid var(--border-hover);
       border-radius: 6px;
