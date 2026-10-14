@@ -557,6 +557,26 @@
 
   /* 预览 */
   .preview-panel { position: sticky; top: 68px; }
+
+  /* 桌面端：左右两栏各自独立滚动容器，配合 JS 做双向滚动同步 */
+  @media (min-width: 901px) {
+    .grid {
+      height: calc(100vh - 84px);
+      align-items: stretch;
+    }
+    .panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+    .panel-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .preview-panel { position: static; }
+  }
   #preview-box {
     width: 100%;
     min-height: 140px;
@@ -577,6 +597,7 @@
     content: attr(data-placeholder);
     color: var(--text-muted);
   }
+  .pstand { display: block; }
   .copy-btn { width: 100%; height: 34px; margin-top: 10px; }
 
   /* 多选下拉 */
@@ -881,7 +902,7 @@
         <div class="panel-title"><i class="fas fa-file-lines"></i>实时预览</div>
       </div>
       <div class="panel-body">
-        <pre id="preview-box" data-placeholder="左侧填写数据，此处自动实时排版..."></pre>
+        <div id="preview-box" data-placeholder="左侧填写数据，此处自动实时排版..."></div>
         <button class="btn btn-primary copy-btn" onclick="copyReport()"><i class="fas fa-copy"></i>一键复制</button>
       </div>
     </section>
@@ -1341,11 +1362,13 @@ function createEventRowHTML(type) {
     </div>`;
 }
 
+let cardIdSeq = 0;
 function addStandCard(type) {
   const container = document.getElementById("stands-container");
   const card = document.createElement("div");
   card.className = "stand-card";
   card.setAttribute("data-type", type);
+  card.dataset.cardId = ++cardIdSeq;
 
   card.innerHTML = `
     <div class="stand-header">
@@ -1418,11 +1441,12 @@ async function clearAllCards() {
 
 // 预览与复制
 function generatePreview() {
-  const cards = document.querySelectorAll(".stand-card");
-  let data = { 远机位: [], 近机位: [] };
+  const cards = Array.from(document.querySelectorAll(".stand-card"));
+  const byType = { 远机位: [], 近机位: [] };
 
   cards.forEach((card) => {
     const type = card.getAttribute("data-type");
+    if (!byType[type]) byType[type] = [];
     const standNum = card.querySelector(".stand-num").value.trim();
     const eventRows = card.querySelectorAll(".item-row");
 
@@ -1433,40 +1457,39 @@ function generatePreview() {
       if (event && reason) records.push({ event, reason });
     });
 
-    if (standNum && records.length > 0) data[type].push({ standNum, records });
+    if (standNum && records.length > 0) {
+      byType[type].push({ card, standNum, records });
+    }
   });
 
-  let resultText = "";
-
-  if (data["远机位"].length > 0) {
-    resultText += "远机位：\n";
-    data["远机位"].forEach((item, index) => {
+  // 按机位块生成带锚点的结构，便于点击左侧输入框时定位预览
+  const frag = document.createDocumentFragment();
+  Object.keys(byType).forEach((type) => {
+    byType[type].forEach((item, index) => {
+      let text = "";
+      if (index === 0) text += type + "：\n";
       const cnIndex = cnNums[index + 1];
-      resultText += `${cnIndex ? `${cnIndex}、` : `${index + 1}. `}${item.standNum}\n`;
+      text += `${cnIndex ? cnIndex + "、" : index + 1 + ". "}${item.standNum}\n`;
       item.records.forEach((rec, recIndex) => {
-        resultText += `${recIndex + 1}. ${rec.event}：${rec.reason}\n`;
+        text += `${recIndex + 1}. ${rec.event}：${rec.reason}\n`;
       });
-      resultText += "\n";
-    });
-  }
+      text += "\n";
 
-  if (data["近机位"].length > 0) {
-    resultText += "近机位：\n";
-    data["近机位"].forEach((item, index) => {
-      const cnIndex = cnNums[index + 1];
-      resultText += `${cnIndex ? `${cnIndex}、` : `${index + 1}. `}${item.standNum}\n`;
-      item.records.forEach((rec, recIndex) => {
-        resultText += `${recIndex + 1}. ${rec.event}：${rec.reason}\n`;
-      });
-      resultText += "\n";
+      const block = document.createElement("div");
+      block.className = "pstand";
+      block.setAttribute("data-card-id", item.card.dataset.cardId);
+      block.textContent = text;
+      frag.appendChild(block);
     });
-  }
+  });
 
-  document.getElementById("preview-box").textContent = resultText.trim();
+  const box = document.getElementById("preview-box");
+  box.innerHTML = "";
+  box.appendChild(frag);
 }
 
 function copyReport() {
-  const text = document.getElementById("preview-box").textContent;
+  const text = document.getElementById("preview-box").textContent.trim();
   if (!text) {
     toast('还没有可复制的数据，请先在左侧录入', 'error');
     return;
@@ -1475,6 +1498,52 @@ function copyReport() {
     .then(() => toast('日报已复制到剪贴板', 'success'))
     .catch(() => toast('复制失败，请手动选择文本复制', 'error'));
 }
+
+// 预览与左侧录入区联动：双向滚动同步 + 点击输入框定位预览
+(function () {
+  const inputBody = document.querySelector('#input-panel .panel-body');
+  const previewBody = document.querySelector('.preview-panel .panel-body');
+  const previewBox = document.getElementById('preview-box');
+  if (!inputBody || !previewBody || !previewBox) return;
+
+  let lock = false;       // 双向同步时的回环锁
+  let locating = false;   // 定位滚动期间，抑制反向同步（避免左侧被带着滚）
+
+  function sync(src, dst) {
+    if (lock || locating) return;
+    const srcMax = src.scrollHeight - src.clientHeight;
+    const dstMax = dst.scrollHeight - dst.clientHeight;
+    if (srcMax <= 0 || dstMax <= 0) return;   // 任一栏不可滚动则不同步（如移动端/内容较短）
+    lock = true;
+    dst.scrollTop = (src.scrollTop / srcMax) * dstMax;
+    requestAnimationFrame(() => { lock = false; });
+  }
+  inputBody.addEventListener('scroll', () => sync(inputBody, previewBody), { passive: true });
+  previewBody.addEventListener('scroll', () => sync(previewBody, inputBody), { passive: true });
+
+  // 聚焦左侧某个输入框 → 右侧预览滚动到对应机位块
+  function locate(cardId) {
+    const target = previewBox.querySelector('.pstand[data-card-id="' + cardId + '"]');
+    if (!target) return;
+    const bodyRect = previewBody.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const top = targetRect.top - bodyRect.top + previewBody.scrollTop;
+    const bottom = top + target.offsetHeight;
+    const viewTop = previewBody.scrollTop;
+    const viewBottom = viewTop + previewBody.clientHeight;
+    // 仅当目标块不在可视范围内时才滚动，避免频繁跳动
+    if (top < viewTop + 4 || bottom > viewBottom - 4) {
+      locating = true;
+      previewBody.scrollTo({ top: Math.max(0, top - 8), behavior: 'smooth' });
+      setTimeout(() => { locating = false; }, 450);
+    }
+  }
+
+  inputBody.addEventListener('focusin', (e) => {
+    const card = e.target.closest('.stand-card');
+    if (card && card.dataset.cardId) locate(card.dataset.cardId);
+  });
+})();
 </script>
 
 <!-- Toast 容器：多条提示纵向堆叠、右对齐 -->
