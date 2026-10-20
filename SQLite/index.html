@@ -313,6 +313,63 @@
     overflow-y: auto;
     padding: 6px;
   }
+  /* 侧栏表搜索框：与 sidebar-header 同宽、同分隔线，搜索中自动展开命中库 */
+  .sidebar-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .sidebar-search-icon {
+    position: absolute;
+    left: 20px;
+    width: 13px;
+    height: 13px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .sidebar-search-input {
+    height: 32px;
+    width: 100%;
+    padding: 0 28px 0 30px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .sidebar-search-input:focus { border-color: var(--primary); }
+  .sidebar-search-input::placeholder { color: var(--text-muted); font-weight: 400; }
+  .sidebar-search-clear {
+    position: absolute;
+    right: 18px;
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: var(--text-muted);
+    color: var(--panel);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .sidebar-search-clear:active { transform: scale(0.9); opacity: 1; }
+  .sidebar-hl {
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-radius: 3px;
+    padding: 0 1px;
+    font-weight: 600;
+  }
   .db-item {
     margin-bottom: 2px;
     border-radius: 6px;
@@ -1882,6 +1939,14 @@
       </button>
       <div class="sidebar-count" id="dbCount">0</div>
     </div>
+    <div class="sidebar-search">
+      <svg class="sidebar-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" class="sidebar-search-input" id="sidebarSearch" placeholder="搜索所有数据库中的表…" inputmode="search" enterkeyhint="search" autocapitalize="none" autocorrect="off" aria-label="搜索表">
+      <button type="button" class="sidebar-search-clear" id="sidebarSearchClear" aria-label="清空搜索" hidden>×</button>
+    </div>
     <div class="db-list" id="dbList">
       <div style="padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
         还未添加数据库<br>点击上方 + 或拖拽 SQLite 文件至右侧
@@ -1975,6 +2040,7 @@ const state = {
   loadMode: localStorage.getItem('sqlite-load-mode') || 'infinite', // 默认无限滚动
   isMobile: matchMedia('(max-width: 768px)').matches,
   infiniteObserver: null,
+  sidebarSearch: '',
 };
 
 // 工具函数
@@ -2267,25 +2333,74 @@ function renderSidebar() {
     return;
   }
 
-  // 按数据库名称升序排序（自然排序：db2 在 db10 前；中文按拼音；忽略大小写）
   const sortedDbs = [...state.databases].sort((a, b) =>
     a.name.localeCompare(b.name, 'zh-CN', { numeric: true, sensitivity: 'base' })
     || a.name.localeCompare(b.name, 'zh-CN')
   );
 
-  list.innerHTML = sortedDbs.map(d => {
-    const isActive = d.id === state.activeDbId;
-    const tablesHtml = d.tables.map(t => `
+  const q = state.sidebarSearch.trim().toLowerCase();
+
+  const hl = (name) => {
+    const safe = escapeHtml(name);
+    if (!q) return safe;
+    const idx = name.toLowerCase().indexOf(q);
+    if (idx === -1) return safe;
+    return escapeHtml(name.slice(0, idx))
+      + '<mark class="sidebar-hl">' + escapeHtml(name.slice(idx, idx + q.length)) + '</mark>'
+      + escapeHtml(name.slice(idx + q.length));
+  };
+
+  const tableItemHtml = (d, t) => `
       <div class="table-item ${isActiveTable(d.id, t.name) ? 'active' : ''}" data-db="${d.id}" data-table="${t.name}" title="${escapeHtml(t.name)} · ${formatNum(t.count)} 行">
         <svg class="table-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <line x1="3" y1="9" x2="21" y2="9"/>
           <line x1="9" y1="3" x2="9" y2="21"/>
         </svg>
-        <span class="table-name">${escapeHtml(t.name)}</span>
+        <span class="table-name">${hl(t.name)}</span>
         <span class="table-count">${formatNum(t.count)}</span>
-      </div>
-    `).join('');
+      </div>`;
+
+  if (q) {
+    const matched = sortedDbs
+      .map(d => ({ d, hits: d.tables.filter(t => t.name.toLowerCase().includes(q)) }))
+      .filter(x => x.hits.length > 0);
+
+    if (matched.length === 0) {
+      list.innerHTML = `
+        <div style="padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
+          未找到匹配的表<br>换个关键词试试
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = matched.map(({ d, hits }) => {
+      const isActive = d.id === state.activeDbId;
+      return `
+      <div class="db-item ${isActive ? 'active' : ''} expanded" data-db="${d.id}">
+        <div class="db-header" title="${escapeHtml(d.name)} · 命中 ${hits.length} / 共 ${d.tables.length} 张表">
+          <svg class="db-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          <svg class="db-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+            <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+            <path d="M3 12a9 3 0 0 0 18 0"/>
+          </svg>
+          <span class="db-name">${escapeHtml(d.name)}</span>
+          <span class="db-meta">${hits.length}/${d.tables.length}</span>
+        </div>
+        <div class="table-list">
+          ${hits.map(t => tableItemHtml(d, t)).join('')}
+        </div>
+      </div>`;
+    }).join('');
+
+    bindSidebarEvents(list);
+    return;
+  }
+
+  list.innerHTML = sortedDbs.map(d => {
+    const isActive = d.id === state.activeDbId;
+    const tablesHtml = d.tables.map(t => tableItemHtml(d, t)).join('');
 
     return `
       <div class="db-item ${isActive ? 'active' : ''} ${d.expanded ? 'expanded' : ''}" data-db="${d.id}">
@@ -2316,6 +2431,10 @@ function renderSidebar() {
       </div>`;
   }).join('');
 
+  bindSidebarEvents(list);
+}
+
+function bindSidebarEvents(list) {
   list.querySelectorAll('[data-toggle]').forEach(el => {
     el.onclick = (e) => {
       if (e.target.closest('[data-remove]')) return;
@@ -3914,6 +4033,31 @@ $('btnAddDb').onclick = () => { window.suspendTips && window.suspendTips(true); 
 // 点击虚线区域任意位置均可触发选择文件（按钮自身由冒泡统一处理，避免重复触发）
 $('dropzone').addEventListener('click', () => { window.suspendTips && window.suspendTips(true); $('fileInput').click(); setTimeout(() => window.resetTips && window.resetTips(), 2000); });
 $('fileInput').onchange = (e) => handleFiles([...e.target.files]);
+
+// 侧栏表搜索：跨所有已导入数据库按表名模糊匹配；输入框与清空按钮联动
+const sidebarSearchEl = $('sidebarSearch');
+const sidebarSearchClear = $('sidebarSearchClear');
+sidebarSearchEl.addEventListener('input', () => {
+  state.sidebarSearch = sidebarSearchEl.value;
+  sidebarSearchClear.hidden = state.sidebarSearch.length === 0;
+  renderSidebar();
+});
+sidebarSearchEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    sidebarSearchEl.value = '';
+    state.sidebarSearch = '';
+    sidebarSearchClear.hidden = true;
+    renderSidebar();
+    sidebarSearchEl.blur();
+  }
+});
+sidebarSearchClear.addEventListener('click', () => {
+  sidebarSearchEl.value = '';
+  state.sidebarSearch = '';
+  sidebarSearchClear.hidden = true;
+  renderSidebar();
+  sidebarSearchEl.focus();
+});
 
 // 上传区点击激活态：点击后虚线边框变蓝、内部浅蓝（.drop-focus），
 // 点击上传区以外任意位置即恢复原状（与 Airport 工具行为一致）
