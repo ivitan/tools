@@ -37,7 +37,7 @@
       document.documentElement.dataset.theme = t;
       document.documentElement.style.colorScheme = t;      // 同步滚动条/原生控件配色
       if (t === 'dark') document.documentElement.style.background = '#0b1220';  // 兜底，防 CSS 解析前露白
-    } catch {}
+    } catch (e) {}
   })();
 </script>
 <style>
@@ -1198,7 +1198,7 @@
           }
           try {
             await usbDevice.transferIn(bulkInEp.endpointNumber, 13);
-          } catch {}
+          } catch (e) {}
         }
         function updateDeviceInfoUI() {
           deviceInfo.classList.add("show");
@@ -1677,7 +1677,7 @@
                 await d.close();
                 await setupDevice(d);
                 return;
-              } catch {
+              } catch (e) {
                 addLog(`设备 ${d.productName} 不在线或无法连接。`, "warn");
               }
             }
@@ -1726,10 +1726,10 @@
             try {
               if (usbInterface && usbDevice.opened)
                 await usbDevice.releaseInterface(usbInterface.interfaceNumber);
-            } catch {}
+            } catch (e) {}
             try {
               await usbDevice.close();
-            } catch {}
+            } catch (e) {}
           }
         });
         if (navigator.usb) {

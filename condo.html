@@ -428,15 +428,15 @@
               + '点击切换（' + (mode === 'auto' ? '跟随系统' : '手动') + '）';
   }
   var saved = null;
-  try { saved = localStorage.getItem('hp-theme'); } catch{}
+  try { saved = localStorage.getItem('hp-theme'); } catch(e){}
   apply(saved || 'auto');
   btn.addEventListener('click', function(){
     var next = btn.getAttribute('data-mode') === 'dark' ? 'light' : 'dark';
     apply(next);
-    try { localStorage.setItem('hp-theme', next); } catch{}
+    try { localStorage.setItem('hp-theme', next); } catch(e){}
   });
   mq.addEventListener('change', function(){
-    var st = null; try { st = localStorage.getItem('hp-theme'); } catch{}
+    var st = null; try { st = localStorage.getItem('hp-theme'); } catch(e){}
     if (!st) apply('auto');
   });
 })();

@@ -13,7 +13,7 @@
           saved === "dark" ||
           (auto && window.matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.dataset.theme = dark ? "dark" : "light";
-      } catch {}
+      } catch (e) { }
     })();
   </script>
   <meta charset="UTF-8" />
@@ -686,7 +686,7 @@
         try {
           const saved = localStorage.getItem(THEME_KEY);
           return saved === "light" || saved === "dark" ? saved : "auto";
-        } catch { return "auto"; }
+        } catch (e) { return "auto"; }
       }
       // 图标仅两态：按当前生效主题显示（深色→太阳，浅色→月亮）
       function updateThemeIcon() {
@@ -701,12 +701,12 @@
       }
       function toggleTheme() {
         const next = root.dataset.theme === "dark" ? "light" : "dark";
-        try { localStorage.setItem(THEME_KEY, next); } catch {}
+        try { localStorage.setItem(THEME_KEY, next); } catch (e) { }
         applyTheme(next === "dark");
       }
       // 清除手动锁定，回到默认 auto（跟随系统），并立即应用当前系统主题
       function resetTheme() {
-        try { localStorage.removeItem(THEME_KEY); } catch {}
+        try { localStorage.removeItem(THEME_KEY); } catch (e) { }
         applyTheme(mqDark.matches);
         // 视觉反馈：缩放一下让用户感知已重置
         themeToggle.style.transform = "scale(0.92)";

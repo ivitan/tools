@@ -987,7 +987,7 @@ print(fibonacci(10))  # 55
         try {
           const saved = localStorage.getItem(STORAGE_CONTENT);
           if (saved && saved.trim()) return saved;
-        } catch {}
+        } catch (e) { }
         isSampleContent = true;
         return defaultContent;
       }
@@ -1046,7 +1046,7 @@ print(fibonacci(10))  # 55
         renderTimeout = setTimeout(() => {
           try {
             previewContent.innerHTML = marked.parse(editor.value);
-          } catch {
+          } catch (e) {
             previewContent.innerHTML =
               '<p style="color:var(--danger);">⚠️ 解析错误</p>';
           }
