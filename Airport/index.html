@@ -14,7 +14,7 @@
         document.documentElement.dataset.theme = t;
         document.documentElement.style.colorScheme = t; // 同步滚动条/原生控件配色
         if (t === 'dark') document.documentElement.style.background = '#0b1220'; // 兜底：仅深色防 CSS 解析前露白
-      } catch (e) {}
+      } catch {}
     })();
   </script>
   <meta charset="UTF-8" />
@@ -1788,7 +1788,7 @@
         renderEmptyTable("near");
         document.getElementById("queryStatus").innerHTML =
           `<span class="c-success fw-bold">系统引擎已就绪</span>`;
-      } catch (e) {
+      } catch {
         document.getElementById("queryStatus").innerHTML =
           `<span class="c-danger fw-bold">引擎加载失败，请检查网络环境</span>`;
       }
@@ -1869,7 +1869,7 @@
             .map((b) => b.toString(16).padStart(2, "0"))
             .join("");
         }
-      } catch (e) {}
+      } catch {}
       // 回退方案：体积 + 均匀采样 FNV-1a
       let h = 2166136261;
       const step = Math.max(1, Math.floor(buf.length / 4096));
@@ -1972,7 +1972,7 @@
             databases.push(dbObj);
             added.push(p.file.name);
           }
-        } catch (e) {
+        } catch {
           if (db) {
             try {
               db.close();
@@ -2000,7 +2000,7 @@
         });
       });
       let listHtml = "";
-      tableMap.forEach((files, tableName) => {
+      tableMap.forEach((tableName) => {
         const checked = prevState.has(tableName)
           ? prevState.get(tableName)
             ? "checked"
@@ -2150,7 +2150,7 @@
         ta.select();
         document.execCommand("copy");
         document.body.removeChild(ta);
-      } catch (e) {}
+      } catch {}
     }
 
     // 双击 B 区网格内任意单元格复制其内容（含数据库来源数据）
@@ -2314,7 +2314,7 @@
               checkIcon.classList.add("hidden");
             }, 1200);
           }
-        } catch (err) {
+        } catch {
           alert("复制失败，请手动选择复制");
         }
         document.body.removeChild(textArea);
@@ -2390,7 +2390,7 @@
                       (row) => String(row[1]).toLowerCase() === "appid",
                     );
                   }
-                } catch (e) {}
+                } catch {}
 
                 // 过滤条件：时间 + 机位号 + （表含 appid 列时）按当前模式接受的 appid 集合精确过滤
                 const conditions = [];
@@ -2880,7 +2880,7 @@
         } else {
           alert("写入失败，请手动框选结果复制");
         }
-      } catch (err) {
+      } catch {
         alert("当前浏览器环境受限，请手动框选");
       }
 
@@ -3017,7 +3017,7 @@
           } else {
             alert("写入失败，请手动复制");
           }
-        } catch (err) {
+        } catch {
           alert("当前浏览器环境受限，请手动复制");
         }
         document.body.removeChild(textArea);

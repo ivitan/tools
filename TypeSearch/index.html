@@ -37,7 +37,7 @@
       document.documentElement.dataset.theme = t;
       document.documentElement.style.colorScheme = t;
       if (t === 'dark') document.documentElement.style.background = '#0b1220';
-    } catch (e) {}
+    } catch {}
   })();
 </script>
 <style>
@@ -1105,7 +1105,7 @@ type: 1000 - 有效（空格不影响）
 
       try {
         await loadXLSX();
-      } catch (err) {
+      } catch {
         showError("Excel 解析库加载失败，请检查网络后重试");
         return;
       }
@@ -1492,7 +1492,7 @@ type: 1000 - 有效（空格不影响）
       document.getElementById("uniqueCount").textContent =
         uniqueMatches.length;
 
-      uniqueMatches.forEach((match, index) => {
+      uniqueMatches.forEach((match) => {
         const item = document.createElement("div");
         item.className = "match-item";
         item.innerHTML = `

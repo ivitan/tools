@@ -1887,7 +1887,7 @@
       if (t === 'dark') document.documentElement.style.background = '#0b1220';  // 兜底，防 CSS 解析前露白
       var _mc = document.querySelector('meta[name="theme-color"]');
       if (_mc) _mc.content = (t === 'dark') ? '#111827' : '#ffffff';  // 同步移动端状态栏配色（mobile-native 基线）
-    } catch (e) {}
+    } catch {}
   })();
 </script>
 </head>
@@ -2187,7 +2187,7 @@ async function computeFingerprint(buf) {
       const d = await globalThis.crypto.subtle.digest('SHA-256', buf);
       return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
-  } catch (e) { /* 落到下面的回退实现 */ }
+  } catch { /* 落到下面的回退实现 */ }
   let h = 2166136261;
   const step = Math.max(1, Math.floor(buf.length / 4096));
   for (let i = 0; i < buf.length; i += step) {
@@ -2281,7 +2281,7 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
     if (!state.openTabs.some(t => tabKey(t) === state.activeTabKey)) {
       state.activeTabKey = state.openTabs[0] ? tabKey(state.openTabs[0]) : null;
     }
-    try { old.db.close(); } catch (e) {}
+    try { old.db.close(); } catch {}
     state.databases[sameIdx] = dbObj;
     replaced = true;
   } else {
@@ -2741,7 +2741,7 @@ function renderContent() {
     const inp = document.querySelector(`[data-col-input-field="${cssEscape(focusInfo.col)}"]`);
     if (inp) {
       inp.focus({ preventScroll: true });
-      try { inp.setSelectionRange(focusInfo.start, focusInfo.end); } catch (err) {}
+      try { inp.setSelectionRange(focusInfo.start, focusInfo.end); } catch {}
     }
   }
   // 面板打开时挂载为悬浮面板（表头不下移、出现在列头下方）
@@ -3503,7 +3503,7 @@ function writeCellWidths(table, widths) {
 }
 
 // 写入列宽后，用浏览器真实布局复检，宽度不够就补到刚好容纳内容。返回是否调整过
-function refineByRealWidth(table, widths, ths, trs) {
+function refineByRealWidth(widths, ths, trs) {
   let changed = false;
   // ① 表头：字段名 + 类型必须完整显示（col-name 有 overflow:hidden，宽度不够会被 ellipsis 裁掉）
   for (let i = 0; i < ths.length && i < widths.length; i++) {
@@ -4109,7 +4109,7 @@ $('btnHome').onclick = async () => {
 };
 
 // 点击最前的 Logo 图标展开/收起侧栏：桌面切换折叠，手机切换抽屉
-function toggleSidebarByLogo(e) {
+function toggleSidebarByLogo() {
   if (isMobile()) {
     toggleDrawer();
   } else {
@@ -4269,7 +4269,7 @@ async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
     return true;
-  } catch (e) {
+  } catch {
     try {
       const ta = document.createElement('textarea');
       ta.value = text;
@@ -4280,7 +4280,7 @@ async function copyToClipboard(text) {
       document.execCommand('copy');
       ta.remove();
       return true;
-    } catch (e2) { return false; }
+    } catch { return false; }
   }
 }
 

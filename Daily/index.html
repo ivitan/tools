@@ -35,7 +35,7 @@
         : saved === 'light' ? false
         : window.matchMedia('(prefers-color-scheme: dark)').matches; // auto 或未设置 → 跟随系统
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    } catch (e) {}
+    } catch {}
   })();
 </script>
 <style>
@@ -1187,7 +1187,7 @@ window.onload = () => {
 };
 
 // 下拉框与智能搜索
-function parseInput(val, validOptions, isNode) {
+function parseInput(val, validOptions) {
   const rawParts = String(val || "").split(SEP_SPLIT_RE).map((v) => v.trim());
   const selected = [];
   let query = "";
