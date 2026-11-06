@@ -264,6 +264,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 /* 关于 */
 .about-hero{display:flex;align-items:center;gap:16px;margin-bottom:18px}
 .about-logo{width:52px;height:52px;border-radius:10px;background:var(--brand);color:var(--brand-on);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0}
+.about-logo svg{width:28px;height:28px}
+.app-guess{font-size:11px;font-weight:400;color:var(--muted);margin-left:6px;white-space:nowrap}
 .kv-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 28px}
 .kv-list .kv{grid-template-columns:82px 1fr}
 .code-inline{font-family:ui-monospace,Consolas,monospace;background:var(--field);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:12px}
@@ -429,7 +431,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.0.8</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.0.9</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -529,6 +531,8 @@ function icon(name, size){ const s = size || 18; return '<svg width="'+s+'" heig
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 const $ = (s, r) => (r||document).querySelector(s);
 const $$ = (s, r) => Array.from((r||document).querySelectorAll(s));
+/* 关于页复用顶栏同一份 LOGO SVG，改一处即两处同步，避免图形不一致 */
+function logoSvg(){ const s=$('.logo-icon svg'); return s ? s.outerHTML : '搞'; }
 
 /* ---------------- 设备数据模板（连接真机后由 getprop / dumpsys 填充） ---------------- */
 const EMPTY_DEVICE = {
@@ -760,7 +764,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.0.8';
+const BUILD='v1.0.9';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1224,34 +1228,160 @@ function startPolling(){
 }
 
 /* ---------------- 页面：软件管理 ---------------- */
-/* 设备默认不提供应用显示名（明文 label 需 aapt 解析 APK，零售机一般没有该二进制）。
-   用「设备返回的 nonLocalizedLabel + 常见包名公认显示名 + 完整包名」三级兜底，
-   不再把包名末段当成应用名。映射只用于展示，所有操作仍使用真实 pkg。 */
+/* Android 不向 shell 提供应用显示名（明文 label 需 aapt 解析 APK，零售机通常没有该二进制）。
+   四级解析：设备 nonLocalizedLabel > 精确包名库 > 包名末段语义 > 包名可读简称。
+   名称仅用于展示；禁用 / 强停 / 清数据 / 卸载一律使用真实 pkg，副行始终保留完整包名。 */
 const KNOWN_APP_NAMES = {
-  'com.tencent.mm':'微信','com.tencent.mobileqq':'QQ','com.eg.android.AlipayGphone':'支付宝',
-  'com.ss.android.ugc.aweme':'抖音','com.taobao.taobao':'淘宝','com.jingdong.app.mall':'京东',
-  'com.sankuai.meituan':'美团','com.xunmeng.pinduoduo':'拼多多','com.autonavi.minimap':'高德地图',
-  'com.baidu.BaiduMap':'百度地图','com.netease.cloudmusic':'网易云音乐','com.tencent.qqmusic':'QQ 音乐',
-  'com.tencent.qqlive':'腾讯视频','com.qiyi.video':'爱奇艺','com.youku.phone':'优酷',
-  'tv.danmaku.bili':'哔哩哔哩','com.sina.weibo':'微博','com.zhihu.android':'知乎','com.douban.frodo':'豆瓣',
-  'com.kingsoft.moffice_pro':'WPS Office','com.tencent.mtt':'QQ 浏览器','com.UCMobile':'UC 浏览器',
-  'com.baidu.searchbox':'百度','com.android.chrome':'Chrome','com.android.vending':'Google Play 商店',
+  /* 社交 · 通讯 · 会议 */
+  'com.tencent.mm':'微信','com.tencent.mobileqq':'QQ','com.tencent.tim':'TIM','com.tencent.wework':'企业微信',
+  'com.tencent.meeting':'腾讯会议','com.alibaba.android.rimet':'钉钉','com.ss.android.lark':'飞书',
+  'com.sina.weibo':'微博','com.zhihu.android':'知乎','com.douban.frodo':'豆瓣','com.xingin.xhs':'小红书',
+  'com.whatsapp':'WhatsApp','org.telegram.messenger':'Telegram','com.instagram.android':'Instagram',
+  'com.facebook.katana':'Facebook','com.twitter.android':'X','com.snapchat.android':'Snapchat',
+  'com.skype.raider':'Skype','com.discord':'Discord','com.reddit.frontpage':'Reddit',
+  'com.linkedin.android':'LinkedIn','com.microsoft.teams':'Teams',
+  /* 短视频 · 影音 · 阅读 */
+  'com.ss.android.ugc.aweme':'抖音','com.ss.android.ugc.aweme.lite':'抖音极速版','com.smile.gifmaker':'快手',
+  'com.kuaishou.nebula':'快手极速版','tv.danmaku.bili':'哔哩哔哩','com.tencent.qqlive':'腾讯视频',
+  'com.qiyi.video':'爱奇艺','com.youku.phone':'优酷','com.hunantv.imgo.activity':'芒果 TV',
+  'com.cmcc.cmvideo':'咪咕视频','com.pplive.androidphone':'PPTV 视频','com.sohu.sohuvideo':'搜狐视频',
+  'com.netease.cloudmusic':'网易云音乐','com.tencent.qqmusic':'QQ 音乐','com.kugou.android':'酷狗音乐',
+  'com.kuwo.player':'酷我音乐','com.ximalaya.ting.android':'喜马拉雅','com.qingting.fm':'蜻蜓 FM',
+  'com.spotify.music':'Spotify','com.google.android.apps.youtube.music':'YouTube Music',
+  'com.netflix.mediaclient':'Netflix','org.videolan.vlc':'VLC',
+  'com.dragon.read':'番茄小说','com.qq.reader':'QQ 阅读','com.qidian.QDReader':'起点读书',
+  'com.chaozh.iReader':'掌阅','com.heytap.book':'阅读',
+  'com.ss.android.article.news':'今日头条','com.ss.android.article.lite':'今日头条极速版',
+  'com.tencent.news':'腾讯新闻','com.netease.newsreader.activity':'网易新闻','com.baidu.news':'百度新闻',
+  /* 电商 · 生活 · 出行 · 金融 */
+  'com.eg.android.AlipayGphone':'支付宝','com.taobao.taobao':'淘宝','com.taobao.litetao':'淘特',
+  'com.jingdong.app.mall':'京东','com.xunmeng.pinduoduo':'拼多多','com.sankuai.meituan':'美团',
+  'com.dianping.v1':'大众点评','me.ele':'饿了么','com.wuba':'58 同城',
+  'com.autonavi.minimap':'高德地图','com.baidu.BaiduMap':'百度地图','com.tencent.map':'腾讯地图',
+  'com.sdu.didi.psnger':'滴滴出行','ctrip.android.view':'携程旅行','com.MobileTicket':'铁路 12306',
+  'com.baidu.netdisk':'百度网盘','com.alicloud.databox':'阿里云盘','com.quark.browser':'夸克',
+  'com.unionpay':'云闪付','com.unionpay.tsmservice':'银联可信服务','cmb.pb':'招商银行',
+  'com.icbc':'中国工商银行','com.android.bankabc':'中国农业银行',
+  /* 浏览器 · 工具 · 输入法 · 效率 */
+  'com.android.chrome':'Chrome','com.microsoft.emmx':'Microsoft Edge','org.mozilla.firefox':'Firefox',
+  'com.UCMobile':'UC 浏览器','com.tencent.mtt':'QQ 浏览器','com.baidu.searchbox':'百度',
+  'com.brave.browser':'Brave','com.opera.browser':'Opera',
+  'com.kingsoft.moffice_pro':'WPS Office','com.tencent.docs':'腾讯文档',
+  'com.sohu.inputmethod.sogou':'搜狗输入法','com.iflytek.inputmethod':'讯飞输入法',
+  'com.baidu.input':'百度输入法','com.tencent.qqpinyin':'QQ 输入法','com.touchtype.swiftkey':'SwiftKey',
+  'com.youdao.dict':'有道词典','com.estrongs.android.pop':'ES 文件浏览器','com.zdevs.zarchiver':'ZArchiver',
+  'com.termux':'Termux','com.cpuid.cpu_z':'CPU-Z','com.finalwire.aida64':'AIDA64',
+  'com.antutu.ABenchMark':'安兔兔评测','com.qihoo360.mobilesafe':'360 手机卫士',
+  'com.tencent.qqpimsecure':'腾讯手机管家','com.mt.mtxx.mtxx':'美图秀秀',
+  /* 系统 AOSP */
+  'com.android.settings':'设置','com.android.dialer':'电话','com.android.contacts':'联系人',
+  'com.android.mms':'信息','com.android.calendar':'日历','com.android.deskclock':'时钟',
+  'com.android.calculator2':'计算器','com.android.gallery3d':'相册','com.android.camera2':'相机',
+  'com.android.soundrecorder':'录音机','com.android.music':'音乐','com.android.browser':'浏览器',
+  'com.android.email':'电子邮件','com.android.documentsui':'文件','com.android.launcher3':'桌面',
+  'com.android.packageinstaller':'应用安装器','com.android.vending':'Google Play 商店',
+  'com.android.systemui':'系统界面','com.android.bluetooth':'蓝牙','com.android.nfc':'NFC',
+  /* Google 服务 */
   'com.google.android.gm':'Gmail','com.google.android.youtube':'YouTube','com.google.android.apps.maps':'Google 地图',
   'com.google.android.apps.photos':'Google 相册','com.google.android.googlequicksearchbox':'Google',
-  'com.whatsapp':'WhatsApp','org.telegram.messenger':'Telegram','com.spotify.music':'Spotify',
+  'com.google.android.apps.messaging':'Google 信息','com.google.android.dialer':'Google 电话',
+  'com.google.android.contacts':'Google 联系人','com.google.android.calendar':'Google 日历',
+  'com.google.android.apps.docs':'Google 云端硬盘','com.google.android.apps.translate':'Google 翻译',
+  'com.google.android.keep':'Google Keep','com.google.android.apps.wellbeing':'数字健康',
+  'com.google.android.inputmethod.latin':'Gboard','com.google.android.gms':'Google Play 服务',
+  'com.google.android.gsf':'Google 服务框架',
+  /* OPPO / 一加 / ColorOS / OPlus */
   'com.coloros.soundrecorder':'录音机','com.coloros.backuprestore':'备份与恢复',
-  'com.unionpay.tsmservice':'银联可信服务','com.redteamobile.roaming':'国际漫游服务',
-  'com.heytap.market':'软件商店','com.coloros.filemanager':'文件管理','com.coloros.alarmclock':'时钟',
-  'com.coloros.calendar':'日历','com.coloros.weather':'天气','com.coloros.calculator':'计算器',
-  'com.coloros.notes':'便签','com.coloros.gallery3d':'相册','com.coloros.contacts':'联系人',
-  'com.coloros.mms':'信息','com.android.dialer':'电话','com.android.settings':'设置',
-  'com.oneplus.camera':'相机','com.oplus.camera':'相机','com.oplus.gallery':'相册',
-  'com.miui.home':'小米桌面','com.xiaomi.market':'小米应用商店'
+  'com.coloros.filemanager':'文件管理','com.coloros.alarmclock':'时钟','com.coloros.calendar':'日历',
+  'com.coloros.weather':'天气','com.coloros.calculator':'计算器','com.coloros.notes':'便签',
+  'com.coloros.gallery3d':'相册','com.coloros.contacts':'联系人','com.coloros.mms':'信息',
+  'com.coloros.camera':'相机','com.coloros.video':'视频','com.coloros.music':'音乐',
+  'com.coloros.browser':'浏览器','com.coloros.email':'邮件','com.coloros.compass':'指南针',
+  'com.coloros.phonemanager':'手机管家','com.coloros.safecenter':'安全中心','com.coloros.health':'健康',
+  'com.coloros.themestore':'主题商店','com.coloros.wallpapers':'壁纸','com.coloros.gamespace':'游戏空间',
+  'com.coloros.smartsidebar':'智能侧边栏','com.coloros.feedback':'意见反馈',
+  'com.oplus.camera':'相机','com.oplus.gallery':'相册','com.oplus.music':'音乐',
+  'com.oplus.themestore':'主题商店','com.oplus.phonemanager':'手机管家','com.oplus.gamespace':'游戏空间',
+  'com.oplus.wallpapers':'壁纸','com.oplus.battery':'电池与性能',
+  'com.heytap.market':'软件商店','com.heytap.cloud':'云服务','com.heytap.music':'音乐',
+  'com.heytap.video':'视频','com.heytap.pictorial':'乐划锁屏','com.heytap.health':'健康',
+  'com.nearme.gamecenter':'游戏中心','com.redteamobile.roaming':'国际漫游服务',
+  'com.oneplus.camera':'相机','com.oneplus.gallery':'相册','com.oneplus.weather':'天气',
+  'com.oneplus.music':'音乐','com.oneplus.notes':'便签','com.oneplus.deskclock':'时钟',
+  'com.oneplus.market':'应用商店','com.oneplus.bbs':'一加社区','com.oneplus.health':'健康',
+  'com.oneplus.gamespace':'游戏空间','com.oneplus.launcher':'一加桌面','com.oneplus.soundrecorder':'录音机',
+  'com.oneplus.filemanager':'文件管理','com.oneplus.calculator':'计算器','com.oneplus.contacts':'联系人',
+  'com.oneplus.mms':'信息','com.oneplus.dialer':'电话','com.oneplus.themestore':'主题商店',
+  'com.oneplus.wallpapers':'壁纸','com.oneplus.backuprestore':'备份与恢复',
+  'com.oppo.launcher':'桌面','com.oppo.market':'软件商店','com.oppo.camera':'相机',
+  'com.oppo.music':'音乐','com.oppo.video':'视频','com.oppo.compass':'指南针',
+  /* 小米 / 华为 / 三星 */
+  'com.miui.home':'小米桌面','com.xiaomi.market':'小米应用商店','com.miui.gallery':'相册',
+  'com.miui.camera':'相机','com.miui.player':'音乐','com.miui.video':'视频','com.miui.notes':'便签',
+  'com.miui.calculator':'计算器','com.miui.weather2':'天气','com.miui.clock':'时钟',
+  'com.miui.calendar':'日历','com.miui.securitycenter':'安全中心','com.miui.powerkeeper':'省电与电池',
+  'com.miui.backup':'备份','com.miui.cloudservice':'小米云服务','com.miui.fm':'收音机',
+  'com.miui.compass':'指南针','com.miui.screenrecorder':'屏幕录制','com.xiaomi.account':'小米帐号',
+  'com.huawei.android.launcher':'华为桌面','com.huawei.appmarket':'华为应用市场',
+  'com.huawei.camera':'相机','com.huawei.music':'华为音乐','com.huawei.himovie':'华为视频',
+  'com.huawei.health':'华为运动健康','com.huawei.browser':'华为浏览器','com.huawei.weather':'天气',
+  'com.huawei.calendar':'日历','com.huawei.deskclock':'时钟','com.huawei.calculator':'计算器',
+  'com.huawei.notes':'备忘录','com.huawei.contacts':'联系人','com.huawei.systemmanager':'手机管家',
+  'com.huawei.hwid':'华为帐号','com.huawei.hicloud':'华为云空间','com.huawei.wallet':'华为钱包',
+  'com.huawei.thememanager':'主题','com.huawei.compass':'指南针',
+  'com.sec.android.app.launcher':'三星桌面','com.sec.android.app.camera':'相机',
+  'com.sec.android.gallery3d':'相册','com.samsung.android.app.notes':'三星笔记',
+  'com.samsung.android.calendar':'日历','com.samsung.android.contacts':'联系人',
+  'com.samsung.android.messaging':'信息','com.samsung.android.dialer':'电话',
+  'com.sec.android.app.clockpackage':'时钟','com.sec.android.app.popupcalculator':'计算器',
+  'com.samsung.android.app.shealth':'三星健康','com.sec.android.app.sbrowser':'三星浏览器',
+  /* 游戏 · 其它 */
+  'com.tencent.tmgp.sgame':'王者荣耀','com.tencent.tmgp.pubgmhd':'和平精英',
+  'com.miHoYo.Yuanshen':'原神','com.supercell.clashofclans':'部落冲突',
+  'com.supercell.clashroyale':'皇室战争','com.mojang.minecraftpe':'Minecraft',
+  'com.ebay.mobile':'eBay','com.amazon.mShop.android.shopping':'Amazon','com.ubercab':'Uber',
+  'com.dropbox.android':'Dropbox','com.evernote':'Evernote','com.notion.id':'Notion'
 };
+/* 包名末段即功能词：大量系统 / 厂商应用可据此还原为中文名 */
+const SEGMENT_NAMES = {
+  gallery:'相册',gallery3d:'相册',photos:'相册',photo:'相册',camera:'相机',camera2:'相机',
+  soundrecorder:'录音机',recorder:'录音机',screenrecorder:'屏幕录制',voiceassist:'语音助手',
+  filemanager:'文件管理',fileexplorer:'文件浏览器',documentsui:'文件',downloads:'下载',
+  weather:'天气',weather2:'天气',calculator:'计算器',calc:'计算器',calendar:'日历',
+  notes:'便签',note:'便签',memo:'备忘录',clock:'时钟',deskclock:'时钟',alarmclock:'时钟',
+  mms:'信息',messaging:'信息',sms:'短信',dialer:'电话',phone:'电话',contacts:'联系人',
+  settings:'设置',launcher:'桌面',home:'桌面',browser:'浏览器',music:'音乐',player:'播放器',
+  video:'视频',email:'邮件',mail:'邮件',keyboard:'输入法',inputmethod:'输入法',
+  wallpapers:'壁纸',wallpaper:'壁纸',theme:'主题',themes:'主题',themestore:'主题商店',
+  thememanager:'主题',backup:'备份',backuprestore:'备份与恢复',cloudservice:'云服务',
+  health:'健康',wellbeing:'数字健康',compass:'指南针',fm:'收音机',torch:'手电筒',
+  market:'应用商店',appstore:'应用商店',store:'应用商店',securitycenter:'安全中心',
+  safecenter:'安全中心',mobilesafe:'手机卫士',gamecenter:'游戏中心',gamespace:'游戏空间',
+  wallet:'钱包',dict:'词典',dictionary:'词典',translate:'翻译',reader:'阅读',news:'新闻',
+  maps:'地图',map:'地图',searchbox:'搜索',search:'搜索',packageinstaller:'应用安装器',
+  bluetooth:'蓝牙',systemui:'系统界面',setupwizard:'设置向导',wizard:'设置向导',
+  bugreport:'问题反馈',feedback:'意见反馈',screenlock:'锁屏',keyguard:'锁屏',
+  launcher3:'桌面',quicksearchbox:'搜索',contactsprovider:'联系人存储'
+};
+const PKG_SKIP = new Set(['com','org','net','cn','io','me','tv','app','xyz','edu','gov','android','google','mobile']);
+/* 未识别的包名不再整串展示，转成可读简称；完整包名仍在副行保留 */
+function prettyPkg(pkg){
+  const parts=String(pkg||'').split('.').filter(Boolean);
+  let w=parts.filter(p=>!PKG_SKIP.has(p.toLowerCase()));
+  if(!w.length) w=parts.slice(-1);
+  const t=w.slice(-2).join(' ')
+    .replace(/([a-z0-9])([A-Z])/g,'$1 $2')
+    .replace(/[_-]+/g,' ').trim().split(/\s+/).filter(Boolean).slice(0,3)
+    .map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(' ');
+  return t || String(pkg);
+}
 function appDisplayName(pkg, rawLabel){
-  const l = String(rawLabel || '').trim();
-  if (l && l !== 'null' && l !== '0x0') return l;   // 设备明文 label 优先
-  return KNOWN_APP_NAMES[pkg] || pkg;               // 否则显示完整包名（应用真正的唯一标识）
+  const l=String(rawLabel||'').trim().replace(/^['"]|['"]$/g,'');
+  if(l && l!=='null' && l!=='0x0' && l!=='0') return {name:l, exact:true};  // 设备明文 label
+  if(KNOWN_APP_NAMES[pkg]) return {name:KNOWN_APP_NAMES[pkg], exact:true};   // 精确包名库
+  const seg=String(pkg).split('.').pop().toLowerCase();
+  if(SEGMENT_NAMES[seg]) return {name:SEGMENT_NAMES[seg], exact:true};       // 末段语义
+  return {name:prettyPkg(pkg), exact:false};                                  // 包名简称
 }
 
 function renderApps(){
@@ -1264,7 +1394,7 @@ function renderApps(){
     '<label class="btn primary"'+(state.mode==='none'?' style="opacity:.5;pointer-events:none" aria-disabled="true"':'')+'>'+icon('download',15)+'安装 APK<input type="file" accept=".apk" hidden data-change="apk"'+(state.mode==='none'?' disabled':'')+'></label>'+
     '<span class="stat">共 <b>'+state.apps.length+'</b> 个第三方应用 · 已禁用 <b>'+offCount+'</b></span></div>'+
     '<div class="card table-card'+(list.length?'':' empty')+'"><table><thead><tr><th>应用</th><th>版本</th><th>类型</th><th>状态</th><th class="col-ops">操作</th></tr></thead><tbody>'+
-    (list.length?list.map(a=>'<tr data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'" data-full="'+encodeURIComponent((a.name+' '+a.pkg).toLowerCase())+'"><td><div class="app-cell"><div class="app-icon">'+esc(a.name.slice(0,1))+'</div><div><div class="app-name">'+esc(a.name)+'</div><div class="app-pkg"'+(a.name===a.pkg?' style="display:none"':'')+'>'+esc(a.pkg)+'</div></div></div></td>'+
+    (list.length?list.map(a=>'<tr data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'" data-full="'+encodeURIComponent((a.name+' '+a.pkg).toLowerCase())+'"><td><div class="app-cell"><div class="app-icon">'+esc(a.name.slice(0,1))+'</div><div><div class="app-name"'+(a.guess?' title="设备未提供显示名，此处为包名简称"':'')+'>'+esc(a.name)+(a.guess?'<span class="app-guess">包名</span>':'')+'</div><div class="app-pkg"'+(a.name===a.pkg?' style="display:none"':'')+'>'+esc(a.pkg)+'</div></div></div></td>'+
       '<td>'+esc(a.ver)+'</td><td>'+(a.sys?'<span class="pill gray">系统应用</span>':'<span class="pill">第三方</span>')+'</td>'+
       '<td>'+(a.state==='on'?'<span class="pill green">已启用</span>':'<span class="pill gray">已禁用</span>')+'</td>'+
       '<td><div class="td-ops"><button class="mini-btn" data-act="app-toggle" data-pkg="'+esc(a.pkg)+'">'+(a.state==='on'?'禁用':'启用')+'</button>'+
@@ -1274,7 +1404,7 @@ function renderApps(){
       :'')+
     '<tr id="noMatch" style="'+(list.length?'display:none':'')+'"><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">'+(state.mode!=='real'?'尚未连接真机，连接后点击「刷新列表」读取应用':(state.apps.length?'未找到匹配的应用':'应用列表为空，点击「刷新列表」读取'))+'</td></tr>'+
     '</tbody></table></div>'+
-    '<p class="hint">提示：禁用 / 启用使用 <code class="code-inline">pm disable-user</code> / <code class="code-inline">pm enable</code>；卸载系统应用需先解除用户安装或具备 root 权限。应用列表需连接真机后点击「刷新列表」读取。窄屏下可左右滑动表格查看操作列。</p>';
+    '<p class="hint">提示：禁用 / 启用使用 <code class="code-inline">pm disable-user</code> / <code class="code-inline">pm enable</code>；卸载系统应用需先解除用户安装或具备 root 权限。应用列表需连接真机后点击「刷新列表」读取。设备未提供显示名的应用按包名简称展示，完整包名见名称下方。窄屏下可左右滑动表格查看操作列。</p>';
 }
 async function appRefresh(){
   if(state.mode!=='real'){ toast('请先连接真机后再刷新应用列表','warn'); renderApps(); return; }
@@ -1283,7 +1413,7 @@ async function appRefresh(){
   const safe=async c=>{ try{ return String(await shell(c)||''); }catch(e){ return ''; } };
   const [out3,outD,dump]=await Promise.all([
     safe('pm list packages -3'), safe('pm list packages -d'),
-    safe('dumpsys package | grep -E "Package \[|versionName=|nonLocalizedLabel="')
+    safe('dumpsys package | grep -E "Package \[|versionName=|nonLocalizedLabel=|application-label"')
   ]);
   const parse=t=>t.split('\n').map(x=>x.replace(/^package:/,'').trim()).filter(Boolean);
   const disabled=new Set(parse(outD));
@@ -1293,17 +1423,22 @@ async function appRefresh(){
     for(let i=1;i<chunks.length;i++){
       const pkg=chunks[i].slice(0,chunks[i].indexOf(']')).trim();
       const m=chunks[i].match(/versionName=([^\s]+)/);
-      const l=chunks[i].match(/nonLocalizedLabel=([^\s]+)/);
+      const l=chunks[i].match(/nonLocalizedLabel=(.*)/);
+      const a=chunks[i].match(/application-label(?:-[\w-]+)?[:=]\s*['"]?([^'"\r\n]+)/);
+      let lab=l?l[1]:'';
+      if(!lab && a) lab=a[1];
+      lab=String(lab||'').trim().replace(/^['"]|['"]$/g,'');
       if(pkg && m) verMap[pkg]=m[1];
-      if(pkg && l && l[1] && l[1]!=='null') labelMap[pkg]=l[1];
+      if(pkg && lab && lab!=='null' && lab!=='0x0' && lab!=='0') labelMap[pkg]=lab;
     }
   }catch(_){}
   const olds={}; state.apps.forEach(a=>olds[a.pkg]=a);
-  state.apps=parse(out3).map(p=>({
-    name:appDisplayName(p,labelMap[p]), pkg:p,
-    ver:verMap[p]||(olds[p]&&olds[p].ver)||'—', sys:false,
-    state:disabled.has(p)?'off':'on'
-  }));
+  state.apps=parse(out3).map(p=>{
+    const d=appDisplayName(p,labelMap[p]);
+    return {name:d.name, guess:!d.exact, pkg:p,
+      ver:verMap[p]||(olds[p]&&olds[p].ver)||'—', sys:false,
+      state:disabled.has(p)?'off':'on'};
+  });
   toast('已读取 '+state.apps.length+' 个第三方应用','ok');
   renderApps();
 }
@@ -1532,9 +1667,9 @@ function renderSettings(){
 /* ---------------- 页面：关于 ---------------- */
 function renderAbout(){
   $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2 align-start">'+
-    '<div class="card"><div class="about-hero"><div class="about-logo">搞</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
-      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.8</div></div></div>'+
-      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.8')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
+    '<div class="card"><div class="about-hero"><div class="about-logo">'+logoSvg()+'</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.9</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.9')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
       kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('版权','© 2026 維坦')+'</div>'+
       '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
       '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
