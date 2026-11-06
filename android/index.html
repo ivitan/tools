@@ -407,6 +407,25 @@ input[type=range]{width:clamp(120px,16vw,190px)}
   input,textarea,select{font-size:16px}
   .btn:active,.ghost-btn:active,.btn-reboot:not(:disabled):active,.mini-btn:active{transform:scale(.97)}
 }
+/* ---------------- 投屏 ---------------- */
+.mirror-stage{position:relative;width:100%;height:min(60vh,560px);min-height:300px;background:#070b14;border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none}
+.mirror-stage img{width:100%;height:100%;object-fit:contain;display:none}
+.mirror-stage img.on{display:block}
+.mirror-stage:fullscreen{height:100vh;min-height:0;background:#000;border:none;border-radius:0}
+.mirror-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#94a3b8;font-size:13px;text-align:center;padding:24px;pointer-events:none;background:#070b14}
+.mirror-placeholder svg{width:36px;height:36px;opacity:.6}
+.mirror-keys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.mirror-keys .btn{width:100%;padding:0 6px}
+.mirror-status{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:12px}
+.mirror-status b{color:var(--text-2);font-weight:600}
+.mirror-input-row{display:flex;gap:8px;margin-top:12px}
+.mirror-input-row .input{flex:1;min-width:0}
+.mirror-rate{height:32px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--field);color:var(--text);font-size:12.5px}
+@media(max-width:640px){
+  .mirror-stage{height:min(52vh,420px);min-height:240px}
+  .mirror-keys{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mirror-status{gap:10px}
+}
 </style>
 </head>
 <body>
@@ -431,7 +450,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.0.9</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.1.1</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -466,6 +485,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
       </section>
 
       <section class="page" id="page-apps"></section>
+      <section class="page" id="page-mirror"></section>
       <section class="page" id="page-display"></section>
       <section class="page" id="page-systemui"></section>
       <section class="page" id="page-battery"></section>
@@ -525,7 +545,17 @@ const P = {
   play:'<polygon points="5 3 19 12 5 21 5 3"/>',
   save:'<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
   trash:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',
-  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>'
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+  cast:'<rect width="18" height="12" x="3" y="5" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2"/>',
+  camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/>',
+  maximize:'<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>',
+  back:'<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+  square:'<rect width="14" height="14" x="5" y="5" rx="2"/>',
+  volup:'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
+  voldn:'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M16 12h6"/>',
+  type:'<rect width="20" height="14" x="2" y="5" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M8 13h8"/>',
+  stop:'<rect width="12" height="12" x="6" y="6" rx="2"/>',
+  keyboard:'<rect width="20" height="14" x="2" y="5" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M8 16h8"/>'
 };
 function icon(name, size){ const s = size || 18; return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(P[name]||P.info)+'</svg>'; }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -560,7 +590,8 @@ const state = {
   cpu:EMPTY_CPU.slice(),
   active:'home', showBoard:false,
   devices:[],
-  apps:[], appFilter:'',
+  apps:[], appFilter:'', appsAutoLoaded:false,
+  mirror:{running:false,busy:false,timer:null,rate:1000,url:null,blob:null,w:0,h:0,frames:0,lastMs:0,err:'',fails:0,down:null},
   termLines:[], termHistory:[], termIdx:0,
   scriptText:'# 在此输入 shell 命令，每行一条\ngetprop ro.product.model\ndumpsys battery | grep level',
   scriptOutput:'', scripts:[],
@@ -573,13 +604,13 @@ if(!Array.isArray(state.scripts)) state.scripts=[];
 state.scripts = state.scripts.filter(x => x && typeof x.name==='string' && typeof x.code==='string');
 
 const NAV = [
-  {id:'home',label:'主页',ic:'home'}, {id:'apps',label:'软件管理',ic:'package'},
+  {id:'home',label:'主页',ic:'home'}, {id:'apps',label:'软件管理',ic:'package'}, {id:'mirror',label:'投屏',ic:'cast'},
   {id:'display',label:'显示控制',ic:'monitor'}, {id:'systemui',label:'系统界面',ic:'sliders'},
   {id:'battery',label:'电池管理',ic:'battery'}, {id:'tuner',label:'无极调节',ic:'gauge'},
   {id:'scripts',label:'控机脚本',ic:'code'}, {id:'terminal',label:'ADB 终端',ic:'terminal'},
   {id:'settings',label:'软件设置',ic:'settings'}, {id:'about',label:'关于',ic:'info'}
 ];
-const TITLES = {home:'设备信息',apps:'软件管理',display:'显示控制',systemui:'系统界面',battery:'电池管理',tuner:'无极调节',scripts:'控机脚本',terminal:'ADB 终端',settings:'软件设置',about:'关于'};
+const TITLES = {home:'设备信息',apps:'软件管理',mirror:'投屏',display:'显示控制',systemui:'系统界面',battery:'电池管理',tuner:'无极调节',scripts:'控机脚本',terminal:'ADB 终端',settings:'软件设置',about:'关于'};
 const REBOOT = [
   {act:'reboot',label:'重启',cmd:'reboot',ic:'refresh'}, {act:'bootloader',label:'Fastboot',cmd:'reboot bootloader',ic:'power'},
   {act:'edl',label:'EDL',cmd:'reboot edl',ic:'download'},
@@ -650,10 +681,16 @@ function renderNav(){
   $('#nav').innerHTML = NAV.map(n=>'<button class="nav-item'+(state.active===n.id?' active':'')+'" data-nav="'+n.id+'">'+icon(n.ic)+'<span>'+n.label+'</span></button>').join('');
 }
 function showPage(id){
+  if(state.active==='mirror' && id!=='mirror') stopMirror();   // 离开投屏页自动停，释放 USB 带宽
   state.active=id;
   $$('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+id));
   renderNav();
   const fn = RENDER[id]; if(fn) fn();
+  // 连接真机后第一次进入「软件管理」自动读取列表，无需手动点「刷新列表」；
+  // 只在真正连接成功且未加载过时触发，断开/重连会重置标志。
+  if(id==='apps' && state.mode==='real' && state.adb && !state.appsAutoLoaded){
+    state.appsAutoLoaded=true; appRefresh(true);
+  }
   window.scrollTo({top:0,behavior:'smooth'});
   try{ history.replaceState(null,'','#'+id); }catch(e){}
 }
@@ -764,7 +801,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.0.9';
+const BUILD='v1.1.1';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1039,7 +1076,7 @@ async function connectReal(preferPaired, targetSerial){
     state.realDevice=dev; state.mode='real';
     const devName=(typeof dev.name==='string'&&dev.name)||((dev.raw||{}).productName)||dev.serial||'Android 设备';
     state.device=freshDevice({name:devName,serial:dev.serial||'unknown'});
-    state.lastError=null;
+    state.lastError=null; state.appsAutoLoaded=false; state.apps=[]; state.appFilter='';
     state.devices=[{id:dev.serial||'adb',label:devName+' · '+(dev.serial||'adb')}];
     setStage('读取设备信息','读取信息…');
     // 读取设备信息失败不应判定为连接失败，否则残留接口会导致下次连接报「被占用」
@@ -1060,6 +1097,11 @@ async function connectReal(preferPaired, targetSerial){
   }
 }
 async function disconnect(){
+  stopMirror();
+  if(state.mirror.url){ try{ URL.revokeObjectURL(state.mirror.url); }catch(_){} }
+  state.mirror.url=null; state.mirror.blob=null; state.mirror.w=0; state.mirror.h=0;
+  state.mirror.frames=0; state.mirror.err=''; state.mirror.fails=0;
+  state.apps=[]; state.appFilter=''; state.appsAutoLoaded=false;
   const dev=state.realDevice;
   if(state.adb){ try{ await state.adb.close(); }catch(_){} }
   state.adb=null; state.realDevice=null; state.manager=null;
@@ -1406,9 +1448,9 @@ function renderApps(){
     '</tbody></table></div>'+
     '<p class="hint">提示：禁用 / 启用使用 <code class="code-inline">pm disable-user</code> / <code class="code-inline">pm enable</code>；卸载系统应用需先解除用户安装或具备 root 权限。应用列表需连接真机后点击「刷新列表」读取。设备未提供显示名的应用按包名简称展示，完整包名见名称下方。窄屏下可左右滑动表格查看操作列。</p>';
 }
-async function appRefresh(){
-  if(state.mode!=='real'){ toast('请先连接真机后再刷新应用列表','warn'); renderApps(); return; }
-  toast('正在读取应用列表…','');
+async function appRefresh(auto){
+  if(state.mode!=='real'){ if(!auto){ toast('请先连接真机后再刷新应用列表','warn'); renderApps(); } return; }
+  if(!auto) toast('正在读取应用列表…','');
   // 单条命令失败不影响其它数据；版本从一次全量 package dump 里解析，失败则降级为 —
   const safe=async c=>{ try{ return String(await shell(c)||''); }catch(e){ return ''; } };
   const [out3,outD,dump]=await Promise.all([
@@ -1439,8 +1481,239 @@ async function appRefresh(){
       ver:verMap[p]||(olds[p]&&olds[p].ver)||'—', sys:false,
       state:disabled.has(p)?'off':'on'};
   });
-  toast('已读取 '+state.apps.length+' 个第三方应用','ok');
+  toast((auto?'已自动刷新 ':'已读取 ')+state.apps.length+' 个第三方应用','ok');
   renderApps();
+}
+
+/* ---------------- 页面：投屏 ---------------- */
+/* 用设备原生 screencap 逐帧取 PNG，再通过 input tap / swipe / keyevent / text 回注操作。
+   零外部依赖、不推送任何 server 二进制，复用已连接的 ADB 通道；约 1~2 帧/秒，
+   适合查看界面与点按操作，不是实时视频流（完整 scrcpy 需额外解码器与 server）。 */
+const MIRROR_KEYS = [
+  {k:4,label:'返回',ic:'back'},{k:3,label:'Home',ic:'home'},
+  {k:187,label:'最近任务',ic:'square'},{k:26,label:'电源',ic:'power'},
+  {k:24,label:'音量 +',ic:'volup'},{k:25,label:'音量 −',ic:'voldn'},
+  {k:224,label:'亮屏',ic:'sun'},{k:66,label:'回车',ic:'terminal'}
+];
+function pngOK(u8){
+  return !!u8 && u8.length>24 && u8[0]===0x89 && u8[1]===0x50 && u8[2]===0x4e && u8[3]===0x47
+    && u8[4]===0x0d && u8[5]===0x0a && u8[6]===0x1a && u8[7]===0x0a;
+}
+function withTimeout(p,ms,label){
+  let t=null;
+  return Promise.race([
+    Promise.resolve(p),
+    new Promise((_,rej)=>{ t=setTimeout(()=>rej(new Error(label)),ms); })
+  ]).finally(()=>{ if(t!=null) clearTimeout(t); });
+}
+/* screencap -p 走 exec service 时二进制安全；个别设备会改写 stdout，
+   则降级为「写文件 + sync 读回」，sync 传输同样二进制安全。 */
+async function grabScreen(){
+  if(!state.adb) throw new Error('设备未连接');
+  const svc=state.adb.subprocess;
+  const runner=(svc && svc.noneProtocol) || svc;
+  if(!runner) throw new Error('当前 ADB 组件不支持截屏');
+  let u8=null;
+  if(typeof runner.spawnWait==='function'){
+    try{ u8=await withTimeout(runner.spawnWait('screencap -p'),10000,'截屏超时'); }catch(_){ u8=null; }
+  }
+  if(pngOK(u8)) return u8;
+  if(typeof runner.spawnWaitText==='function')
+    await withTimeout(runner.spawnWaitText('screencap -p /data/local/tmp/gjbox_screen.png'),10000,'截屏超时');
+  else
+    await withTimeout(runner.spawnWait('screencap -p /data/local/tmp/gjbox_screen.png'),10000,'截屏超时');
+  let file=null, sync=null;
+  try{
+    sync=await state.adb.sync();
+    file=new Uint8Array(await withTimeout(new Response(sync.read('/data/local/tmp/gjbox_screen.png')).arrayBuffer(),10000,'读取画面超时'));
+  }finally{ if(sync){ try{ await sync.dispose(); }catch(_){} } }
+  if(!pngOK(file)) throw new Error('设备未返回有效 PNG 画面');
+  return file;
+}
+function mirrorInfo(){
+  const m=state.mirror, el=$('#mirrorInfo');
+  if(!el) return;
+  el.innerHTML='画面 <b>'+(m.w?m.w+'×'+m.h:'—')+'</b> · 帧 <b>'+m.frames+'</b>'+
+    (m.lastMs?' · 单帧 <b>'+m.lastMs+' ms</b>':'')+
+    (m.err?' · <span style="color:var(--danger-text)">'+esc(m.err)+'</span>':'');
+}
+function mirrorSetBtn(){
+  const b=$('[data-act="mirror-toggle"]');
+  if(!b) return;
+  b.innerHTML=icon(state.mirror.running?'stop':'play',15)+(state.mirror.running?'停止投屏':'开始投屏');
+  b.classList.toggle('primary',!state.mirror.running);
+}
+/* 重渲染后恢复画面：blob 数据一直在，即使旧 blob URL 已被撤销也能重建，
+   避免把失效地址写进 <img src> 触发浏览器破图图标 */
+function mirrorPaint(){
+  const img=$('#mirrorImg'), ph=$('#mirrorPlaceholder');
+  if(!img) return;
+  const m=state.mirror;
+  if(!m.blob){
+    img.classList.remove('on'); img.removeAttribute('src');
+    if(ph) ph.style.display='';
+    return;
+  }
+  const url=URL.createObjectURL(m.blob);
+  img.onload=()=>{
+    img.classList.add('on');
+    if(ph) ph.style.display='none';
+    const old=m.url;
+    m.url=url;
+    if(old && old!==url){ try{ URL.revokeObjectURL(old); }catch(_){} }
+  };
+  img.onerror=()=>{
+    try{ URL.revokeObjectURL(url); }catch(_){}
+    img.classList.remove('on'); img.removeAttribute('src');
+    m.url=null; m.blob=null;
+    if(ph) ph.style.display='';
+  };
+  img.src=url;
+}
+async function mirrorFrame(){
+  const m=state.mirror;
+  if(m.busy || state.mode!=='real' || !state.adb) return;
+  m.busy=true;
+  const t0=Date.now();
+  try{
+    const u8=await grabScreen();
+    const blob=new Blob([u8],{type:'image/png'});
+    const url=URL.createObjectURL(blob);
+    const img=$('#mirrorImg');
+    if(!img){ try{ URL.revokeObjectURL(url); }catch(_){} return; }
+    const old=m.url;
+    img.onload=()=>{
+      if(img.src!==url) return;               // 已被下一帧覆盖，丢弃旧回调
+      const w=img.naturalWidth, h=img.naturalHeight;
+      m.w=w; m.h=h; m.blob=blob; m.url=url;
+      if(old && old!==url){ try{ URL.revokeObjectURL(old); }catch(_){} }
+      img.classList.add('on');               // 有效画面才显示，杜绝破图图标
+      const ph=$('#mirrorPlaceholder'); if(ph) ph.style.display='none';
+      mirrorInfo();
+    };
+    img.onerror=()=>{
+      try{ URL.revokeObjectURL(url); }catch(_){}
+      img.classList.remove('on'); img.removeAttribute('src');  // 立刻撤掉破图
+      m.blob=null; m.url=null; m.w=0; m.h=0;
+      const ph=$('#mirrorPlaceholder'); if(ph) ph.style.display='';
+      m.err='画面解码失败，已恢复占位'; m.fails++;
+      mirrorInfo();
+    };
+    img.src=url;
+    m.frames++; m.lastMs=Date.now()-t0; m.err=''; m.fails=0;
+    mirrorInfo();
+  }catch(e){
+    m.err=String((e&&e.message)||e); m.fails++;
+    mirrorInfo();
+    if(m.fails>=3){ stopMirror(); toast('投屏已停止：'+esc(m.err),'err'); }
+  }finally{ m.busy=false; }
+}
+function mirrorTick(){
+  const m=state.mirror;
+  if(m.timer){ clearTimeout(m.timer); m.timer=null; }
+  if(!m.running) return;
+  m.timer=setTimeout(async()=>{
+    if(!m.running) return;
+    await mirrorFrame();
+    mirrorTick();
+  }, m.rate);
+}
+function startMirror(){
+  if(state.mode!=='real' || !state.adb){ toast('请先连接真机后再开始投屏','warn'); return; }
+  const m=state.mirror;
+  if(m.running) return;
+  m.running=true; m.err=''; m.fails=0;
+  mirrorSetBtn();
+  toast('投屏已开始','ok');
+  mirrorFrame().then(mirrorTick);
+}
+function stopMirror(){
+  const m=state.mirror;
+  if(!m.running && !m.timer) return;
+  m.running=false;
+  if(m.timer){ clearTimeout(m.timer); m.timer=null; }
+  mirrorSetBtn();
+}
+function mirrorSave(){
+  const m=state.mirror;
+  if(!m.blob){ toast('还没有可保存的画面','warn'); return; }
+  const url=URL.createObjectURL(m.blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='gjbox-screen-'+Date.now()+'.png';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){} }, 30000);
+  toast('截图已保存','ok');
+}
+function mirrorFull(){
+  const el=$('#mirrorStage'); if(!el) return;
+  if(document.fullscreenElement){ const p=document.exitFullscreen(); if(p&&p.catch) p.catch(()=>{}); }
+  else if(el.requestFullscreen){ const p=el.requestFullscreen(); if(p&&p.catch) p.catch(()=>toast('当前浏览器不支持全屏','warn')); }
+  else toast('当前浏览器不支持全屏','warn');
+}
+async function mirrorKey(k){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  await runCmd('input keyevent '+k,true);
+}
+/* Android 原生 input text 只吃 ASCII；空格用 %s，其余只保留安全可打印字符 */
+function mirrorTextArg(s){
+  return String(s==null?'':s).replace(/\s+/g,'%s').replace(/[^A-Za-z0-9%_.,:@\/+=\-]/g,'');
+}
+async function mirrorSend(){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  const el=$('#mirrorText'), arg=mirrorTextArg(el?el.value:'');
+  if(!arg){ toast('请输入英文 / 数字或常见符号','warn'); return; }
+  await runCmd('input text '+arg,true);
+  if(el) el.value='';
+  toast('文字已发送','ok');
+}
+/* 把画面上的点换算成设备原始像素坐标（考虑 object-fit: contain 的黑边） */
+function mirrorPoint(cx,cy){
+  const img=$('#mirrorImg');
+  if(!img || !img.naturalWidth) return null;
+  const r=img.getBoundingClientRect();
+  const nw=img.naturalWidth, nh=img.naturalHeight;
+  const scale=Math.min(r.width/nw, r.height/nh);
+  if(!(scale>0)) return null;
+  const ox=r.left+(r.width-nw*scale)/2, oy=r.top+(r.height-nh*scale)/2;
+  const x=Math.round((cx-ox)/scale), y=Math.round((cy-oy)/scale);
+  if(x<0 || y<0 || x>=nw || y>=nh) return null;
+  return {x,y};
+}
+function renderMirror(){
+  const ok=state.mode==='real' && !!state.adb, m=state.mirror;
+  const dis=ok?'':' disabled style="opacity:.5;pointer-events:none" aria-disabled="true"';
+  $('#page-mirror').innerHTML='<h1 class="page-title">投屏</h1>'+
+    '<div class="toolbar">'+
+      '<button class="btn '+(m.running?'':'primary')+'" data-act="mirror-toggle"'+dis+'>'+icon(m.running?'stop':'play',15)+(m.running?'停止投屏':'开始投屏')+'</button>'+
+      '<button class="btn" data-act="mirror-once"'+dis+'>'+icon('camera',15)+'单帧</button>'+
+      '<button class="btn" data-act="mirror-save">'+icon('download',15)+'保存截图</button>'+
+      '<button class="btn" data-act="mirror-full">'+icon('maximize',15)+'全屏</button>'+
+      '<label class="muted" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px">帧间隔 '+
+        '<select class="mirror-rate" data-change="mirror-rate"'+dis+'>'+
+        [['500','0.5 秒'],['1000','1 秒'],['2000','2 秒'],['3000','3 秒']].map(o=>'<option value="'+o[0]+'"'+(String(m.rate)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+
+        '</select></label>'+
+      '<span class="stat" id="mirrorInfo"></span>'+
+    '</div>'+
+    '<div class="card" style="padding:14px">'+
+      '<div class="mirror-stage" id="mirrorStage">'+
+        '<img id="mirrorImg" alt="">'+
+        '<div class="mirror-placeholder" id="mirrorPlaceholder"'+(m.blob?' style="display:none"':'')+'>'+
+          icon('cast',36)+'<div>'+(ok?'点击「开始投屏」查看设备画面':'请先连接真机，再开始投屏')+'</div>'+
+          '<div style="font-size:12px;opacity:.8">画面可点击 / 滑动，操作会实时下发到手机</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="grid-2" style="margin-top:20px">'+
+      '<div class="card"><h2 class="card-title">导航与电源</h2>'+
+        '<div class="mirror-keys">'+MIRROR_KEYS.map(k=>'<button class="btn" data-act="mirror-key" data-key="'+k.k+'"'+dis+'>'+icon(k.ic,15)+k.label+'</button>').join('')+'</div>'+
+        '<p class="hint">按键通过 <code class="code-inline">input keyevent</code> 下发，需要设备已开启 USB 调试。</p></div>'+
+      '<div class="card"><h2 class="card-title">文字输入</h2>'+
+        '<div class="mirror-input-row"><input class="input" id="mirrorText" placeholder="输入英文 / 数字后发送" autocomplete="off"><button class="btn primary" data-act="mirror-send"'+dis+'>'+icon('type',15)+'发送</button></div>'+
+        '<p class="hint">Android 原生 <code class="code-inline">input text</code> 仅支持 ASCII 字符，空格自动转义为 <code class="code-inline">%s</code>；中文请用设备输入法。</p>'+
+      '</div>'+
+    '</div>'+
+    '<p class="hint">投屏基于设备原生 <code class="code-inline">screencap</code> 逐帧截图，约 1~2 帧/秒，适合查看界面与点按操作，不是实时视频流。帧间隔越短 USB 占用越高；离开本页会自动停止以释放带宽。首次使用若画面为空，请点亮手机屏幕后点「单帧」。</p>';
+  mirrorInfo(); mirrorPaint();
 }
 
 /* ---------------- 页面：显示控制 ---------------- */
@@ -1668,11 +1941,11 @@ function renderSettings(){
 function renderAbout(){
   $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2 align-start">'+
     '<div class="card"><div class="about-hero"><div class="about-logo">'+logoSvg()+'</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
-      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.9</div></div></div>'+
-      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.9')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.1.1</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.1.1')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
       kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('版权','© 2026 維坦')+'</div>'+
       '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
-      '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
+      '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 投屏（画面镜像与触控） · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
     '</div>'+
     '<div class="card"><h2 class="card-title">真机连接</h2>'+
       '<div class="muted" style="font-size:13px;line-height:2.1">1. 手机开启「开发者选项 → USB 调试」并用数据线连接<br>2. 关闭电脑端 adb / 手机助手，只保留一个标签页<br>3. 点「连接设备」，选手机并在手机上允许授权</div>'+
@@ -1684,7 +1957,7 @@ function renderAbout(){
     '</div></div>';
 }
 
-const RENDER={home:renderHome,apps:renderApps,display:renderDisplay,systemui:renderSystemUI,battery:renderBattery,tuner:renderTuner,scripts:renderScripts,terminal:renderTerminal,settings:renderSettings,about:renderAbout};
+const RENDER={home:renderHome,apps:renderApps,mirror:renderMirror,display:renderDisplay,systemui:renderSystemUI,battery:renderBattery,tuner:renderTuner,scripts:renderScripts,terminal:renderTerminal,settings:renderSettings,about:renderAbout};
 
 /* ---------------- 事件委托 ---------------- */
 document.addEventListener('click', async e=>{
@@ -1732,6 +2005,12 @@ document.addEventListener('click', async e=>{
       toast('动画速度已设置为 '+v+'×','ok'); break;
     }
     case 'app-refresh': appRefresh(); break;
+    case 'mirror-toggle': state.mirror.running?stopMirror():startMirror(); break;
+    case 'mirror-once': if(state.mode==='real' && !state.mirror.busy) mirrorFrame(); else if(state.mode!=='real') toast('请先连接真机','warn'); break;
+    case 'mirror-save': mirrorSave(); break;
+    case 'mirror-full': mirrorFull(); break;
+    case 'mirror-key': await mirrorKey(el.dataset.key); break;
+    case 'mirror-send': await mirrorSend(); break;
     case 'app-toggle': {
       const a=state.apps.find(x=>x.pkg===el.dataset.pkg); if(!a) return;
       const next=a.state==='on'?'off':'on';
@@ -1841,6 +2120,7 @@ document.addEventListener('change', async e=>{
     if(t.dataset.setting==='refresh'){ startPolling(); toast('刷新间隔已更新','ok'); }
     return;
   }
+  if(t.dataset.change==='mirror-rate'){ state.mirror.rate=parseInt(t.value,10)||1000; if(state.mirror.running) mirrorTick(); return; }
   if(t.dataset.change==='apk'){
     const f=t.files&&t.files[0]; if(!f) return;
     toast('已选择 '+esc(f.name)+'（'+(f.size/1048576).toFixed(1)+' MB）','');
@@ -1864,6 +2144,23 @@ document.addEventListener('click', e=>{
   const k=s.dataset.settingSw; settings[k]=!settings[k]; saveSettings(); s.classList.toggle('on',settings[k]);
   toast('设置已'+(settings[k]?'开启':'关闭'),'ok');
 });
+/* 投屏画面：点击 = tap，拖动 = swipe；坐标按 object-fit:contain 换算回设备像素 */
+document.addEventListener('pointerdown', e=>{
+  const st=e.target.closest && e.target.closest('#mirrorStage');
+  if(!st || state.mode!=='real' || !state.adb) return;
+  const p=mirrorPoint(e.clientX,e.clientY); if(!p) return;
+  state.mirror.down={x:p.x,y:p.y,t:Date.now()};
+});
+document.addEventListener('pointerup', async e=>{
+  const d=state.mirror.down; if(!d) return;
+  state.mirror.down=null;
+  const p=mirrorPoint(e.clientX,e.clientY); if(!p) return;
+  const dist=Math.abs(p.x-d.x)+Math.abs(p.y-d.y);
+  const dur=Math.max(80,Math.min(900,Date.now()-d.t));
+  if(dist>8) await runCmd('input swipe '+d.x+' '+d.y+' '+p.x+' '+p.y+' '+dur,true);
+  else await runCmd('input tap '+p.x+' '+p.y,true);
+});
+document.addEventListener('pointercancel', ()=>{ state.mirror.down=null; });
 document.addEventListener('keydown', async e=>{
   const i=$('#termInput');
   if(e.target===i){
