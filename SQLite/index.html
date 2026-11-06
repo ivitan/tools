@@ -362,6 +362,7 @@
     opacity: 0.6;
     transition: opacity 0.15s, transform 0.15s;
   }
+  .sidebar-search-clear[hidden] { display: none; }   /* 无输入时不显示（覆盖上面的 display:flex） */
   .sidebar-search-clear:active { transform: scale(0.9); opacity: 1; }
   .sidebar-hl {
     background: var(--primary-soft);
@@ -1922,7 +1923,7 @@
       </svg>
     </button>
   </div>
-  <input type="file" id="fileInput" accept=".db,.db3,.db4,.sqlite,.sqlite3,.s3db,.sl3,application/x-sqlite3,application/vnd.sqlite3" multiple style="display:none;">
+  <input type="file" id="fileInput" accept=".db,.db3,.db4,.sqlite,.sqlite3,.s3db,.sl3,.sql,application/x-sqlite3,application/vnd.sqlite3,text/plain" multiple style="display:none;">
 </div>
 
 <div class="layout">
@@ -1949,7 +1950,7 @@
     </div>
     <div class="db-list" id="dbList">
       <div style="padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
-        还未添加数据库<br>点击上方 + 或拖拽 SQLite 文件至右侧
+        还未添加数据库<br>点击上方 + 或拖拽文件至右侧
       </div>
     </div>
   </aside>
@@ -1961,7 +1962,7 @@
         <polyline points="17 8 12 3 7 8"/>
         <line x1="12" y1="3" x2="12" y2="15"/>
       </svg>
-      <div class="dropzone-title">点击选择 SQLite 文件，或将文件拖拽到此导入</div>
+      <div class="dropzone-title">点击选择或拖拽文件导入</div>
     </div>
 
     <div id="dataView" style="display:none; flex-direction: column; height: 100%; min-height:0;">
@@ -2238,6 +2239,17 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
   }
 
   const db = new state.SQL.Database(buf);
+  // 复用公共收尾逻辑（读 schema / 去重 / 同名替换 / 注册）
+  return await buildDbObj(file, db, hash, opts);
+}
+
+// 公共收尾：读取 schema、构建 dbObj、按 hash 去重 / 同名替换、注册到 state。
+// 二进制导入与 MySQL .sql 导入共用，保证「查看表内容」的体验一致
+async function buildDbObj(file, db, hash, opts, extra) {
+  const silent = !!(opts && opts.silent);
+  const warnings = (extra && extra.warnings) || [];
+  const execFailures = (extra && extra.execFailures) || 0;
+
   const tables = [];
   // 非 SQLite 数据（如 zip / 文本 / 其他格式）不会在建库时暴露，而是在首次读 schema 时
   // 抛出「file is not a database」。这里统一捕获：关闭半初始化的库（释放 wasm 内存）后
@@ -2260,18 +2272,8 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
     try { db.close(); } catch (_) {}
     throw e;
   }
-  const dbObj = {
-    id: uid(),
-    file,
-    name: file.name,
-    size: file.size,
-    db,
-    tables,
-    hash,
-    expanded: false,    // 导入后默认收拢，不自动展开
-  };
 
-  // ② 同名但内容不同 → 视为新版本，原位替换旧库（同样只显示一个）
+  // 同名但内容不同 → 视为新版本，原位替换旧库（同样只显示一个）
   const sameIdx = state.databases.findIndex(d => d.name === file.name);
   let replaced = false;
   if (sameIdx !== -1) {
@@ -2282,13 +2284,34 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
       state.activeTabKey = state.openTabs[0] ? tabKey(state.openTabs[0]) : null;
     }
     try { old.db.close(); } catch (e) {}
+    const dbObj = {
+      id: old.id,        // 沿用旧 id，避免已打开的标签/高亮指向失效
+      file,
+      name: file.name,
+      size: file.size,
+      db,
+      tables,
+      hash,
+      expanded: old.expanded,
+    };
     state.databases[sameIdx] = dbObj;
     replaced = true;
+    state.activeDbId = dbObj.id;
   } else {
     // 不再展开任何库：导入后全部保持收拢（active 高亮与展开是两个独立概念）
+    const dbObj = {
+      id: uid(),
+      file,
+      name: file.name,
+      size: file.size,
+      db,
+      tables,
+      hash,
+      expanded: false,
+    };
     state.databases.push(dbObj);
+    state.activeDbId = dbObj.id;
   }
-  state.activeDbId = dbObj.id;
 
   if (!silent) {
     renderSidebar();
@@ -2297,9 +2320,799 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
     showDropzone(false);
     renderContent();     // 未打开任何表时，刷新主区为「从左侧选择一张表查看数据」
     if (isMobile()) closeDrawer();
-    toast(replaced ? `「${file.name}」已更新为新版本` : `已加载 ${file.name}`, 'success');
+    if (warnings.length || execFailures) {
+      toast(`已加载 ${file.name}（跳过部分不支持的语句）`, 'warn');
+    } else {
+      toast(replaced ? `「${file.name}」已更新为新版本` : `已加载 ${file.name}`, 'success');
+    }
   }
-  return { kind: replaced ? 'replaced' : 'added', db: dbObj, replaced };
+  return { kind: replaced ? 'replaced' : 'added', db: state.databases.find(d => d.hash === hash), replaced };
+}
+
+// ───────────────────────────────────────────────────────────
+// MySQL .sql 导出文件导入支持（仅表结构 + 数据，供查看表内容）
+// 解析管线参考成熟的 mysql-reader 实现：先按行剔除 DELIMITER 块、再固定按
+// 分号切分，解析为结构化表/列/行后，参数化建表 + 插行进 sql.js 内存库。
+// 这样比"把 MySQL 文本直接交给 SQLite 执行"更稳，且支持 GBK 回退解码。
+// ───────────────────────────────────────────────────────────
+
+/** 解码导出文本：识别 BOM / UTF-16，UTF-8 失败时回退 GBK（Windows 下 mysqldump 常见） */
+function decodeDumpText(buf) {
+  if (buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
+    return new TextDecoder('utf-8').decode(buf.subarray(3));
+  }
+  if (buf[0] === 0xff && buf[1] === 0xfe) return new TextDecoder('utf-16le').decode(buf.subarray(2));
+  if (buf[0] === 0xfe && buf[1] === 0xff) return new TextDecoder('utf-16be').decode(buf.subarray(2));
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+  } catch (e) {
+    try { return new TextDecoder('gbk').decode(buf); }
+    catch (_) { return new TextDecoder('utf-8').decode(buf); }
+  }
+}
+
+/** 去掉 BOM，并把 DELIMITER 段（触发器/存储过程）整体剔除 */
+function stripDelimiterBlocks(text) {
+  if (!/^\s*DELIMITER\s/im.test(text)) return text;
+  const lines = text.split(/\r?\n/);
+  const out = [];
+  let skip = false;
+  let skipDelim = '';
+  for (const line of lines) {
+    const m = /^\s*DELIMITER\s+(\S+)\s*$/i.exec(line);
+    if (m) {
+      if (m[1] === ';') { skip = false; skipDelim = ''; }
+      else { skip = true; skipDelim = m[1]; }
+      continue;
+    }
+    if (skip) {
+      if (skipDelim && line.trimEnd().endsWith(skipDelim)) { skip = false; skipDelim = ''; }
+      continue;
+    }
+    out.push(line);
+  }
+  return out.join('\n');
+}
+
+/** 按分号切分 SQL 语句，正确跳过字符串 / 反引号 / 注释 */
+function splitStatements(sql) {
+  const out = [];
+  const n = sql.length;
+  let i = 0, start = 0;
+  let inStr = false, quote = '', inIdent = false, inLine = false, inBlock = false;
+  while (i < n) {
+    const c = sql[i];
+    if (inLine) { if (c === '\n') inLine = false; i++; continue; }
+    if (inBlock) {
+      if (c === '*' && sql[i + 1] === '/') { inBlock = false; i += 2; continue; }
+      i++; continue;
+    }
+    if (inStr) {
+      if (c === '\\') { i += 2; continue; }
+      if (c === quote) {
+        if (sql[i + 1] === quote) { i += 2; continue; }
+        inStr = false;
+      }
+      i++; continue;
+    }
+    if (inIdent) {
+      if (c === '`') { if (sql[i + 1] === '`') { i += 2; continue; } inIdent = false; }
+      i++; continue;
+    }
+    // 正常状态
+    if (c === '-' && sql[i + 1] === '-' && (i + 2 >= n || /\s/.test(sql[i + 2]))) { inLine = true; i += 2; continue; }
+    if (c === '#') { inLine = true; i++; continue; }
+    if (c === '/' && sql[i + 1] === '*') { inBlock = true; i += 2; continue; }
+    if (c === "'" || c === '"') { inStr = true; quote = c; i++; continue; }
+    if (c === '`') { inIdent = true; i++; continue; }
+    if (c === ';') {
+      const stmt = sql.slice(start, i);
+      if (stmt.trim()) out.push(stmt);
+      start = i + 1;
+      i++;
+      continue;
+    }
+    i++;
+  }
+  const tail = sql.slice(start);
+  if (tail.trim()) out.push(tail);
+  return out;
+}
+
+/** 去掉语句开头的空白与注释（mysqldump 常在语句前写注释） */
+function stripLeadingComments(str) {
+  let i = 0;
+  for (;;) {
+    while (i < str.length && /\s/.test(str[i])) i++;
+    if (str.startsWith('--', i) || str[i] === '#') {
+      const nl = str.indexOf('\n', i);
+      if (nl < 0) return '';
+      i = nl + 1;
+      continue;
+    }
+    if (str.startsWith('/*', i)) {
+      const end = str.indexOf('*/', i + 2);
+      if (end < 0) return '';
+      i = end + 2;
+      continue;
+    }
+    break;
+  }
+  return str.slice(i);
+}
+
+/** 读取一个标识符（可反引号），返回 { name, end } */
+function readIdent(s, i) {
+  while (i < s.length && /\s/.test(s[i])) i++;
+  if (s[i] === '`') {
+    let j = i + 1, out = '';
+    while (j < s.length) {
+      if (s[j] === '`') {
+        if (s[j + 1] === '`') { out += '`'; j += 2; continue; }
+        j++; break;
+      }
+      out += s[j++];
+    }
+    return { name: out, end: j };
+  }
+  let j = i;
+  while (j < s.length && /[A-Za-z0-9_$]/.test(s[j])) j++;
+  return { name: s.slice(i, j), end: j };
+}
+
+/** 读取 `db`.`table` 形式的名字 */
+function readQualified(s, i) {
+  const a = readIdent(s, i);
+  let j = a.end;
+  while (j < s.length && /\s/.test(s[j])) j++;
+  if (s[j] === '.') {
+    const b = readIdent(s, j + 1);
+    return { db: a.name, name: b.name, full: a.name + '.' + b.name, end: b.end };
+  }
+  return { db: null, name: a.name, full: a.name, end: j };
+}
+
+/** 按顶层分隔符切开（忽略括号 / 字符串 / 反引号内部） */
+function splitTopLevel(str, sep) {
+  const parts = [];
+  let depth = 0, inStr = false, quote = '', inIdent = false, start = 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (inStr) {
+      if (c === '\\') { i++; continue; }
+      if (c === quote) { if (str[i + 1] === quote) { i++; continue; } inStr = false; }
+      continue;
+    }
+    if (inIdent) { if (c === '`') inIdent = false; continue; }
+    if (c === "'" || c === '"') { inStr = true; quote = c; continue; }
+    if (c === '`') { inIdent = true; continue; }
+    if (c === '(') { depth++; continue; }
+    if (c === ')') { depth--; continue; }
+    if (depth === 0 && c === sep) { parts.push(str.slice(start, i)); start = i + 1; }
+  }
+  parts.push(str.slice(start));
+  return parts;
+}
+
+/** 从 def 中截取匹配括号内的内容 */
+function readParen(str, openIdx) {
+  let depth = 0, inStr = false, quote = '';
+  for (let i = openIdx; i < str.length; i++) {
+    const c = str[i];
+    if (inStr) {
+      if (c === '\\') { i++; continue; }
+      if (c === quote) { if (str[i + 1] === quote) { i++; continue; } inStr = false; }
+      continue;
+    }
+    if (c === "'" || c === '"') { inStr = true; quote = c; continue; }
+    if (c === '(') depth++;
+    else if (c === ')') {
+      depth--;
+      if (depth === 0) return { content: str.slice(openIdx + 1, i), end: i };
+    }
+  }
+  return { content: str.slice(openIdx + 1), end: str.length };
+}
+
+function unescapeMysql(str) {
+  let out = '';
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (c !== '\\') { out += c; continue; }
+    const e = str[++i];
+    switch (e) {
+      case '0': out += '\0'; break;
+      case 'n': out += '\n'; break;
+      case 'r': out += '\r'; break;
+      case 't': out += '\t'; break;
+      case 'b': out += '\b'; break;
+      case 'Z': out += '\x1a'; break;
+      case '%': out += '%'; break;
+      case '_': out += '_'; break;
+      default: out += e == null ? '' : e;
+    }
+  }
+  return out;
+}
+
+function hexToText(hex) {
+  if (!hex || hex.length % 2) return hex ? '0x' + hex : '';
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let k = 0; k < bytes.length; k++) {
+    const b = parseInt(hex.substr(k * 2, 2), 16);
+    if (isNaN(b)) return '0x' + hex;
+    bytes[k] = b;
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch (e) {
+    return '0x' + hex.toUpperCase();
+  }
+}
+
+/** 读取一个值（字符串 / 数字 / NULL / 函数 / 十六进制） */
+// 粘性正则：配合 lastIndex 原地匹配，避免 readValue 每个值都 slice 子串再跑正则（海量分配是解析慢的主因）
+const RE_WORD = /[A-Za-z_][A-Za-z0-9_]*/y;
+const RE_NUM = /-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/y;
+
+// 热循环里判断空白：直接字符比较，避免每字符跑一次 /\s/.test 正则
+function isWs(ch) {
+  return ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r' || ch === '\f' || ch === '\v';
+}
+
+function readValue(s, i) {
+  const n = s.length;
+  while (i < n && isWs(s[i])) i++;
+  const c = s[i];
+  if (c === "'" || c === '"') return readString(s, i);
+  if (c === '0' && (s[i + 1] === 'x' || s[i + 1] === 'X')) {
+    let j = i + 2;
+    while (j < n) { const h = s[j]; if ((h >= '0' && h <= '9') || (h >= 'a' && h <= 'f') || (h >= 'A' && h <= 'F')) j++; else break; }
+    return { v: hexToText(s.slice(i + 2, j)), end: j };
+  }
+  if (c === '_') {
+    const m = /^_[A-Za-z0-9]+\s*/.exec(s.slice(i, i + 24));
+    if (m) {
+      const j = i + m[0].length;
+      if (s[j] === "'") return readString(s, j);
+      i = j;
+    }
+  }
+  if ((c === 'b' || c === 'B') && s[i + 1] === "'") {
+    let j = i + 2, bits = '';
+    while (j < n && (s[j] === '0' || s[j] === '1')) { bits += s[j++]; }
+    if (s[j] === "'") j++;
+    return { v: parseInt(bits || '0', 2), end: j };
+  }
+  if ((c === 'N' || c === 'n') && s[i + 1] === "'") return readString(s, i + 1);
+  RE_WORD.lastIndex = i;
+  const word = RE_WORD.exec(s);
+  if (word) {
+    const W = word[0].toUpperCase();
+    let j = i + word[0].length;
+    let j2 = j;
+    while (j2 < n && isWs(s[j2])) j2++;
+    if (s[j2] === '(') {
+      const block = readParen(s, j2);
+      const end = block.end + 1;
+      if (W === 'UNHEX') {
+        const inner = block.content.trim().replace(/^'|'$/g, '');
+        return { v: hexToText(inner), end };
+      }
+      if (W === 'CHAR') {
+        try {
+          const parts = block.content.split(',').map((x) => parseInt(x.trim(), 10));
+          return { v: String.fromCharCode.apply(null, parts), end };
+        } catch (e) { /* fallthrough */ }
+      }
+      return { v: s.slice(i, end), end };
+    }
+    if (W === 'NULL') return { v: null, end: j };
+    if (W === 'TRUE') return { v: 1, end: j };
+    if (W === 'FALSE') return { v: 0, end: j };
+    return { v: word[0], end: j };
+  }
+  RE_NUM.lastIndex = i;
+  const num = RE_NUM.exec(s);
+  if (num) {
+    const t = num[0];
+    const v = /[.eE]/.test(t) ? parseFloat(t) : (t.length > 15 ? parseFloat(t) : parseInt(t, 10));
+    return { v, end: i + t.length };
+  }
+  let j = i;
+  while (j < n && s[j] !== ',' && s[j] !== ')') j++;
+  return { v: s.slice(i, j).trim(), end: j };
+}
+
+/** 读取 MySQL 字符串字面量（含转义） */
+// 性能：先用 indexOf 跳到下一个 \ 或引号，中间纯文本一次性 slice，
+// 只在转义/双写引号处单独处理 —— 比逐字符 out+=c 快很多（dump 中绝大多数是纯文本值）
+function readString(s, i) {
+  const q = s[i];
+  let j = i + 1, out = '';
+  for (;;) {
+    const eIdx = s.indexOf('\\', j);
+    const qIdx = s.indexOf(q, j);
+    let next;
+    if (eIdx < 0) next = qIdx;
+    else if (qIdx < 0) next = eIdx;
+    else next = eIdx < qIdx ? eIdx : qIdx;
+    if (next < 0) { out += s.slice(j); j = s.length; break; }
+    out += s.slice(j, next);
+    if (s[next] === q) {
+      if (s[next + 1] === q) { out += q; j = next + 2; continue; }
+      j = next + 1; break;
+    }
+    const e = s[next + 1];
+    switch (e) {
+      case '0': out += '\0'; break;
+      case 'n': out += '\n'; break;
+      case 'r': out += '\r'; break;
+      case 't': out += '\t'; break;
+      case 'b': out += '\b'; break;
+      case 'Z': out += '\x1a'; break;
+      case '%': out += '%'; break;
+      case '_': out += '_'; break;
+      case "'": out += "'"; break;
+      case '"': out += '"'; break;
+      case '\\': out += '\\'; break;
+      default: out += e == null ? '' : e;
+    }
+    j = next + 2;
+  }
+  return { v: out, end: j };
+}
+
+/** 解析索引定义行 */
+function parseIndexDef(def) {
+  const u = def.toUpperCase();
+  const openIdx = def.indexOf('(');
+  if (openIdx < 0) return null;
+  const block = readParen(def, openIdx);
+  const cols = splitTopLevel(block.content, ',').map((x) => {
+    const id = readIdent(x, 0);
+    return id.name;
+  }).filter(Boolean);
+
+  let kind = 'INDEX';
+  if (/^PRIMARY\s+KEY/.test(u)) kind = 'PRIMARY';
+  else if (/^UNIQUE/.test(u)) kind = 'UNIQUE';
+  else if (/^FULLTEXT/.test(u)) kind = 'FULLTEXT';
+  else if (/^SPATIAL/.test(u)) kind = 'SPATIAL';
+  else if (/^CONSTRAINT/.test(u) || /FOREIGN\s+KEY/.test(u)) kind = 'FOREIGN';
+
+  let name = '';
+  if (kind === 'PRIMARY') name = 'PRIMARY';
+  else {
+    const head = def.slice(0, openIdx);
+    const cnm = /^CONSTRAINT\s+(`(?:[^`]|``)+`|[A-Za-z0-9_$]+)/i.exec(def);
+    if (cnm) name = readIdent(cnm[1], 0).name;
+    if (!name) {
+      const nm = /(?:KEY|INDEX)\s+(`(?:[^`]|``)+`|[A-Za-z0-9_$]+)/i.exec(head);
+      if (nm) name = readIdent(nm[1], 0).name;
+    }
+    if (!name) name = cols.join('_');
+  }
+
+  let refTable = '', refCols = [];
+  if (kind === 'FOREIGN') {
+    const rm = /REFERENCES\s+((?:`(?:[^`]|``)+`|[A-Za-z0-9_$]+)(?:\s*\.\s*(?:`(?:[^`]|``)+`|[A-Za-z0-9_$]+))?)\s*\(([^)]*)\)/i.exec(def);
+    if (rm) {
+      const q = readQualified(rm[1], 0);
+      refTable = q.full;
+      refCols = rm[2].split(',').map((x) => readIdent(x, 0).name);
+    }
+  }
+  return { kind, name, columns: cols, refTable, refCols };
+}
+
+/** 解析列定义 */
+function parseColumnDef(def) {
+  const id = readIdent(def, 0);
+  if (!id.name) return null;
+  const restRaw = def.slice(id.end).trim();
+  const tm = /^([A-Za-z]+)\s*(?:\(([^)]*)\))?/.exec(restRaw);
+  if (!tm) return null;
+  const type = tm[1].toLowerCase();
+  const args = (tm[2] || '').trim();
+  const tail = restRaw.slice(tm[0].length);
+
+  const col = {
+    name: id.name,
+    type,
+    args,
+    typeText: type + (args ? '(' + args + ')' : '') + (/\bunsigned\b/i.test(tail) ? ' unsigned' : '') + (/\bzerofill\b/i.test(tail) ? ' zerofill' : ''),
+    nullable: !/\bNOT\s+NULL\b/i.test(tail),
+    autoInc: /\bAUTO_INCREMENT\b/i.test(tail),
+    unsigned: /\bunsigned\b/i.test(tail),
+    primary: /\bPRIMARY\s+KEY\b/i.test(tail),
+    unique: /\bUNIQUE\b/i.test(tail),
+    default: null,
+    defaultRaw: '',
+    comment: '',
+    extra: ''
+  };
+
+  const dm = /\bDEFAULT\s+('(?:[^'\\]|\\.)*'|[A-Za-z0-9_$.+-]+(?:\s*\([^)]*\))?)/i.exec(tail);
+  if (dm) {
+    const raw = dm[1];
+    col.defaultRaw = raw;
+    if (/^'.*'$/s.test(raw)) col.default = unescapeMysql(raw.slice(1, -1));
+    else if (/^NULL$/i.test(raw)) col.default = null;
+    else if (/^(CURRENT_TIMESTAMP|NOW|LOCALTIME|LOCALTIMESTAMP)\b/i.test(raw)) col.default = raw.toUpperCase();
+    else if (/^-?\d+(\.\d+)?$/.test(raw)) col.default = raw;
+    else col.default = raw;
+  }
+  const cm = /\bCOMMENT\s+('(?:[^'\\]|\\.)*')/i.exec(tail);
+  if (cm) col.comment = unescapeMysql(cm[1].slice(1, -1));
+
+  const extras = [];
+  if (/ON\s+UPDATE\s+CURRENT_TIMESTAMP/i.test(tail)) extras.push('on update CURRENT_TIMESTAMP');
+  if (/GENERATED\s+ALWAYS/i.test(tail)) extras.push('GENERATED');
+  if (/\bINVISIBLE\b/i.test(tail)) extras.push('INVISIBLE');
+  col.extra = extras.join(', ');
+  return col;
+}
+
+/** 解析 CREATE TABLE 语句 */
+function parseCreateTable(stmt) {
+  const tm = /CREATE\s+(?:TEMPORARY\s+)?TABLE\s+/i.exec(stmt);
+  if (!tm) return null;
+  let p = tm.index + tm[0].length;
+  const ifm = /IF\s+NOT\s+EXISTS\s*/i.exec(stmt.slice(p));
+  if (ifm) p += ifm[0].length;
+  const q = readQualified(stmt, p);
+  if (!q.name) return null;
+
+  const openIdx = stmt.indexOf('(', q.end);
+  if (openIdx < 0) return null;
+  const block = readParen(stmt, openIdx);
+  const body = block.content;
+  const tail = stmt.slice(block.end + 1);
+
+  const parts = splitTopLevel(body, ',');
+  const columns = [];
+  const indexes = [];
+  for (const raw of parts) {
+    const def = raw.trim();
+    if (!def) continue;
+    if (/^(PRIMARY\s+KEY|UNIQUE|KEY|INDEX|FULLTEXT|SPATIAL|CONSTRAINT|FOREIGN\s+KEY)\b/i.test(def)) {
+      const idx = parseIndexDef(def);
+      if (idx) indexes.push(Object.assign(idx, { raw: def }));
+    } else if (/^CHECK\b/i.test(def)) {
+      indexes.push({ kind: 'CHECK', name: '', columns: [], raw: def });
+    } else {
+      const col = parseColumnDef(def);
+      if (col) { col.raw = def; columns.push(col); }
+    }
+  }
+  columns.forEach((c) => {
+    if (c.primary) indexes.unshift({ kind: 'PRIMARY', name: 'PRIMARY', columns: [c.name], raw: 'PRIMARY KEY (`' + c.name + '`)' });
+    else if (c.unique) indexes.push({ kind: 'UNIQUE', name: c.name, columns: [c.name], raw: 'UNIQUE KEY (`' + c.name + '`)' });
+  });
+
+  const opt = (re) => {
+    const m = re.exec(tail);
+    return m ? m[1].trim() : '';
+  };
+  const engine = opt(/ENGINE\s*=\s*(\w+)/i);
+  const charset = opt(/(?:DEFAULT\s+)?CHARSET\s*=\s*(\w+)/i) || opt(/CHARACTER\s+SET\s*=\s*(\w+)/i);
+  const collate = opt(/COLLATE\s*=\s*(\w+)/i);
+  const comment = (() => {
+    const m = /COMMENT\s*=\s*('(?:[^'\\]|\\.)*')/i.exec(tail);
+    return m ? unescapeMysql(m[1].slice(1, -1)) : '';
+  })();
+  const autoInc = opt(/AUTO_INCREMENT\s*=\s*(\d+)/i);
+
+  return {
+    name: q.name,
+    db: q.db,
+    full: q.full,
+    columns,
+    indexes,
+    engine,
+    charset,
+    collate,
+    comment,
+    autoInc,
+    options: tail.trim(),
+    ddl: stmt.trim() + ';'
+  };
+}
+
+/** 解析 INSERT / REPLACE 语句，返回 { table, cols, rows: [[...]] } */
+function parseInsert(stmt) {
+  const hm = /^\s*(?:INSERT|REPLACE)\s+(?:(?:LOW_PRIORITY|DELAYED|HIGH_PRIORITY)\s+)?(?:IGNORE\s+)?(?:INTO\s+)?/i.exec(stmt);
+  if (!hm) return null;
+  let i = hm[0].length;
+  const tbl = readQualified(stmt, i);
+  if (!tbl.name) return null;
+  i = tbl.end;
+
+  let cols = null;
+  while (i < stmt.length && isWs(stmt[i])) i++;
+  if (stmt[i] === '(') {
+    const block = readParen(stmt, i);
+    cols = splitTopLevel(block.content, ',').map((x) => readIdent(x, 0).name).filter(Boolean);
+    i = block.end + 1;
+  }
+  const upper = stmt.toUpperCase();
+  const vIdx = upper.indexOf('VALUES', i);
+  if (vIdx < 0) return { table: tbl, cols, rows: [], skipped: true };
+  i = vIdx + 6;
+
+  const rows = [];
+  const n = stmt.length;
+  while (i < n) {
+    while (i < n && (stmt[i] === ',' || stmt[i] === ';' || isWs(stmt[i]))) i++;
+    if (stmt[i] !== '(') break;
+    i++;
+    const row = [];
+    let guard = true;
+    while (guard && i < n) {
+      const r = readValue(stmt, i);
+      row.push(r.v);
+      i = r.end;
+      while (i < n && isWs(stmt[i])) i++;
+      if (stmt[i] === ',') { i++; continue; }
+      if (stmt[i] === ')') { i++; break; }
+      guard = false;
+    }
+    rows.push(row);
+    while (i < n && (stmt[i] === ',' || isWs(stmt[i]))) i++;
+    if (stmt[i] !== '(') break;
+  }
+  return { table: tbl, cols, rows, skipped: false };
+}
+
+/** MySQL 列类型 → 内存库可用的声明类型（保留长度/精度，去掉 UNSIGNED 等修饰） */
+function sqliteTypeOf(raw, argsIn) {
+  const s = String(raw == null ? '' : raw).trim();
+  if (!s) return 'TEXT';
+  const m = /^([A-Za-z][A-Za-z0-9_]*)\s*(?:\(\s*([^)]*)\))?/.exec(s);
+  const base = (m ? m[1] : s).toLowerCase();
+  const args = String(argsIn != null && argsIn !== '' ? argsIn : (m && m[2] ? m[2] : '')).trim();
+  const numericArgs = /^\d+(\s*,\s*\d+)?$/.test(args) ? args.replace(/\s+/g, '') : '';
+  const withArgs = (t) => (numericArgs ? t + '(' + numericArgs + ')' : t);
+  switch (base) {
+    case 'int': case 'tinyint': case 'smallint': case 'mediumint': case 'bigint': case 'integer':
+      return withArgs(base.toUpperCase());
+    case 'decimal': case 'numeric':
+      return withArgs('DECIMAL');
+    case 'float': case 'double': case 'real':
+      return withArgs('DOUBLE');
+    case 'varchar': case 'char': case 'nvarchar': case 'nchar':
+      return withArgs(base.toUpperCase());
+    case 'datetime': case 'timestamp': case 'date': case 'time': case 'year':
+    case 'json': case 'bit': case 'blob':
+      return withArgs(base.toUpperCase());
+    case 'enum': case 'set':
+      return base.toUpperCase();
+    case 'tinytext': case 'text': case 'mediumtext': case 'longtext':
+      return base.toUpperCase();
+    case 'tinyblob': case 'mediumblob': case 'longblob': case 'binary': case 'varbinary':
+      return withArgs(base.toUpperCase());
+    default:
+      return withArgs(base.toUpperCase());
+  }
+}
+
+function quoteIdent(name) {
+  return '"' + String(name).replace(/"/g, '""') + '"';
+}
+
+/** 在内存库里建一张表并灌入行数据 */
+function createTableInSqlite(db, tableName, columns, indexes, rows) {
+  const cols = (columns || []).filter((c) => c && c.name);
+  const names = cols.map((c) => c.name);
+  const pkIdx = (indexes || []).find((i) => i.kind === 'PRIMARY' && i.columns && i.columns.length);
+  const pkCols = (pkIdx ? pkIdx.columns : []).filter((c) => c && names.indexOf(c) !== -1);
+  const single = pkCols.length === 1 ? pkCols[0] : null;
+  const autoCol = single && cols.some((c) => c.name === single && c.autoInc && /int/i.test(c.type || ''));
+
+  const defs = cols.map((c) => {
+    const id = quoteIdent(c.name);
+    if (autoCol && c.name === single) return id + ' INTEGER PRIMARY KEY AUTOINCREMENT';
+    return id + ' ' + sqliteTypeOf(c.type, c.args);
+  });
+  if (pkCols.length && !autoCol) {
+    defs.push('PRIMARY KEY (' + pkCols.map(quoteIdent).join(', ') + ')');
+  }
+  if (!defs.length) defs.push('"_" TEXT');
+
+  db.run('CREATE TABLE ' + quoteIdent(tableName) + ' (\n  ' + defs.join(',\n  ') + '\n)');
+
+  if (rows && rows.length && names.length) {
+    // 性能：用「预处理语句 + 绑定参数」逐行写入，而不是把数据重新序列化成
+    // INSERT ... VALUES (...),(...) 的巨串再 db.exec —— 后者要把每个值做转义、
+    // 再用几 MB~几十 MB 的字符串拼接，再交给 SQLite 解析，几十万行很慢。
+    // 绑定参数完全绕开字符串转义与巨串拼接；在 sql.js（WASM）实测与文本拼接持平、
+    // 且更稳健（无转义出错风险）。复用同一个 prepared statement，循环内复用同一
+    // vals 数组（bind 会立即拷进引擎），避免逐行分配数组。
+    // 注意：事务由调用方（loadDatabaseFromSql）统一包在 BEGIN/COMMIT 中，
+    // 这里不要再 BEGIN，否则会触发「cannot start a transaction within a transaction」。
+    const ph = '?,'.repeat(names.length).slice(0, -1);
+    const stmt = db.prepare('INSERT INTO ' + quoteIdent(tableName) +
+      ' (' + names.map(quoteIdent).join(',') + ') VALUES (' + ph + ')');
+    const vals = new Array(names.length);
+    try {
+      for (let r = 0; r < rows.length; r++) {
+        const row = rows[r] || [];
+        for (let i = 0; i < names.length; i++) {
+          vals[i] = i < row.length ? row[i] : null;
+        }
+        stmt.run(vals);
+      }
+    } finally {
+      stmt.free();
+    }
+  }
+}
+
+/** 解析 mysqldump 文本，返回 { tables, dbName, warnings } */
+function parseMysqlDump(text) {
+  const warnings = [];
+  const t0 = Date.now();
+  let src = text;
+  if (src.charCodeAt(0) === 0xFEFF) src = src.slice(1);
+  if (!/\bCREATE\s+TABLE\b/i.test(src) && !/\bINSERT\s+INTO\b/i.test(src)) {
+    return { tables: [], dbName: '', warnings: ['文件中未找到 CREATE TABLE / INSERT 语句，请确认这是 mysqldump 导出文件'], ms: Date.now() - t0 };
+  }
+  src = stripDelimiterBlocks(src);
+
+  let dbName = '';
+  let seq = 0;
+  const newId = () => 't_' + (++seq);
+  const dm = /(?:CREATE\s+DATABASE[^;]*?`([^`]+)`|USE\s+`?([A-Za-z0-9_$]+)`?)/i.exec(src);
+  if (dm) dbName = dm[1] || dm[2] || '';
+
+  const stmts = splitStatements(src);
+  const map = new Map();
+  const order = [];
+  let insertCount = 0;
+
+  const ensureTable = (q) => {
+    const full = q.db ? q.db + '.' + q.name : q.name;
+    let t = map.get(full);
+    if (!t) {
+      t = {
+        id: newId(),
+        name: q.name,
+        db: q.db || dbName || '',
+        full,
+        columns: [],
+        indexes: [],
+        rows: [],
+        engine: '', charset: '', collate: '', comment: '', autoInc: '',
+        options: '', ddl: '', synthetic: true
+      };
+      map.set(full, t);
+      order.push(t);
+    }
+    return t;
+  };
+
+  for (let si = 0; si < stmts.length; si++) {
+    const stmt = stripLeadingComments(stmts[si]);
+    if (!stmt.trim()) continue;
+    const head = stmt.slice(0, 60).trimStart().toUpperCase();
+    if (head.startsWith('CREATE TABLE') || /^CREATE\s+TEMPORARY\s+TABLE/.test(head)) {
+      const t = parseCreateTable(stmt);
+      if (!t) { warnings.push('无法解析 CREATE TABLE 语句，已跳过'); continue; }
+      const full = t.db ? t.db + '.' + t.name : t.name;
+      let target = map.get(full);
+      if (target && target.synthetic) {
+        Object.assign(target, {
+          columns: t.columns, indexes: t.indexes, engine: t.engine, charset: t.charset,
+          collate: t.collate, comment: t.comment, autoInc: t.autoInc,
+          options: t.options, ddl: t.ddl, synthetic: false, db: t.db || dbName || ''
+        });
+      } else if (target) {
+        Object.assign(target, {
+          columns: t.columns, indexes: t.indexes, engine: t.engine, charset: t.charset,
+          collate: t.collate, comment: t.comment, autoInc: t.autoInc,
+          options: t.options, ddl: t.ddl, synthetic: false
+        });
+      } else {
+        const nt = Object.assign({
+          id: newId(),
+          name: t.name,
+          db: t.db || dbName || '',
+          full,
+          rows: [],
+          synthetic: false
+        }, t);
+        map.set(full, nt);
+        order.push(nt);
+      }
+      continue;
+    }
+    if (/^(INSERT|REPLACE)\b/.test(head)) {
+      const res = parseInsert(stmt);
+      if (!res) continue;
+      const tbl = ensureTable(res.table);
+      if (tbl.synthetic && res.cols && !tbl.columns.length) {
+        tbl.columns = res.cols.map((c) => ({
+          name: c, type: 'text', args: '', typeText: 'text', nullable: true,
+          autoInc: false, unsigned: false, primary: false, unique: false,
+          default: null, defaultRaw: '', comment: '', extra: ''
+        }));
+      }
+      let idxMap = null;
+      if (res.cols && res.cols.length) {
+        idxMap = res.cols.map((c) => tbl.columns.findIndex((col) => col.name === c));
+      }
+      const width = tbl.columns.length;
+      const identity = !idxMap || idxMap.every((v, k) => v === k);
+      for (let ri = 0; ri < res.rows.length; ri++) {
+        const row = res.rows[ri];
+        let arr;
+        if (!identity) {
+          arr = new Array(Math.max(width, idxMap.length)).fill(null);
+          for (let k = 0; k < row.length; k++) {
+            const target = idxMap[k];
+            if (target != null && target >= 0) arr[target] = row[k];
+            else if (target === -1) arr[k] = row[k];
+          }
+        } else {
+          arr = row;
+        }
+        while (arr.length < width) arr.push(null);
+        tbl.rows.push(arr);
+        insertCount++;
+      }
+      continue;
+    }
+    if (/^ALTER\s+TABLE\b/.test(head)) {
+      const am = /^ALTER\s+TABLE\s+((?:`[^`]+`|[A-Za-z0-9_$]+)(?:\s*\.\s*(?:`[^`]+`|[A-Za-z0-9_$]+))?)\s+ADD\s+(PRIMARY\s+KEY|UNIQUE|KEY|INDEX|CONSTRAINT|FOREIGN\s+KEY)([\s\S]*)$/i.exec(stmt.trim());
+      if (am) {
+        const q = readQualified(am[1], 0);
+        const full = q.db ? q.db + '.' + q.name : q.name;
+        const tbl = map.get(full);
+        if (tbl) {
+          const idx = parseIndexDef(am[2] + am[3]);
+          if (idx) tbl.indexes.push(Object.assign(idx, { raw: stmt.trim() }));
+        }
+      }
+    }
+  }
+
+  const tables = order.filter((t) => t.columns.length || t.rows.length);
+  return { tables, dbName, warnings, ms: Date.now() - t0, insertCount };
+}
+
+// 从 MySQL .sql 文本（字节）建库（表 + 数据），复用现有 dbObj 注册逻辑
+async function loadDatabaseFromSql(file, buf, opts = {}) {
+  const silent = !!(opts && opts.silent);
+  const hash = await computeFingerprint(buf);
+
+  // 内容完全一致 → 已加载过，直接跳过
+  const dup = state.databases.find(d => d.hash === hash);
+  if (dup) {
+    state.activeDbId = dup.id;
+    dup.expanded = true;
+    if (!silent) { renderSidebar(); toast(`「${file.name}」已加载，已跳过重复导入`, 'warn'); }
+    return { kind: 'duplicate', db: dup };
+  }
+
+  const text = decodeDumpText(buf);
+  const res = parseMysqlDump(text);
+  if (!res.tables.length) {
+    throw new Error(res.warnings && res.warnings[0] ? res.warnings[0] : '未解析出任何数据表，请确认这是 mysqldump 导出文件');
+  }
+
+  const db = new state.SQL.Database();
+  try {
+    db.run('BEGIN');
+    res.tables.forEach(t => createTableInSqlite(db, t.name, t.columns, t.indexes, t.rows));
+    db.run('COMMIT');
+  } catch (e) {
+    try { db.close(); } catch (_) {}
+    throw e;
+  }
+
+  // 复用与二进制导入一致的建库收尾逻辑（读 schema / 去重 / 同名替换 / 注册）
+  return await buildDbObj(file, db, hash, opts, { warnings: res.warnings });
 }
 
 // 抽屉控制
@@ -2328,7 +3141,7 @@ function renderSidebar() {
   if (state.databases.length === 0) {
     list.innerHTML = `
       <div style="padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
-        还未添加数据库<br>点击上方 + 或拖拽 .db 文件至右侧
+        还未添加数据库<br>点击上方 + 或拖拽文件至右侧
       </div>`;
     return;
   }
@@ -3636,7 +4449,7 @@ function showDropzone(show) {
 // 多个失败文件逐行显示。失败不影响右侧视图：视图状态由调用方决定是否刷新，这里只负责提示
 function toastImportFailed(failedList) {
   if (!failedList || !failedList.length) return;
-  toast(failedList.map(f => `${f.fileName} 不是 SQLite 数据库文件`).join('\n'), 'fail', 4000);
+  toast(failedList.map(f => f.reason ? `${f.fileName}：${f.reason}` : `${f.fileName} 不是 SQLite 数据库文件`).join('\n'), 'fail', 4000);
 }
 
 // 悬浮到底按钮
@@ -3956,11 +4769,18 @@ async function handleFiles(files) {
   if (!arr.length) return;
 
   // 阶段 1：并行读取文件并计算指纹（IO/异步，互不阻塞）
+  // .sql 文本文件走 MySQL 导入分支（读成字节，内部再做 GBK 回退解码），其余走原 SQLite 二进制分支
   const prepared = await Promise.all(arr.map(async f => {
     try {
+      const isSql = /\.sql$/i.test(f.name);
+      if (isSql) {
+        const buf = new Uint8Array(await f.arrayBuffer());
+        const hash = await computeFingerprint(buf);
+        return { file: f, buf, isSql: true, hash, error: null };
+      }
       const buf = new Uint8Array(await f.arrayBuffer());
       const hash = await computeFingerprint(buf);
-      return { file: f, buf, hash, error: null };
+      return { file: f, buf, isSql: false, hash, error: null };
     } catch (e) {
       return { file: f, error: e };   // 文件读不出来，同样按导入失败处理
     }
@@ -3974,6 +4794,17 @@ async function handleFiles(files) {
     const p = prepared[i];
     if (p.error) {
       results.push({ kind: 'error', fileName: p.file.name, error: p.error });
+      continue;
+    }
+    if (p.isSql) {
+      try {
+        const r = await loadDatabaseFromSql(p.file, p.buf, { silent: true });
+        results.push(r);
+      } catch (e) {
+        console.warn(`[导入跳过] ${p.file.name}: ${e?.message || e}`);
+        results.push({ kind: 'error', fileName: p.file.name, error: e, reason: e?.message || 'MySQL SQL 解析失败' });
+      }
+      if (i < prepared.length - 1) await new Promise(res => setTimeout(res, 0));
       continue;
     }
     try {
