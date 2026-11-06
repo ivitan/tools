@@ -409,7 +409,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.0.3</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.0.4</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -507,6 +507,10 @@ const EMPTY_DEVICE = {
   battery:{level:0,voltage:'—',temp:'—',health:'—',status:'—',plugged:'—'}
 };
 const EMPTY_CPU = [0,0,0,0,0,0,0,0];
+/* 生成一份全新的空设备对象（battery 必须深拷贝，避免共享引用被写脏） */
+function freshDevice(over){
+  return Object.assign({}, EMPTY_DEVICE, {battery:Object.assign({}, EMPTY_DEVICE.battery)}, over||{});
+}
 
 /* ---------------- 状态 ---------------- */
 const DEFAULT_SETTINGS = { theme:'light', refresh:'2', confirm:true, autoReconnect:true };
@@ -518,7 +522,7 @@ Object.keys(settings).forEach(k=>{ if(!Object.prototype.hasOwnProperty.call(DEFA
 const state = {
   mode:'none',                 // real | none
   adb:null, manager:null, realDevice:null, connecting:false, lastError:null,
-  device:Object.assign({}, EMPTY_DEVICE),
+  device:freshDevice(),
   cpu:EMPTY_CPU.slice(),
   active:'home', showBoard:false,
   devices:[],
@@ -530,7 +534,9 @@ const state = {
   switches:{rotate:true,night:false,batteryPct:true,immersive:false,nav:false,animOff:false,powerSave:false,chargeLimit:false},
   logs:[]
 };
-try { state.scripts = JSON.parse(localStorage.getItem('gjbox.scripts')||'[]'); } catch(e){}
+try { state.scripts = JSON.parse(localStorage.getItem('gjbox.scripts')||'[]'); } catch(e){ state.scripts=[]; }
+if(!Array.isArray(state.scripts)) state.scripts=[];
+state.scripts = state.scripts.filter(x => x && typeof x.name==='string' && typeof x.code==='string');
 
 const NAV = [
   {id:'home',label:'主页',ic:'home'}, {id:'apps',label:'软件管理',ic:'package'},
@@ -553,8 +559,17 @@ function toast(msg, type){
   d.innerHTML=msg; $('#toasts').appendChild(d);
   setTimeout(()=>{ d.style.opacity='0'; d.style.transform='translateX(16px)'; d.style.transition='.25s'; setTimeout(()=>d.remove(),260); }, 3200);
 }
+let dlgResolve=null;
+function closeDialog(v){
+  $('#mask').hidden=true;
+  const r=dlgResolve; dlgResolve=null;
+  if(r) r(v);
+}
 function dialog(title, body, buttons){
+  // 单例：已有弹窗时不覆盖 #dlgActions，直接返回「取消」(-1)，避免首个 Promise 永久泄漏
+  if(dlgResolve) return Promise.resolve(-1);
   return new Promise(resolve=>{
+    dlgResolve=resolve;
     $('#dlgTitle').textContent=title;
     $('#dlgBody').innerHTML=body;
     const box=$('#dlgActions'); box.innerHTML='';
@@ -562,14 +577,14 @@ function dialog(title, body, buttons){
       const el=document.createElement('button');
       el.className='btn '+(b.primary?'primary':'')+(b.danger?' danger':'');
       el.textContent=b.label;
-      el.onclick=()=>{ $('#mask').hidden=true; resolve(i); };
+      el.onclick=()=>closeDialog(i);
       box.appendChild(el);
     });
     $('#mask').hidden=false;
   });
 }
 function log(cmd, result){
-  state.logs.unshift({t:new Date().toLocaleTimeString('zh-CN',{hour12:false}),cmd,result:result||'已下发'});
+  state.logs.unshift({t:new Date().toLocaleTimeString('zh-CN',{hour12:false}),cmd,result:String(result||'已下发')});
   if(state.logs.length>60) state.logs.length=60;
 }
 
@@ -580,6 +595,8 @@ function applyTheme(){
   const t = settings.theme==='auto' ? (systemPrefersDark()?'dark':'light') : settings.theme;
   document.documentElement.setAttribute('data-theme',t);
   const meta=$('#themeColorMeta'); if(meta) meta.setAttribute('content',t==='dark'?'#0b1220':'#ffffff');
+  const badge=$('#page-settings .badge-soft');
+  if(badge) badge.textContent=systemPrefersDark()?'系统：深色':'系统：浅色';
   const btn=$('#themeBtn');
   if(btn){
     btn.innerHTML = icon(t==='dark'?'sun':'moon',15);
@@ -603,7 +620,6 @@ function showPage(id){
   $$('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+id));
   renderNav();
   const fn = RENDER[id]; if(fn) fn();
-  document.querySelector('.main').scrollTop=0;
   window.scrollTo({top:0,behavior:'smooth'});
   try{ history.replaceState(null,'','#'+id); }catch(e){}
 }
@@ -616,9 +632,10 @@ window.addEventListener('hashchange',()=>{
 function val(k){
   if(state.mode==='none') return '—';
   const d=state.device;
+  const b=d.battery||EMPTY_DEVICE.battery;
   const map={brand:d.brand,model:d.model,device:d.device,android:d.android,
     cpuArch:d.cpuArch,flash:d.flash,display:d.display,
-    battery:d.battery.level+'%, '+d.battery.voltage+' '+d.battery.temp,
+    battery:b.level+'%, '+b.voltage+' '+b.temp,
     sysArch:d.sysArch,build:d.build,kernel:d.kernel};
   return map[k]==null?'—':map[k];
 }
@@ -626,21 +643,22 @@ function uptimeText(){
   if(state.mode==='none') return '—';
   return state.device.uptime||'—';
 }
-function kv(k,v,cls){ return '<div class="kv"><span class="k">'+k+'</span><span class="v '+(cls||'')+'">'+v+'</span></div>'; }
+function kv(k,v,cls,id){ return '<div class="kv"><span class="k">'+k+'</span><span class="v '+(cls||'')+'"'+(id?' id="'+id+'"':'')+'>'+v+'</span></div>'; }
 function renderHome(){
   const d=state.device;
   const board = state.showBoard ? esc(d.board||'—') : '********';
   const c1 = kv('品牌',esc(val('brand')))+kv('型号',esc(val('model')))+kv('代号',esc(val('device')))+kv('系统',esc(val('android')))
     + '<div class="kv"><span class="k">主板 ID</span><span class="v">'+board+'<button class="link-btn" data-act="toggle-board">'+(state.showBoard?'隐藏':'显示')+'</button></span></div>';
   const c2 = kv('CPU 架构',esc(val('cpuArch')))+kv('闪存类型',esc(val('flash')))+kv('显示信息',esc(val('display')))
-    + kv('已开机',esc(uptimeText()))+kv('电池信息',esc(val('battery')));
+    + kv('已开机',esc(uptimeText()),'','v-uptime')+kv('电池信息',esc(val('battery')),'','v-battery');
   let cpuPane='';
   for(let i=0;i<8;i++) cpuPane+=kv('CPU '+i, state.mode==='none'?'—':state.cpu[i]+' MHz',state.mode==='none'?'':'blue');
-  $('#infoGrid').innerHTML='<div class="info-col">'+c1+'</div><div class="info-col">'+c2+'</div><div class="cpu-pane">'+cpuPane+'</div>';
+  $('#infoGrid').innerHTML='<div class="info-col">'+c1+'</div><div class="info-col">'+c2+'</div><div class="cpu-pane" id="cpuPane">'+cpuPane+'</div>';
   $('#infoBottom').innerHTML=kv('系统架构',esc(val('sysArch')))+kv('编译版本',esc(val('build')))+kv('内核版本',esc(val('kernel')));
   $('#rebootGrid').innerHTML=REBOOT.map(r=>'<button class="btn-reboot" data-act="reboot" data-cmd="'+esc(r.cmd)+'" data-label="'+r.label+'"'+(state.mode==='none'?' disabled':'')+'>'+icon(r.ic,15)+r.label+'</button>').join('');
   const sel=$('#deviceSelect');
   sel.innerHTML = state.devices.length ? state.devices.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.label)+'</option>').join('') : '<option value="">未检测到设备</option>';
+  if(state.devices.length) sel.value=(state.realDevice&&state.realDevice.serial)||state.devices[0].id;
   sel.disabled = state.mode==='none';
   const connected = state.mode!=='none';
   $('#statusDot').className='dot'+(connected?' green':'');
@@ -669,12 +687,19 @@ async function realShell(cmd){
   const svc=state.adb.subprocess;
   const runner=(svc && svc.noneProtocol) || svc;
   if(!runner) throw new Error('当前 ADB 组件不支持 shell 命令');
-  const timer=new Promise((_,rej)=>setTimeout(()=>rej(new Error('命令执行超时')),10000));
-  if(typeof runner.spawnWaitText==='function') return await Promise.race([runner.spawnWaitText(cmd),timer]);
-  // 兼容旧版 Tango：spawn() 返回可读流
-  const proc=await runner.spawn(cmd);
-  const read=new Response(proc.stdout||proc.output).text();
-  return await Promise.race([read,timer]);
+  let timerId=null;
+  const timer=new Promise((_,rej)=>{ timerId=setTimeout(()=>rej(new Error('命令执行超时')),10000); });
+  try{
+    if(typeof runner.spawnWaitText==='function') return await Promise.race([runner.spawnWaitText(cmd),timer]);
+    // 兼容旧版 Tango：spawn() 返回可读流，读完后再等待进程退出
+    const proc=await runner.spawn(cmd);
+    const read=(async()=>{
+      const text=await new Response(proc.stdout||proc.output).text();
+      if(proc && typeof proc.wait==='function'){ try{ await proc.wait(); }catch(_){} }
+      return text;
+    })();
+    return await Promise.race([read,timer]);
+  }finally{ if(timerId!=null) clearTimeout(timerId); }
 }
 /* 统一 shell 执行层：仅连接真机后可用，未连接时返回明确提示，不再提供模拟输出 */
 async function shell(cmd){
@@ -696,7 +721,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.0.3';
+const BUILD='v1.0.4';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -717,9 +742,10 @@ async function probeUsb(dev, verdict){
   out.push('接口探测: '+(target===null?'未找到 ADB 接口':'目标接口 #'+target));
   if(target===null){ V.status='no-adb'; return out; }
   let openedByUs=false;
+  const wasOpened=!!dev.opened;
   try{
     if(!dev.opened){ await dev.open(); openedByUs=true; out.push('  open(): 成功'); }
-    else out.push('  open(): 设备已处于打开状态（可能是残留连接）');
+    else out.push('  open(): 设备已处于打开状态（残留句柄）');
   }catch(e){ out.push('  open(): 失败 -> '+errText(e)); V.status='open-failed'; return out; }
   try{
     const live=dev.configuration && dev.configuration.interfaces.find(i=>i.interfaceNumber===target);
@@ -736,8 +762,15 @@ async function probeUsb(dev, verdict){
     out.push('  claimInterface('+target+'): 失败 -> '+errText(e));
     out.push('  => 接口被占用或驱动不支持。');
   }
+  // 本函数打开的一定 close；原本就打开且当前无活跃连接时也释放残留，避免诊断污染后续连接
+  const canRelease = openedByUs || (wasOpened && state.mode!=='real');
   try{
-    if(dev.opened && openedByUs){ await dev.close(); out.push('  close(): 成功'); }
+    if(dev.opened && canRelease){
+      await dev.close();
+      out.push('  close(): 成功'+(openedByUs?'':'（已释放残留句柄）'));
+    }else if(dev.opened && wasOpened){
+      out.push('  close(): 跳过（设备正在使用中）');
+    }
   }catch(e){ out.push('  close(): '+errText(e)); }
   return out;
 }
@@ -813,7 +846,13 @@ async function runDiagnostics(){
   L.push('', ...guideFor(verdict));
   return L.join('\n');
 }
+let diagBusy=false;
 async function showDiagnostics(){
+  if(diagBusy) return;
+  diagBusy=true;
+  try{ await _showDiagnostics(); } finally{ diagBusy=false; }
+}
+async function _showDiagnostics(){
   toast('正在检测 WebUSB 状态…','');
   let text;
   try{ text=await runDiagnostics(); }
@@ -841,8 +880,10 @@ async function showDiagnostics(){
 function isBusyError(e){
   const t=String((e&&e.message)||e||'').toLowerCase();
   const n=String((e&&e.name)||'').toLowerCase();
-  return /already in used|already in use|in use by another|device.{0,24}busy|claim.?interface|unable to claim|failed to claim/.test(t)
-      || n==='networkerror' || n==='devicebusyerror';
+  const busyText=/already in used|already in use|in use by another|device.{0,24}busy|claim.?interface|unable to claim|failed to claim/.test(t);
+  if(busyText || n==='devicebusyerror') return true;
+  // open() 失败也会抛 NetworkError，必须明确指向 claim/占用才判定为「设备被占用」
+  return n==='networkerror' && /claim|busy|in use|already in use/.test(t);
 }
 async function releaseUsb(dev){
   const raw=dev && (dev.raw || (typeof dev.close==='function'?dev:null));
@@ -871,7 +912,7 @@ function setConnecting(on){
   const b=document.querySelector('[data-act="connect"]');
   if(b){ b.disabled=on; b.textContent=on?'连接中…':'连接设备'; }
 }
-async function connectReal(preferPaired){
+async function connectReal(preferPaired, targetSerial){
   if(state.connecting) throw new Error('正在连接中，请稍候');
   if(!navigator.usb) throw new Error('当前浏览器或页面环境不支持 WebUSB。请使用 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页。');
   state.connecting=true; setConnecting(true);
@@ -885,9 +926,10 @@ async function connectReal(preferPaired){
     // 已有授权设备时直接复用，避免重复弹出系统选择器、减少 USB 句柄累积
     if(preferPaired){
       const list=await Manager.getDevices();
-      if(list.length) dev=list[0];
+      if(list.length) dev=(targetSerial && list.find(d=>d.serial===targetSerial)) || list[0];
     }
     if(!dev){
+      // 库内部已默认按 ADB 接口过滤 (class 0xff / sub 0x42 / proto 1)，无需额外 filters
       dev=await Manager.requestDevice();
       if(!dev) throw new Error('CANCELLED');
     }
@@ -909,7 +951,8 @@ async function connectReal(preferPaired){
     state.adb=new libs.a.Adb(transport);
     state.realDevice=dev; state.mode='real';
     const devName=(typeof dev.name==='string'&&dev.name)||((dev.raw||{}).productName)||dev.serial||'Android 设备';
-    state.device={name:devName,serial:dev.serial||'unknown'};
+    state.device=freshDevice({name:devName,serial:dev.serial||'unknown'});
+    state.lastError=null;
     state.devices=[{id:dev.serial||'adb',label:devName+' · '+(dev.serial||'adb')}];
     // 读取设备信息失败不应判定为连接失败，否则残留接口会导致下次连接报「被占用」
     try{ await loadRealInfo(); }catch(e){ console.warn('设备信息读取部分失败',e); }
@@ -930,6 +973,7 @@ async function disconnect(){
   if(state.adb){ try{ await state.adb.close(); }catch(_){} }
   state.adb=null; state.realDevice=null; state.manager=null;
   state.mode='none'; state.devices=[]; state.showBoard=false;
+  state.device=freshDevice(); state.cpu=EMPTY_CPU.slice(); state.lastError=null;
   const n=await releaseUsb(dev);
   toast(n?'设备已断开，USB 接口已释放（可重新连接）':'设备已断开','');
   renderHome();
@@ -942,11 +986,11 @@ function busyHelp(){
     '<li>手机切回<b>「传输文件(MTP)」</b>，撤销 USB 调试授权后重插数据线、重新允许</li>'+
     '<li>Windows 需 <b>WinUSB</b> 驱动（可用 Zadig 替换）；换 Linux / macOS 免驱动可直接连</li>'+
     '</ol>'+
-    '<div class="hint">页面会自动释放浏览器自己的句柄，管不了外部进程和系统驱动。构建 '+BUILD+'</div>';
+    '<div class="hint">页面会自动释放浏览器自己的句柄，管不了外部进程和系统驱动；「释放接口并重试」会断开其它标签页的连接。构建 '+BUILD+'</div>';
 }
-async function attemptConnect(preferPaired){
+async function attemptConnect(preferPaired, targetSerial){
   try{
-    await connectReal(preferPaired);
+    await connectReal(preferPaired, targetSerial);
     renderHome(); showPage('home');
   }catch(e){
     const msg=String((e&&e.message)||e||'');
@@ -954,7 +998,7 @@ async function attemptConnect(preferPaired){
     if(isBusyError(e)){
       const i=await dialog('设备被占用，无法连接',busyHelp(),
         [{label:'释放接口并重试',primary:true},{label:'运行连接诊断'},{label:'关闭'}]);
-      if(i===0){ await releaseAllUsb(); await attemptConnect(true); return; }
+      if(i===0){ await releaseAllUsb(); await attemptConnect(true, targetSerial); return; }
       if(i===1){ await showDiagnostics(); }
       return;
     }
@@ -976,7 +1020,7 @@ async function connectFlow(){
   const i=await dialog('连接设备',body,paired
     ? [{label:'重连已授权设备',primary:true},{label:'选择其他设备'},{label:'取消'}]
     : [{label:'连接真机（WebUSB）',primary:true},{label:'取消'}]);
-  if(i===(paired?2:1)) return;
+  if(i<0 || i===(paired?2:1)) return;
   await attemptConnect(paired>0 && i===0);
 }
 async function refreshDevices(){
@@ -998,17 +1042,21 @@ async function loadRealInfo(){
   const d=state.device;
   const g=async(k,def)=>{ try{ return (await realShell('getprop '+k)).trim()||def; }catch(e){ return def; } };
   const s=async(cmd,def)=>{ try{ return (await realShell(cmd)).trim()||def; }catch(e){ return def; } };
-  const [brand,model,dev,rel,sdk,board,abi,fp,kernel,flash,wmsize,wmdens,batt,cpus]=await Promise.all([
+  // 分三组串行下发，避免一次 14 条并发在慢设备 / 慢 USB 上堆积超时
+  const [brand,model,dev,rel,sdk,board,abi,fp]=await Promise.all([
     g('ro.product.brand','—'),g('ro.product.model','—'),g('ro.product.device','—'),
     g('ro.build.version.release','—'),g('ro.build.version.sdk','—'),g('ro.product.board','—'),
-    g('ro.product.cpu.abi','—'),g('ro.build.fingerprint','—'),s('uname -r','—'),
-    g('ro.boot.bootdevice','—'),s('wm size',''),s('wm density',''),s('dumpsys battery',''),readRealCpu()
+    g('ro.product.cpu.abi','—'),g('ro.build.fingerprint','—')
   ]);
+  const [kernel,flash,wmsize,wmdens,batt]=await Promise.all([
+    s('uname -r','—'),g('ro.boot.bootdevice','—'),s('wm size',''),s('wm density',''),s('dumpsys battery','')
+  ]);
+  const [upt,cpus]=await Promise.all([s('cat /proc/uptime','0'),readRealCpu()]);
   Object.assign(d,{
     brand,model,device:dev,android:'Android '+rel+' (API '+sdk+')',board,
     cpuArch:abi,build:fp,kernel,flash:/ufs/i.test(flash)?'UFS':(/mmc/i.test(flash)?'eMMC':flash||'—'),
     display:((wmsize.match(/(\d+)x(\d+)/)||[]).slice(1).join('×')||'—')+' ('+((wmdens.match(/(\d+)/)||[])[1]||'—')+' dpi)',
-    sysArch:'aarch64',uptime:uptimeFromProc(await s('cat /proc/uptime','0'))
+    sysArch:'aarch64',uptime:uptimeFromProc(upt)
   });
   let level=+((batt.match(/level:\s*(\d+)/)||[])[1]||0);
   let volt=+((batt.match(/voltage:\s*(\d+)/)||[])[1]||0);
@@ -1032,20 +1080,52 @@ async function readRealCpu(){
 }
 
 /* ---------------- 定时刷新 ---------------- */
-let pollTimer=null;
+let pollTimer=null, polling=false;
+/* 轮询只更新纯展示节点，绝不重建整页（否则会打断用户拖动滑块 / 展开下拉） */
+function updateHomeLive(){
+  const pane=$('#cpuPane');
+  if(pane) pane.innerHTML=state.cpu.map((f,i)=>kv('CPU '+i,f+' MHz','blue')).join('');
+  const b=$('#v-battery'); if(b) b.textContent=val('battery');
+  const u=$('#v-uptime'); if(u) u.textContent=uptimeText();
+}
+function updateBatteryView(){
+  const b=state.device.battery||EMPTY_DEVICE.battery;
+  const C=2*Math.PI*54;
+  const arc=$('#batteryArc'); if(arc) arc.setAttribute('stroke-dashoffset',String(C*(1-b.level/100)));
+  const lv=$('#batteryLv'); if(lv) lv.textContent=b.level+'%';
+  const st=$('#batteryStatus'); if(st) st.textContent=b.status;
+  const vals=[b.voltage,b.temp,b.health,b.plugged,b.status,state.device.model||'—'];
+  $$('#page-battery .metric-grid .m-v').forEach((el,i)=>{ if(vals[i]!=null) el.textContent=vals[i]; });
+}
+function updateTunerCpu(){
+  $$('#page-tuner [data-cpu]').forEach(el=>{
+    const i=+el.dataset.cpu;
+    if(state.cpu[i]!=null) el.textContent=(state.mode==='none'?'—':state.cpu[i]+' MHz');
+  });
+}
 function startPolling(){
-  clearInterval(pollTimer);
+  clearInterval(pollTimer); pollTimer=null;
+  if(String(settings.refresh)==='0') return;           // 「关闭」真的停表
   const ms=(parseInt(settings.refresh,10)||2)*1000;
   pollTimer=setInterval(async()=>{
+    if(polling) return;                                 // 慢设备不堆积 ADB 请求
     if(state.mode!=='real' || !state.adb) return;
-    state.cpu=await readRealCpu();
-    const b=await realShell('dumpsys battery').catch(()=> '');
-    if(b){
-      const lv=+((b.match(/level:\s*(\d+)/)||[])[1]||state.device.battery.level);
-      state.device.battery.level=lv;
-    }
-    if(state.active==='home') renderHome();
-    if(state.active==='battery') renderBattery();
+    polling=true;
+    try{
+      state.cpu=await readRealCpu();
+      const b=await realShell('dumpsys battery').catch(()=> '');
+      if(b){
+        const m=b.match(/level:\s*(\d+)/);
+        if(m){
+          if(!state.device.battery) state.device.battery=Object.assign({},EMPTY_DEVICE.battery);
+          state.device.battery.level=+m[1];
+        }
+      }
+      if(state.active==='home') updateHomeLive();
+      else if(state.active==='battery') updateBatteryView();
+      else if(state.active==='tuner') updateTunerCpu();
+    }catch(e){ /* 单次采样失败静默跳过，不影响下一轮 */ }
+    finally{ polling=false; }
   },ms);
 }
 
@@ -1053,14 +1133,14 @@ function startPolling(){
 function renderApps(){
   const q=state.appFilter.toLowerCase();
   const list=state.apps.filter(a=>!q||a.name.toLowerCase().includes(q)||a.pkg.toLowerCase().includes(q));
-  const third=state.apps.filter(a=>!a.sys).length;
+  const offCount=state.apps.filter(a=>a.state==='off').length;
   $('#page-apps').innerHTML='<h1 class="page-title">软件管理</h1>'+
     '<div class="toolbar"><input class="input" id="appSearch" placeholder="搜索应用名 / 包名" value="'+esc(state.appFilter)+'">'+
     '<button class="btn" data-act="app-refresh">'+icon('refresh',15)+'刷新列表</button>'+
-    '<label class="btn primary">'+icon('download',15)+'安装 APK<input type="file" accept=".apk" hidden data-change="apk"></label>'+
-    '<span class="stat">共 <b>'+state.apps.length+'</b> 个应用 · 第三方 <b>'+third+'</b> · 系统 <b>'+(state.apps.length-third)+'</b></span></div>'+
+    '<label class="btn primary"'+(state.mode==='none'?' style="opacity:.5;pointer-events:none" aria-disabled="true"':'')+'>'+icon('download',15)+'安装 APK<input type="file" accept=".apk" hidden data-change="apk"'+(state.mode==='none'?' disabled':'')+'></label>'+
+    '<span class="stat">共 <b>'+state.apps.length+'</b> 个第三方应用 · 已禁用 <b>'+offCount+'</b></span></div>'+
     '<div class="card table-card'+(list.length?'':' empty')+'"><table><thead><tr><th>应用</th><th>版本</th><th>类型</th><th>状态</th><th class="col-ops">操作</th></tr></thead><tbody>'+
-    (list.length?list.map(a=>'<tr data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'"><td><div class="app-cell"><div class="app-icon">'+esc(a.name.slice(0,1))+'</div><div><div class="app-name">'+esc(a.name)+'</div><div class="app-pkg">'+esc(a.pkg)+'</div></div></div></td>'+
+    (list.length?list.map(a=>'<tr data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'" data-full="'+encodeURIComponent((a.name+' '+a.pkg).toLowerCase())+'"><td><div class="app-cell"><div class="app-icon">'+esc(a.name.slice(0,1))+'</div><div><div class="app-name">'+esc(a.name)+'</div><div class="app-pkg">'+esc(a.pkg)+'</div></div></div></td>'+
       '<td>'+esc(a.ver)+'</td><td>'+(a.sys?'<span class="pill gray">系统应用</span>':'<span class="pill">第三方</span>')+'</td>'+
       '<td>'+(a.state==='on'?'<span class="pill green">已启用</span>':'<span class="pill gray">已禁用</span>')+'</td>'+
       '<td><div class="td-ops"><button class="mini-btn" data-act="app-toggle" data-pkg="'+esc(a.pkg)+'">'+(a.state==='on'?'禁用':'启用')+'</button>'+
@@ -1073,14 +1153,32 @@ function renderApps(){
     '<p class="hint">提示：禁用 / 启用使用 <code class="code-inline">pm disable-user</code> / <code class="code-inline">pm enable</code>；卸载系统应用需先解除用户安装或具备 root 权限。应用列表需连接真机后点击「刷新列表」读取。窄屏下可左右滑动表格查看操作列。</p>';
 }
 async function appRefresh(){
-  if(state.mode==='real'){
-    toast('正在读取应用列表…','');
-    const out=await shell('pm list packages -3');
-    const pkgs=out.split('\n').map(x=>x.replace(/^package:/,'').trim()).filter(Boolean);
-    const olds={}; state.apps.forEach(a=>olds[a.pkg]=a);
-    state.apps=pkgs.map(p=>olds[p]||{name:p.split('.').pop(),pkg:p,ver:'—',sys:false,state:'on'});
-    toast('已读取 '+state.apps.length+' 个第三方应用','ok');
-  }else toast('请先连接真机后再刷新应用列表','warn');
+  if(state.mode!=='real'){ toast('请先连接真机后再刷新应用列表','warn'); renderApps(); return; }
+  toast('正在读取应用列表…','');
+  // 单条命令失败不影响其它数据；版本从一次全量 package dump 里解析，失败则降级为 —
+  const safe=async c=>{ try{ return String(await shell(c)||''); }catch(e){ return ''; } };
+  const [out3,outD,dump]=await Promise.all([
+    safe('pm list packages -3'), safe('pm list packages -d'),
+    safe('dumpsys package | grep -E "Package \[|versionName="')
+  ]);
+  const parse=t=>t.split('\n').map(x=>x.replace(/^package:/,'').trim()).filter(Boolean);
+  const disabled=new Set(parse(outD));
+  const verMap={};
+  try{
+    const chunks=dump.split(/^\s*Package \[/m);
+    for(let i=1;i<chunks.length;i++){
+      const pkg=chunks[i].slice(0,chunks[i].indexOf(']')).trim();
+      const m=chunks[i].match(/versionName=([^\s]+)/);
+      if(pkg && m) verMap[pkg]=m[1];
+    }
+  }catch(_){}
+  const olds={}; state.apps.forEach(a=>olds[a.pkg]=a);
+  state.apps=parse(out3).map(p=>({
+    name:(olds[p]&&olds[p].name)||p.split('.').pop(), pkg:p,
+    ver:verMap[p]||(olds[p]&&olds[p].ver)||'—', sys:false,
+    state:disabled.has(p)?'off':'on'
+  }));
+  toast('已读取 '+state.apps.length+' 个第三方应用','ok');
   renderApps();
 }
 
@@ -1150,8 +1248,8 @@ function renderBattery(){
     '<div class="card"><h2 class="card-title">实时电池信息</h2>'+
       '<div class="battery-wrap"><div class="ring"><svg viewBox="0 0 128 128" width="128" height="128">'+
         '<circle cx="64" cy="64" r="54" fill="none" stroke="var(--border)" stroke-width="10"/>'+
-        '<circle cx="64" cy="64" r="54" fill="none" stroke="var(--brand)" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-lv/100))+'"/></svg>'+
-        '<div class="ring-text"><b>'+lv+'%</b><span>'+esc(b.status)+'</span></div></div>'+
+        '<circle id="batteryArc" cx="64" cy="64" r="54" fill="none" stroke="var(--brand)" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-lv/100))+'"/></svg>'+
+        '<div class="ring-text"><b id="batteryLv">'+lv+'%</b><span id="batteryStatus">'+esc(b.status)+'</span></div></div>'+
         '<div class="metric-grid">'+
           metric('电压',b.voltage)+metric('温度',b.temp)+metric('健康状态',b.health)+metric('供电方式',b.plugged)+
           metric('充电状态',b.status)+metric('设备型号',state.device.model||'—')+
@@ -1184,11 +1282,11 @@ function renderTuner(){
       '<div class="notice mt16">CPU / GPU 频率写入 sysfs 通常需要 root 权限；非 root 设备仅会返回权限错误，不会造成损害。屏幕刷新率、音量等通过系统公开接口调节，无需 root。</div>'+
     '</div>'+
     '<div class="card"><h2 class="card-title">当前状态</h2>'+
-      '<div class="section-title">CPU 实时频率（每 '+(settings.refresh||'2')+' 秒刷新）</div>'+
-      '<div class="grid-2" style="gap:8px 20px">'+state.cpu.map((f,i)=>'<div class="kv"><span class="k">CPU '+i+'</span><span class="v '+(state.mode==='none'?'':'blue')+'">'+(state.mode==='none'?'—':f+' MHz')+'</span></div>').join('')+'</div>'+
+      '<div class="section-title">CPU 实时频率（'+(String(settings.refresh)==='0'?'自动刷新已关闭':'每 '+(settings.refresh||'2')+' 秒刷新')+'）</div>'+
+      '<div class="grid-2" style="gap:8px 20px">'+state.cpu.map((f,i)=>'<div class="kv"><span class="k">CPU '+i+'</span><span class="v '+(state.mode==='none'?'':'blue')+'" data-cpu="'+i+'">'+(state.mode==='none'?'—':f+' MHz')+'</span></div>').join('')+'</div>'+
       '<div class="info-divider"></div>'+
       '<div class="section-title">已下发命令记录（最近 8 条）</div>'+
-      '<div class="output-box">'+(state.logs.length?state.logs.slice(0,8).map(l=>'['+l.t+'] $ '+l.cmd+'  →  '+l.result.slice(0,90)).join('\n'):'暂无记录')+'</div>'+
+      '<div class="output-box">'+(state.logs.length?state.logs.slice(0,8).map(l=>'['+l.t+'] $ '+l.cmd+'  →  '+String(l.result).slice(0,90)).join('\n'):'暂无记录')+'</div>'+
     '</div></div>';
 }
 
@@ -1247,10 +1345,26 @@ function renderTerminal(){
     '</div>';
   drawTerminal();
 }
+function termClass(t){ return t==='cmd'?'t-cmd':t==='err'?'t-err':t==='sys'?'t-sys':'t-out'; }
 function drawTerminal(){
   const box=$('#termBox'); if(!box) return;
   if(!state.termLines.length) state.termLines=[{t:'sys',s:'搞机工具箱 ADB Terminal · 输入 help 查看可用命令\n'+(state.mode==='real'?'已连接真机，输入 shell 命令开始':'尚未连接设备，请先点击右上角「连接设备」')}];
-  box.innerHTML=state.termLines.map(l=>'<div class="'+(l.t==='cmd'?'t-cmd':l.t==='err'?'t-err':l.t==='sys'?'t-sys':'t-out')+'">'+esc(l.s)+'</div>').join('');
+  box.innerHTML=state.termLines.map(l=>'<div class="'+termClass(l.t)+'">'+esc(l.s)+'</div>').join('');
+  box.scrollTop=box.scrollHeight;
+}
+/* 增量追加：长历史不再每次重建 innerHTML，并限制最多 500 行 */
+function appendTermLine(l){
+  const box=$('#termBox'); if(!box) return;
+  state.termLines.push(l);
+  const div=document.createElement('div');
+  div.className=termClass(l.t); div.textContent=l.s;
+  box.appendChild(div);
+  const MAX=500;
+  if(state.termLines.length>MAX){
+    const drop=state.termLines.length-MAX;
+    state.termLines.splice(0,drop);
+    for(let i=0;i<drop && box.firstChild;i++) box.removeChild(box.firstChild);
+  }
   box.scrollTop=box.scrollHeight;
 }
 async function termExec(cmd){
@@ -1258,18 +1372,16 @@ async function termExec(cmd){
   state.termHistory.push(cmd); state.termIdx=state.termHistory.length;
   if(cmd==='clear'){ state.termLines=[]; drawTerminal(); return; }
   if(cmd==='help'){
-    state.termLines.push({t:'cmd',s:'$ help'});
-    state.termLines.push({t:'sys',s:'可用命令：getprop / dumpsys / pm / wm / settings / input / am / reboot / screencap 等设备端 shell 命令。\n未连接设备时会提示先连接真机；连接后所有命令真实下发。'});
-    drawTerminal(); return;
+    appendTermLine({t:'cmd',s:'$ help'});
+    appendTermLine({t:'sys',s:'可用命令：getprop / dumpsys / pm / wm / settings / input / am / reboot / screencap 等设备端 shell 命令。\n未连接设备时会提示先连接真机；连接后所有命令真实下发。'});
+    return;
   }
-  state.termLines.push({t:'cmd',s:'$ '+cmd});
-  drawTerminal();
+  appendTermLine({t:'cmd',s:'$ '+cmd});
   let out;
   try{ out=await shell(cmd); log(cmd,out||'成功'); }
   catch(e){ out='ERROR: '+(e.message||e); }
   if(out==='__CLEAR__'){ state.termLines=[]; drawTerminal(); return; }
-  state.termLines.push({t:out.indexOf('ERROR')===0||/not found/.test(out)?'err':'out',s:out||'(无输出)'});
-  drawTerminal();
+  appendTermLine({t:out.indexOf('ERROR')===0||/not found/.test(out)?'err':'out',s:out||'(无输出)'});
 }
 
 /* ---------------- 页面：软件设置 ---------------- */
@@ -1295,9 +1407,9 @@ function renderSettings(){
 function renderAbout(){
   $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2">'+
     '<div class="card"><div class="about-hero"><div class="about-logo">搞</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
-      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.3</div></div></div>'+
-      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.3')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
-      kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('出品','維坦')+kv('版权','© 2026 維坦')+'</div>'+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.4</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.4')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
+      kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('版权','© 2026 維坦')+'</div>'+
       '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
       '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
     '</div>'+
@@ -1353,7 +1465,7 @@ document.addEventListener('click', async e=>{
     }
     case 'wm-size': await runCmd('wm size '+state.tuner.w+'x'+state.tuner.h); break;
     case 'wm-density': await runCmd('wm density '+state.tuner.dpi); break;
-    case 'wm-reset': await runCmd('wm size reset'); await runCmd('wm density reset'); toast('分辨率与密度已重置','ok'); break;
+    case 'wm-reset': await runCmd('wm size reset',true); await runCmd('wm density reset',true); toast('分辨率与密度已重置','ok'); break;
     case 'anim-apply': {
       const v=state.tuner.anim;
       await runCmd('settings put global window_animation_scale '+v,true);
@@ -1393,8 +1505,15 @@ document.addEventListener('click', async e=>{
     case 'script-run': runScript(); break;
     case 'script-save': {
       state.scriptText=$('#scriptEditor').value;
-      const name=prompt('脚本名称：','自定义脚本 '+(state.scripts.length+1));
-      if(name){ state.scripts.push({name,code:state.scriptText}); localStorage.setItem('gjbox.scripts',JSON.stringify(state.scripts)); renderScripts(); toast('脚本已保存','ok'); }
+      const i=await dialog('保存脚本',
+        '<div class="label" style="margin-bottom:8px">脚本名称</div><input class="input" id="scriptName" value="'+esc('自定义脚本 '+(state.scripts.length+1))+'" autocomplete="off">',
+        [{label:'取消'},{label:'保存',primary:true}]);
+      if(i!==1) break;
+      const el=$('#scriptName');
+      const name=((el&&el.value)||'').trim()||('自定义脚本 '+(state.scripts.length+1));
+      state.scripts.push({name,code:state.scriptText});
+      try{ localStorage.setItem('gjbox.scripts',JSON.stringify(state.scripts)); }catch(e){}
+      renderScripts(); toast('脚本已保存','ok');
       break;
     }
     case 'script-clear': state.scriptText=''; state.scriptOutput=''; renderScripts(); break;
@@ -1425,6 +1544,11 @@ document.addEventListener('click', async e=>{
   if(cmd.indexOf('power set-mode')>=0) cmd='cmd power set-mode '+(state.switches[key]?1:0);
   if(cmd.indexOf('charging_limit')>=0 && !state.switches[key]) cmd='settings delete global charging_limit';
   if(cmd.indexOf('status_bar_show')>=0) cmd='settings put system status_bar_show_battery_percent '+v;
+  // 两个开关共用 policy_control，必须按当前组合合并写入，否则关闭其一会清掉另一个
+  if(key==='immersive'||key==='nav'){
+    const f=state.switches.immersive, n=state.switches.nav;
+    cmd='settings put global policy_control '+(f&&n?'immersive.full=*:immersive.navigation=*':f?'immersive.full=*':n?'immersive.navigation=*':'null');
+  }
   s.classList.toggle('on',state.switches[key]);
   if(state.mode==='none'){ toast('请先连接真机','warn'); return; }
   await runCmd(cmd,true);
@@ -1435,7 +1559,7 @@ document.addEventListener('input', e=>{
   if(t.id==='appSearch'){
     state.appFilter=t.value.trim().toLowerCase();
     let shown=0;
-    $$('#page-apps tbody tr[data-search]').forEach(r=>{ const ok=r.dataset.search.indexOf(state.appFilter)>=0; r.style.display=ok?'':'none'; if(ok) shown++; });
+    $$('#page-apps tbody tr[data-search]').forEach(r=>{ const raw=r.dataset.full?decodeURIComponent(r.dataset.full):r.dataset.search; const ok=raw.indexOf(state.appFilter)>=0; r.style.display=ok?'':'none'; if(ok) shown++; });
     const empty=$('#noMatch'); if(empty) empty.style.display=shown===0?'':'none';
     const card=$('#page-apps .table-card'); if(card) card.classList.toggle('empty',shown===0);
     return;
@@ -1462,23 +1586,17 @@ document.addEventListener('change', async e=>{
   if(t.dataset.change==='apk'){
     const f=t.files&&t.files[0]; if(!f) return;
     toast('已选择 '+esc(f.name)+'（'+(f.size/1048576).toFixed(1)+' MB）','');
-    if(state.mode==='real'){
-      // 真机安装：通过 adb sync 分块推送到 /data/local/tmp 后 pm install
-      try{
-        const bytes=new Uint8Array(await f.arrayBuffer());
-        const sync=await state.adb.sync();
-        let off=0;
-        const stream=new ReadableStream({pull(c){
-          if(off>=bytes.length){ c.close(); return; }
-          const end=Math.min(off+65536,bytes.length);
-          c.enqueue(bytes.subarray(off,end)); off=end;
-        }});
-        await sync.write({filename:'/data/local/tmp/base.apk',file:stream});
-        try{ await sync.dispose(); }catch(e){}
-        await runCmd('pm install -r /data/local/tmp/base.apk',true);
-        toast('APK 安装流程已下发','ok');
-      }catch(err){ toast('APK 安装失败：'+esc(err.message||err),'err'); }
-    }else toast('请先连接真机后再安装 APK','warn');
+    if(state.mode!=='real'){ toast('请先连接真机后再安装 APK','warn'); return; }
+    // 直接用 File.stream() 分块推送，避免整个 APK 进内存导致大文件 OOM
+    let sync=null;
+    try{
+      const stream=f.stream();
+      sync=await state.adb.sync();
+      await sync.write({filename:'/data/local/tmp/base.apk',file:stream});
+      await runCmd('pm install -r /data/local/tmp/base.apk',true);
+      toast('APK 安装流程已下发','ok');
+    }catch(err){ toast('APK 安装失败：'+esc(err.message||err),'err'); }
+    finally{ if(sync){ try{ await sync.dispose(); }catch(_){} } }
     return;
   }
 });
@@ -1495,11 +1613,18 @@ document.addEventListener('keydown', async e=>{
     else if(e.key==='ArrowUp'){ e.preventDefault(); if(state.termIdx>0){ state.termIdx--; i.value=state.termHistory[state.termIdx]||''; } }
     else if(e.key==='ArrowDown'){ e.preventDefault(); if(state.termIdx<state.termHistory.length-1){ state.termIdx++; i.value=state.termHistory[state.termIdx]||''; } else { state.termIdx=state.termHistory.length; i.value=''; } }
   }
-  if(e.key==='Escape' && !$('#mask').hidden) $('#mask').hidden=true;
+  if(e.key==='Escape' && !$('#mask').hidden) closeDialog(-1);
 });
-$('#mask').addEventListener('click', e=>{ if(e.target.id==='mask') $('#mask').hidden=true; });
-$('#deviceSelect').addEventListener('change', e=>{
-  toast('已选择设备 '+e.target.value,'');
+$('#mask').addEventListener('click', e=>{ if(e.target.id==='mask') closeDialog(-1); });
+$('#deviceSelect').addEventListener('change', async e=>{
+  const id=e.target.value;
+  if(!id || state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  const cur=(state.realDevice&&state.realDevice.serial)||'adb';
+  if(id===cur){ toast('当前已连接该设备',''); return; }
+  if(state.connecting){ toast('正在连接中，请稍候…',''); return; }
+  toast('正在切换到设备 '+esc(id)+'…','');
+  await disconnect();
+  await attemptConnect(true,id);
 });
 
 /* ---------------- 启动 ---------------- */
