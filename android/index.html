@@ -409,7 +409,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.0.0</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.0.1</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -517,7 +517,7 @@ Object.keys(settings).forEach(k=>{ if(!Object.prototype.hasOwnProperty.call(DEFA
 
 const state = {
   mode:'none',                 // real | none
-  adb:null, manager:null, realDevice:null, connecting:false,
+  adb:null, manager:null, realDevice:null, connecting:false, lastError:null,
   device:Object.assign({}, EMPTY_DEVICE),
   cpu:EMPTY_CPU.slice(),
   active:'home', showBoard:false,
@@ -695,6 +695,129 @@ async function runCmd(cmd, silent){
   }
 }
 
+/* ---------------- 连接诊断 ---------------- */
+const BUILD='v1.0.1+diag';
+function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
+function errText(e){
+  if(!e) return '无';
+  const c=e.cause ? (' | cause='+((e.cause.name||'')+': '+(e.cause.message||e.cause))) : '';
+  return ((e.name||'Error')+': '+(e.message||String(e))+c);
+}
+async function probeUsb(dev){
+  const out=[];
+  const cfg=dev.configuration;
+  let target=null;
+  if(cfg && cfg.interfaces){
+    for(const itf of cfg.interfaces){
+      const a=(itf.alternates&&itf.alternates[0])||{};
+      if(a.interfaceClass===255 && a.interfaceSubclass===66 && a.interfaceProtocol===1){ target=itf.interfaceNumber; break; }
+    }
+  }
+  out.push('深度探测: '+(target===null?'未找到 ADB 接口 (class=255 / sub=66 / proto=1)，跳过':'目标 ADB 接口 #'+target));
+  if(target===null) return out;
+  let openedByUs=false;
+  try{
+    if(!dev.opened){ await dev.open(); openedByUs=true; out.push('  open(): 成功'); }
+    else out.push('  open(): 设备已处于打开状态（可能是残留连接）');
+  }catch(e){ out.push('  open(): 失败 -> '+errText(e)); return out; }
+  try{
+    const live=dev.configuration && dev.configuration.interfaces.find(i=>i.interfaceNumber===target);
+    if(live && live.claimed) out.push('  claimInterface('+target+'): 已处于 claimed 状态');
+    else{
+      await dev.claimInterface(target);
+      out.push('  claimInterface('+target+'): 成功 —— 接口可被浏览器独占，驱动与占用均正常');
+      try{ await dev.releaseInterface(target); out.push('  releaseInterface('+target+'): 成功'); }
+      catch(e){ out.push('  releaseInterface: '+errText(e)); }
+    }
+  }catch(e){
+    out.push('  claimInterface('+target+'): 失败 -> '+errText(e));
+    out.push('  => 若为 NetworkError：接口被其他程序占用，或 Windows 驱动不是 WinUSB。');
+  }
+  try{
+    if(dev.opened && openedByUs){ await dev.close(); out.push('  close(): 成功'); }
+  }catch(e){ out.push('  close(): '+errText(e)); }
+  return out;
+}
+async function runDiagnostics(){
+  const L=[];
+  const p=(k,v)=>L.push(k+': '+v);
+  p('构建', BUILD);
+  p('时间', new Date().toLocaleString('zh-CN',{hour12:false}));
+  p('页面', location.href);
+  p('协议 / 安全上下文', location.protocol+' / '+(window.isSecureContext?'安全（WebUSB 可用）':'不安全（WebUSB 会被禁用）'));
+  p('浏览器', navigator.userAgent);
+  p('平台', navigator.platform||'(未知)');
+  p('WebUSB 接口', navigator.usb?'存在':'不存在');
+  p('当前状态', 'mode='+state.mode+' connecting='+!!state.connecting+' manager='+!!state.manager);
+  p('最近连接错误', errText(state.lastError));
+  L.push('');
+  if(!navigator.usb){ L.push('无法继续：当前浏览器不支持 WebUSB。'); return L.join('\n'); }
+  let list=[];
+  try{ list=await navigator.usb.getDevices(); p('已授权设备数', list.length); }
+  catch(e){ p('枚举设备失败', errText(e)); return L.join('\n'); }
+  const GUIDE=[
+    '--- 判定指引 ---',
+    'A. claimInterface 成功 -> 驱动与占用正常，问题在 ADB 库加载 / RSA 授权，看「最近连接错误」。',
+    'B. claimInterface 失败 NetworkError -> 接口被占用或驱动不支持：',
+    '   1) 电脑端 adb kill-server，关闭 Android Studio / scrcpy / 手机助手 / 模拟器；',
+    '   2) 关闭其他打开本页或 WebADB 的标签页与窗口；',
+    '   3) Windows：用 Zadig 把该 ADB 接口驱动换成 WinUSB',
+    '      (Options -> List All Devices -> 选带 ADB / Interface 1 的项 -> WinUSB -> Replace Driver)，然后拔插数据线；',
+    '   4) 只保留一台 Android 设备，换数据线 / USB 口重试。'
+  ];
+  if(!list.length){
+    L.push('未发现已授权设备。请先点「连接设备」在系统弹窗中选择手机；');
+    L.push('若弹窗不出现，检查 USB 调试、数据线是否支持传输、以及 Windows 驱动是否为 WinUSB。');
+    L.push('', ...GUIDE);
+    return L.join('\n');
+  }
+  for(let i=0;i<list.length;i++){
+    const d=list[i];
+    L.push('--- 设备 '+i+' ---');
+    p('  VID:PID', hex4(d.vendorId)+':'+hex4(d.productId));
+    p('  名称', (d.productName||'-')+' / '+(d.manufacturerName||'-')+' / serial='+(d.serialNumber||'-'));
+    p('  opened', String(d.opened));
+    const cfg=d.configuration;
+    p('  configuration', cfg?'#'+cfg.configurationValue:'null (未选择配置)');
+    if(cfg && cfg.interfaces){
+      for(const itf of cfg.interfaces){
+        const a=(itf.alternates&&itf.alternates[0])||{};
+        const isAdb=a.interfaceClass===255&&a.interfaceSubclass===66&&a.interfaceProtocol===1;
+        p('  接口 #'+itf.interfaceNumber,
+          'claimed='+itf.claimed+' class='+(a.interfaceClass==null?'-':a.interfaceClass)+
+          ' sub='+(a.interfaceSubclass==null?'-':a.interfaceSubclass)+
+          ' proto='+(a.interfaceProtocol==null?'-':a.interfaceProtocol)+(isAdb?'   <== ADB 接口':''));
+      }
+    }
+  }
+  L.push('');
+  L.push('--- 接口占用实测（会短暂打开并释放接口）---');
+  L.push(...await probeUsb(list[0]));
+  L.push('', ...GUIDE);
+  return L.join('\n');
+}
+async function showDiagnostics(){
+  toast('正在检测 WebUSB 状态…','');
+  let text;
+  try{ text=await runDiagnostics(); }
+  catch(e){ text='诊断过程异常：'+errText(e); }
+  const body='<div class="output-box" id="diagBox" style="max-height:52vh;min-height:210px">'+esc(text)+'</div>'+
+    '<div class="hint" style="margin-top:10px">把上面内容复制给开发者，可一次定位连接失败原因。</div>';
+  const i=await dialog('连接诊断 · '+BUILD, body, [{label:'复制诊断结果',primary:true},{label:'关闭'}]);
+  if(i===0){
+    try{ await navigator.clipboard.writeText(text); toast('诊断结果已复制','ok'); }
+    catch(e){
+      const ta=document.createElement('textarea');
+      ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      let done=false;
+      try{ done=document.execCommand('copy'); }catch(_){}
+      ta.remove();
+      toast(done?'诊断结果已复制':'复制失败，请手动选中文本','ok');
+    }
+  }
+}
+
 /* ---------------- 连接 / 断开 / 刷新 ---------------- */
 /* ADB 的 USB 接口是独占的。claimInterface() 被拒时 Tango ADB 会抛
    DeviceBusyError（"The device is already in used by another program"）。
@@ -777,6 +900,7 @@ async function connectReal(preferPaired){
     try{ await loadRealInfo(); }catch(e){ console.warn('设备信息读取部分失败',e); }
     toast('真机已连接，设备信息已读取','ok');
   }catch(e){
+    state.lastError={name:(e&&e.name)||'Error',message:(e&&e.message)||String(e),cause:e&&e.cause};
     // 任何失败都释放刚打开的 USB 接口，避免污染后续连接
     await releaseUsb(dev);
     if(state.adb){ try{ await state.adb.close(); }catch(_){} }
@@ -805,7 +929,8 @@ function busyHelp(){
     '<li>重新插拔 USB 数据线，手机上重新点「允许 USB 调试」</li>'+
     '<li>Windows 可开启 <code class="code-inline">chrome://flags/#enable-webusb-device-detection</code> 后重启浏览器</li>'+
     '</ol>'+
-    '<div class="notice mt16">页面已内置自动释放：连接前清理残留句柄、连接失败自动回滚、断开时主动释放接口。若自动重试后仍失败，基本可确定是电脑端 adb 或其他程序占用，请按第 1 步处理。</div>';
+    '<div class="notice mt16">页面已内置自动释放：连接前清理残留句柄、连接失败自动回滚、断开时主动释放接口。若自动重试后仍失败，基本可确定是电脑端 adb 或其他程序占用，请按第 1 步处理。</div>'+
+    '<div class="hint">构建 '+BUILD+' · 仍失败请点「运行连接诊断」，把结果发给开发者。</div>';
 }
 async function attemptConnect(preferPaired){
   try{
@@ -816,8 +941,9 @@ async function attemptConnect(preferPaired){
     if(msg==='CANCELLED'){ toast('已取消选择设备',''); return; }
     if(isBusyError(e)){
       const i=await dialog('设备被占用，无法连接',busyHelp(),
-        [{label:'释放接口并重试',primary:true},{label:'查看排查步骤后关闭'},{label:'取消'}]);
-      if(i===0){ await releaseAllUsb(); await attemptConnect(true); }
+        [{label:'释放接口并重试',primary:true},{label:'运行连接诊断'},{label:'关闭'}]);
+      if(i===0){ await releaseAllUsb(); await attemptConnect(true); return; }
+      if(i===1){ await showDiagnostics(); }
       return;
     }
     const hint=/WebUSB|安全上下文|HTTPS|localhost|凭证组件|加载|不支持/.test(msg)
@@ -834,6 +960,7 @@ async function connectFlow(){
   const body='连接真机需要 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页。<br><br>'+
     '<b>连接前请先关闭</b>电脑上的 adb / Android Studio / scrcpy / 手机助手，并只保留一个浏览器标签页，否则会提示「设备已被其他程序占用」。<br><br>'+
     '手机需开启 USB 调试，在系统弹窗中选择设备后于手机上允许 RSA 授权。'+
+    '<div class="hint" style="margin-top:12px">构建 '+BUILD+' · 连不上可在「关于」页运行连接诊断</div>'+
     (paired?'<div class="notice mt16">检测到 '+paired+' 台已授权设备，选「重连已授权设备」可跳过系统选择器。</div>':'');
   const i=await dialog('连接设备',body,paired
     ? [{label:'重连已授权设备',primary:true},{label:'选择其他设备'},{label:'取消'}]
@@ -1157,8 +1284,8 @@ function renderSettings(){
 function renderAbout(){
   $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2">'+
     '<div class="card"><div class="about-hero"><div class="about-logo">搞</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
-      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.0</div></div></div>'+
-      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.0')+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.1</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.1')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
       kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('出品','維坦')+kv('版权','© 2026 維坦')+'</div>'+
       '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
       '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
@@ -1168,7 +1295,8 @@ function renderAbout(){
       '<div class="info-divider"></div><h2 class="card-title">部署与本地运行</h2>'+
       '<div class="muted" style="font-size:12.8px;line-height:1.9">部署到 HTTPS 站点后即可直接使用，无需后端或额外配置。本地调试可在本目录启动静态服务：<br><code class="code-inline">python3 -m http.server 8000</code><br>然后打开 <code class="code-inline">http://localhost:8000</code>。直接双击打开 HTML 文件（<code class="code-inline">file://</code>）时浏览器会禁用 WebUSB。</div>'+
       '<div class="info-divider"></div><h2 class="card-title">连接失败：设备被占用</h2>'+
-      '<div class="muted" style="font-size:12.8px;line-height:1.9">若提示 <code class="code-inline">The device is already in used by another program</code>，表示 ADB 的 USB 接口已被独占，与浏览器或 HTTPS 无关。按顺序处理：<br>① 电脑端执行 <code class="code-inline">adb kill-server</code>，并关闭 Android Studio、scrcpy、手机助手、模拟器；<br>② 关闭其他打开本页或 WebADB 的标签页 / 窗口；<br>③ 只保留一台 Android 设备，重新插拔数据线并在手机上重新允许 USB 调试；<br>④ 回到本页点「连接设备」，或选择「释放接口并重试」。<br>页面已内置自动释放：连接前清理残留句柄、失败自动回滚、断开时主动 <code class="code-inline">releaseInterface</code> / <code class="code-inline">close</code>。</div>'+
+      '<div class="muted" style="font-size:12.8px;line-height:1.9">若提示 <code class="code-inline">The device is already in used by another program</code>，表示 ADB 的 USB 接口已被独占，与浏览器或 HTTPS 无关。按顺序处理：<br>① 电脑端执行 <code class="code-inline">adb kill-server</code>，并关闭 Android Studio、scrcpy、手机助手、模拟器；<br>② 关闭其他打开本页或 WebADB 的标签页 / 窗口；<br>③ 只保留一台 Android 设备，重新插拔数据线并在手机上重新允许 USB 调试；<br>④ <b>Windows 专属</b>：Chrome 只能打开使用 WinUSB 驱动的 USB 设备。若手机厂商驱动不是 WinUSB，用 <b>Zadig</b>（Options → List All Devices → 选带 ADB / Interface 1 的项 → WinUSB → Replace Driver）替换后拔插重连；<br>⑤ 回到本页点「连接设备」，或选择「释放接口并重试」。<br>页面已内置自动释放：连接前清理残留句柄、失败自动回滚、断开时主动 <code class="code-inline">releaseInterface</code> / <code class="code-inline">close</code>。</div>'+
+      '<div style="margin-top:12px"><button class="btn" data-act="diagnose">运行连接诊断（定位接口占用原因）</button></div>'+
       '<div class="info-divider"></div><h2 class="card-title">技术实现</h2>'+
       '<div class="muted" style="font-size:12.8px;line-height:1.9">纯静态单文件实现，无需后端。连接真机后动态加载 <code class="code-inline">@yume-chan/adb</code>（Tango ADB）通过 WebUSB 直连 adbd，执行 <code class="code-inline">getprop</code> / <code class="code-inline">dumpsys</code> / <code class="code-inline">pm</code> / <code class="code-inline">wm</code> / <code class="code-inline">settings</code> / <code class="code-inline">reboot</code> 等指令。设备信息、频率采样、脚本与终端共用同一执行层。</div>'+
       '<div class="notice mt16">免责声明：重启、清除数据、修改系统设置等操作可能影响设备状态，请确认已备份重要数据后再执行。本工具仅在用户明确点击时下发命令。</div>'+
@@ -1190,6 +1318,7 @@ document.addEventListener('click', async e=>{
       saveSettings(); applyTheme(); break;
     }
     case 'connect': connectFlow(); break;
+    case 'diagnose': showDiagnostics(); break;
     case 'disconnect': await disconnect(); break;
     case 'refresh': refreshDevices(); break;
     case 'toggle-board': state.showBoard=!state.showBoard; renderHome(); break;
