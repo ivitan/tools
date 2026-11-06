@@ -924,6 +924,14 @@ function setConnecting(on){
     b.textContent=on?'取消连接':'连接设备';
     if(on) b.dataset.cancel='1'; else delete b.dataset.cancel;
   }
+  const s=$('#statusName');
+  if(s) s.textContent=on?'准备连接…':(state.mode==='real'?state.device.name:'未连接设备');
+}
+/* 连接阶段实时显示在顶栏；卡住时能一眼看出停在哪一步，而不是只看到「连接中」 */
+function setStage(full, short){
+  state.connectStage=full;
+  const s=$('#statusName');
+  if(s && state.connecting) s.textContent=short||full;
 }
 /* 连接链路里 CDN 挂起 / adbd 半死 / 系统选择器被抑制，任一 await 都可能永不 settle。
    每个阶段都包上「超时 + 可取消」，保证 state.connecting 一定能复位。 */
@@ -941,7 +949,9 @@ function stage(promise, ms, label, optional){
   const parts=[Promise.resolve(promise)];
   if(connectAbort) parts.push(connectAbort.promise);
   let timer=null;
-  if(!optional && ms>0) parts.push(new Promise((_,rej)=>{ timer=setTimeout(()=>rej(new Error(label)),ms); }));
+  // 系统选择器由用户操作，给 60 秒兜底；否则弹窗被静默抑制时会永久停在「连接中」
+  const limit=optional?60000:ms;
+  if(limit>0) parts.push(new Promise((_,rej)=>{ timer=setTimeout(()=>rej(new Error(label)),limit); }));
   return Promise.race(parts).finally(()=>{ if(timer!=null) clearTimeout(timer); });
 }
 async function connectReal(preferPaired, targetSerial){
@@ -950,7 +960,7 @@ async function connectReal(preferPaired, targetSerial){
   state.connecting=true; setConnecting(true); beginConnect();
   let dev=null, connection=null;
   try{
-    state.connectStage='加载 ADB 组件';
+    setStage('加载 ADB 组件','加载组件…');
     toast(preferPaired?'正在重连已授权设备（不会弹出系统选择器）…':'正在连接真机，请在系统弹窗中选择设备…','');
     const libs=await stage(loadLibs(),15000,'加载 ADB 组件超时，请检查网络能否访问 esm.sh 后重试');
     const Manager=libs.b.AdbDaemonWebUsbDeviceManager.BROWSER;
@@ -958,19 +968,19 @@ async function connectReal(preferPaired, targetSerial){
     state.manager=Manager;
     // 已有授权设备时直接复用，避免重复弹出系统选择器、减少 USB 句柄累积
     if(preferPaired){
-      state.connectStage='枚举已授权设备';
+      setStage('枚举已授权设备','查找设备…');
       const list=await stage(Manager.getDevices(),8000,'枚举已授权设备超时');
       if(list.length) dev=(targetSerial && list.find(d=>d.serial===targetSerial)) || list[0];
     }
     if(!dev){
       // 库内部已默认按 ADB 接口过滤 (class 0xff / sub 0x42 / proto 1)，无需额外 filters
-      state.connectStage='等待选择设备（系统弹窗）';
-      dev=await stage(Manager.requestDevice(),0,'',true);   // 用户选择需要时间：不设超时，仅可取消
+      setStage('等待选择设备（系统弹窗）','等待系统弹窗…');
+      dev=await stage(Manager.requestDevice(),0,'等待设备选择超时：若没弹出系统弹窗，多为电脑端 adb 占用或站点 USB 权限被禁用',true);
       if(!dev) throw new Error('CANCELLED');
     }
     // 先释放本页可能残留的句柄
     if(state.realDevice) await releaseUsb(state.realDevice);
-    state.connectStage='打开 USB 接口';
+    setStage('打开 USB 接口','打开接口…');
     try{ connection=await stage(dev.connect(),20000,'打开 USB 接口超时（20 秒）'); }
     catch(e){
       if(!isBusyError(e)) throw e;
@@ -979,7 +989,7 @@ async function connectReal(preferPaired, targetSerial){
       await releaseUsb(dev);
       connection=await stage(dev.connect(),20000,'打开 USB 接口超时（20 秒）');
     }
-    state.connectStage='ADB 授权握手';
+    setStage('ADB 授权握手','ADB 授权…');
     const Store=libs.c.AdbWebCredentialStore||libs.c.default;
     if(typeof Store!=='function') throw new Error('ADB 凭证组件加载失败，请检查网络后重试');
     const store=new Store('GeekToolboxWeb');
@@ -992,10 +1002,10 @@ async function connectReal(preferPaired, targetSerial){
     state.device=freshDevice({name:devName,serial:dev.serial||'unknown'});
     state.lastError=null;
     state.devices=[{id:dev.serial||'adb',label:devName+' · '+(dev.serial||'adb')}];
-    state.connectStage='读取设备信息';
+    setStage('读取设备信息','读取信息…');
     // 读取设备信息失败不应判定为连接失败，否则残留接口会导致下次连接报「被占用」
     try{ await stage(loadRealInfo(),8000,'读取设备信息超时'); }catch(e){ console.warn('设备信息读取部分失败',e); }
-    state.connectStage='已连接';
+    setStage('已连接','已连接');
     toast('真机已连接，设备信息已读取','ok');
   }catch(e){
     state.lastError={name:(e&&e.name)||'Error',message:(e&&e.message)||String(e),cause:e&&e.cause,stage:state.connectStage};
@@ -1066,7 +1076,7 @@ async function connectFlow(){
     '请先关闭电脑端 adb / Android Studio / scrcpy / 手机助手，只保留一个标签页（否则会提示设备被占用）；手机开启 USB 调试后，在系统弹窗中选择设备并允许授权。'+
     '<div class="hint" style="margin-top:12px">构建 '+BUILD+'</div>'+
     (paired?'<div class="notice mt16">检测到 '+paired+' 台已授权设备，可直接重连（不会弹出系统选择器）。</div>':'');
-  const i=await dialog('连接设备',body,paired
+  const i=await dialog('连接设备 · '+BUILD,body,paired
     ? [{label:'重连已授权设备',primary:true},{label:'选择其他设备'},{label:'取消'}]
     : [{label:'连接真机（WebUSB）',primary:true},{label:'取消'}]);
   if(i<0 || i===(paired?2:1)) return;
