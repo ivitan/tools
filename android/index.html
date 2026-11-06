@@ -1715,7 +1715,7 @@ function renderMirror(){
   const ok=state.mode==='real' && !!state.adb, m=state.mirror;
   const dis=ok?'':' disabled style="opacity:.5;pointer-events:none" aria-disabled="true"';
   const keyBtn=k=>'<button class="btn" data-act="mirror-key" data-key="'+k.k+'"'+dis+'>'+icon(k.ic,15)+k.label+'</button>';
-  $('#page-mirror').innerHTML='<h1 class="page-title">投屏</h1>'+
+  $('#page-mirror').innerHTML='<h1 class="page-title">屏幕投屏</h1>'+
     '<div class="toolbar">'+
       '<button class="btn '+(m.running?'':'primary')+'" data-act="mirror-toggle"'+dis+'>'+icon(m.running?'stop':'play',15)+(m.running?'停止投屏':'开始投屏')+'</button>'+
       '<label class="muted" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px">帧间隔 '+
