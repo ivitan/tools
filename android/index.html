@@ -409,7 +409,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.0.2</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.0.3</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -696,7 +696,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.0.2+winusb';
+const BUILD='v1.0.3';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -714,7 +714,7 @@ async function probeUsb(dev, verdict){
       if(a.interfaceClass===255 && a.interfaceSubclass===66 && a.interfaceProtocol===1){ target=itf.interfaceNumber; break; }
     }
   }
-  out.push('深度探测: '+(target===null?'未找到 ADB 接口 (class=255 / sub=66 / proto=1)，跳过':'目标 ADB 接口 #'+target));
+  out.push('接口探测: '+(target===null?'未找到 ADB 接口':'目标接口 #'+target));
   if(target===null){ V.status='no-adb'; return out; }
   let openedByUs=false;
   try{
@@ -727,14 +727,14 @@ async function probeUsb(dev, verdict){
     else{
       await dev.claimInterface(target);
       V.status='ok';
-      out.push('  claimInterface('+target+'): 成功 —— 接口可被浏览器独占，驱动与占用均正常');
+      out.push('  claimInterface('+target+'): 成功');
       try{ await dev.releaseInterface(target); out.push('  releaseInterface('+target+'): 成功'); }
       catch(e){ out.push('  releaseInterface: '+errText(e)); }
     }
   }catch(e){
     V.status='busy';
     out.push('  claimInterface('+target+'): 失败 -> '+errText(e));
-    out.push('  => 浏览器未能独占接口：外部进程已占用，或 Windows 驱动不允许 Chrome 声明该接口。');
+    out.push('  => 接口被占用或驱动不支持。');
   }
   try{
     if(dev.opened && openedByUs){ await dev.close(); out.push('  close(): 成功'); }
@@ -746,10 +746,12 @@ async function runDiagnostics(){
   const p=(k,v)=>L.push(k+': '+v);
   p('构建', BUILD);
   p('时间', new Date().toLocaleString('zh-CN',{hour12:false}));
-  p('页面', location.href);
+  p('页面', location.origin+location.pathname);
   p('协议 / 安全上下文', location.protocol+' / '+(window.isSecureContext?'安全（WebUSB 可用）':'不安全（WebUSB 会被禁用）'));
-  p('浏览器', navigator.userAgent);
-  p('平台', navigator.platform||'(未知)');
+  const ua=navigator.userAgent||'';
+  const br=(ua.match(/(Edg|Chrome|CriOS|Firefox)\/[\d.]+/)||[])[0]||'未知浏览器';
+  const os=/Windows/.test(ua)?'Windows':/Mac OS/.test(ua)?'macOS':/Android/.test(ua)?'Android':/Linux|CrOS/.test(ua)?'Linux':'其他';
+  p('浏览器', br+' / '+os);
   p('WebUSB 接口', navigator.usb?'存在':'不存在');
   p('当前状态', 'mode='+state.mode+' connecting='+!!state.connecting+' manager='+!!state.manager);
   p('最近连接错误', errText(state.lastError));
@@ -760,55 +762,26 @@ async function runDiagnostics(){
   catch(e){ p('枚举设备失败', errText(e)); return L.join('\n'); }
   function guideFor(v){
     const s=(v&&v.status)||'unknown';
-    const L=['--- 判定指引 ---'];
+    const L=['--- 处理建议 ---'];
     if(s==='ok'){
-      L.push('【实测结论】接口可被浏览器独占，驱动与占用均正常。');
-      L.push('连接失败不在 USB 层，请检查 ADB 组件加载与 RSA 授权：');
-      L.push('  手机「撤销 USB 调试授权」→ 拔插数据线 → 重新勾选「一律允许」并允许；');
-      L.push('  或换数据线 / USB 口，并查看上方「最近连接错误」。');
+      L.push('接口可被浏览器独占，USB 层正常。连接失败多在 RSA 授权：撤销 USB 调试授权 → 拔插数据线 → 重新允许。');
       return L;
     }
     if(s==='claimed'){
-      L.push('【实测结论】ADB 接口已被浏览器自身 claim，属于残留句柄。');
-      L.push('处理：点「释放接口并重试」，或先点右上角「断开」再重新连接；');
-      L.push('若反复出现，关闭其他打开本页或 WebADB 的标签页 / 窗口。');
+      L.push('接口被浏览器占用（残留句柄）：点「释放接口并重试」，或先断开再重连。');
       return L;
     }
-    L.push('【实测结论】浏览器未能独占 ADB 接口。');
-    if(s==='open-failed') L.push('设备 open() 都失败，驱动或系统权限异常。');
-    else if(s==='no-adb') L.push('未在设备描述符中找到 ADB 接口 (class=255/sub=66/proto=1)。');
-    else L.push('结合本次输出：open() 成功、所有接口 claimed=false、mode=none，浏览器侧干净；');
-    L.push('剩余两种可能，单凭本页诊断无法区分：① Windows 常驻驱动 / 服务绑定了 ADB 接口；② 外部进程已 claim 该接口。');
-    L.push('与 HTTPS / 浏览器版本 / 页面代码无关。下面按「先判定 → 再处理」顺序做，不要一上来就改驱动。');
-    const isWin=/Win/i.test((navigator.platform||'')+' '+(navigator.userAgent||''));
-    L.push('当前平台：'+(navigator.platform||navigator.userAgent||'未知')+(isWin?'（Windows，驱动问题需重点排查）':'（非 Windows，驱动问题基本可排除）')+'。');
-    L.push('');
-    L.push('--- 先判定（30 秒，无副作用）---');
-    L.push('1) 地址栏手动打开 chrome://device-log，再点一次「连接设备」，看 Chrome USB 后端原始错误；');
-    L.push('2) 用 app.webadb.com 连同一台手机：同样失败 = Windows 环境 / 驱动问题，与本页代码无关；');
-    L.push('   能连上 = 本页代码问题，请把本诊断结果发开发者；');
-    L.push('3) 换 Linux / macOS / ChromeOS 电脑打开本页：这些系统无需驱动，能连上即可确认是 Windows 驱动问题。');
-    L.push('');
-    L.push('--- 第 1 组：排除外部占用（最省事，先做）---');
-    L.push('4) 命令行 adb kill-server；任务管理器结束 adb.exe / scrcpy / 手机助手(欢太) / 模拟器 / Android Studio；');
-    L.push('5) 关闭其他打开本页或 app.webadb.com 的标签页与窗口，只保留一个；');
-    L.push('6) 只保留一台 Android 设备，换数据线 / USB 口；手机「开发者选项 → 选择 USB 配置」切回');
-    L.push('   「传输文件(MTP)」（若诊断出现 class=1 音频类接口尤其要做），撤销 USB 调试授权后重新允许。');
-    L.push('');
-    L.push('--- 第 2 组：Windows 驱动（有副作用，放最后）---');
-    L.push('7) 设备管理器 → 通用串行总线设备 → 找 ADB Interface / WinUSB Device / 手机型号，');
-    L.push('   右键属性 → 驱动程序 → 看「驱动程序提供商」：应为 Microsoft(WinUSB) 或 Google Inc.；');
-    L.push('   若为 OPPO / Realme / libusbK / 厂商驱动，Chrome 无法独占该接口。');
-    L.push('8) 用 Zadig 修复：Options → List All Devices → 选带 ADB / Interface 1 的项');
-    L.push('   → 目标驱动选 WinUSB → Replace Driver → 拔插数据线 → 手机重新允许 USB 调试。');
-    L.push('   注意：换成 WinUSB 后 Windows 端 adb.exe / Android Studio 可能识别不到手机，二者需二选一。');
-    L.push('9) 或在设备管理器「更新驱动程序 → 从列表选取 → Android Phone →');
-    L.push('   Android Composite ADB Interface」强制指定 Google ADB 驱动（同为 WinUSB 基础）。');
+    L.push('浏览器未能独占 ADB 接口，通常不是浏览器或 HTTPS 的问题。');
+    if(s==='open-failed') L.push('设备 open() 失败：驱动或系统权限异常。');
+    else if(s==='no-adb') L.push('未找到 ADB 接口：手机切回「传输文件(MTP)」并开启 USB 调试。');
+    else L.push('浏览器侧已干净，多为电脑端占用或 Windows 驱动：');
+    L.push('1) 关掉电脑端 adb / 手机助手 / scrcpy，只留一个标签页、一台设备，重插数据线；');
+    L.push('2) 手机切回「传输文件(MTP)」，撤销 USB 调试授权后重新允许；');
+    L.push('3) Windows 需 WinUSB 驱动（Zadig 可换）；Linux / macOS 免驱动，可直接连。');
     return L;
   }
   if(!list.length){
-    L.push('未发现已授权设备。请先点「连接设备」在系统弹窗中选择手机；');
-    L.push('若弹窗不出现，检查 USB 调试、数据线是否支持传输、以及 Windows 驱动是否为 WinUSB。');
+    L.push('未发现已授权设备。请先点「连接设备」在系统弹窗中选择手机。');
     L.push('', ...guideFor({status:'unknown'}));
     return L.join('\n');
   }
@@ -830,11 +803,11 @@ async function runDiagnostics(){
           ' proto='+(a.interfaceProtocol==null?'-':a.interfaceProtocol)+(isAdb?'   <== ADB 接口':''));
       }
       const audioItfs=cfg.interfaces.filter(i=>{const a=(i.alternates&&i.alternates[0])||{};return a.interfaceClass===1;}).length;
-      if(audioItfs) p('  注意', '检测到 '+audioItfs+' 个 USB 音频类接口 (class=1)，手机当前可能不在「传输文件(MTP)」模式，建议切回后重插数据线');
+      if(audioItfs) p('  注意', '存在 USB 音频类接口，建议手机切回「传输文件(MTP)」');
     }
   }
   L.push('');
-  L.push('--- 接口占用实测（会短暂打开并释放接口）---');
+  L.push('--- 接口实测 ---');
   const verdict={status:'unknown'};
   L.push(...await probeUsb(list[0], verdict));
   L.push('', ...guideFor(verdict));
@@ -846,7 +819,7 @@ async function showDiagnostics(){
   try{ text=await runDiagnostics(); }
   catch(e){ text='诊断过程异常：'+errText(e); }
   const body='<div class="output-box" id="diagBox" style="max-height:52vh;min-height:210px">'+esc(text)+'</div>'+
-    '<div class="hint" style="margin-top:10px">把上面内容复制给开发者，可一次定位连接失败原因。Windows 用户可另开 <code class="code-inline">chrome://device-log</code> 查看 USB 后端原始错误。</div>';
+    '<div class="hint" style="margin-top:10px">复制结果发给开发者即可。</div>';
   const i=await dialog('连接诊断 · '+BUILD, body, [{label:'复制诊断结果',primary:true},{label:'关闭'}]);
   if(i===0){
     try{ await navigator.clipboard.writeText(text); toast('诊断结果已复制','ok'); }
@@ -863,11 +836,8 @@ async function showDiagnostics(){
 }
 
 /* ---------------- 连接 / 断开 / 刷新 ---------------- */
-/* ADB 的 USB 接口是独占的。claimInterface() 被拒时 Tango ADB 会抛
-   DeviceBusyError（"The device is already in used by another program"）。
-   原因分两层：① Windows 驱动不是 WinUSB，Chrome 根本无法声明该接口；
-   ② 外部进程（adb server / 厂商套件 / 其他标签页）已占用接口。
-   下面的释放逻辑只能清理浏览器自己持有的句柄；驱动与外部占用需按排障指引处理。 */
+/* ADB 的 USB 接口是独占的，claimInterface 被拒会抛 DeviceBusyError。
+   释放逻辑只能清理浏览器自己的句柄；外部占用与驱动需在电脑端处理。 */
 function isBusyError(e){
   const t=String((e&&e.message)||e||'').toLowerCase();
   const n=String((e&&e.name)||'').toLowerCase();
@@ -966,17 +936,13 @@ async function disconnect(){
   if(state.active!=='home' && RENDER[state.active]) RENDER[state.active]();
 }
 function busyHelp(){
-  return '<p>浏览器无法独占手机的 ADB 接口（<code class="code-inline">claimInterface</code> 失败）。这通常<strong>不是</strong>浏览器或 HTTPS 的问题。</p>'+
-    '<div class="notice">若「运行连接诊断」显示 <code class="code-inline">open() 成功</code>、所有接口 <code class="code-inline">claimed=false</code>，说明浏览器侧已干净。请<strong>先做第 1、2 步</strong>判定与排除占用，实在不行再动驱动。</div>'+
+  return '<p>浏览器拿不到手机的 ADB 接口，通常<strong>不是</strong>浏览器或 HTTPS 的问题。</p>'+
     '<ol>'+
-    '<li><b>先判定</b>：地址栏打开 <code class="code-inline">chrome://device-log</code> 看 USB 后端原始错误；用 app.webadb.com 或 Linux / macOS 电脑连同一台手机作对照，同样失败即与本页代码无关</li>'+
-    '<li>关闭电脑上的 <b>adb server</b>：执行 <code class="code-inline">adb kill-server</code>，并结束 Android Studio、scrcpy、OPPO/欢太手机助手、模拟器等常驻进程</li>'+
-    '<li>关闭其他打开本页或 WebADB 的<b>标签页 / 窗口</b>，只保留当前一个；电脑上只保留<b>一台</b> Android 设备；手机「开发者选项 → 选择 USB 配置」切回<b>「传输文件(MTP)」</b>（诊断出现 class=1 音频类接口时尤其要做），重插数据线（换口 / 换线），撤销 USB 调试授权后重新点「允许」</li>'+
-    '<li><b>Windows 驱动（有副作用，放最后）</b>：设备管理器 → ADB Interface → 属性 → 驱动程序，看提供商是否为 Microsoft(WinUSB) / Google Inc.；若为 OPPO / 厂商 / libusbK 驱动，用 <b>Zadig</b>（Options → List All Devices → 选带 ADB / Interface 1 的项 → WinUSB → Replace Driver）替换后拔插重连。注意：换后 Windows 端 adb.exe 可能失效，二者需二选一</li>'+
-    '<li>仍失败可开 <code class="code-inline">chrome://flags/#enable-webusb-device-detection</code> 后重启浏览器，或用设备管理器强制指定「Android Composite ADB Interface」</li>'+
+    '<li>关闭电脑端 <b>adb / 手机助手 / scrcpy</b>（<code class="code-inline">adb kill-server</code>），只留一个标签页、一台设备</li>'+
+    '<li>手机切回<b>「传输文件(MTP)」</b>，撤销 USB 调试授权后重插数据线、重新允许</li>'+
+    '<li>Windows 需 <b>WinUSB</b> 驱动（可用 Zadig 替换）；换 Linux / macOS 免驱动可直接连</li>'+
     '</ol>'+
-    '<div class="notice mt16">页面已内置自动释放：连接前清理残留句柄、连接失败自动回滚、断开时主动 <code class="code-inline">releaseInterface</code> / <code class="code-inline">close</code>。这些只能释放浏览器自己的句柄，管不了外部进程和系统驱动。</div>'+
-    '<div class="hint">构建 '+BUILD+' · 点「运行连接诊断」可看到针对本机的实测结论与完整步骤。</div>';
+    '<div class="hint">页面会自动释放浏览器自己的句柄，管不了外部进程和系统驱动。构建 '+BUILD+'</div>';
 }
 async function attemptConnect(preferPaired){
   try{
@@ -994,7 +960,7 @@ async function attemptConnect(preferPaired){
     }
     const hint=/WebUSB|安全上下文|HTTPS|localhost|凭证组件|加载|不支持/.test(msg)
       ? '<br>请确认使用 Chrome / Edge 并通过 HTTPS 或 localhost 打开，且网络可访问 esm.sh。'
-      : '<br>可重新插拔数据线后重试；详情见「关于 → 连接失败排查」。';
+      : '<br>可重插数据线后重试，或运行连接诊断。';
     toast('真机连接失败：'+esc(msg)+hint,'warn');
   }
 }
@@ -1004,11 +970,9 @@ async function connectFlow(){
   let paired=0;
   try{ paired=navigator.usb?(await navigator.usb.getDevices()).length:0; }catch(_){}
   const body='连接真机需要 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页。<br><br>'+
-    '<b>连接前请先关闭</b>电脑上的 adb / Android Studio / scrcpy / 手机助手，并只保留一个浏览器标签页，否则会提示「设备已被其他程序占用」。<br><br>'+
-    '<b>Windows 用户</b>：若反复提示占用，通常是常驻进程占用了 ADB 接口，或该接口未绑定 WinUSB 驱动；可先用「关于 → 运行连接诊断」判定，再按指引处理。<br><br>'+
-    '手机需开启 USB 调试，在系统弹窗中选择设备后于手机上允许 RSA 授权。'+
-    '<div class="hint" style="margin-top:12px">构建 '+BUILD+' · 连不上可在「关于」页运行连接诊断</div>'+
-    (paired?'<div class="notice mt16">检测到 '+paired+' 台已授权设备，选「重连已授权设备」可跳过系统选择器。</div>':'');
+    '请先关闭电脑端 adb / Android Studio / scrcpy / 手机助手，只保留一个标签页（否则会提示设备被占用）；手机开启 USB 调试后，在系统弹窗中选择设备并允许授权。'+
+    '<div class="hint" style="margin-top:12px">构建 '+BUILD+'</div>'+
+    (paired?'<div class="notice mt16">检测到 '+paired+' 台已授权设备，可直接重连。</div>':'');
   const i=await dialog('连接设备',body,paired
     ? [{label:'重连已授权设备',primary:true},{label:'选择其他设备'},{label:'取消'}]
     : [{label:'连接真机（WebUSB）',primary:true},{label:'取消'}]);
@@ -1331,19 +1295,19 @@ function renderSettings(){
 function renderAbout(){
   $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2">'+
     '<div class="card"><div class="about-hero"><div class="about-logo">搞</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
-      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.2</div></div></div>'+
-      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.2')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.3</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.3')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
       kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('出品','維坦')+kv('版权','© 2026 維坦')+'</div>'+
       '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
       '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
     '</div>'+
     '<div class="card"><h2 class="card-title">真机连接步骤</h2>'+
-      '<div class="muted" style="font-size:13px;line-height:2.1">1. 手机开启「开发者选项 → USB 调试」<br>2. <b>关闭电脑端 adb</b>：Android Studio / 命令行 adb / scrcpy / 手机助手 / 模拟器（或执行 <code class="code-inline">adb kill-server</code>），否则 ADB 接口会被独占<br>3. 数据线连接电脑，USB 模式选「传输文件」，电脑上只保留这一台 Android 设备<br>4. 使用 Chrome 或 Edge 打开本页（HTTPS 或 localhost），只保留一个标签页<br>5. 点击右上角「连接设备」，在弹出列表中选择手机<br>6. 手机上勾选「一律允许」并点击「允许」完成 RSA 授权</div>'+
+      '<div class="muted" style="font-size:13px;line-height:2.1">1. 手机开启「开发者选项 → USB 调试」<br>2. <b>关闭电脑端 adb</b>：Android Studio / scrcpy / 手机助手 / 模拟器（或执行 <code class="code-inline">adb kill-server</code>）<br>3. 数据线连接电脑，USB 模式选「传输文件」，只保留一台设备<br>4. 用 Chrome / Edge 打开本页（HTTPS 或 localhost），只开一个标签页<br>5. 点「连接设备」，选手机并在手机上允许 USB 调试授权</div>'+
       '<div class="info-divider"></div><h2 class="card-title">部署与本地运行</h2>'+
       '<div class="muted" style="font-size:12.8px;line-height:1.9">部署到 HTTPS 站点后即可直接使用，无需后端或额外配置。本地调试可在本目录启动静态服务：<br><code class="code-inline">python3 -m http.server 8000</code><br>然后打开 <code class="code-inline">http://localhost:8000</code>。直接双击打开 HTML 文件（<code class="code-inline">file://</code>）时浏览器会禁用 WebUSB。</div>'+
       '<div class="info-divider"></div><h2 class="card-title">连接失败：设备被占用</h2>'+
-      '<div class="muted" style="font-size:12.8px;line-height:1.9">若提示 <code class="code-inline">The device is already in used by another program</code>，表示 ADB 的 USB 接口已被独占，与浏览器或 HTTPS 无关。<b>诊断显示 open() 成功、所有接口 claimed=false 时，浏览器侧已干净</b>，剩余两种可能：Windows 常驻驱动 / 服务绑定了接口，或外部进程已 claim 接口。按「先判定 → 再处理」顺序：<br>① <b>先判定</b>：地址栏打开 <code class="code-inline">chrome://device-log</code> 看 Chrome USB 后端原始错误；用 app.webadb.com 或 Linux / macOS 电脑作对照（这些系统无需驱动，可直接连上）；<br>② <b>排除占用</b>：电脑端执行 <code class="code-inline">adb kill-server</code>，关闭 Android Studio、scrcpy、手机助手、模拟器等常驻进程；关闭其他打开本页或 WebADB 的标签页 / 窗口，只保留一台 Android 设备；手机「开发者选项 → 选择 USB 配置」切回<b>「传输文件(MTP)」</b>（诊断出现 class=1 音频类接口时尤其要做），重新插拔数据线并在手机上撤销授权后重新允许；<br>③ <b>Windows 驱动（有副作用，放最后）</b>：设备管理器 → 通用串行总线设备 → ADB Interface / WinUSB Device → 属性 → 驱动程序，提供商应为 Microsoft(WinUSB) 或 Google Inc.；若为 OPPO / Realme / libusbK / 厂商驱动，用 <b>Zadig</b>（Options → List All Devices → 选带 ADB / Interface 1 的项 → WinUSB → Replace Driver）替换为 WinUSB 后拔插重连；<b>换成 WinUSB 后 Windows 端 adb.exe / Android Studio 可能识别不到手机，二者需二选一</b>。也可在设备管理器「更新驱动程序 → 从列表选取 → Android Phone → Android Composite ADB Interface」强制指定 Google ADB 驱动。<br>页面已内置自动释放：连接前清理残留句柄、失败自动回滚、断开时主动 <code class="code-inline">releaseInterface</code> / <code class="code-inline">close</code>，但只能释放浏览器自己的句柄。</div>'+
-      '<div style="margin-top:12px"><button class="btn" data-act="diagnose">运行连接诊断（定位接口占用原因）</button></div>'+
+      '<div class="muted" style="font-size:12.8px;line-height:1.9">若提示 <code class="code-inline">device is already in use</code>，表示 ADB 接口被占用，与浏览器或 HTTPS 无关。请关闭电脑端 adb / 手机助手、只留一个标签页，手机切回「传输文件(MTP)」后重插重连；Windows 还需 WinUSB 驱动（Zadig）。换 Linux / macOS 免驱动可直接连。</div>'+
+      '<div style="margin-top:12px"><button class="btn" data-act="diagnose">运行连接诊断</button></div>'+
       '<div class="info-divider"></div><h2 class="card-title">技术实现</h2>'+
       '<div class="muted" style="font-size:12.8px;line-height:1.9">纯静态单文件实现，无需后端。连接真机后动态加载 <code class="code-inline">@yume-chan/adb</code>（Tango ADB）通过 WebUSB 直连 adbd，执行 <code class="code-inline">getprop</code> / <code class="code-inline">dumpsys</code> / <code class="code-inline">pm</code> / <code class="code-inline">wm</code> / <code class="code-inline">settings</code> / <code class="code-inline">reboot</code> 等指令。设备信息、频率采样、脚本与终端共用同一执行层。</div>'+
       '<div class="notice mt16">免责声明：重启、清除数据、修改系统设置等操作可能影响设备状态，请确认已备份重要数据后再执行。本工具仅在用户明确点击时下发命令。</div>'+
