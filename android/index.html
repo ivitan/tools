@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" id="themeColorMeta" content="#ffffff">
+<title>搞机工具箱 - 全安卓通用免ROOT玩机神器（网页版）</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232563eb'/><rect x='11' y='6' width='10' height='20' rx='2' fill='none' stroke='white' stroke-width='2'/><path d='M14 23h4' stroke='white' stroke-width='2' stroke-linecap='round'/></svg>">
+<style>
+:root{
+  color-scheme:light;
+  /* ivitan 统一色板：slate 中性色 + blue-600 主色 */
+  --brand:#2563eb; --brand-600:#1d4ed8; --brand-500:#3b82f6; --brand-on:#ffffff;
+  --brand-soft:#eff6ff; --brand-soft-2:rgba(37,99,235,.10);
+  --bg:#f8fafc; --card:#ffffff; --card-hover:#f1f5f9;
+  --text:#0f172a; --text-2:#475569; --muted:#64748b;
+  --border:#e2e8f0; --border-hover:#cbd5e1; --line:#f1f5f9; --field:#f8fafc;
+  --ok:#059669; --ok-text:#047857; --ok-bg:#ecfdf5;
+  --warn:#d97706; --warn-bg:#fef3c7;
+  --danger:#dc2626; --danger-bg:#fef2f2; --danger-text:#b91c1c;
+  --shadow:0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.03);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.04);
+  --scrollbar-thumb:#cbd5e1; --scrollbar-thumb-hover:#94a3b8;
+  --term-bg:#f1f5f9; --term-border:#e2e8f0; --term-text:#0f172a;
+  --term-cmd:#2563eb; --term-err:#dc2626; --term-sys:#64748b;
+  --mask:rgba(15,23,42,.45);
+  --radius:10px;
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --brand:#60a5fa; --brand-600:#3b82f6; --brand-500:#93c5fd; --brand-on:#0b1220;
+  --brand-soft:rgba(96,165,250,.18); --brand-soft-2:rgba(96,165,250,.22);
+  --bg:#0b1220; --card:#111827; --card-hover:#1e293b;
+  --text:#f1f5f9; --text-2:#cbd5e1; --muted:#94a3b8;
+  --border:#1f2937; --border-hover:#475569; --line:#1e293b; --field:#0f172a;
+  --ok:#34d399; --ok-text:#6ee7b7; --ok-bg:rgba(52,211,153,.18);
+  --warn:#fbbf24; --warn-bg:rgba(251,191,36,.20);
+  --danger:#f87171; --danger-bg:rgba(248,113,113,.18); --danger-text:#fca5a5;
+  --shadow:0 1px 3px rgba(0,0,0,.5);
+  --shadow-lg:0 10px 25px rgba(0,0,0,.5);
+  --scrollbar-thumb:#475569; --scrollbar-thumb-hover:#64748b;
+  --term-bg:#0a1224; --term-border:#1f2937; --term-text:#f1f5f9;
+  --term-cmd:#60a5fa; --term-err:#f87171; --term-sys:#94a3b8;
+  --mask:rgba(0,0,0,.62);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;transition:background-color .15s,color .15s}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+a{color:var(--brand);text-decoration:none}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--scrollbar-thumb-hover)}
+
+/* ---------- 顶栏（对齐站点 .header：52px 白底 + 底部细线） ---------- */
+.topbar{height:52px;background:var(--card);border-bottom:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px;position:sticky;top:0;z-index:30;box-shadow:var(--shadow)}
+.brand-group{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto}
+.logo-icon{width:28px;height:28px;border-radius:6px;background:var(--brand);color:var(--brand-on);display:flex;align-items:center;justify-content:center;flex-shrink:0;user-select:none;transition:background-color .15s}
+.logo-icon:hover{background:var(--brand-600)}
+.logo-icon svg{width:16px;height:16px}
+.brand-title{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.brand-title .sub{font-weight:400;color:var(--muted);font-size:13px;margin-left:4px}
+.home-btn{width:30px;height:30px;border-radius:50%;border:none;background:var(--card-hover);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s}
+.home-btn:hover{background:var(--brand);color:var(--brand-on)}
+.home-btn svg{width:16px;height:16px}
+.status #statusName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.top-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.status{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-2);margin-right:6px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border-hover);display:inline-block;flex-shrink:0}
+.dot.green{background:var(--ok);box-shadow:0 0 0 3px var(--ok-bg)}
+.ghost-btn{height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;display:inline-flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap}
+.ghost-btn:hover{background:var(--card-hover);border-color:var(--border-hover)}
+.ghost-btn.solid{background:var(--brand);border-color:var(--brand);color:var(--brand-on)}
+.ghost-btn.solid:hover{background:var(--brand-600);border-color:var(--brand-600)}
+.ghost-btn.icon{width:32px;padding:0;justify-content:center}
+.ghost-btn:disabled{opacity:.4;cursor:not-allowed}
+.ghost-btn svg{width:15px;height:15px}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex;min-height:calc(100vh - 52px)}
+.sidebar{width:200px;flex:0 0 200px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:10px 0 14px;position:sticky;top:52px;height:calc(100vh - 52px)}
+.nav{display:flex;flex-direction:column;gap:2px;overflow-y:auto;flex:1}
+.nav-item{position:relative;display:flex;align-items:center;gap:10px;height:38px;padding:0 16px;color:var(--text-2);font-size:13px;border:none;background:transparent;width:100%;text-align:left;transition:.15s}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.75}
+.nav-item:hover{background:var(--card-hover);color:var(--text)}
+.nav-item.active{background:var(--brand-soft);color:var(--brand);font-weight:600}
+.nav-item.active::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--brand)}
+.nav-item.active svg{opacity:1}
+.side-foot{padding:12px 16px 0;color:var(--muted);font-size:11.5px;line-height:1.7;border-top:1px solid var(--line)}
+.side-foot b{font-weight:600;color:var(--text-2)}
+.main{flex:1;min-width:0;padding:24px 28px 50px}
+.container{max-width:1180px;margin:0 auto}
+.page{display:none;animation:fade .18s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.page-title{font-size:19px;font-weight:600;margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;min-width:0}
+.card-title{font-size:15px;font-weight:600;margin:0 0 16px}
+.card-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title-row .card-title{margin:0}
+.badge-soft{font-size:11.5px;color:var(--muted);background:var(--card-hover);border:1px solid var(--border);padding:3px 8px;border-radius:6px}
+
+/* ---------- 设备信息 ---------- */
+.info-card{padding:24px 28px 22px;margin-bottom:20px}
+.info-grid{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1.28fr) minmax(0,1.84fr);column-gap:26px;row-gap:4px}
+.info-col{display:flex;flex-direction:column;gap:0;min-width:0}
+.cpu-pane{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:26px;align-content:start;min-width:0}
+.kv{display:grid;grid-template-columns:66px minmax(0,1fr);align-items:baseline;min-height:29px;line-height:1.5}
+.kv .k{color:var(--muted);font-size:13px;white-space:nowrap}
+.kv .v{color:var(--text);font-size:13px;word-break:break-all}
+.kv .v.blue{color:var(--brand);font-weight:500}
+.kv .v.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12.5px}
+.info-divider{height:1px;background:var(--line);margin:16px 0 14px}
+.info-bottom{display:flex;flex-direction:column;gap:2px}
+.info-bottom .kv{grid-template-columns:66px minmax(0,1fr);min-height:26px}
+.info-bottom .v{color:var(--text-2);font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;word-break:break-all}
+.link-btn{border:none;background:none;color:var(--brand);font-size:12.5px;padding:0 0 0 8px}
+.link-btn:hover{text-decoration:underline}
+.empty-hint{color:var(--muted)}
+
+/* ---------- 主页下半区 ---------- */
+.home-lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.reboot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.btn-reboot{height:40px;border:1px solid var(--brand);border-radius:6px;background:var(--brand);color:var(--brand-on);font-size:13px;display:flex;align-items:center;justify-content:center;gap:7px;transition:.15s;font-weight:600}
+.btn-reboot:hover{background:var(--brand-600);border-color:var(--brand-600)}
+.btn-reboot:disabled{opacity:.4;filter:saturate(.5);cursor:not-allowed;transform:none}
+.btn-reboot:disabled:hover{background:var(--brand);transform:none}
+html[data-theme="dark"] .btn-reboot:disabled:hover{background:var(--brand-600)}
+.btn-reboot svg{width:15px;height:15px}
+.connected-line{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:500;margin-bottom:16px}
+.device-picker{display:flex;gap:10px}
+.device-picker select{flex:1;min-width:0;height:34px;padding:0 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);outline:none}
+.device-picker select:focus{border-color:var(--brand)}
+.btn-outline{height:34px;padding:0 12px;border:1px solid var(--border);background:var(--card);border-radius:6px;color:var(--text);font-size:13px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;transition:.15s}
+.btn-outline:hover{border-color:var(--brand);color:var(--brand)}
+.btn-outline svg{width:15px;height:15px}
+#refreshIcon{display:inline-flex}
+.hint{color:var(--muted);font-size:12.5px;line-height:1.7;margin:18px 0 0}
+
+/* ---------- 通用控件 ---------- */
+.btn{height:32px;padding:0 12px;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:6px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:.15s;white-space:nowrap}
+.btn:hover{border-color:var(--border-hover);background:var(--card-hover)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-on)}
+.btn.primary:hover{background:var(--brand-600);border-color:var(--brand-600)}
+.btn.danger{color:var(--danger)}
+.btn svg{width:15px;height:15px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.input{height:34px;padding:0 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);outline:none;min-width:0}
+.input:focus{border-color:var(--brand)}
+.input.num-sm{width:74px}
+.input.num-md{width:90px}
+textarea.input{height:auto;padding:10px 12px;resize:vertical;line-height:1.6}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.toolbar .input{flex:1;max-width:320px}
+.stat{color:var(--muted);font-size:12.5px;margin-left:auto}
+.stat b{color:var(--text)}
+.grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.section-title{font-size:14px;font-weight:600;margin:0 0 12px}
+.muted{color:var(--muted)}
+.mt16{margin-top:16px}
+.mt20{margin-top:20px}
+
+/* 表格 */
+.table-card{padding:0;overflow:hidden}
+/* 无数据 / 无匹配时取消表格最小宽度，避免空态提示在窄屏被横向裁切 */
+.table-card.empty{overflow:hidden}
+.table-card.empty table{min-width:0}
+.table-card.empty thead{display:none}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line)}
+table th:nth-child(1){width:36%}
+table th:nth-child(2){width:14%}
+table th:nth-child(3){width:13%}
+table th:nth-child(4){width:13%}
+table th.col-ops{width:24%}
+th{background:var(--field);color:var(--muted);font-weight:500;font-size:12.5px;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--field)}
+.td-ops{display:flex;gap:6px;flex-wrap:wrap}
+.mini-btn{border:1px solid var(--border);background:var(--card);color:var(--text-2);border-radius:6px;padding:4px 9px;font-size:12px;white-space:nowrap}
+.mini-btn:hover{border-color:var(--brand);color:var(--brand)}
+.mini-btn.red:hover{border-color:var(--danger);color:var(--danger)}
+.pill{font-size:11.5px;padding:2px 8px;border-radius:20px;background:var(--brand-soft-2);color:var(--brand);white-space:nowrap}
+.pill.gray{background:var(--card-hover);color:var(--muted)}
+.pill.green{background:var(--ok-bg);color:var(--ok-text)}
+.app-cell{display:flex;align-items:center;gap:10px}
+.app-icon{width:30px;height:30px;border-radius:6px;background:var(--brand-soft-2);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.app-name{font-weight:500}
+.app-pkg{font-size:11.5px;color:var(--muted);font-family:ui-monospace,Consolas,monospace}
+
+/* 设置行 */
+.row-item{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 18px;padding:13px 0;border-bottom:1px solid var(--line)}
+.row-item:last-child{border-bottom:none}
+.row-item .label{font-size:13.5px}
+.row-item .desc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+.row-item .ctrl{display:flex;align-items:center;flex-wrap:wrap;gap:10px;min-width:0}
+.row-item select{min-width:130px;height:34px;padding:0 10px;border:1px solid var(--border);border-radius:6px;background:var(--field);outline:none}
+.switch{position:relative;width:42px;height:23px;border-radius:20px;background:var(--border);border:none;transition:.2s;flex-shrink:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:.2s}
+.switch.on{background:var(--brand)}
+.switch.on::after{transform:translateX(19px)}
+.range-wrap{display:flex;align-items:center;gap:12px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:190px;height:5px;border-radius:5px;background:var(--border);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--brand);cursor:pointer;box-shadow:0 1px 4px rgba(37,99,235,.35)}
+.range-val{min-width:66px;font-size:13px;font-variant-numeric:tabular-nums;color:var(--brand);font-weight:600}
+
+/* 电池 */
+.battery-wrap{display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+.ring{position:relative;width:128px;height:128px;flex-shrink:0}
+.ring svg{transform:rotate(-90deg)}
+.ring .ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .ring-text b{font-size:28px;line-height:1}
+.ring .ring-text span{font-size:11px;color:var(--muted);margin-top:5px}
+.metric-grid{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:14px 26px;flex:1}
+.metric .m-k{font-size:12px;color:var(--muted)}
+.metric .m-v{font-size:17px;font-weight:600;margin-top:4px}
+
+/* 终端 */
+.terminal{background:var(--term-bg);border:1px solid var(--term-border);border-radius:6px;padding:16px;height:400px;overflow-y:auto;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12.8px;line-height:1.75;color:var(--term-text)}
+.terminal .t-cmd{color:var(--term-cmd)}
+.terminal .t-out{white-space:pre-wrap;word-break:break-all;color:var(--term-text)}
+.terminal .t-err{color:var(--term-err)}
+.terminal .t-sys{color:var(--term-sys)}
+.term-input{display:flex;align-items:center;gap:10px;margin-top:12px}
+.term-input .prompt{font-family:ui-monospace,Consolas,monospace;color:var(--brand);font-weight:700}
+.term-input input{flex:1;height:34px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:0 12px;outline:none;font-family:ui-monospace,Consolas,monospace}
+.term-input input:focus{border-color:var(--brand)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{border:1px solid var(--border);background:var(--card);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text-2);font-family:ui-monospace,Consolas,monospace}
+.chip:hover{border-color:var(--brand);color:var(--brand)}
+
+/* 脚本 */
+.code-area{width:100%;min-height:180px;background:var(--field);border:1px solid var(--border);border-radius:6px;padding:12px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12.8px;line-height:1.7;outline:none;color:var(--text)}
+.code-area:focus{border-color:var(--brand)}
+.tpl-list{display:flex;flex-direction:column;gap:8px}
+.tpl{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border:1px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer;transition:.15s}
+.tpl:hover{border-color:var(--brand);background:var(--brand-soft)}
+.tpl .t-name{font-size:13px;font-weight:500}
+.tpl .t-desc{font-size:11.5px;color:var(--muted);margin-top:3px}
+.output-box{background:var(--field);border:1px solid var(--border);border-radius:6px;padding:12px;min-height:110px;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,Consolas,monospace;font-size:12.3px;line-height:1.65;color:var(--text-2)}
+
+/* 关于 */
+.about-hero{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.about-logo{width:52px;height:52px;border-radius:10px;background:var(--brand);color:var(--brand-on);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0}
+.kv-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 28px}
+.kv-list .kv{grid-template-columns:82px 1fr}
+.code-inline{font-family:ui-monospace,Consolas,monospace;background:var(--field);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:12px}
+.notice{background:var(--brand-soft);border:1px solid var(--border);border-radius:6px;padding:12px 14px;font-size:12.8px;line-height:1.8;color:var(--text-2)}
+
+/* toast & dialog */
+#toasts{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;gap:9px;z-index:100}
+.toast{min-width:220px;max-width:380px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--brand);border-radius:6px;box-shadow:var(--shadow-lg);padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text)}
+.toast.ok{border-left-color:var(--ok)}
+.toast.warn{border-left-color:var(--warn)}
+.toast.err{border-left-color:var(--danger)}
+@keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.mask{position:fixed;inset:0;background:var(--mask);display:flex;align-items:center;justify-content:center;z-index:90;padding:20px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.mask[hidden]{display:none}
+.dialog{background:var(--card);border:1px solid var(--border);border-radius:10px;width:min(440px,100%);box-shadow:var(--shadow-lg);padding:22px 24px}
+.dialog h3{margin:0 0 12px;font-size:16px}
+.dialog .dlg-body{font-size:13.2px;line-height:1.8;color:var(--text-2)}
+.dlg-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;flex-wrap:wrap}
+.choice{display:block;width:100%;text-align:left;border:1px solid var(--border);border-radius:6px;background:var(--field);padding:12px 14px;margin-top:10px;transition:.15s}
+.choice:hover{border-color:var(--brand);background:var(--brand-soft)}
+.choice b{display:block;font-size:13.5px;margin-bottom:3px}
+.choice span{font-size:12px;color:var(--muted);line-height:1.6}
+.spin{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- 暗色模式微调 ---------- */
+html[data-theme="dark"] .nav-item.active,
+html[data-theme="dark"] .app-icon,
+html[data-theme="dark"] .pill,
+html[data-theme="dark"] .link-btn{color:var(--brand)}
+html[data-theme="dark"] .switch::after{background:#f5f7ff}
+html[data-theme="dark"] .dot{background:#7d86a8}
+html[data-theme="dark"] input[type=range]::-webkit-slider-thumb{box-shadow:0 1px 6px rgba(96,165,250,.6)}
+
+/* 长命令 / 长文本不撑破容器，表格可横向滚动 */
+.code-inline,.hint,.notice,.muted,.dlg-body,.output-box{overflow-wrap:anywhere}
+.about-hero{flex-wrap:wrap}
+.device-picker{flex-wrap:wrap}
+.table-card{overflow:auto}
+table{min-width:720px}
+.ring svg{width:100%;height:100%}
+input[type=range]{width:clamp(120px,16vw,190px)}
+.scripts-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px}
+
+/* ---------- 响应式断点 ---------- */
+@media (min-width:1600px){
+  .main{padding:30px 36px 60px}
+  .page-title{font-size:22px}
+  .card{padding:24px 28px}
+}
+@media (max-width:1279px){
+  .main{padding:22px 22px 44px}
+  .card{padding:20px 22px}
+  .info-card{padding:22px 24px 20px}
+  .info-grid{column-gap:18px}
+  .status{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media (max-width:1023px){
+  .home-lower,.grid-2,.grid-3,.kv-list,.scripts-layout{grid-template-columns:minmax(0,1fr)}
+  .info-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);row-gap:10px}
+  .cpu-pane{grid-column:1/-1}
+  .toolbar .stat{margin-left:0}
+  .row-item .ctrl{flex-wrap:wrap;justify-content:flex-end}
+  .terminal{height:360px}
+}
+@media (max-width:860px){
+  .topbar{padding:0 14px;gap:10px}
+  .top-right{gap:6px}
+  .brand-title .sub{display:none}
+  .ghost-btn{padding:0 10px;font-size:12.5px}
+  .status{font-size:12px;max-width:150px;margin-right:0}
+  .main{padding:20px 18px 40px}
+}
+@media (max-width:720px){
+  .sidebar{width:60px;flex-basis:60px}
+  .nav-item{justify-content:center;padding:0}
+  .nav-item span,.side-foot{display:none}
+  .nav-item.active::before{top:6px;bottom:6px}
+  .brand-title{font-size:15px}
+  .info-grid{grid-template-columns:1fr;row-gap:8px}
+  .row-item{flex-direction:column;align-items:stretch;gap:10px}
+  .row-item .ctrl{justify-content:flex-start;width:100%}
+  .range-wrap{flex:1 1 220px}
+  input[type=range]{width:clamp(110px,40vw,190px)}
+  .metric-grid{grid-template-columns:1fr 1fr}
+  .terminal{height:330px;font-size:12.2px}
+  .ring{width:112px;height:112px}
+  #toasts{right:12px;bottom:12px;left:12px}
+  .toast{min-width:0;max-width:none}
+  .dialog{padding:20px 18px}
+  .dlg-actions .btn{flex:1 1 auto}
+}
+@media (max-width:480px){
+  .topbar{padding:0 10px;gap:8px}
+  .brand-title{font-size:14px}
+  .status{display:none}
+  .ghost-btn{height:30px;padding:0 9px;font-size:12px}
+  .ghost-btn.icon{width:30px;padding:0}
+  .main{padding:16px 12px 36px}
+  .page-title{font-size:18px;margin-bottom:14px}
+  .card,.info-card{padding:16px 14px}
+  .card-title{font-size:15px}
+  .home-lower{gap:14px}
+  .reboot-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .btn-reboot{height:40px;font-size:12.5px}
+  .device-picker{gap:8px}
+  .device-picker select,.device-picker .btn-outline{flex:1 1 100%}
+  .btn-outline{justify-content:center}
+  .kv,.info-bottom .kv{grid-template-columns:62px minmax(0,1fr)}
+  .cpu-pane{column-gap:12px}
+  .metric-grid{grid-template-columns:1fr}
+  .toolbar{gap:8px}
+  .toolbar .input{flex:1 1 100%;max-width:none}
+  .toolbar .btn{flex:1 1 auto}
+  .toolbar .stat{flex:1 1 auto;text-align:right}
+  th,td{padding:10px 12px}
+  .terminal{height:300px;padding:12px}
+  .term-input{flex-wrap:wrap}
+  .term-input input{flex:1 1 calc(100% - 26px)}
+  .term-input .btn{flex:1 1 100%}
+  .chips .chip{font-size:11px;padding:4px 9px}
+  .about-hero{gap:12px}
+  .code-area{min-height:150px}
+  .hint{font-size:12px;margin-top:14px}
+  .input.num-sm{width:62px}
+  .input.num-md{width:74px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-property:opacity,color,background-color,border-color,box-shadow!important;transition-duration:.15s!important}
+}
+@media (hover:none) and (pointer:coarse){
+  input,textarea,select{font-size:16px}
+  .btn:active,.ghost-btn:active,.btn-reboot:not(:disabled):active,.mini-btn:active{transform:scale(.97)}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand-group">
+    <div class="logo-icon" aria-label="搞机工具箱">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>
+    </div>
+    <div class="brand-title">搞机工具箱 <span class="sub">网页版</span></div>
+    <a class="home-btn" href="/" title="返回主页" aria-label="返回主页">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9.5"/></svg>
+    </a>
+  </div>
+  <div class="top-right">
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusName">未连接设备</span></div>
+    <button class="ghost-btn icon" data-act="toggle-theme" title="切换深浅色主题" id="themeBtn"></button>
+    <button class="ghost-btn solid" data-act="connect">连接设备</button>
+    <button class="ghost-btn" data-act="disconnect" id="disconnectBtn">断开</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.0.0</div>
+  </aside>
+  <main class="main">
+    <div class="container">
+
+      <!-- 主页 -->
+      <section class="page active" id="page-home">
+        <h1 class="page-title">设备信息</h1>
+        <div class="notice" id="homeNotice" style="margin-bottom:16px">当前未连接真机，设备信息与所有指令均不可用。请点击右上角「连接设备」，使用 Chrome / Edge 通过 USB 调试连接手机。</div>
+        <div class="card info-card">
+          <div class="info-grid" id="infoGrid"></div>
+          <div class="info-divider"></div>
+          <div class="info-bottom" id="infoBottom"></div>
+        </div>
+        <div class="home-lower">
+          <div class="card">
+            <h2 class="card-title">快捷重启</h2>
+            <div class="reboot-grid" id="rebootGrid"></div>
+          </div>
+          <div class="card">
+            <div class="card-title-row">
+              <h2 class="card-title">连接设备</h2>
+              <span class="badge-soft" id="modeBadge">未连接</span>
+            </div>
+            <div class="connected-line"><span class="dot" id="connDot"></span><span id="connectedName">暂无设备连接</span></div>
+            <div class="device-picker">
+              <select id="deviceSelect"></select>
+              <button class="btn-outline" data-act="refresh"><span id="refreshIcon"></span>刷新</button>
+            </div>
+            <p class="hint">使用 Chrome / Edge，开启手机的 USB 调试，连接后在手机上允许授权。未连接设备时所有指令不可下发。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-apps"></section>
+      <section class="page" id="page-display"></section>
+      <section class="page" id="page-systemui"></section>
+      <section class="page" id="page-battery"></section>
+      <section class="page" id="page-tuner"></section>
+      <section class="page" id="page-scripts"></section>
+      <section class="page" id="page-terminal"></section>
+      <section class="page" id="page-settings"></section>
+      <section class="page" id="page-about"></section>
+    </div>
+  </main>
+</div>
+
+<div id="toasts"></div>
+<div class="mask" id="mask" hidden>
+  <div class="dialog">
+    <h3 id="dlgTitle"></h3>
+    <div class="dlg-body" id="dlgBody"></div>
+    <div class="dlg-actions" id="dlgActions"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   搞机工具箱（网页版） — WebUSB/ADB 实现
+   通过 Chrome/Edge + WebUSB + Tango ADB（动态加载 CDN）直连真机，
+   所有设备信息与指令均来自真实 adb shell；未连接时为空态。
+   ============================================================ */
+(function () {
+'use strict';
+
+/* ---------------- 图标 ---------------- */
+const P = {
+  home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  package:'<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  monitor:'<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
+  sliders:'<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/>',
+  battery:'<rect width="16" height="10" x="2" y="7" rx="2"/><line x1="22" x2="22" y1="11" y2="13"/><path d="M6 12h6"/>',
+  gauge:'<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
+  code:'<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+  terminal:'<polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  power:'<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>',
+  refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  play:'<polygon points="5 3 19 12 5 21 5 3"/>',
+  save:'<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
+  trash:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>'
+};
+function icon(name, size){ const s = size || 18; return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(P[name]||P.info)+'</svg>'; }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+const $ = (s, r) => (r||document).querySelector(s);
+const $$ = (s, r) => Array.from((r||document).querySelectorAll(s));
+
+/* ---------------- 设备数据模板（连接真机后由 getprop / dumpsys 填充） ---------------- */
+const EMPTY_DEVICE = {
+  name:'未连接设备', serial:'—', brand:'—', model:'—', device:'—', android:'—', board:'—',
+  cpuArch:'—', flash:'—', display:'—', sysArch:'—', build:'—', kernel:'—', uptime:'—',
+  battery:{level:0,voltage:'—',temp:'—',health:'—',status:'—',plugged:'—'}
+};
+const EMPTY_CPU = [0,0,0,0,0,0,0,0];
+
+/* ---------------- 状态 ---------------- */
+const DEFAULT_SETTINGS = { theme:'light', refresh:'2', confirm:true, autoReconnect:true };
+let settings = Object.assign({}, DEFAULT_SETTINGS);
+try { Object.assign(settings, JSON.parse(localStorage.getItem('gjbox.settings')||'{}')); } catch(e){}
+// 剔除旧版本遗留的未知配置项
+Object.keys(settings).forEach(k=>{ if(!Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS,k)) delete settings[k]; });
+
+const state = {
+  mode:'none',                 // real | none
+  adb:null, manager:null, realDevice:null,
+  device:Object.assign({}, EMPTY_DEVICE),
+  cpu:EMPTY_CPU.slice(),
+  active:'home', showBoard:false,
+  devices:[],
+  apps:[], appFilter:'',
+  termLines:[], termHistory:[], termIdx:0,
+  scriptText:'# 在此输入 shell 命令，每行一条\ngetprop ro.product.model\ndumpsys battery | grep level',
+  scriptOutput:'', scripts:[],
+  tuner:{cpuMin:634,cpuMax:2016,bright:160,refresh:120,volume:9,font:1.0,anim:1,dpi:520,w:1280,h:2772,timeout:60000,level:100},
+  switches:{rotate:true,night:false,batteryPct:true,immersive:false,nav:false,animOff:false,powerSave:false,chargeLimit:false},
+  logs:[]
+};
+try { state.scripts = JSON.parse(localStorage.getItem('gjbox.scripts')||'[]'); } catch(e){}
+
+const NAV = [
+  {id:'home',label:'主页',ic:'home'}, {id:'apps',label:'软件管理',ic:'package'},
+  {id:'display',label:'显示控制',ic:'monitor'}, {id:'systemui',label:'系统界面',ic:'sliders'},
+  {id:'battery',label:'电池管理',ic:'battery'}, {id:'tuner',label:'无极调节',ic:'gauge'},
+  {id:'scripts',label:'控机脚本',ic:'code'}, {id:'terminal',label:'ADB 终端',ic:'terminal'},
+  {id:'settings',label:'软件设置',ic:'settings'}, {id:'about',label:'关于',ic:'info'}
+];
+const TITLES = {home:'设备信息',apps:'软件管理',display:'显示控制',systemui:'系统界面',battery:'电池管理',tuner:'无极调节',scripts:'控机脚本',terminal:'ADB 终端',settings:'软件设置',about:'关于'};
+const REBOOT = [
+  {act:'reboot',label:'重启',cmd:'reboot',ic:'refresh'}, {act:'bootloader',label:'Fastboot',cmd:'reboot bootloader',ic:'power'},
+  {act:'edl',label:'EDL',cmd:'reboot edl',ic:'download'},
+  {act:'shutdown',label:'关机',cmd:'reboot -p',ic:'power'}, {act:'fastbootd',label:'Fastbootd',cmd:'reboot fastboot',ic:'power'},
+  {act:'recovery',label:'Recovery',cmd:'reboot recovery',ic:'refresh'}
+];
+
+/* ---------------- Toast / Dialog ---------------- */
+function toast(msg, type){
+  const d=document.createElement('div'); d.className='toast '+(type||'');
+  d.innerHTML=msg; $('#toasts').appendChild(d);
+  setTimeout(()=>{ d.style.opacity='0'; d.style.transform='translateX(16px)'; d.style.transition='.25s'; setTimeout(()=>d.remove(),260); }, 3200);
+}
+function dialog(title, body, buttons){
+  return new Promise(resolve=>{
+    $('#dlgTitle').textContent=title;
+    $('#dlgBody').innerHTML=body;
+    const box=$('#dlgActions'); box.innerHTML='';
+    buttons.forEach((b,i)=>{
+      const el=document.createElement('button');
+      el.className='btn '+(b.primary?'primary':'')+(b.danger?' danger':'');
+      el.textContent=b.label;
+      el.onclick=()=>{ $('#mask').hidden=true; resolve(i); };
+      box.appendChild(el);
+    });
+    $('#mask').hidden=false;
+  });
+}
+function log(cmd, result){
+  state.logs.unshift({t:new Date().toLocaleTimeString('zh-CN',{hour12:false}),cmd,result:result||'已下发'});
+  if(state.logs.length>60) state.logs.length=60;
+}
+
+/* ---------------- 主题 ---------------- */
+const systemDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+function systemPrefersDark(){ return !!(systemDark && systemDark.matches); }
+function applyTheme(){
+  const t = settings.theme==='auto' ? (systemPrefersDark()?'dark':'light') : settings.theme;
+  document.documentElement.setAttribute('data-theme',t);
+  const meta=$('#themeColorMeta'); if(meta) meta.setAttribute('content',t==='dark'?'#0b1220':'#ffffff');
+  const btn=$('#themeBtn');
+  if(btn){
+    btn.innerHTML = icon(t==='dark'?'sun':'moon',15);
+    btn.title = '当前'+(t==='dark'?'深色':'浅色')+'主题'+(settings.theme==='auto'?'（跟随系统）':'')+'，点击切换';
+  }
+}
+/* 跟随系统主题时，系统深浅色变化实时同步 */
+if(systemDark){
+  const onSysChange=()=>{ if(settings.theme==='auto'){ applyTheme(); toast('系统主题已变化，界面已自动同步',''); } };
+  try{ systemDark.addEventListener('change',onSysChange); }
+  catch(e){ if(systemDark.addListener) systemDark.addListener(onSysChange); }
+}
+function saveSettings(){ try{ localStorage.setItem('gjbox.settings',JSON.stringify(settings)); }catch(e){} }
+
+/* ---------------- 侧栏 / 页面切换 ---------------- */
+function renderNav(){
+  $('#nav').innerHTML = NAV.map(n=>'<button class="nav-item'+(state.active===n.id?' active':'')+'" data-nav="'+n.id+'">'+icon(n.ic)+'<span>'+n.label+'</span></button>').join('');
+}
+function showPage(id){
+  state.active=id;
+  $$('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+id));
+  renderNav();
+  const fn = RENDER[id]; if(fn) fn();
+  document.querySelector('.main').scrollTop=0;
+  window.scrollTo({top:0,behavior:'smooth'});
+  try{ history.replaceState(null,'','#'+id); }catch(e){}
+}
+window.addEventListener('hashchange',()=>{
+  const id=(location.hash||'').replace(/^#/,'');
+  if(NAV.some(n=>n.id===id) && id!==state.active) showPage(id);
+});
+
+/* ---------------- 主页渲染 ---------------- */
+function val(k){
+  if(state.mode==='none') return '—';
+  const d=state.device;
+  const map={brand:d.brand,model:d.model,device:d.device,android:d.android,
+    cpuArch:d.cpuArch,flash:d.flash,display:d.display,
+    battery:d.battery.level+'%, '+d.battery.voltage+' '+d.battery.temp,
+    sysArch:d.sysArch,build:d.build,kernel:d.kernel};
+  return map[k]==null?'—':map[k];
+}
+function uptimeText(){
+  if(state.mode==='none') return '—';
+  return state.device.uptime||'—';
+}
+function kv(k,v,cls){ return '<div class="kv"><span class="k">'+k+'</span><span class="v '+(cls||'')+'">'+v+'</span></div>'; }
+function renderHome(){
+  const d=state.device;
+  const board = state.showBoard ? esc(d.board||'—') : '********';
+  const c1 = kv('品牌',esc(val('brand')))+kv('型号',esc(val('model')))+kv('代号',esc(val('device')))+kv('系统',esc(val('android')))
+    + '<div class="kv"><span class="k">主板 ID</span><span class="v">'+board+'<button class="link-btn" data-act="toggle-board">'+(state.showBoard?'隐藏':'显示')+'</button></span></div>';
+  const c2 = kv('CPU 架构',esc(val('cpuArch')))+kv('闪存类型',esc(val('flash')))+kv('显示信息',esc(val('display')))
+    + kv('已开机',esc(uptimeText()))+kv('电池信息',esc(val('battery')));
+  let cpuPane='';
+  for(let i=0;i<8;i++) cpuPane+=kv('CPU '+i, state.mode==='none'?'—':state.cpu[i]+' MHz',state.mode==='none'?'':'blue');
+  $('#infoGrid').innerHTML='<div class="info-col">'+c1+'</div><div class="info-col">'+c2+'</div><div class="cpu-pane">'+cpuPane+'</div>';
+  $('#infoBottom').innerHTML=kv('系统架构',esc(val('sysArch')))+kv('编译版本',esc(val('build')))+kv('内核版本',esc(val('kernel')));
+  $('#rebootGrid').innerHTML=REBOOT.map(r=>'<button class="btn-reboot" data-act="reboot" data-cmd="'+esc(r.cmd)+'" data-label="'+r.label+'"'+(state.mode==='none'?' disabled':'')+'>'+icon(r.ic,15)+r.label+'</button>').join('');
+  const sel=$('#deviceSelect');
+  sel.innerHTML = state.devices.length ? state.devices.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.label)+'</option>').join('') : '<option value="">未检测到设备</option>';
+  sel.disabled = state.mode==='none';
+  const connected = state.mode!=='none';
+  $('#statusDot').className='dot'+(connected?' green':'');
+  $('#connDot').className='dot'+(connected?' green':'');
+  $('#statusName').textContent = connected? state.device.name : '未连接设备';
+  $('#connectedName').textContent = connected? state.device.name : '暂无设备连接';
+  $('#modeBadge').textContent = state.mode==='real'?'真机已连接':'未连接';
+  const notice=$('#homeNotice'); if(notice) notice.style.display = state.mode==='real'?'none':'';
+  $('#disconnectBtn').disabled = !connected;
+  $('#refreshIcon').innerHTML = icon('refresh',15);
+}
+
+/* ---------------- 统一 shell 执行层 ---------------- */
+/* 三个包统一锁定到 adb 2.3.1，避免 esm.sh 解析出多份不兼容的 adb 实例 */
+const CDN = {
+  adb:'https://esm.sh/@yume-chan/adb@2.3.1',
+  webusb:'https://esm.sh/@yume-chan/adb-daemon-webusb@2.3.2?deps=@yume-chan/adb@2.3.1',
+  cred:'https://esm.sh/@yume-chan/adb-credential-web@2.1.0?deps=@yume-chan/adb@2.3.1'
+};
+async function loadLibs(){
+  const [a,b,c]=await Promise.all([import(CDN.adb),import(CDN.webusb),import(CDN.cred)]);
+  return {a,b,c};
+}
+async function realShell(cmd){
+  if(!state.adb) throw new Error('设备未连接');
+  const svc=state.adb.subprocess;
+  const runner=(svc && svc.noneProtocol) || svc;
+  if(!runner) throw new Error('当前 ADB 组件不支持 shell 命令');
+  const timer=new Promise((_,rej)=>setTimeout(()=>rej(new Error('命令执行超时')),10000));
+  if(typeof runner.spawnWaitText==='function') return await Promise.race([runner.spawnWaitText(cmd),timer]);
+  // 兼容旧版 Tango：spawn() 返回可读流
+  const proc=await runner.spawn(cmd);
+  const read=new Response(proc.stdout||proc.output).text();
+  return await Promise.race([read,timer]);
+}
+/* 统一 shell 执行层：仅连接真机后可用，未连接时返回明确提示，不再提供模拟输出 */
+async function shell(cmd){
+  if(state.mode!=='real' || !state.adb) return '设备未连接，请先点击右上角「连接设备」连接真机';
+  return await realShell(cmd);
+}
+async function runCmd(cmd, silent){
+  if(state.mode!=='real'){ toast('请先连接真机后再执行操作','warn'); return ''; }
+  try{
+    const out=await shell(cmd);
+    log(cmd, out||'执行成功');
+    if(!silent && out) toast('命令已执行：<code>'+esc(cmd)+'</code>','ok');
+    else if(!silent) toast('命令已下发：<code>'+esc(cmd)+'</code>','ok');
+    return out;
+  }catch(e){
+    if(!silent) toast('执行失败：'+esc(e.message||e),'err');
+    return 'ERROR: '+(e.message||e);
+  }
+}
+
+/* ---------------- 连接 / 断开 / 刷新 ---------------- */
+async function connectReal(){
+  if(!navigator.usb) throw new Error('当前浏览器或页面环境不支持 WebUSB。请使用 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页。');
+  toast('正在加载 ADB 组件，首次连接可能需要几秒…','');
+  const libs=await loadLibs();
+  const Manager=libs.b.AdbDaemonWebUsbDeviceManager.BROWSER;
+  if(!Manager) throw new Error('WebUSB 不可用（需要安全上下文：HTTPS 或 localhost）');
+  state.manager=Manager;
+  const dev=await Manager.requestDevice();
+  if(!dev) throw new Error('已取消选择设备');
+  const connection=await dev.connect();
+  const Store=libs.c.AdbWebCredentialStore||libs.c.default;
+  if(typeof Store!=='function') throw new Error('ADB 凭证组件加载失败，请检查网络后重试');
+  const store=new Store('GeekToolboxWeb');
+  const transport=await libs.a.AdbDaemonTransport.authenticate({serial:dev.serial,connection,credentialStore:store});
+  state.adb=new libs.a.Adb(transport);
+  state.realDevice=dev; state.mode='real';
+  const devName=(typeof dev.name==='string'&&dev.name)||((dev.raw||{}).productName)||dev.serial||'Android 设备';
+  state.device={name:devName,serial:dev.serial||'unknown'};
+  state.devices=[{id:dev.serial||'adb',label:devName+' · '+(dev.serial||'adb')}];
+  await loadRealInfo();
+  toast('真机已连接，设备信息已读取','ok');
+}
+function disconnect(){
+  if(state.adb){ try{ state.adb.close(); }catch(e){} }
+  state.adb=null; state.realDevice=null; state.manager=null;
+  state.mode='none'; state.devices=[]; state.showBoard=false;
+  toast('设备已断开','');
+  renderHome();
+  if(state.active!=='home' && RENDER[state.active]) RENDER[state.active]();
+}
+async function connectFlow(){
+  if(state.mode!=='none'){ toast('设备已连接，如需切换请先断开',''); return; }
+  const i=await dialog('连接设备',
+    '连接真机需要 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页；请先开启手机的 USB 调试，在系统弹窗中选择设备后于手机上允许 RSA 授权。',
+    [{label:'连接真机（WebUSB）',primary:true},{label:'取消'}]);
+  if(i===1) return;
+  try{ await connectReal(); renderHome(); showPage('home'); }
+  catch(e){ toast('真机连接失败：'+esc(e.message||e)+'<br>请确认使用 Chrome / Edge 并通过 HTTPS 或 localhost 打开','warn'); }
+}
+async function refreshDevices(){
+  const el=$('#refreshIcon'); el.classList.add('spin');
+  try{
+    if(state.mode==='real' && state.manager){
+      const list=await state.manager.getDevices();
+      state.devices=list.map(d=>({id:d.serial||'adb',label:(d.name||((d.raw||{}).productName)||'Android 设备')+' · '+(d.serial||'adb')}));
+      toast('已刷新，找到 '+state.devices.length+' 台设备','ok');
+    }else{
+      state.devices=[];
+      toast('尚未连接设备，请先点击「连接设备」','warn');
+    }
+    renderHome();
+  }catch(e){ toast('刷新失败：'+esc(e.message||e),'err'); }
+  finally{ setTimeout(()=>el.classList.remove('spin'),600); }
+}
+async function loadRealInfo(){
+  const d=state.device;
+  const g=async(k,def)=>{ try{ return (await realShell('getprop '+k)).trim()||def; }catch(e){ return def; } };
+  const s=async(cmd,def)=>{ try{ return (await realShell(cmd)).trim()||def; }catch(e){ return def; } };
+  const [brand,model,dev,rel,sdk,board,abi,fp,kernel,flash,wmsize,wmdens,batt,cpus]=await Promise.all([
+    g('ro.product.brand','—'),g('ro.product.model','—'),g('ro.product.device','—'),
+    g('ro.build.version.release','—'),g('ro.build.version.sdk','—'),g('ro.product.board','—'),
+    g('ro.product.cpu.abi','—'),g('ro.build.fingerprint','—'),s('uname -r','—'),
+    g('ro.boot.bootdevice','—'),s('wm size',''),s('wm density',''),s('dumpsys battery',''),readRealCpu()
+  ]);
+  Object.assign(d,{
+    brand,model,device:dev,android:'Android '+rel+' (API '+sdk+')',board,
+    cpuArch:abi,build:fp,kernel,flash:/ufs/i.test(flash)?'UFS':(/mmc/i.test(flash)?'eMMC':flash||'—'),
+    display:((wmsize.match(/(\d+)x(\d+)/)||[]).slice(1).join('×')||'—')+' ('+((wmdens.match(/(\d+)/)||[])[1]||'—')+' dpi)',
+    sysArch:'aarch64',uptime:uptimeFromProc(await s('cat /proc/uptime','0'))
+  });
+  let level=+((batt.match(/level:\s*(\d+)/)||[])[1]||0);
+  let volt=+((batt.match(/voltage:\s*(\d+)/)||[])[1]||0);
+  let temp=+((batt.match(/temperature:\s*(\d+)/)||[])[1]||0);
+  let stat=+((batt.match(/status:\s*(\d+)/)||[])[1]||0);
+  d.battery={level,voltage:(volt/1000).toFixed(3)+' V',temp:(temp/10).toFixed(1)+'°C',
+    health:'良好',status:stat===2?'充电中':'未充电',plugged:stat===2?'USB / 充电器':'电池'};
+  state.cpu=cpus;
+}
+function uptimeFromProc(p){
+  const sec=Math.floor(parseFloat(p.split(' ')[0])||0);
+  return Math.floor(sec/86400)+'天'+Math.floor(sec%86400/3600)+'时'+Math.floor(sec%3600/60)+'分';
+}
+async function readRealCpu(){
+  try{
+    const out=await realShell('for i in 0 1 2 3 4 5 6 7; do cat /sys/devices/system/cpu/cpu$i/cpufreq/scaling_cur_freq 2>/dev/null || echo 0; done');
+    const nums=out.split('\n').map(x=>parseInt(x.trim(),10)).filter(x=>!isNaN(x));
+    if(nums.length>=8) return nums.slice(0,8).map(x=>Math.round(x/1000));
+  }catch(e){}
+  return EMPTY_CPU.slice();
+}
+
+/* ---------------- 定时刷新 ---------------- */
+let pollTimer=null;
+function startPolling(){
+  clearInterval(pollTimer);
+  const ms=(parseInt(settings.refresh,10)||2)*1000;
+  pollTimer=setInterval(async()=>{
+    if(state.mode!=='real' || !state.adb) return;
+    state.cpu=await readRealCpu();
+    const b=await realShell('dumpsys battery').catch(()=> '');
+    if(b){
+      const lv=+((b.match(/level:\s*(\d+)/)||[])[1]||state.device.battery.level);
+      state.device.battery.level=lv;
+    }
+    if(state.active==='home') renderHome();
+    if(state.active==='battery') renderBattery();
+  },ms);
+}
+
+/* ---------------- 页面：软件管理 ---------------- */
+function renderApps(){
+  const q=state.appFilter.toLowerCase();
+  const list=state.apps.filter(a=>!q||a.name.toLowerCase().includes(q)||a.pkg.toLowerCase().includes(q));
+  const third=state.apps.filter(a=>!a.sys).length;
+  $('#page-apps').innerHTML='<h1 class="page-title">软件管理</h1>'+
+    '<div class="toolbar"><input class="input" id="appSearch" placeholder="搜索应用名 / 包名" value="'+esc(state.appFilter)+'">'+
+    '<button class="btn" data-act="app-refresh">'+icon('refresh',15)+'刷新列表</button>'+
+    '<label class="btn primary">'+icon('download',15)+'安装 APK<input type="file" accept=".apk" hidden data-change="apk"></label>'+
+    '<span class="stat">共 <b>'+state.apps.length+'</b> 个应用 · 第三方 <b>'+third+'</b> · 系统 <b>'+(state.apps.length-third)+'</b></span></div>'+
+    '<div class="card table-card'+(list.length?'':' empty')+'"><table><thead><tr><th>应用</th><th>版本</th><th>类型</th><th>状态</th><th class="col-ops">操作</th></tr></thead><tbody>'+
+    (list.length?list.map(a=>'<tr data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'"><td><div class="app-cell"><div class="app-icon">'+esc(a.name.slice(0,1))+'</div><div><div class="app-name">'+esc(a.name)+'</div><div class="app-pkg">'+esc(a.pkg)+'</div></div></div></td>'+
+      '<td>'+esc(a.ver)+'</td><td>'+(a.sys?'<span class="pill gray">系统应用</span>':'<span class="pill">第三方</span>')+'</td>'+
+      '<td>'+(a.state==='on'?'<span class="pill green">已启用</span>':'<span class="pill gray">已禁用</span>')+'</td>'+
+      '<td><div class="td-ops"><button class="mini-btn" data-act="app-toggle" data-pkg="'+esc(a.pkg)+'">'+(a.state==='on'?'禁用':'启用')+'</button>'+
+      '<button class="mini-btn" data-act="app-force" data-pkg="'+esc(a.pkg)+'">强停</button>'+
+      '<button class="mini-btn" data-act="app-clear" data-pkg="'+esc(a.pkg)+'">清数据</button>'+
+      '<button class="mini-btn red" data-act="app-uninstall" data-pkg="'+esc(a.pkg)+'">卸载</button></div></td></tr>').join('')
+      :'')+
+    '<tr id="noMatch" style="'+(list.length?'display:none':'')+'"><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">'+(state.mode!=='real'?'尚未连接真机，连接后点击「刷新列表」读取应用':(state.apps.length?'未找到匹配的应用':'应用列表为空，点击「刷新列表」读取'))+'</td></tr>'+
+    '</tbody></table></div>'+
+    '<p class="hint">提示：禁用 / 启用使用 <code class="code-inline">pm disable-user</code> / <code class="code-inline">pm enable</code>；卸载系统应用需先解除用户安装或具备 root 权限。应用列表需连接真机后点击「刷新列表」读取。窄屏下可左右滑动表格查看操作列。</p>';
+}
+async function appRefresh(){
+  if(state.mode==='real'){
+    toast('正在读取应用列表…','');
+    const out=await shell('pm list packages -3');
+    const pkgs=out.split('\n').map(x=>x.replace(/^package:/,'').trim()).filter(Boolean);
+    const olds={}; state.apps.forEach(a=>olds[a.pkg]=a);
+    state.apps=pkgs.map(p=>olds[p]||{name:p.split('.').pop(),pkg:p,ver:'—',sys:false,state:'on'});
+    toast('已读取 '+state.apps.length+' 个第三方应用','ok');
+  }else toast('请先连接真机后再刷新应用列表','warn');
+  renderApps();
+}
+
+/* ---------------- 页面：显示控制 ---------------- */
+function rangeRow(label,desc,key,min,max,step,unit,tpl){
+  const v=state.tuner[key], id='r-'+key;
+  return '<div class="row-item"><div><div class="label">'+label+'</div><div class="desc">'+desc+'</div></div>'+
+    '<div class="ctrl"><div class="range-wrap"><input type="range" id="'+id+'" data-range="'+key+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+v+'">'+
+    '<span class="range-val" id="v-'+key+'">'+v+unit+'</span></div>'+
+    '<button class="btn primary" data-act="apply" data-tpl="'+esc(tpl)+'" data-key="'+key+'">应用</button></div></div>';
+}
+function renderDisplay(){
+  const t=state.tuner;
+  $('#page-display').innerHTML='<h1 class="page-title">显示控制</h1><div class="grid-2">'+
+    '<div class="card"><h2 class="card-title">屏幕参数</h2>'+
+      '<div class="row-item"><div><div class="label">分辨率</div><div class="desc">当前 '+t.w+' × '+t.h+'</div></div><div class="ctrl">'+
+        '<input class="input num-sm" type="number" data-num="w" value="'+t.w+'"><span class="muted">×</span>'+
+        '<input class="input num-sm" type="number" data-num="h" value="'+t.h+'">'+
+        '<button class="btn primary" data-act="wm-size">应用</button><button class="btn" data-act="wm-reset">重置</button></div></div>'+
+      '<div class="row-item"><div><div class="label">屏幕密度 DPI</div><div class="desc">当前 '+t.dpi+' dpi</div></div><div class="ctrl">'+
+        '<input class="input num-md" type="number" data-num="dpi" value="'+t.dpi+'">'+
+        '<button class="btn primary" data-act="wm-density">应用</button></div></div>'+
+      rangeRow('屏幕亮度','0 - 255，需关闭自动亮度','bright',0,255,1,'','settings put system screen_brightness {v}; settings put system screen_brightness_mode 0')+
+      '<div class="row-item"><div><div class="label">自动旋转</div><div class="desc">accelerometer_rotation</div></div><div class="ctrl">'+sw('rotate','settings put system accelerometer_rotation {v}')+'</div></div>'+
+      '<div class="row-item"><div><div class="label">深色模式</div><div class="desc">cmd uimode night</div></div><div class="ctrl">'+sw('night','cmd uimode night {v}')+'</div></div>'+
+    '</div>'+
+    '<div class="card"><h2 class="card-title">显示策略</h2>'+
+      '<div class="row-item"><div><div class="label">休眠时间</div><div class="desc">screen_off_timeout</div></div><div class="ctrl"><select data-select="timeout">'+
+        [[15000,'15 秒'],[30000,'30 秒'],[60000,'1 分钟'],[120000,'2 分钟'],[300000,'5 分钟'],[600000,'10 分钟'],[-1,'永不休眠']].map(o=>'<option value="'+o[0]+'"'+(t.timeout==o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div></div>'+
+      '<div class="row-item"><div><div class="label">字体缩放</div><div class="desc">font_scale，范围 0.85 - 1.30</div></div><div class="ctrl">'+rangeOnly('font',0.85,1.3,0.05,'×')+'<button class="btn primary" data-act="apply" data-tpl="settings put system font_scale {v}" data-key="font">应用</button></div></div>'+
+      '<div class="row-item"><div><div class="label">屏幕刷新率</div><div class="desc">peak_refresh_rate（需机型支持）</div></div><div class="ctrl">'+rangeOnly('refresh',60,144,1,' Hz')+'<button class="btn primary" data-act="apply" data-tpl="settings put system peak_refresh_rate {v}" data-key="refresh">应用</button></div></div>'+
+      '<div class="notice mt16">修改分辨率 / DPI 可能导致界面异常，若出现显示问题请点击「重置」恢复，或重启设备。所有修改均通过 <code class="code-inline">wm</code> / <code class="code-inline">settings</code> 命令下发，无需 ROOT。</div>'+
+    '</div></div>';
+}
+function rangeOnly(key,min,max,step,unit){ return '<div class="range-wrap"><input type="range" data-range="'+key+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+state.tuner[key]+'"><span class="range-val" id="v-'+key+'">'+state.tuner[key]+unit+'</span></div>'; }
+function sw(key,cmd){ return '<button class="switch'+(state.switches[key]?' on':'')+'" data-switch="'+key+'" data-cmd="'+esc(cmd)+'" aria-label="切换"></button>'; }
+
+/* ---------------- 页面：系统界面 ---------------- */
+function renderSystemUI(){
+  const t=state.tuner;
+  $('#page-systemui').innerHTML='<h1 class="page-title">系统界面</h1><div class="grid-2">'+
+    '<div class="card"><h2 class="card-title">界面行为</h2>'+
+      '<div class="row-item"><div><div class="label">动画速度</div><div class="desc">window / transition / animator 三个缩放值</div></div><div class="ctrl"><select data-select="anim">'+
+        [[0,'关闭动画'],[0.5,'0.5×'],[1,'1×（默认）'],[1.5,'1.5×'],[2,'2×']].map(o=>'<option value="'+o[0]+'"'+(t.anim==o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
+        '<button class="btn primary" data-act="anim-apply">应用</button></div></div>'+
+      '<div class="row-item"><div><div class="label">状态栏电量百分比</div><div class="desc">status_bar_show_battery_percent</div></div><div class="ctrl">'+sw('batteryPct','settings put system status_bar_show_battery_percent {v}')+'</div></div>'+
+      '<div class="row-item"><div><div class="label">沉浸式状态栏</div><div class="desc">policy_control immersive.full=*</div></div><div class="ctrl">'+sw('immersive','settings put global policy_control immersive.full=*')+'</div></div>'+
+      '<div class="row-item"><div><div class="label">隐藏导航栏</div><div class="desc">policy_control immersive.navigation=*</div></div><div class="ctrl">'+sw('nav','settings put global policy_control immersive.navigation=*')+'</div></div>'+
+    '</div>'+
+    '<div class="card"><h2 class="card-title">常用快捷指令</h2>'+
+      quickCmd('返回主界面','input keyevent 3')+quickCmd('打开最近任务','input keyevent 187')+
+      quickCmd('锁屏','input keyevent 26')+quickCmd('截图到 /sdcard','screencap -p /sdcard/screen.png')+
+      quickCmd('下拉通知栏','input swipe 500 0 500 800 200')+quickCmd('重启系统界面','am force-stop com.android.systemui')+
+      quickCmd('打开开发者选项','am start -a android.settings.APPLICATION_DEVELOPMENT_SETTINGS')+
+      '<div class="notice mt16">以上指令通过 <code class="code-inline">adb shell</code> 下发，点击即执行。执行结果可在「ADB 终端」中查看。</div>'+
+    '</div></div>';
+}
+function quickCmd(label,cmd){ return '<div class="row-item"><div><div class="label">'+label+'</div><div class="desc code-inline" style="display:inline-block;margin-top:4px">'+esc(cmd)+'</div></div><div class="ctrl"><button class="btn" data-act="run" data-cmd="'+esc(cmd)+'">执行</button></div></div>'; }
+
+/* ---------------- 页面：电池管理 ---------------- */
+function renderBattery(){
+  const blank={level:0,voltage:'—',temp:'—',health:'—',status:'—',plugged:'—'};
+  const b=state.mode==='none'?blank:(state.device.battery||blank);
+  const lv=b.level;
+  const C=2*Math.PI*54;
+  $('#page-battery').innerHTML='<h1 class="page-title">电池管理</h1><div class="grid-2">'+
+    '<div class="card"><h2 class="card-title">实时电池信息</h2>'+
+      '<div class="battery-wrap"><div class="ring"><svg viewBox="0 0 128 128" width="128" height="128">'+
+        '<circle cx="64" cy="64" r="54" fill="none" stroke="var(--border)" stroke-width="10"/>'+
+        '<circle cx="64" cy="64" r="54" fill="none" stroke="var(--brand)" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-lv/100))+'"/></svg>'+
+        '<div class="ring-text"><b>'+lv+'%</b><span>'+esc(b.status)+'</span></div></div>'+
+        '<div class="metric-grid">'+
+          metric('电压',b.voltage)+metric('温度',b.temp)+metric('健康状态',b.health)+metric('供电方式',b.plugged)+
+          metric('充电状态',b.status)+metric('设备型号',state.device.model||'—')+
+        '</div></div>'+
+      '<div class="mt20">'+rangeRow('模拟电量','cmd battery set level，用于调试与测试','level',0,100,1,'%','cmd battery set level {v}')+
+        '<div class="row-item"><div><div class="label">恢复真实电量</div><div class="desc">dumpsys battery reset</div></div><div class="ctrl"><button class="btn" data-act="run" data-cmd="dumpsys battery reset">重置</button></div></div></div>'+
+    '</div>'+
+    '<div class="card"><h2 class="card-title">电源策略</h2>'+
+      '<div class="row-item"><div><div class="label">省电模式</div><div class="desc">cmd power set-mode 1</div></div><div class="ctrl">'+sw('powerSave','cmd power set-mode {v}')+'</div></div>'+
+      '<div class="row-item"><div><div class="label">充电上限保护</div><div class="desc">部分机型支持，需系统接口</div></div><div class="ctrl">'+sw('chargeLimit','settings put global charging_limit 80')+'</div></div>'+
+      quickCmd('电池校准统计重置','dumpsys batterystats --reset')+
+      quickCmd('查看电池服务状态','dumpsys battery')+
+      quickCmd('查看耗电排行','dumpsys batterystats --charged')+
+      quickCmd('关闭 Doze 深度休眠','dumpsys deviceidle disable')+
+      '<div class="notice mt16">模拟电量仅改变系统上报值，不影响真实电池；重启或执行「恢复真实电量」后复原。所有电池命令均来自 <code class="code-inline">dumpsys battery</code> / <code class="code-inline">cmd</code>。</div>'+
+    '</div></div>';
+}
+function metric(k,v){ return '<div class="metric"><div class="m-k">'+k+'</div><div class="m-v">'+esc(v)+'</div></div>'; }
+
+/* ---------------- 页面：无极调节 ---------------- */
+function renderTuner(){
+  const t=state.tuner;
+  $('#page-tuner').innerHTML='<h1 class="page-title">无极调节</h1><div class="grid-2">'+
+    '<div class="card"><h2 class="card-title">性能调节</h2>'+
+      rangeRow('CPU 最小频率','单位 MHz，写入 scaling_min_freq 需 root','cpuMin',300,2000,1,' MHz','echo {v}000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq')+
+      rangeRow('CPU 最大频率','单位 MHz，写入 scaling_max_freq 需 root','cpuMax',600,3200,1,' MHz','echo {v}000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq')+
+      rangeRow('媒体音量','media volume --stream 3 --set','volume',0,15,1,'','media volume --stream 3 --set {v}')+
+      '<div class="row-item"><div><div class="label">性能预设</div><div class="desc">一键切换常用调度组合</div></div><div class="ctrl">'+
+        ['省电','均衡','性能'].map(p=>'<button class="btn" data-act="preset" data-preset="'+p+'">'+p+'</button>').join('')+'</div></div>'+
+      '<div class="notice mt16">CPU / GPU 频率写入 sysfs 通常需要 root 权限；非 root 设备仅会返回权限错误，不会造成损害。屏幕刷新率、音量等通过系统公开接口调节，无需 root。</div>'+
+    '</div>'+
+    '<div class="card"><h2 class="card-title">当前状态</h2>'+
+      '<div class="section-title">CPU 实时频率（每 '+(settings.refresh||'2')+' 秒刷新）</div>'+
+      '<div class="grid-2" style="gap:8px 20px">'+state.cpu.map((f,i)=>'<div class="kv"><span class="k">CPU '+i+'</span><span class="v '+(state.mode==='none'?'':'blue')+'">'+(state.mode==='none'?'—':f+' MHz')+'</span></div>').join('')+'</div>'+
+      '<div class="info-divider"></div>'+
+      '<div class="section-title">已下发命令记录（最近 8 条）</div>'+
+      '<div class="output-box">'+(state.logs.length?state.logs.slice(0,8).map(l=>'['+l.t+'] $ '+l.cmd+'  →  '+l.result.slice(0,90)).join('\n'):'暂无记录')+'</div>'+
+    '</div></div>';
+}
+
+/* ---------------- 页面：控机脚本 ---------------- */
+const TEMPLATES=[
+  {name:'一键清理后台',desc:'强制停止常见后台应用',code:'am force-stop com.tencent.mm\nam force-stop com.kugou.android\nam kill-all 2>/dev/null\ninput keyevent 3'},
+  {name:'导出应用列表',desc:'保存已安装包名到 /sdcard',code:'pm list packages -3 > /sdcard/packages.txt\necho "已导出到 /sdcard/packages.txt"'},
+  {name:'抓取当前屏幕',desc:'截图并保存到 /sdcard/screen.png',code:'screencap -p /sdcard/screen.png\necho "截图完成"'},
+  {name:'性能快照',desc:'CPU 频率 + 内存 + 电池',code:'dumpsys battery | grep -E "level|temperature|voltage"\ncat /proc/meminfo | head -3\nfor i in 0 2 4 6; do cat /sys/devices/system/cpu/cpu$i/cpufreq/scaling_cur_freq; done'},
+  {name:'清理系统缓存',desc:'trim 分区并广播媒体扫描',code:'sm trim-all 2>/dev/null\nam broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard'},
+  {name:'重启到 Recovery',desc:'reboot recovery（危险操作）',code:'reboot recovery'}
+];
+function renderScripts(){
+  $('#page-scripts').innerHTML='<h1 class="page-title">控机脚本</h1><div class="scripts-layout">'+
+    '<div class="card"><h2 class="card-title">脚本模板</h2><div class="tpl-list">'+
+      TEMPLATES.map((t,i)=>'<div class="tpl" data-act="tpl" data-i="'+i+'"><div><div class="t-name">'+t.name+'</div><div class="t-desc">'+t.desc+'</div></div>'+icon('play',15)+'</div>').join('')+
+      '</div><div class="info-divider"></div><h2 class="card-title" style="margin-bottom:10px">我的脚本</h2>'+
+      (state.scripts.length?state.scripts.map((s,i)=>'<div class="tpl" data-act="load-script" data-i="'+i+'"><div><div class="t-name">'+esc(s.name)+'</div><div class="t-desc">'+esc(s.code.split('\n')[0])+'</div></div><button class="mini-btn red" data-act="del-script" data-i="'+i+'">删除</button></div>').join(''):'<div class="muted" style="font-size:12.5px">暂无保存的脚本</div>')+
+    '</div>'+
+    '<div><div class="card"><h2 class="card-title">脚本编辑器（每行一条 shell 命令）</h2>'+
+      '<textarea class="code-area" id="scriptEditor">'+esc(state.scriptText)+'</textarea>'+
+      '<div class="toolbar mt16" style="margin-bottom:0"><button class="btn primary" data-act="script-run">'+icon('play',15)+'运行脚本</button>'+
+      '<button class="btn" data-act="script-save">'+icon('save',15)+'保存脚本</button>'+
+      '<button class="btn" data-act="script-clear">清空</button>'+
+      '<span class="stat">共 '+state.scriptText.split('\n').filter(x=>x.trim()&&!x.trim().startsWith('#')).length+' 条有效命令</span></div></div>'+
+      '<div class="card mt20"><div class="card-title-row"><h2 class="card-title">执行输出</h2><span class="badge-soft">'+(state.mode==='real'?'真机':'未连接')+'</span></div>'+
+      '<div class="output-box" id="scriptOutput">'+(esc(state.scriptOutput)||'<span class="muted">点击「运行脚本」查看输出…</span>')+'</div></div>'+
+    '</div></div>';
+}
+async function runScript(){
+  if(state.mode!=='real'){ toast('请先连接真机后再运行脚本','warn'); return; }
+  state.scriptText=$('#scriptEditor').value;
+  const lines=state.scriptText.split('\n').map(x=>x.trim()).filter(x=>x&&!x.startsWith('#'));
+  let out='';
+  $('#scriptOutput').textContent='正在执行…';
+  for(const line of lines){
+    out+='$ '+line+'\n';
+    try{ const r=await shell(line); if(r && r!=='__CLEAR__') out+=r+'\n'; log(line,r||'成功'); }
+    catch(e){ out+='ERROR: '+(e.message||e)+'\n'; }
+    $('#scriptOutput').textContent=out;
+  }
+  state.scriptOutput=out+'\n✔ 执行完成，共 '+lines.length+' 条命令';
+  $('#scriptOutput').textContent=state.scriptOutput;
+  toast('脚本执行完成，共 '+lines.length+' 条命令','ok');
+}
+
+/* ---------------- 页面：ADB 终端 ---------------- */
+function renderTerminal(){
+  $('#page-terminal').innerHTML='<h1 class="page-title">ADB 终端</h1>'+
+    '<div class="card" style="padding:20px 22px">'+
+      '<div class="toolbar" style="margin-bottom:12px"><span class="stat" style="margin-left:0">'+(state.mode==='real'?'已连接真机 · 命令将真实下发至设备':'未连接设备 · 请先点击右上角「连接设备」连接真机')+'</span>'+
+      '<button class="btn" data-act="term-clear">清屏</button></div>'+
+      '<div class="terminal" id="termBox"></div>'+
+      '<div class="term-input"><span class="prompt">$</span><input id="termInput" placeholder="输入 shell 命令，按 Enter 执行；↑ / ↓ 查看历史" autocomplete="off" spellcheck="false"><button class="btn primary" data-act="term-run">执行</button></div>'+
+      '<div class="chips">'+['getprop ro.product.model','dumpsys battery','pm list packages -3','wm size','uname -a','id','date','help'].map(c=>'<button class="chip" data-act="term-quick" data-cmd="'+esc(c)+'">'+esc(c)+'</button>').join('')+'</div>'+
+    '</div>';
+  drawTerminal();
+}
+function drawTerminal(){
+  const box=$('#termBox'); if(!box) return;
+  if(!state.termLines.length) state.termLines=[{t:'sys',s:'搞机工具箱 ADB Terminal · 输入 help 查看可用命令\n'+(state.mode==='real'?'已连接真机，输入 shell 命令开始':'尚未连接设备，请先点击右上角「连接设备」')}];
+  box.innerHTML=state.termLines.map(l=>'<div class="'+(l.t==='cmd'?'t-cmd':l.t==='err'?'t-err':l.t==='sys'?'t-sys':'t-out')+'">'+esc(l.s)+'</div>').join('');
+  box.scrollTop=box.scrollHeight;
+}
+async function termExec(cmd){
+  cmd=cmd.trim(); if(!cmd) return;
+  state.termHistory.push(cmd); state.termIdx=state.termHistory.length;
+  if(cmd==='clear'){ state.termLines=[]; drawTerminal(); return; }
+  if(cmd==='help'){
+    state.termLines.push({t:'cmd',s:'$ help'});
+    state.termLines.push({t:'sys',s:'可用命令：getprop / dumpsys / pm / wm / settings / input / am / reboot / screencap 等设备端 shell 命令。\n未连接设备时会提示先连接真机；连接后所有命令真实下发。'});
+    drawTerminal(); return;
+  }
+  state.termLines.push({t:'cmd',s:'$ '+cmd});
+  drawTerminal();
+  let out;
+  try{ out=await shell(cmd); log(cmd,out||'成功'); }
+  catch(e){ out='ERROR: '+(e.message||e); }
+  if(out==='__CLEAR__'){ state.termLines=[]; drawTerminal(); return; }
+  state.termLines.push({t:out.indexOf('ERROR')===0||/not found/.test(out)?'err':'out',s:out||'(无输出)'});
+  drawTerminal();
+}
+
+/* ---------------- 页面：软件设置 ---------------- */
+function renderSettings(){
+  const s=settings;
+  $('#page-settings').innerHTML='<h1 class="page-title">软件设置</h1><div class="grid-2">'+
+    '<div class="card"><h2 class="card-title">外观与刷新</h2>'+
+      '<div class="row-item"><div><div class="label">主题模式</div><div class="desc">支持浅色 / 深色 / 跟随系统</div></div><div class="ctrl"><select data-setting="theme">'+
+        [['light','浅色'],['dark','深色'],['auto','跟随系统']].map(o=>'<option value="'+o[0]+'"'+(s.theme===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div></div>'+
+      '<div class="row-item"><div><div class="label">系统外观偏好</div><div class="desc">选择「跟随系统」后，系统切换深浅色界面会自动同步</div></div><div class="ctrl"><span class="badge-soft">'+(systemPrefersDark()?'系统：深色':'系统：浅色')+'</span></div></div>'+
+      '<div class="row-item"><div><div class="label">设备信息刷新间隔</div><div class="desc">CPU 频率 / 电池 / 开机时长自动采样</div></div><div class="ctrl"><select data-setting="refresh">'+
+        [['1','1 秒'],['2','2 秒'],['5','5 秒'],['10','10 秒'],['0','关闭']].map(o=>'<option value="'+o[0]+'"'+(s.refresh===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div></div>'+
+    '</div>'+
+    '<div class="card"><h2 class="card-title">连接与操作</h2>'+
+      '<div class="row-item"><div><div class="label">危险操作二次确认</div><div class="desc">重启 / 关机 / 卸载类操作弹出确认框</div></div><div class="ctrl"><button class="switch'+(s.confirm?' on':'')+'" data-setting-sw="confirm"></button></div></div>'+
+      '<div class="row-item"><div><div class="label">自动重连已授权设备</div><div class="desc">页面加载时尝试连接浏览器已授权的 USB 设备</div></div><div class="ctrl"><button class="switch'+(s.autoReconnect?' on':'')+'" data-setting-sw="autoReconnect"></button></div></div>'+
+      '<div class="row-item"><div><div class="label">本地数据</div><div class="desc">保存的脚本与偏好设置存储于浏览器 localStorage</div></div><div class="ctrl"><button class="btn danger" data-act="clear-local">清空数据</button></div></div>'+
+    '</div></div>'+
+    '<div class="notice mt20">所有设置仅保存在本机浏览器，不会上传。切换主题会立即生效；刷新间隔修改后自动重启采样定时器。</div>';
+}
+
+/* ---------------- 页面：关于 ---------------- */
+function renderAbout(){
+  $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2">'+
+    '<div class="card"><div class="about-hero"><div class="about-logo">搞</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.0</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.0')+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
+      kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('出品','維坦')+kv('版权','© 2026 維坦')+'</div>'+
+      '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
+      '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
+    '</div>'+
+    '<div class="card"><h2 class="card-title">真机连接步骤</h2>'+
+      '<div class="muted" style="font-size:13px;line-height:2.1">1. 手机开启「开发者选项 → USB 调试」<br>2. 使用数据线连接电脑，USB 模式选择「传输文件」<br>3. 使用 Chrome 或 Edge 打开本页（HTTPS 或 localhost）<br>4. 点击右上角「连接设备 → 连接真机」，在弹出列表中选择手机<br>5. 手机上勾选「一律允许」并点击「允许」完成 RSA 授权</div>'+
+      '<div class="info-divider"></div><h2 class="card-title">本地运行</h2>'+
+      '<div class="muted" style="font-size:12.8px;line-height:1.9">WebUSB 要求安全上下文，建议在本目录启动静态服务后访问：<br><code class="code-inline">python3 -m http.server 8000</code><br>然后打开 <code class="code-inline">http://localhost:8000</code>。直接双击打开 HTML 文件时部分浏览器会禁用 WebUSB，请改用上述本地服务方式。</div>'+
+      '<div class="info-divider"></div><h2 class="card-title">技术实现</h2>'+
+      '<div class="muted" style="font-size:12.8px;line-height:1.9">纯静态单文件实现，无需后端。连接真机后动态加载 <code class="code-inline">@yume-chan/adb</code>（Tango ADB）通过 WebUSB 直连 adbd，执行 <code class="code-inline">getprop</code> / <code class="code-inline">dumpsys</code> / <code class="code-inline">pm</code> / <code class="code-inline">wm</code> / <code class="code-inline">settings</code> / <code class="code-inline">reboot</code> 等指令。设备信息、频率采样、脚本与终端共用同一执行层。</div>'+
+      '<div class="notice mt16">免责声明：重启、清除数据、修改系统设置等操作可能影响设备状态，请确认已备份重要数据后再执行。本工具仅在用户明确点击时下发命令。</div>'+
+    '</div></div>';
+}
+
+const RENDER={home:renderHome,apps:renderApps,display:renderDisplay,systemui:renderSystemUI,battery:renderBattery,tuner:renderTuner,scripts:renderScripts,terminal:renderTerminal,settings:renderSettings,about:renderAbout};
+
+/* ---------------- 事件委托 ---------------- */
+document.addEventListener('click', async e=>{
+  const nav=e.target.closest('[data-nav]');
+  if(nav){ showPage(nav.dataset.nav); return; }
+  const el=e.target.closest('[data-act]');
+  if(!el) return;
+  const act=el.dataset.act, cmd=el.dataset.cmd||'', key=el.dataset.key;
+  switch(act){
+    case 'toggle-theme': {
+      settings.theme = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+      saveSettings(); applyTheme(); break;
+    }
+    case 'connect': connectFlow(); break;
+    case 'disconnect': disconnect(); break;
+    case 'refresh': refreshDevices(); break;
+    case 'toggle-board': state.showBoard=!state.showBoard; renderHome(); break;
+    case 'reboot': {
+      if(state.mode==='none'){ toast('请先连接真机','warn'); return; }
+      const label=el.dataset.label;
+      const go=async()=>{ await runCmd(cmd,true); toast('已下发「'+label+'」指令：'+esc(cmd),'ok'); };
+      if(settings.confirm){
+        const i=await dialog('确认执行「'+label+'」？','将向设备下发命令：<br><code class="code-inline">'+esc(cmd)+'</code><br><br>设备会立即重启或关机，此操作不可撤销。',[{label:'取消'},{label:'确认执行',primary:true,danger:true}]);
+        if(i===1) go();
+      }else go();
+      break;
+    }
+    case 'run': runCmd(cmd); break;
+    case 'apply': {
+      const tpl=el.dataset.tpl||cmd;
+      const v=key&&state.tuner[key]!=null?state.tuner[key]:'';
+      await runCmd(tpl.replace(/\{v\}/g,String(v)));
+      if(key==='bright') await runCmd('settings put system screen_brightness_mode 0',true);
+      break;
+    }
+    case 'wm-size': await runCmd('wm size '+state.tuner.w+'x'+state.tuner.h); break;
+    case 'wm-density': await runCmd('wm density '+state.tuner.dpi); break;
+    case 'wm-reset': await runCmd('wm size reset'); await runCmd('wm density reset'); toast('分辨率与密度已重置','ok'); break;
+    case 'anim-apply': {
+      const v=state.tuner.anim;
+      await runCmd('settings put global window_animation_scale '+v,true);
+      await runCmd('settings put global transition_animation_scale '+v,true);
+      await runCmd('settings put global animator_duration_scale '+v,true);
+      toast('动画速度已设置为 '+v+'×','ok'); break;
+    }
+    case 'app-refresh': appRefresh(); break;
+    case 'app-toggle': {
+      const a=state.apps.find(x=>x.pkg===el.dataset.pkg); if(!a) return;
+      const next=a.state==='on'?'off':'on';
+      await runCmd('pm '+(next==='off'?'disable-user':'enable')+' '+a.pkg,true);
+      a.state=next; toast((next==='off'?'已禁用 ':'已启用 ')+a.name,'ok'); renderApps(); break;
+    }
+    case 'app-force': await runCmd('am force-stop '+el.dataset.pkg); break;
+    case 'app-clear': {
+      const i=await dialog('清除应用数据？','将执行 <code class="code-inline">pm clear '+esc(el.dataset.pkg)+'</code>，该应用的登录状态与本地数据会被清空。',[{label:'取消'},{label:'确认清除',primary:true,danger:true}]);
+      if(i===1){ await runCmd('pm clear '+el.dataset.pkg,true); toast('已清除应用数据','ok'); }
+      break;
+    }
+    case 'app-uninstall': {
+      const i=await dialog('卸载应用？','将执行 <code class="code-inline">pm uninstall -k --user 0 '+esc(el.dataset.pkg)+'</code>。',[{label:'取消'},{label:'确认卸载',primary:true,danger:true}]);
+      if(i===1){ await runCmd('pm uninstall -k --user 0 '+el.dataset.pkg,true); state.apps=state.apps.filter(x=>x.pkg!==el.dataset.pkg); renderApps(); toast('应用卸载指令已下发','ok'); }
+      break;
+    }
+    case 'preset': {
+      const p=el.dataset.preset;
+      const map={'省电':[634,1498,3,60],'均衡':[634,2016,7,120],'性能':[1098,3000,11,144]};
+      const v=map[p]; state.tuner.cpuMin=v[0]; state.tuner.cpuMax=v[1]; state.tuner.volume=v[2]; state.tuner.refresh=v[3];
+      await runCmd('settings put system peak_refresh_rate '+v[3],true);
+      toast('已应用「'+p+'」预设','ok'); renderTuner(); break;
+    }
+    case 'tpl': {
+      const t=TEMPLATES[+el.dataset.i];
+      if(!t) return; state.scriptText=t.code; renderScripts(); toast('已载入模板：'+t.name,''); break;
+    }
+    case 'script-run': runScript(); break;
+    case 'script-save': {
+      state.scriptText=$('#scriptEditor').value;
+      const name=prompt('脚本名称：','自定义脚本 '+(state.scripts.length+1));
+      if(name){ state.scripts.push({name,code:state.scriptText}); localStorage.setItem('gjbox.scripts',JSON.stringify(state.scripts)); renderScripts(); toast('脚本已保存','ok'); }
+      break;
+    }
+    case 'script-clear': state.scriptText=''; state.scriptOutput=''; renderScripts(); break;
+    case 'load-script': state.scriptText=state.scripts[+el.dataset.i].code; renderScripts(); break;
+    case 'del-script': state.scripts.splice(+el.dataset.i,1); localStorage.setItem('gjbox.scripts',JSON.stringify(state.scripts)); renderScripts(); break;
+    case 'term-clear': state.termLines=[]; drawTerminal(); break;
+    case 'term-run': { const i=$('#termInput'); await termExec(i.value); i.value=''; i.focus(); break; }
+    case 'term-quick': { const i=$('#termInput'); i.value=cmd; await termExec(cmd); i.value=''; i.focus(); break; }
+    case 'clear-local': {
+      const i=await dialog('清空本地数据？','将删除保存的脚本与所有偏好设置，页面将恢复默认值。',[{label:'取消'},{label:'确认清空',primary:true,danger:true}]);
+      if(i===1){ localStorage.removeItem('gjbox.scripts'); localStorage.removeItem('gjbox.settings'); toast('已清空，即将刷新页面','ok'); setTimeout(()=>location.reload(),900); }
+      break;
+    }
+  }
+});
+
+/* 开关 / 下拉 / 滑块 / 输入 */
+document.addEventListener('click', async e=>{
+  const s=e.target.closest('[data-switch]');
+  if(!s) return;
+  const key=s.dataset.key;
+  state.switches[key]=!state.switches[key];
+  const v=state.switches[key]?1:0;
+  let cmd=s.dataset.cmd||'';
+  if(cmd.indexOf('{v}')>=0) cmd=cmd.replace(/\{v\}/g,v);
+  else if(!state.switches[key]) cmd=cmd.replace(/immersive\.\w+=\*/,'null').replace(/night yes/,'night no');
+  if(cmd.indexOf('uimode')>=0) cmd='cmd uimode night '+(state.switches[key]?'yes':'no');
+  if(cmd.indexOf('power set-mode')>=0) cmd='cmd power set-mode '+(state.switches[key]?1:0);
+  if(cmd.indexOf('charging_limit')>=0 && !state.switches[key]) cmd='settings delete global charging_limit';
+  if(cmd.indexOf('status_bar_show')>=0) cmd='settings put system status_bar_show_battery_percent '+v;
+  s.classList.toggle('on',state.switches[key]);
+  if(state.mode==='none'){ toast('请先连接真机','warn'); return; }
+  await runCmd(cmd,true);
+  toast('设置已'+(state.switches[key]?'开启':'关闭'),'ok');
+});
+document.addEventListener('input', e=>{
+  const t=e.target;
+  if(t.id==='appSearch'){
+    state.appFilter=t.value.trim().toLowerCase();
+    let shown=0;
+    $$('#page-apps tbody tr[data-search]').forEach(r=>{ const ok=r.dataset.search.indexOf(state.appFilter)>=0; r.style.display=ok?'':'none'; if(ok) shown++; });
+    const empty=$('#noMatch'); if(empty) empty.style.display=shown===0?'':'none';
+    const card=$('#page-apps .table-card'); if(card) card.classList.toggle('empty',shown===0);
+    return;
+  }
+  if(t.dataset.range){
+    const k=t.dataset.range, v=parseFloat(t.value); state.tuner[k]=v;
+    const unit=({bright:'',font:'×',refresh:' Hz',cpuMin:' MHz',cpuMax:' MHz',volume:'',level:'%'})[k]||'';
+    const out=$('#v-'+k); if(out) out.textContent=v+unit;
+    return;
+  }
+  if(t.dataset.num){ state.tuner[t.dataset.num]=parseInt(t.value,10)||0; return; }
+  if(t.id==='scriptEditor'){ state.scriptText=t.value; return; }
+});
+document.addEventListener('change', async e=>{
+  const t=e.target;
+  if(t.dataset.select==='timeout'){ state.tuner.timeout=+t.value; await runCmd('settings put system screen_off_timeout '+t.value,true); toast('休眠时间已设置','ok'); return; }
+  if(t.dataset.select==='anim'){ state.tuner.anim=parseFloat(t.value); return; }
+  if(t.dataset.setting){
+    settings[t.dataset.setting]=t.value; saveSettings();
+    if(t.dataset.setting==='theme'){ applyTheme(); toast('主题已切换','ok'); }
+    if(t.dataset.setting==='refresh'){ startPolling(); toast('刷新间隔已更新','ok'); }
+    return;
+  }
+  if(t.dataset.change==='apk'){
+    const f=t.files&&t.files[0]; if(!f) return;
+    toast('已选择 '+esc(f.name)+'（'+(f.size/1048576).toFixed(1)+' MB）','');
+    if(state.mode==='real'){
+      // 真机安装：通过 adb sync 分块推送到 /data/local/tmp 后 pm install
+      try{
+        const bytes=new Uint8Array(await f.arrayBuffer());
+        const sync=await state.adb.sync();
+        let off=0;
+        const stream=new ReadableStream({pull(c){
+          if(off>=bytes.length){ c.close(); return; }
+          const end=Math.min(off+65536,bytes.length);
+          c.enqueue(bytes.subarray(off,end)); off=end;
+        }});
+        await sync.write({filename:'/data/local/tmp/base.apk',file:stream});
+        try{ await sync.dispose(); }catch(e){}
+        await runCmd('pm install -r /data/local/tmp/base.apk',true);
+        toast('APK 安装流程已下发','ok');
+      }catch(err){ toast('APK 安装失败：'+esc(err.message||err),'err'); }
+    }else toast('请先连接真机后再安装 APK','warn');
+    return;
+  }
+});
+document.addEventListener('click', e=>{
+  const s=e.target.closest('[data-setting-sw]');
+  if(!s) return;
+  const k=s.dataset.settingSw; settings[k]=!settings[k]; saveSettings(); s.classList.toggle('on',settings[k]);
+  toast('设置已'+(settings[k]?'开启':'关闭'),'ok');
+});
+document.addEventListener('keydown', async e=>{
+  const i=$('#termInput');
+  if(e.target===i){
+    if(e.key==='Enter'){ e.preventDefault(); const v=i.value; i.value=''; await termExec(v); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); if(state.termIdx>0){ state.termIdx--; i.value=state.termHistory[state.termIdx]||''; } }
+    else if(e.key==='ArrowDown'){ e.preventDefault(); if(state.termIdx<state.termHistory.length-1){ state.termIdx++; i.value=state.termHistory[state.termIdx]||''; } else { state.termIdx=state.termHistory.length; i.value=''; } }
+  }
+  if(e.key==='Escape' && !$('#mask').hidden) $('#mask').hidden=true;
+});
+$('#mask').addEventListener('click', e=>{ if(e.target.id==='mask') $('#mask').hidden=true; });
+$('#deviceSelect').addEventListener('change', e=>{
+  toast('已选择设备 '+e.target.value,'');
+});
+
+/* ---------------- 启动 ---------------- */
+function boot(){
+  applyTheme(); renderNav();
+  const hash=(location.hash||'').replace(/^#/,'');
+  showPage(NAV.some(n=>n.id===hash)?hash:'home');
+  if(settings.refresh!=='0') startPolling();
+  // 自动重连（仅在开启且已获得过 USB 授权时静默尝试，不弹系统选择器）
+  if(settings.autoReconnect && navigator.usb && location.protocol!=='file:'){
+    navigator.usb.getDevices().then(list=>{
+      if(list.length) toast('检测到 '+list.length+' 台已授权设备，点击「连接设备」即可重连','');
+    }).catch(()=>{});
+  }
+}
+boot();
+})();
+</script>
+</body>
+</html>
