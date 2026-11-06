@@ -626,7 +626,7 @@ const NAV = [
   {id:'scripts',label:'控机脚本',ic:'code'}, {id:'terminal',label:'ADB 终端',ic:'terminal'},
   {id:'settings',label:'软件设置',ic:'settings'}, {id:'about',label:'关于',ic:'info'}
 ];
-const TITLES = {home:'设备信息',apps:'软件管理',mirror:'投屏',display:'显示控制',systemui:'系统界面',battery:'电池管理',tuner:'无极调节',scripts:'控机脚本',terminal:'ADB 终端',settings:'软件设置',about:'关于'};
+const TITLES = {home:'设备信息',apps:'软件管理',mirror:'手机投屏',display:'显示控制',systemui:'系统界面',battery:'电池管理',tuner:'无极调节',scripts:'控机脚本',terminal:'ADB 终端',settings:'软件设置',about:'关于'};
 const REBOOT = [
   {act:'reboot',label:'重启',cmd:'reboot',ic:'refresh'}, {act:'bootloader',label:'Fastboot',cmd:'reboot bootloader',ic:'power'},
   {act:'edl',label:'EDL',cmd:'reboot edl',ic:'download'},
@@ -1715,7 +1715,7 @@ function renderMirror(){
   const ok=state.mode==='real' && !!state.adb, m=state.mirror;
   const dis=ok?'':' disabled style="opacity:.5;pointer-events:none" aria-disabled="true"';
   const keyBtn=k=>'<button class="btn" data-act="mirror-key" data-key="'+k.k+'"'+dis+'>'+icon(k.ic,15)+k.label+'</button>';
-  $('#page-mirror').innerHTML='<h1 class="page-title">屏幕投屏</h1>'+
+  $('#page-mirror').innerHTML='<h1 class="page-title">投屏</h1>'+
     '<div class="toolbar">'+
       '<button class="btn '+(m.running?'':'primary')+'" data-act="mirror-toggle"'+dis+'>'+icon(m.running?'stop':'play',15)+(m.running?'停止投屏':'开始投屏')+'</button>'+
       '<label class="muted" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px">帧间隔 '+
