@@ -409,7 +409,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.0.4</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.0.5</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -521,7 +521,7 @@ Object.keys(settings).forEach(k=>{ if(!Object.prototype.hasOwnProperty.call(DEFA
 
 const state = {
   mode:'none',                 // real | none
-  adb:null, manager:null, realDevice:null, connecting:false, lastError:null,
+  adb:null, manager:null, realDevice:null, connecting:false, connectStage:'', lastError:null,
   device:freshDevice(),
   cpu:EMPTY_CPU.slice(),
   active:'home', showBoard:false,
@@ -678,10 +678,18 @@ const CDN = {
   webusb:'https://esm.sh/@yume-chan/adb-daemon-webusb@2.3.2?deps=@yume-chan/adb@2.3.1',
   cred:'https://esm.sh/@yume-chan/adb-credential-web@2.1.0?deps=@yume-chan/adb@2.3.1'
 };
-async function loadLibs(){
-  const [a,b,c]=await Promise.all([import(CDN.adb),import(CDN.webusb),import(CDN.cred)]);
-  return {a,b,c};
+let libsPromise=null;
+function loadLibs(){
+  if(!libsPromise){
+    libsPromise=Promise.all([import(CDN.adb),import(CDN.webusb),import(CDN.cred)])
+      .then(([a,b,c])=>({a,b,c}))
+      .catch(e=>{ libsPromise=null; throw e; });   // 加载失败允许下次重试
+  }
+  return libsPromise;
 }
+/* 预先取好组件：navigator.usb.requestDevice() 必须在用户手势有效期内调用，
+   若等点击后才现场下载 3 个 ESM 包，手势过期会导致系统设备选择器不弹出。 */
+function warmLibs(){ if(navigator.usb && window.isSecureContext) loadLibs().catch(()=>{}); }
 async function realShell(cmd){
   if(!state.adb) throw new Error('设备未连接');
   const svc=state.adb.subprocess;
@@ -721,7 +729,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.0.4';
+const BUILD='v1.0.5';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -787,6 +795,7 @@ async function runDiagnostics(){
   p('浏览器', br+' / '+os);
   p('WebUSB 接口', navigator.usb?'存在':'不存在');
   p('当前状态', 'mode='+state.mode+' connecting='+!!state.connecting+' manager='+!!state.manager);
+  p('连接阶段', state.connectStage||'—');
   p('最近连接错误', errText(state.lastError));
   L.push('');
   if(!navigator.usb){ L.push('无法继续：当前浏览器不支持 WebUSB。'); return L.join('\n'); }
@@ -910,69 +919,102 @@ async function releaseAllUsb(){
 }
 function setConnecting(on){
   const b=document.querySelector('[data-act="connect"]');
-  if(b){ b.disabled=on; b.textContent=on?'连接中…':'连接设备'; }
+  if(b){
+    b.disabled=false;                       // 连接中保持可点，作为「取消连接」出口
+    b.textContent=on?'取消连接':'连接设备';
+    if(on) b.dataset.cancel='1'; else delete b.dataset.cancel;
+  }
+}
+/* 连接链路里 CDN 挂起 / adbd 半死 / 系统选择器被抑制，任一 await 都可能永不 settle。
+   每个阶段都包上「超时 + 可取消」，保证 state.connecting 一定能复位。 */
+let connectAbort=null;
+function beginConnect(){
+  let rej; const p=new Promise((_,r)=>{ rej=r; });
+  connectAbort={promise:p,reject:rej};
+}
+function cancelConnect(){
+  const a=connectAbort; connectAbort=null;
+  if(a) a.reject(new Error('CANCELLED'));
+}
+/* optional=true：系统设备选择器由用户操作，不设超时，但可被取消 */
+function stage(promise, ms, label, optional){
+  const parts=[Promise.resolve(promise)];
+  if(connectAbort) parts.push(connectAbort.promise);
+  let timer=null;
+  if(!optional && ms>0) parts.push(new Promise((_,rej)=>{ timer=setTimeout(()=>rej(new Error(label)),ms); }));
+  return Promise.race(parts).finally(()=>{ if(timer!=null) clearTimeout(timer); });
 }
 async function connectReal(preferPaired, targetSerial){
   if(state.connecting) throw new Error('正在连接中，请稍候');
   if(!navigator.usb) throw new Error('当前浏览器或页面环境不支持 WebUSB。请使用 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页。');
-  state.connecting=true; setConnecting(true);
-  let dev=null;
+  state.connecting=true; setConnecting(true); beginConnect();
+  let dev=null, connection=null;
   try{
-    toast('正在加载 ADB 组件，首次连接可能需要几秒…','');
-    const libs=await loadLibs();
+    state.connectStage='加载 ADB 组件';
+    toast(preferPaired?'正在重连已授权设备（不会弹出系统选择器）…':'正在连接真机，请在系统弹窗中选择设备…','');
+    const libs=await stage(loadLibs(),15000,'加载 ADB 组件超时，请检查网络能否访问 esm.sh 后重试');
     const Manager=libs.b.AdbDaemonWebUsbDeviceManager.BROWSER;
     if(!Manager) throw new Error('WebUSB 不可用（需要安全上下文：HTTPS 或 localhost）');
     state.manager=Manager;
     // 已有授权设备时直接复用，避免重复弹出系统选择器、减少 USB 句柄累积
     if(preferPaired){
-      const list=await Manager.getDevices();
+      state.connectStage='枚举已授权设备';
+      const list=await stage(Manager.getDevices(),8000,'枚举已授权设备超时');
       if(list.length) dev=(targetSerial && list.find(d=>d.serial===targetSerial)) || list[0];
     }
     if(!dev){
       // 库内部已默认按 ADB 接口过滤 (class 0xff / sub 0x42 / proto 1)，无需额外 filters
-      dev=await Manager.requestDevice();
+      state.connectStage='等待选择设备（系统弹窗）';
+      dev=await stage(Manager.requestDevice(),0,'',true);   // 用户选择需要时间：不设超时，仅可取消
       if(!dev) throw new Error('CANCELLED');
     }
     // 先释放本页可能残留的句柄
     if(state.realDevice) await releaseUsb(state.realDevice);
-    let connection;
-    try{ connection=await dev.connect(); }
+    state.connectStage='打开 USB 接口';
+    try{ connection=await stage(dev.connect(),20000,'打开 USB 接口超时（20 秒）'); }
     catch(e){
       if(!isBusyError(e)) throw e;
       // 自动清理浏览器内所有残留 USB 句柄后重试一次
       await releaseAllUsb();
       await releaseUsb(dev);
-      connection=await dev.connect();
+      connection=await stage(dev.connect(),20000,'打开 USB 接口超时（20 秒）');
     }
+    state.connectStage='ADB 授权握手';
     const Store=libs.c.AdbWebCredentialStore||libs.c.default;
     if(typeof Store!=='function') throw new Error('ADB 凭证组件加载失败，请检查网络后重试');
     const store=new Store('GeekToolboxWeb');
-    const transport=await libs.a.AdbDaemonTransport.authenticate({serial:dev.serial,connection,credentialStore:store});
+    // 杀掉电脑端 adb 后，手机端常需重新确认「允许 USB 调试」；握手可能长时间等待，故设 30 秒上限
+    const transport=await stage(libs.a.AdbDaemonTransport.authenticate({serial:dev.serial,connection,credentialStore:store}),
+      30000,'ADB 授权握手超时：请解锁手机并点「允许 USB 调试」，或撤销授权后重插数据线');
     state.adb=new libs.a.Adb(transport);
     state.realDevice=dev; state.mode='real';
     const devName=(typeof dev.name==='string'&&dev.name)||((dev.raw||{}).productName)||dev.serial||'Android 设备';
     state.device=freshDevice({name:devName,serial:dev.serial||'unknown'});
     state.lastError=null;
     state.devices=[{id:dev.serial||'adb',label:devName+' · '+(dev.serial||'adb')}];
+    state.connectStage='读取设备信息';
     // 读取设备信息失败不应判定为连接失败，否则残留接口会导致下次连接报「被占用」
-    try{ await loadRealInfo(); }catch(e){ console.warn('设备信息读取部分失败',e); }
+    try{ await stage(loadRealInfo(),8000,'读取设备信息超时'); }catch(e){ console.warn('设备信息读取部分失败',e); }
+    state.connectStage='已连接';
     toast('真机已连接，设备信息已读取','ok');
   }catch(e){
-    state.lastError={name:(e&&e.name)||'Error',message:(e&&e.message)||String(e),cause:e&&e.cause};
+    state.lastError={name:(e&&e.name)||'Error',message:(e&&e.message)||String(e),cause:e&&e.cause,stage:state.connectStage};
     // 任何失败都释放刚打开的 USB 接口，避免污染后续连接
     await releaseUsb(dev);
+    // 超时往往伴随浏览器侧残留句柄，额外清一遍（会断开其它标签页的连接）
+    if(/超时/.test(String((e&&e.message)||''))){ try{ await releaseAllUsb(); }catch(_){} }
     if(state.adb){ try{ await state.adb.close(); }catch(_){} }
     state.adb=null; state.realDevice=null; state.mode='none'; state.devices=[];
     throw e;
   }finally{
-    state.connecting=false; setConnecting(false);
+    state.connecting=false; setConnecting(false); connectAbort=null;
   }
 }
 async function disconnect(){
   const dev=state.realDevice;
   if(state.adb){ try{ await state.adb.close(); }catch(_){} }
   state.adb=null; state.realDevice=null; state.manager=null;
-  state.mode='none'; state.devices=[]; state.showBoard=false;
+  state.mode='none'; state.devices=[]; state.showBoard=false; state.connectStage='';
   state.device=freshDevice(); state.cpu=EMPTY_CPU.slice(); state.lastError=null;
   const n=await releaseUsb(dev);
   toast(n?'设备已断开，USB 接口已释放（可重新连接）':'设备已断开','');
@@ -994,7 +1036,7 @@ async function attemptConnect(preferPaired, targetSerial){
     renderHome(); showPage('home');
   }catch(e){
     const msg=String((e&&e.message)||e||'');
-    if(msg==='CANCELLED'){ toast('已取消选择设备',''); return; }
+    if(msg==='CANCELLED'){ toast('已取消连接，可重新点击「连接设备」重试',''); return; }
     if(isBusyError(e)){
       const i=await dialog('设备被占用，无法连接',busyHelp(),
         [{label:'释放接口并重试',primary:true},{label:'运行连接诊断'},{label:'关闭'}]);
@@ -1002,21 +1044,28 @@ async function attemptConnect(preferPaired, targetSerial){
       if(i===1){ await showDiagnostics(); }
       return;
     }
-    const hint=/WebUSB|安全上下文|HTTPS|localhost|凭证组件|加载|不支持/.test(msg)
-      ? '<br>请确认使用 Chrome / Edge 并通过 HTTPS 或 localhost 打开，且网络可访问 esm.sh。'
-      : '<br>可重插数据线后重试，或运行连接诊断。';
+    let hint;
+    if(/加载 ADB 组件超时|凭证组件|WebUSB|安全上下文|HTTPS|localhost|不支持/.test(msg))
+      hint='<br>请确认使用 Chrome / Edge 并通过 HTTPS 打开，且网络可访问 esm.sh。';
+    else if(/ADB 授权握手超时/.test(msg))
+      hint='<br>解锁手机并点「允许 USB 调试」；若无弹窗，撤销授权后重插数据线。';
+    else if(/超时/.test(msg))
+      hint='<br>已释放浏览器占用的 USB 接口，请重插数据线后重试。';
+    else
+      hint='<br>可重插数据线后重试，或运行连接诊断。';
     toast('真机连接失败：'+esc(msg)+hint,'warn');
   }
 }
 async function connectFlow(){
-  if(state.connecting){ toast('正在连接中，请稍候…',''); return; }
+  if(state.connecting){ cancelConnect(); return; }   // 提示统一由 attemptConnect 给出，避免重复
+  warmLibs();   // 用户阅读弹窗时预取组件，点击后 requestDevice 仍在手势有效期内
   if(state.mode!=='none'){ toast('设备已连接，如需切换请先断开',''); return; }
   let paired=0;
   try{ paired=navigator.usb?(await navigator.usb.getDevices()).length:0; }catch(_){}
   const body='连接真机需要 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页。<br><br>'+
     '请先关闭电脑端 adb / Android Studio / scrcpy / 手机助手，只保留一个标签页（否则会提示设备被占用）；手机开启 USB 调试后，在系统弹窗中选择设备并允许授权。'+
     '<div class="hint" style="margin-top:12px">构建 '+BUILD+'</div>'+
-    (paired?'<div class="notice mt16">检测到 '+paired+' 台已授权设备，可直接重连。</div>':'');
+    (paired?'<div class="notice mt16">检测到 '+paired+' 台已授权设备，可直接重连（不会弹出系统选择器）。</div>':'');
   const i=await dialog('连接设备',body,paired
     ? [{label:'重连已授权设备',primary:true},{label:'选择其他设备'},{label:'取消'}]
     : [{label:'连接真机（WebUSB）',primary:true},{label:'取消'}]);
@@ -1407,8 +1456,8 @@ function renderSettings(){
 function renderAbout(){
   $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2">'+
     '<div class="card"><div class="about-hero"><div class="about-logo">搞</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
-      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.4</div></div></div>'+
-      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.4')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.5</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.5')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
       kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('版权','© 2026 維坦')+'</div>'+
       '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
       '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
@@ -1630,6 +1679,7 @@ $('#deviceSelect').addEventListener('change', async e=>{
 /* ---------------- 启动 ---------------- */
 function boot(){
   applyTheme(); renderNav();
+  if(location.protocol!=='file:') warmLibs();
   const hash=(location.hash||'').replace(/^#/,'');
   showPage(NAV.some(n=>n.id===hash)?hash:'home');
   if(settings.refresh!=='0') startPolling();
