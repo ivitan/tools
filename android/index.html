@@ -6,6 +6,23 @@
 <meta name="theme-color" id="themeColorMeta" content="#ffffff">
 <title>搞机工具箱 - 全安卓通用免ROOT玩机神器（网页版）</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232563eb'/><rect x='11' y='6' width='10' height='20' rx='2' fill='none' stroke='white' stroke-width='2'/><path d='M14 23h4' stroke='white' stroke-width='2' stroke-linecap='round'/></svg>">
+<script id="theme-boot">
+/* 首帧前确定主题：在样式表和页面内容解析之前就写好 data-theme，
+   避免先按浅色绘制再切暗色造成的白闪。判定逻辑须与主脚本 applyTheme() 一致。 */
+(function(){
+  var t = 'light';
+  try {
+    var s = JSON.parse(localStorage.getItem('gjbox.settings') || '{}').theme;
+    if (s === 'dark') t = 'dark';
+    else if (s === 'light') t = 'light';
+    else if (s === 'auto' && window.matchMedia &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  } catch (e) {}
+  document.documentElement.setAttribute('data-theme', t);
+  var m = document.getElementById('themeColorMeta');
+  if (m) m.setAttribute('content', t === 'dark' ? '#0b1220' : '#ffffff');
+})();
+</script>
 <style>
 :root{
   color-scheme:light;
@@ -158,6 +175,7 @@ textarea.input{height:auto;padding:10px 12px;resize:vertical;line-height:1.6}
 .stat{color:var(--muted);font-size:12.5px;margin-left:auto}
 .stat b{color:var(--text)}
 .grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.grid-2.align-start{align-items:start}
 .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .section-title{font-size:14px;font-weight:600;margin:0 0 12px}
 .muted{color:var(--muted)}
@@ -282,7 +300,9 @@ html[data-theme="dark"] .app-icon,
 html[data-theme="dark"] .pill,
 html[data-theme="dark"] .link-btn{color:var(--brand)}
 html[data-theme="dark"] .switch::after{background:#f5f7ff}
-html[data-theme="dark"] .dot{background:#7d86a8}
+/* 暗色：未连接用柔和灰蓝；已连接保持醒目绿点（.dot.green 不再被覆盖） */
+html[data-theme="dark"] .dot:not(.green){background:#6b7692}
+html[data-theme="dark"] .dot.green{background:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.16),0 0 9px rgba(52,211,153,.5)}
 html[data-theme="dark"] input[type=range]::-webkit-slider-thumb{box-shadow:0 1px 6px rgba(96,165,250,.6)}
 
 /* 长命令 / 长文本不撑破容器，表格可横向滚动 */
@@ -409,7 +429,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.0.6</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.0.8</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -602,7 +622,7 @@ function log(cmd, result){
 const systemDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 function systemPrefersDark(){ return !!(systemDark && systemDark.matches); }
 function applyTheme(){
-  const t = settings.theme==='auto' ? (systemPrefersDark()?'dark':'light') : settings.theme;
+  const t = settings.theme==='auto' ? (systemPrefersDark()?'dark':'light') : (settings.theme==='dark'?'dark':'light');
   document.documentElement.setAttribute('data-theme',t);
   const meta=$('#themeColorMeta'); if(meta) meta.setAttribute('content',t==='dark'?'#0b1220':'#ffffff');
   const badge=$('#page-settings .badge-soft');
@@ -740,7 +760,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.0.6';
+const BUILD='v1.0.8';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1204,6 +1224,36 @@ function startPolling(){
 }
 
 /* ---------------- 页面：软件管理 ---------------- */
+/* 设备默认不提供应用显示名（明文 label 需 aapt 解析 APK，零售机一般没有该二进制）。
+   用「设备返回的 nonLocalizedLabel + 常见包名公认显示名 + 完整包名」三级兜底，
+   不再把包名末段当成应用名。映射只用于展示，所有操作仍使用真实 pkg。 */
+const KNOWN_APP_NAMES = {
+  'com.tencent.mm':'微信','com.tencent.mobileqq':'QQ','com.eg.android.AlipayGphone':'支付宝',
+  'com.ss.android.ugc.aweme':'抖音','com.taobao.taobao':'淘宝','com.jingdong.app.mall':'京东',
+  'com.sankuai.meituan':'美团','com.xunmeng.pinduoduo':'拼多多','com.autonavi.minimap':'高德地图',
+  'com.baidu.BaiduMap':'百度地图','com.netease.cloudmusic':'网易云音乐','com.tencent.qqmusic':'QQ 音乐',
+  'com.tencent.qqlive':'腾讯视频','com.qiyi.video':'爱奇艺','com.youku.phone':'优酷',
+  'tv.danmaku.bili':'哔哩哔哩','com.sina.weibo':'微博','com.zhihu.android':'知乎','com.douban.frodo':'豆瓣',
+  'com.kingsoft.moffice_pro':'WPS Office','com.tencent.mtt':'QQ 浏览器','com.UCMobile':'UC 浏览器',
+  'com.baidu.searchbox':'百度','com.android.chrome':'Chrome','com.android.vending':'Google Play 商店',
+  'com.google.android.gm':'Gmail','com.google.android.youtube':'YouTube','com.google.android.apps.maps':'Google 地图',
+  'com.google.android.apps.photos':'Google 相册','com.google.android.googlequicksearchbox':'Google',
+  'com.whatsapp':'WhatsApp','org.telegram.messenger':'Telegram','com.spotify.music':'Spotify',
+  'com.coloros.soundrecorder':'录音机','com.coloros.backuprestore':'备份与恢复',
+  'com.unionpay.tsmservice':'银联可信服务','com.redteamobile.roaming':'国际漫游服务',
+  'com.heytap.market':'软件商店','com.coloros.filemanager':'文件管理','com.coloros.alarmclock':'时钟',
+  'com.coloros.calendar':'日历','com.coloros.weather':'天气','com.coloros.calculator':'计算器',
+  'com.coloros.notes':'便签','com.coloros.gallery3d':'相册','com.coloros.contacts':'联系人',
+  'com.coloros.mms':'信息','com.android.dialer':'电话','com.android.settings':'设置',
+  'com.oneplus.camera':'相机','com.oplus.camera':'相机','com.oplus.gallery':'相册',
+  'com.miui.home':'小米桌面','com.xiaomi.market':'小米应用商店'
+};
+function appDisplayName(pkg, rawLabel){
+  const l = String(rawLabel || '').trim();
+  if (l && l !== 'null' && l !== '0x0') return l;   // 设备明文 label 优先
+  return KNOWN_APP_NAMES[pkg] || pkg;               // 否则显示完整包名（应用真正的唯一标识）
+}
+
 function renderApps(){
   const q=state.appFilter.toLowerCase();
   const list=state.apps.filter(a=>!q||a.name.toLowerCase().includes(q)||a.pkg.toLowerCase().includes(q));
@@ -1214,7 +1264,7 @@ function renderApps(){
     '<label class="btn primary"'+(state.mode==='none'?' style="opacity:.5;pointer-events:none" aria-disabled="true"':'')+'>'+icon('download',15)+'安装 APK<input type="file" accept=".apk" hidden data-change="apk"'+(state.mode==='none'?' disabled':'')+'></label>'+
     '<span class="stat">共 <b>'+state.apps.length+'</b> 个第三方应用 · 已禁用 <b>'+offCount+'</b></span></div>'+
     '<div class="card table-card'+(list.length?'':' empty')+'"><table><thead><tr><th>应用</th><th>版本</th><th>类型</th><th>状态</th><th class="col-ops">操作</th></tr></thead><tbody>'+
-    (list.length?list.map(a=>'<tr data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'" data-full="'+encodeURIComponent((a.name+' '+a.pkg).toLowerCase())+'"><td><div class="app-cell"><div class="app-icon">'+esc(a.name.slice(0,1))+'</div><div><div class="app-name">'+esc(a.name)+'</div><div class="app-pkg">'+esc(a.pkg)+'</div></div></div></td>'+
+    (list.length?list.map(a=>'<tr data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'" data-full="'+encodeURIComponent((a.name+' '+a.pkg).toLowerCase())+'"><td><div class="app-cell"><div class="app-icon">'+esc(a.name.slice(0,1))+'</div><div><div class="app-name">'+esc(a.name)+'</div><div class="app-pkg"'+(a.name===a.pkg?' style="display:none"':'')+'>'+esc(a.pkg)+'</div></div></div></td>'+
       '<td>'+esc(a.ver)+'</td><td>'+(a.sys?'<span class="pill gray">系统应用</span>':'<span class="pill">第三方</span>')+'</td>'+
       '<td>'+(a.state==='on'?'<span class="pill green">已启用</span>':'<span class="pill gray">已禁用</span>')+'</td>'+
       '<td><div class="td-ops"><button class="mini-btn" data-act="app-toggle" data-pkg="'+esc(a.pkg)+'">'+(a.state==='on'?'禁用':'启用')+'</button>'+
@@ -1233,22 +1283,24 @@ async function appRefresh(){
   const safe=async c=>{ try{ return String(await shell(c)||''); }catch(e){ return ''; } };
   const [out3,outD,dump]=await Promise.all([
     safe('pm list packages -3'), safe('pm list packages -d'),
-    safe('dumpsys package | grep -E "Package \[|versionName="')
+    safe('dumpsys package | grep -E "Package \[|versionName=|nonLocalizedLabel="')
   ]);
   const parse=t=>t.split('\n').map(x=>x.replace(/^package:/,'').trim()).filter(Boolean);
   const disabled=new Set(parse(outD));
-  const verMap={};
+  const verMap={}, labelMap={};
   try{
     const chunks=dump.split(/^\s*Package \[/m);
     for(let i=1;i<chunks.length;i++){
       const pkg=chunks[i].slice(0,chunks[i].indexOf(']')).trim();
       const m=chunks[i].match(/versionName=([^\s]+)/);
+      const l=chunks[i].match(/nonLocalizedLabel=([^\s]+)/);
       if(pkg && m) verMap[pkg]=m[1];
+      if(pkg && l && l[1] && l[1]!=='null') labelMap[pkg]=l[1];
     }
   }catch(_){}
   const olds={}; state.apps.forEach(a=>olds[a.pkg]=a);
   state.apps=parse(out3).map(p=>({
-    name:(olds[p]&&olds[p].name)||p.split('.').pop(), pkg:p,
+    name:appDisplayName(p,labelMap[p]), pkg:p,
     ver:verMap[p]||(olds[p]&&olds[p].ver)||'—', sys:false,
     state:disabled.has(p)?'off':'on'
   }));
@@ -1479,23 +1531,20 @@ function renderSettings(){
 
 /* ---------------- 页面：关于 ---------------- */
 function renderAbout(){
-  $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2">'+
+  $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2 align-start">'+
     '<div class="card"><div class="about-hero"><div class="about-logo">搞</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
-      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.6</div></div></div>'+
-      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.6')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.0.8</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.0.8')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
       kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('版权','© 2026 維坦')+'</div>'+
       '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
       '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
     '</div>'+
-    '<div class="card"><h2 class="card-title">真机连接步骤</h2>'+
-      '<div class="muted" style="font-size:13px;line-height:2.1">1. 手机开启「开发者选项 → USB 调试」<br>2. <b>关闭电脑端 adb</b>：Android Studio / scrcpy / 手机助手 / 模拟器（或执行 <code class="code-inline">adb kill-server</code>）<br>3. 数据线连接电脑，USB 模式选「传输文件」，只保留一台设备<br>4. 用 Chrome / Edge 打开本页（HTTPS 或 localhost），只开一个标签页<br>5. 点「连接设备」，选手机并在手机上允许 USB 调试授权</div>'+
-      '<div class="info-divider"></div><h2 class="card-title">部署与本地运行</h2>'+
-      '<div class="muted" style="font-size:12.8px;line-height:1.9">部署到 HTTPS 站点后即可直接使用，无需后端或额外配置。本地调试可在本目录启动静态服务：<br><code class="code-inline">python3 -m http.server 8000</code><br>然后打开 <code class="code-inline">http://localhost:8000</code>。直接双击打开 HTML 文件（<code class="code-inline">file://</code>）时浏览器会禁用 WebUSB。</div>'+
-      '<div class="info-divider"></div><h2 class="card-title">连接失败：设备被占用</h2>'+
-      '<div class="muted" style="font-size:12.8px;line-height:1.9">若提示 <code class="code-inline">device is already in use</code>，表示 ADB 接口被占用，与浏览器或 HTTPS 无关。请关闭电脑端 adb / 手机助手、只留一个标签页，手机切回「传输文件(MTP)」后重插重连；Windows 还需 WinUSB 驱动（Zadig）。换 Linux / macOS 免驱动可直接连。</div>'+
+    '<div class="card"><h2 class="card-title">真机连接</h2>'+
+      '<div class="muted" style="font-size:13px;line-height:2.1">1. 手机开启「开发者选项 → USB 调试」并用数据线连接<br>2. 关闭电脑端 adb / 手机助手，只保留一个标签页<br>3. 点「连接设备」，选手机并在手机上允许授权</div>'+
+      '<div class="muted" style="font-size:12.5px;line-height:1.8;margin-top:14px">连接失败多为电脑端 adb 进程占用了 ADB 接口，关闭后重插数据线即可；卡住时顶栏会显示停在哪个阶段。</div>'+
       '<div style="margin-top:12px"><button class="btn" data-act="diagnose">运行连接诊断</button></div>'+
       '<div class="info-divider"></div><h2 class="card-title">技术实现</h2>'+
-      '<div class="muted" style="font-size:12.8px;line-height:1.9">纯静态单文件实现，无需后端。连接真机后动态加载 <code class="code-inline">@yume-chan/adb</code>（Tango ADB）通过 WebUSB 直连 adbd，执行 <code class="code-inline">getprop</code> / <code class="code-inline">dumpsys</code> / <code class="code-inline">pm</code> / <code class="code-inline">wm</code> / <code class="code-inline">settings</code> / <code class="code-inline">reboot</code> 等指令。设备信息、频率采样、脚本与终端共用同一执行层。</div>'+
+      '<div class="muted" style="font-size:12.8px;line-height:1.9">纯静态单文件，无需后端。WebUSB 直连 adbd 执行 <code class="code-inline">getprop</code> / <code class="code-inline">dumpsys</code> / <code class="code-inline">pm</code> / <code class="code-inline">settings</code> 等指令。</div>'+
       '<div class="notice mt16">免责声明：重启、清除数据、修改系统设置等操作可能影响设备状态，请确认已备份重要数据后再执行。本工具仅在用户明确点击时下发命令。</div>'+
     '</div></div>';
 }
