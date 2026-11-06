@@ -408,21 +408,37 @@ input[type=range]{width:clamp(120px,16vw,190px)}
   .btn:active,.ghost-btn:active,.btn-reboot:not(:disabled):active,.mini-btn:active{transform:scale(.97)}
 }
 /* ---------------- 投屏 ---------------- */
-.mirror-stage{position:relative;width:100%;height:min(60vh,560px);min-height:300px;background:#070b14;border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none}
+.mirror-layout{display:flex;gap:16px;align-items:stretch}
+.mirror-view{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;background:#070b14;border:1px solid var(--border);border-radius:8px;padding:16px;min-height:340px}
+.mirror-stage{position:relative;height:min(74vh,760px);aspect-ratio:var(--ar,9 / 19.5);width:auto;max-width:100%;background:#05080f;border:1px solid rgba(148,163,184,.26);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;box-shadow:0 10px 32px rgba(0,0,0,.42)}
 .mirror-stage img{width:100%;height:100%;object-fit:contain;display:none}
 .mirror-stage img.on{display:block}
-.mirror-stage:fullscreen{height:100vh;min-height:0;background:#000;border:none;border-radius:0}
+.mirror-stage:fullscreen{height:100vh;max-height:none;aspect-ratio:auto;width:100%;min-height:0;background:#000;border:none;border-radius:0}
 .mirror-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#94a3b8;font-size:13px;text-align:center;padding:24px;pointer-events:none;background:#070b14}
 .mirror-placeholder svg{width:36px;height:36px;opacity:.6}
-.mirror-keys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.mirror-keys .btn{width:100%;padding:0 6px}
+.mirror-side{width:200px;flex:none;display:flex;flex-direction:column;gap:10px}
+.mirror-side-group{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.mirror-side-label{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);padding:2px 2px 4px}
+.mirror-keys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.mirror-keys .btn,.mirror-side-group>.btn{width:100%;padding:0 8px;justify-content:flex-start;gap:7px}
+.mirror-side .mirror-input-row{flex-direction:column;gap:6px;margin-top:0}
+.mirror-side .mirror-input-row .btn{width:100%}
 .mirror-status{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:12px}
 .mirror-status b{color:var(--text-2);font-weight:600}
 .mirror-input-row{display:flex;gap:8px;margin-top:12px}
 .mirror-input-row .input{flex:1;min-width:0}
 .mirror-rate{height:32px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--field);color:var(--text);font-size:12.5px}
+.mirror-tip{margin-top:14px}
+@media(max-width:900px){
+  .mirror-layout{flex-direction:column}
+  .mirror-side{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .mirror-side .mirror-input-row{flex-direction:row}
+  .mirror-side .mirror-input-row .btn{width:auto}
+}
 @media(max-width:640px){
-  .mirror-stage{height:min(52vh,420px);min-height:240px}
+  .mirror-view{min-height:260px;padding:10px}
+  .mirror-stage{height:min(60vh,480px)}
+  .mirror-side{grid-template-columns:1fr}
   .mirror-keys{grid-template-columns:repeat(2,minmax(0,1fr))}
   .mirror-status{gap:10px}
 }
@@ -450,7 +466,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.1.1</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.2.0</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -591,7 +607,7 @@ const state = {
   active:'home', showBoard:false,
   devices:[],
   apps:[], appFilter:'', appsAutoLoaded:false,
-  mirror:{running:false,busy:false,timer:null,rate:1000,url:null,blob:null,w:0,h:0,frames:0,lastMs:0,err:'',fails:0,down:null},
+  mirror:{running:false,busy:false,timer:null,rate:500,url:null,blob:null,w:0,h:0,frames:0,lastMs:0,capMs:0,capMode:null,err:'',fails:0,down:null},
   termLines:[], termHistory:[], termIdx:0,
   scriptText:'# 在此输入 shell 命令，每行一条\ngetprop ro.product.model\ndumpsys battery | grep level',
   scriptOutput:'', scripts:[],
@@ -801,7 +817,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.1.1';
+const BUILD='v1.2.0';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1100,7 +1116,8 @@ async function disconnect(){
   stopMirror();
   if(state.mirror.url){ try{ URL.revokeObjectURL(state.mirror.url); }catch(_){} }
   state.mirror.url=null; state.mirror.blob=null; state.mirror.w=0; state.mirror.h=0;
-  state.mirror.frames=0; state.mirror.err=''; state.mirror.fails=0;
+  state.mirror.frames=0; state.mirror.lastMs=0; state.mirror.capMs=0; state.mirror.capMode=null;
+  state.mirror.err=''; state.mirror.fails=0;
   state.apps=[]; state.appFilter=''; state.appsAutoLoaded=false;
   const dev=state.realDevice;
   if(state.adb){ try{ await state.adb.close(); }catch(_){} }
@@ -1491,9 +1508,9 @@ async function appRefresh(auto){
    适合查看界面与点按操作，不是实时视频流（完整 scrcpy 需额外解码器与 server）。 */
 const MIRROR_KEYS = [
   {k:4,label:'返回',ic:'back'},{k:3,label:'Home',ic:'home'},
-  {k:187,label:'最近任务',ic:'square'},{k:26,label:'电源',ic:'power'},
-  {k:24,label:'音量 +',ic:'volup'},{k:25,label:'音量 −',ic:'voldn'},
-  {k:224,label:'亮屏',ic:'sun'},{k:66,label:'回车',ic:'terminal'}
+  {k:187,label:'最近任务',ic:'square'},{k:66,label:'回车',ic:'terminal'},
+  {k:26,label:'电源',ic:'power'},{k:24,label:'音量 +',ic:'volup'},
+  {k:25,label:'音量 −',ic:'voldn'},{k:224,label:'亮屏',ic:'sun'}
 ];
 function pngOK(u8){
   return !!u8 && u8.length>24 && u8[0]===0x89 && u8[1]===0x50 && u8[2]===0x4e && u8[3]===0x47
@@ -1514,10 +1531,12 @@ async function grabScreen(){
   const runner=(svc && svc.noneProtocol) || svc;
   if(!runner) throw new Error('当前 ADB 组件不支持截屏');
   let u8=null;
-  if(typeof runner.spawnWait==='function'){
+  /* 记住输出路径：stdout 被改写的设备只探测一次，后续帧直接走文件，省掉一次 shell 调用 */
+  if(state.mirror.capMode!=='file' && typeof runner.spawnWait==='function'){
     try{ u8=await withTimeout(runner.spawnWait('screencap -p'),10000,'截屏超时'); }catch(_){ u8=null; }
   }
-  if(pngOK(u8)) return u8;
+  if(pngOK(u8)){ state.mirror.capMode='stdout'; return u8; }
+  state.mirror.capMode='file';
   if(typeof runner.spawnWaitText==='function')
     await withTimeout(runner.spawnWaitText('screencap -p /data/local/tmp/gjbox_screen.png'),10000,'截屏超时');
   else
@@ -1534,7 +1553,9 @@ function mirrorInfo(){
   const m=state.mirror, el=$('#mirrorInfo');
   if(!el) return;
   el.innerHTML='画面 <b>'+(m.w?m.w+'×'+m.h:'—')+'</b> · 帧 <b>'+m.frames+'</b>'+
-    (m.lastMs?' · 单帧 <b>'+m.lastMs+' ms</b>':'')+
+    (m.frames?' · 抓取 <b>'+m.capMs+' ms</b>':'')+
+    (m.frames?' · 单帧 <b>'+m.lastMs+' ms</b>':'')+
+    (m.rate>0?' · 间隔 <b>'+m.rate+' ms</b>':' · <b>连续</b>')+
     (m.err?' · <span style="color:var(--danger-text)">'+esc(m.err)+'</span>':'');
 }
 function mirrorSetBtn(){
@@ -1545,7 +1566,14 @@ function mirrorSetBtn(){
 }
 /* 重渲染后恢复画面：blob 数据一直在，即使旧 blob URL 已被撤销也能重建，
    避免把失效地址写进 <img src> 触发浏览器破图图标 */
+/* 显示框按设备画面宽高比自适应，让画面填满显示区（旧实现固定全宽+contain，竖屏被缩成一小条） */
+function mirrorFit(){
+  const st=$('#mirrorStage'); if(!st) return;
+  const m=state.mirror, w=m.w||9, hh=m.h||19.5;
+  st.style.setProperty('--ar', (w>0&&hh>0)? w+' / '+hh : '9 / 19.5');
+}
 function mirrorPaint(){
+  mirrorFit();
   const img=$('#mirrorImg'), ph=$('#mirrorPlaceholder');
   if(!img) return;
   const m=state.mirror;
@@ -1577,6 +1605,7 @@ async function mirrorFrame(){
   const t0=Date.now();
   try{
     const u8=await grabScreen();
+    m.capMs=Date.now()-t0;                  // 纯抓取耗时，供调度扣除等待间隔
     const blob=new Blob([u8],{type:'image/png'});
     const url=URL.createObjectURL(blob);
     const img=$('#mirrorImg');
@@ -1589,7 +1618,7 @@ async function mirrorFrame(){
       if(old && old!==url){ try{ URL.revokeObjectURL(old); }catch(_){} }
       img.classList.add('on');               // 有效画面才显示，杜绝破图图标
       const ph=$('#mirrorPlaceholder'); if(ph) ph.style.display='none';
-      mirrorInfo();
+      mirrorFit(); mirrorInfo();
     };
     img.onerror=()=>{
       try{ URL.revokeObjectURL(url); }catch(_){}
@@ -1612,11 +1641,14 @@ function mirrorTick(){
   const m=state.mirror;
   if(m.timer){ clearTimeout(m.timer); m.timer=null; }
   if(!m.running) return;
+  /* 旧实现周期 = 抓取耗时 T + rate，等待被叠加、延时近乎翻倍。
+     现在周期 ≈ max(T, rate)；rate=0 为「连续」档，以设备最快速度抓帧。 */
+  const gap = m.rate<=0 ? 0 : Math.max(0, m.rate - (m.capMs||0));
   m.timer=setTimeout(async()=>{
     if(!m.running) return;
     await mirrorFrame();
     mirrorTick();
-  }, m.rate);
+  }, gap);
 }
 function startMirror(){
   if(state.mode!=='real' || !state.adb){ toast('请先连接真机后再开始投屏','warn'); return; }
@@ -1682,37 +1714,43 @@ function mirrorPoint(cx,cy){
 function renderMirror(){
   const ok=state.mode==='real' && !!state.adb, m=state.mirror;
   const dis=ok?'':' disabled style="opacity:.5;pointer-events:none" aria-disabled="true"';
+  const keyBtn=k=>'<button class="btn" data-act="mirror-key" data-key="'+k.k+'"'+dis+'>'+icon(k.ic,15)+k.label+'</button>';
   $('#page-mirror').innerHTML='<h1 class="page-title">投屏</h1>'+
     '<div class="toolbar">'+
       '<button class="btn '+(m.running?'':'primary')+'" data-act="mirror-toggle"'+dis+'>'+icon(m.running?'stop':'play',15)+(m.running?'停止投屏':'开始投屏')+'</button>'+
-      '<button class="btn" data-act="mirror-once"'+dis+'>'+icon('camera',15)+'单帧</button>'+
-      '<button class="btn" data-act="mirror-save">'+icon('download',15)+'保存截图</button>'+
-      '<button class="btn" data-act="mirror-full">'+icon('maximize',15)+'全屏</button>'+
       '<label class="muted" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px">帧间隔 '+
         '<select class="mirror-rate" data-change="mirror-rate"'+dis+'>'+
-        [['500','0.5 秒'],['1000','1 秒'],['2000','2 秒'],['3000','3 秒']].map(o=>'<option value="'+o[0]+'"'+(String(m.rate)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+
+        [['0','连续（最快）'],['250','0.25 秒'],['500','0.5 秒'],['1000','1 秒'],['2000','2 秒']].map(o=>'<option value="'+o[0]+'"'+(String(m.rate)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+
         '</select></label>'+
       '<span class="stat" id="mirrorInfo"></span>'+
     '</div>'+
-    '<div class="card" style="padding:14px">'+
-      '<div class="mirror-stage" id="mirrorStage">'+
-        '<img id="mirrorImg" alt="">'+
-        '<div class="mirror-placeholder" id="mirrorPlaceholder"'+(m.blob?' style="display:none"':'')+'>'+
-          icon('cast',36)+'<div>'+(ok?'点击「开始投屏」查看设备画面':'请先连接真机，再开始投屏')+'</div>'+
-          '<div style="font-size:12px;opacity:.8">画面可点击 / 滑动，操作会实时下发到手机</div>'+
+    '<div class="mirror-layout">'+
+      '<div class="mirror-view">'+
+        '<div class="mirror-stage" id="mirrorStage">'+
+          '<img id="mirrorImg" alt="">'+
+          '<div class="mirror-placeholder" id="mirrorPlaceholder"'+(m.blob?' style="display:none"':'')+'>'+
+            icon('cast',36)+'<div>'+(ok?'点击「开始投屏」查看设备画面':'请先连接真机，再开始投屏')+'</div>'+
+            '<div style="font-size:12px;opacity:.8">画面可点击 / 滑动，操作会实时下发到手机</div>'+
+          '</div>'+
         '</div>'+
       '</div>'+
+      '<aside class="mirror-side">'+
+        '<div class="mirror-side-group"><span class="mirror-side-label">导航</span>'+
+          '<div class="mirror-keys">'+MIRROR_KEYS.slice(0,4).map(keyBtn).join('')+'</div></div>'+
+        '<div class="mirror-side-group"><span class="mirror-side-label">电源与音量</span>'+
+          '<div class="mirror-keys">'+MIRROR_KEYS.slice(4).map(keyBtn).join('')+'</div></div>'+
+        '<div class="mirror-side-group"><span class="mirror-side-label">画面</span>'+
+          '<button class="btn" data-act="mirror-once"'+dis+'>'+icon('camera',15)+'单帧抓取</button>'+
+          '<button class="btn" data-act="mirror-save">'+icon('download',15)+'保存截图</button>'+
+          '<button class="btn" data-act="mirror-full">'+icon('maximize',15)+'全屏显示</button>'+
+        '</div>'+
+        '<div class="mirror-side-group"><span class="mirror-side-label">文字输入</span>'+
+          '<div class="mirror-input-row"><input class="input" id="mirrorText" placeholder="输入英文 / 数字" autocomplete="off"><button class="btn primary" data-act="mirror-send"'+dis+'>'+icon('type',15)+'发送</button></div>'+
+          '<p class="hint" style="margin:2px 0 0;font-size:11.5px">仅支持 ASCII，中文请用设备输入法</p>'+
+        '</div>'+
+      '</aside>'+
     '</div>'+
-    '<div class="grid-2" style="margin-top:20px">'+
-      '<div class="card"><h2 class="card-title">导航与电源</h2>'+
-        '<div class="mirror-keys">'+MIRROR_KEYS.map(k=>'<button class="btn" data-act="mirror-key" data-key="'+k.k+'"'+dis+'>'+icon(k.ic,15)+k.label+'</button>').join('')+'</div>'+
-        '<p class="hint">按键通过 <code class="code-inline">input keyevent</code> 下发，需要设备已开启 USB 调试。</p></div>'+
-      '<div class="card"><h2 class="card-title">文字输入</h2>'+
-        '<div class="mirror-input-row"><input class="input" id="mirrorText" placeholder="输入英文 / 数字后发送" autocomplete="off"><button class="btn primary" data-act="mirror-send"'+dis+'>'+icon('type',15)+'发送</button></div>'+
-        '<p class="hint">Android 原生 <code class="code-inline">input text</code> 仅支持 ASCII 字符，空格自动转义为 <code class="code-inline">%s</code>；中文请用设备输入法。</p>'+
-      '</div>'+
-    '</div>'+
-    '<p class="hint">投屏基于设备原生 <code class="code-inline">screencap</code> 逐帧截图，约 1~2 帧/秒，适合查看界面与点按操作，不是实时视频流。帧间隔越短 USB 占用越高；离开本页会自动停止以释放带宽。首次使用若画面为空，请点亮手机屏幕后点「单帧」。</p>';
+    '<p class="hint mirror-tip">画面按设备宽高比自适应填满显示区，可点击 / 滑动实时操控。延时主要来自设备端 <code class="code-inline">screencap</code> 编码与 USB 传输：「连续」档取消固定间隔、以设备最快速度抓帧（USB 占用较高），状态栏的「抓取」耗时即单帧瓶颈。离开本页会自动停止以释放带宽，首次画面为空请点亮手机屏幕后点「单帧抓取」。</p>';
   mirrorInfo(); mirrorPaint();
 }
 
@@ -1941,8 +1979,8 @@ function renderSettings(){
 function renderAbout(){
   $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2 align-start">'+
     '<div class="card"><div class="about-hero"><div class="about-logo">'+logoSvg()+'</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
-      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.1.1</div></div></div>'+
-      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.1.1')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.2.0</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.2.0')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
       kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('版权','© 2026 維坦')+'</div>'+
       '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
       '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 投屏（画面镜像与触控） · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
@@ -2120,7 +2158,7 @@ document.addEventListener('change', async e=>{
     if(t.dataset.setting==='refresh'){ startPolling(); toast('刷新间隔已更新','ok'); }
     return;
   }
-  if(t.dataset.change==='mirror-rate'){ state.mirror.rate=parseInt(t.value,10)||1000; if(state.mirror.running) mirrorTick(); return; }
+  if(t.dataset.change==='mirror-rate'){ const v=parseInt(t.value,10); state.mirror.rate=(Number.isFinite(v)&&v>=0)?v:500; if(state.mirror.running) mirrorTick(); mirrorInfo(); return; }
   if(t.dataset.change==='apk'){
     const f=t.files&&t.files[0]; if(!f) return;
     toast('已选择 '+esc(f.name)+'（'+(f.size/1048576).toFixed(1)+' MB）','');
