@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" id="themeColorMeta" content="#ffffff">
-<title>搞机工具箱</title>
+<title>搞机工具箱 - 全安卓通用免ROOT玩机神器（网页版）</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232563eb'/><rect x='11' y='6' width='10' height='20' rx='2' fill='none' stroke='white' stroke-width='2'/><path d='M14 23h4' stroke='white' stroke-width='2' stroke-linecap='round'/></svg>">
 <script id="theme-boot">
 /* 首帧前确定主题：在样式表和页面内容解析之前就写好 data-theme，
@@ -225,6 +225,31 @@ tbody tr:hover{background:var(--field)}
 input[type=range]{-webkit-appearance:none;appearance:none;width:190px;height:5px;border-radius:5px;background:var(--border);outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--brand);cursor:pointer;box-shadow:0 1px 4px rgba(37,99,235,.35)}
 .range-val{min-width:66px;font-size:13px;font-variant-numeric:tabular-nums;color:var(--brand);font-weight:600}
+
+/* 截图 */
+.shot-card{grid-column:1/-1}
+.shot-bar{display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px}
+.shot-bar .btn{display:inline-flex;align-items:center;gap:6px}
+.chk{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-2);cursor:pointer;user-select:none}
+.chk input{width:15px;height:15px;accent-color:var(--brand);margin:0;cursor:pointer}
+.shot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px;margin-top:16px}
+.shot-item{display:flex;flex-direction:column;gap:6px;padding:0;border:1px solid var(--border);border-radius:8px;background:var(--field);overflow:hidden;cursor:zoom-in;text-align:left;transition:.15s;font-family:inherit}
+.shot-item:hover{border-color:var(--brand);box-shadow:var(--shadow)}
+.shot-item img{display:block;width:100%;height:132px;object-fit:cover;background:var(--card-hover)}
+.shot-meta{font-size:11px;color:var(--muted);padding:0 8px 7px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shot-empty{grid-column:1/-1;font-size:12.5px;color:var(--muted);line-height:1.9;padding:16px;border:1px dashed var(--border);border-radius:8px;text-align:center}
+.shot-preview{max-height:60vh;overflow:auto;text-align:center;background:var(--field);border-radius:8px;padding:6px}
+.shot-preview img{max-width:100%;display:block;margin:0 auto}
+
+/* 系统界面 / 无级调节 */
+.icon-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px 18px}
+.icon-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.btn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.btn-grid .btn{justify-content:center}
+.field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
+.stack{display:flex;flex-direction:column;gap:20px;min-width:0}
+.range-wrap .range-val{min-width:60px;text-align:right}
+@media(max-width:640px){.icon-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* 电池 */
 .battery-wrap{display:flex;align-items:center;gap:26px;flex-wrap:wrap}
@@ -450,7 +475,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
     <div class="logo-icon" aria-label="搞机工具箱">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>
     </div>
-    <div class="brand-title">搞机工具箱</div>
+    <div class="brand-title">搞机工具箱 <span class="sub">网页版</span></div>
     <a class="home-btn" href="/" title="返回主页" aria-label="返回主页">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9.5"/></svg>
     </a>
@@ -466,7 +491,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.2.0</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.2.3</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -611,7 +636,10 @@ const state = {
   termLines:[], termHistory:[], termIdx:0,
   scriptText:'# 在此输入 shell 命令，每行一条\ngetprop ro.product.model\ndumpsys battery | grep level',
   scriptOutput:'', scripts:[],
-  tuner:{cpuMin:634,cpuMax:2016,bright:160,refresh:120,volume:9,font:1.0,anim:1,dpi:520,w:1280,h:2772,timeout:60000,level:100},
+  tuner:{cpuMin:634,cpuMax:2016,bright:160,refresh:120,volume:9,font:1.0,anim:1,dpi:520,w:1280,h:2772,timeout:60000,level:100,
+    fontScale:1,winScale:1,transScale:1,animScale:1,timeoutSec:60},
+  sysui:{raw:'',icons:{},rotationHide:false,clockSeconds:false,qqs:'',pad:'',reading:false},
+  tuning:{reading:false},
   switches:{rotate:true,night:false,batteryPct:true,immersive:false,nav:false,animOff:false,powerSave:false,chargeLimit:false},
   logs:[]
 };
@@ -620,13 +648,13 @@ if(!Array.isArray(state.scripts)) state.scripts=[];
 state.scripts = state.scripts.filter(x => x && typeof x.name==='string' && typeof x.code==='string');
 
 const NAV = [
-  {id:'home',label:'主页',ic:'home'}, {id:'apps',label:'软件管理',ic:'package'}, {id:'mirror',label:'手机投屏',ic:'cast'},
+  {id:'home',label:'设备信息',ic:'home'}, {id:'apps',label:'软件管理',ic:'package'}, {id:'mirror',label:'手机投屏',ic:'cast'},
   {id:'display',label:'显示控制',ic:'monitor'}, {id:'systemui',label:'系统界面',ic:'sliders'},
-  {id:'battery',label:'电池管理',ic:'battery'}, {id:'tuner',label:'无极调节',ic:'gauge'},
+  {id:'battery',label:'电池管理',ic:'battery'}, {id:'tuner',label:'无级调节',ic:'gauge'},
   {id:'scripts',label:'控机脚本',ic:'code'}, {id:'terminal',label:'ADB 终端',ic:'terminal'},
   {id:'settings',label:'软件设置',ic:'settings'}, {id:'about',label:'关于',ic:'info'}
 ];
-const TITLES = {home:'设备信息',apps:'软件管理',mirror:'手机投屏',display:'显示控制',systemui:'系统界面',battery:'电池管理',tuner:'无极调节',scripts:'控机脚本',terminal:'ADB 终端',settings:'软件设置',about:'关于'};
+const TITLES = {home:'设备信息',apps:'软件管理',mirror:'手机投屏',display:'显示控制',systemui:'系统界面',battery:'电池管理',tuner:'无级调节',scripts:'控机脚本',terminal:'ADB 终端',settings:'软件设置',about:'关于'};
 const REBOOT = [
   {act:'reboot',label:'重启',cmd:'reboot',ic:'refresh'}, {act:'bootloader',label:'Fastboot',cmd:'reboot bootloader',ic:'power'},
   {act:'edl',label:'EDL',cmd:'reboot edl',ic:'download'},
@@ -817,7 +845,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.2.0';
+const BUILD='v1.2.3';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1119,6 +1147,9 @@ async function disconnect(){
   state.mirror.frames=0; state.mirror.lastMs=0; state.mirror.capMs=0; state.mirror.capMode=null;
   state.mirror.err=''; state.mirror.fails=0;
   state.apps=[]; state.appFilter=''; state.appsAutoLoaded=false;
+  /* 断开后清空设备侧读取的状态栏 / 调节参数缓存，避免下次连接展示上一台设备的旧值 */
+  state.sysui={raw:'',icons:{},rotationHide:false,clockSeconds:false,qqs:'',pad:'',reading:false};
+  state.tuning.reading=false;
   const dev=state.realDevice;
   if(state.adb){ try{ await state.adb.close(); }catch(_){} }
   state.adb=null; state.realDevice=null; state.manager=null;
@@ -1195,6 +1226,17 @@ async function refreshDevices(){
   }catch(e){ toast('刷新失败：'+esc(e.message||e),'err'); }
   finally{ setTimeout(()=>el.classList.remove('spin'),600); }
 }
+/* 闪存类型识别：先看 UFS / eMMC 关键字（含型号串里的版本号），
+   再看块设备命名——UFS 在多数平台以 SCSI 盘 sda 暴露，eMMC 固定为 mmcblk0。 */
+function detectFlash(raw){
+  const t=String(raw||'').toLowerCase();
+  if(!t.trim()) return '未知';
+  const ver=(t.match(/ufs[\s_-]*([0-9]\.[0-9])/)||[])[1];
+  if(/ufshc|\bufs/.test(t)) return 'UFS'+(ver?' '+ver:'');
+  if(/mmcblk0|emmc/.test(t)) return 'eMMC';
+  if(/(^|[^a-z0-9])sd[a-z]\d?\b/.test(t)) return 'UFS';
+  return '未知';
+}
 async function loadRealInfo(){
   const d=state.device;
   const g=async(k,def)=>{ try{ return (await realShell('getprop '+k)).trim()||def; }catch(e){ return def; } };
@@ -1205,13 +1247,18 @@ async function loadRealInfo(){
     g('ro.build.version.release','—'),g('ro.build.version.sdk','—'),g('ro.product.board','—'),
     g('ro.product.cpu.abi','—'),g('ro.build.fingerprint','—')
   ]);
-  const [kernel,flash,wmsize,wmdens,batt]=await Promise.all([
-    s('uname -r','—'),g('ro.boot.bootdevice','—'),s('wm size',''),s('wm density',''),s('dumpsys battery','')
+  // 闪存类型单次探测：/dev/block 与 /sys/block 的块设备命名最可靠，
+  // ro.boot.bootdevice 在多数 ColorOS / HyperOS 机型为空或只给 ufshc 路径，仅作兜底
+  const flashCmd='ls /dev/block 2>/dev/null; echo "|"; grep " /data " /proc/mounts 2>/dev/null | head -1; echo "|";'
+    +' getprop ro.boot.bootdevice; echo "|"; ls /sys/block 2>/dev/null; echo "|";'
+    +' cat /sys/block/sda/device/model 2>/dev/null; echo "|"; cat /sys/block/mmcblk0/device/name 2>/dev/null';
+  const [kernel,flashProbe,wmsize,wmdens,batt]=await Promise.all([
+    s('uname -r','—'),s(flashCmd,''),s('wm size',''),s('wm density',''),s('dumpsys battery','')
   ]);
   const [upt,cpus]=await Promise.all([s('cat /proc/uptime','0'),readRealCpu()]);
   Object.assign(d,{
     brand,model,device:dev,android:'Android '+rel+' (API '+sdk+')',board,
-    cpuArch:abi,build:fp,kernel,flash:/ufs/i.test(flash)?'UFS':(/mmc/i.test(flash)?'eMMC':flash||'—'),
+    cpuArch:abi,build:fp,kernel,flash:detectFlash(flashProbe),
     display:((wmsize.match(/(\d+)x(\d+)/)||[]).slice(1).join('×')||'—')+' ('+((wmdens.match(/(\d+)/)||[])[1]||'—')+' dpi)',
     sysArch:'aarch64',uptime:uptimeFromProc(upt)
   });
@@ -1715,7 +1762,7 @@ function renderMirror(){
   const ok=state.mode==='real' && !!state.adb, m=state.mirror;
   const dis=ok?'':' disabled style="opacity:.5;pointer-events:none" aria-disabled="true"';
   const keyBtn=k=>'<button class="btn" data-act="mirror-key" data-key="'+k.k+'"'+dis+'>'+icon(k.ic,15)+k.label+'</button>';
-  $('#page-mirror').innerHTML='<h1 class="page-title">投屏</h1>'+
+  $('#page-mirror').innerHTML='<h1 class="page-title">手机投屏</h1>'+
     '<div class="toolbar">'+
       '<button class="btn '+(m.running?'':'primary')+'" data-act="mirror-toggle"'+dis+'>'+icon(m.running?'stop':'play',15)+(m.running?'停止投屏':'开始投屏')+'</button>'+
       '<label class="muted" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px">帧间隔 '+
@@ -1764,6 +1811,7 @@ function rangeRow(label,desc,key,min,max,step,unit,tpl){
 }
 function renderDisplay(){
   const t=state.tuner;
+  const dis=state.mode!=='real'?' disabled':'';
   $('#page-display').innerHTML='<h1 class="page-title">显示控制</h1><div class="grid-2">'+
     '<div class="card"><h2 class="card-title">屏幕参数</h2>'+
       '<div class="row-item"><div><div class="label">分辨率</div><div class="desc">当前 '+t.w+' × '+t.h+'</div></div><div class="ctrl">'+
@@ -1778,35 +1826,246 @@ function renderDisplay(){
       '<div class="row-item"><div><div class="label">深色模式</div><div class="desc">cmd uimode night</div></div><div class="ctrl">'+sw('night','cmd uimode night {v}')+'</div></div>'+
     '</div>'+
     '<div class="card"><h2 class="card-title">显示策略</h2>'+
-      '<div class="row-item"><div><div class="label">休眠时间</div><div class="desc">screen_off_timeout</div></div><div class="ctrl"><select data-select="timeout">'+
-        [[15000,'15 秒'],[30000,'30 秒'],[60000,'1 分钟'],[120000,'2 分钟'],[300000,'5 分钟'],[600000,'10 分钟'],[-1,'永不休眠']].map(o=>'<option value="'+o[0]+'"'+(t.timeout==o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div></div>'+
-      '<div class="row-item"><div><div class="label">字体缩放</div><div class="desc">font_scale，范围 0.85 - 1.30</div></div><div class="ctrl">'+rangeOnly('font',0.85,1.3,0.05,'×')+'<button class="btn primary" data-act="apply" data-tpl="settings put system font_scale {v}" data-key="font">应用</button></div></div>'+
+      '<div class="row-item"><div><div class="label">字体缩放 / 锁屏时间</div><div class="desc">已归入「无级调节」，支持 0.2 - 4.0 倍率与任意秒数</div></div><div class="ctrl"><button class="btn" data-nav="tuner">前往无级调节</button></div></div>'+
       '<div class="row-item"><div><div class="label">屏幕刷新率</div><div class="desc">peak_refresh_rate（需机型支持）</div></div><div class="ctrl">'+rangeOnly('refresh',60,144,1,' Hz')+'<button class="btn primary" data-act="apply" data-tpl="settings put system peak_refresh_rate {v}" data-key="refresh">应用</button></div></div>'+
       '<div class="notice mt16">修改分辨率 / DPI 可能导致界面异常，若出现显示问题请点击「重置」恢复，或重启设备。所有修改均通过 <code class="code-inline">wm</code> / <code class="code-inline">settings</code> 命令下发，无需 ROOT。</div>'+
-    '</div></div>';
+    '</div>'+shotCard(dis)+'</div>';
+  shotRender();
+}
+/* 截图卡片：screencap 写手机相册 → ADB sync 拉回 → 浏览器下载，可选保留手机原图 */
+function shotCard(dis){
+  return '<div class="card shot-card"><div class="card-title-row"><h2 class="card-title">截图</h2>'+
+      '<span class="badge-soft">screencap · 无损 PNG</span></div>'+
+    '<div class="shot-bar">'+
+      '<button class="btn primary" data-act="shot-take"'+(dis||'')+'>'+icon('camera',15)+'<span class="shot-label">立即截图</span></button>'+
+      '<label class="chk" data-act="shot-keep"><input type="checkbox"'+(SHOTS.keep?' checked':'')+'> 同时保存到手机相册</label>'+
+      (SHOTS.list.length?'<button class="btn" data-act="shot-clear">清空列表</button>':'')+
+      '<span class="muted" style="font-size:12px">保存路径 <code class="code-inline">/sdcard/DCIM/Screenshots</code></span>'+
+    '</div>'+
+    '<div class="shot-grid" id="shotGrid"></div>'+
+    '<div class="notice mt16">截图走设备原生 <code class="code-inline">screencap -p</code>，再经 ADB sync 拉回浏览器并自动下载；不勾选「保存到手机相册」时会删除手机内的临时文件。点缩略图可放大预览或重新下载。</div>'+
+  '</div>';
+}
+
+/* ---------------- 截图逻辑 ---------------- */
+const SHOTS={list:[],busy:false,keep:true};
+function shotName(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return 'gjbox-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+'.png';
+}
+function saveUrlAs(url,name){
+  const a=document.createElement('a');
+  a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function saveBlobAs(blob,name){
+  const url=URL.createObjectURL(blob);
+  saveUrlAs(url,name);
+  setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){} },30000);
+}
+function shotBusy(b){
+  const btn=document.querySelector('[data-act="shot-take"]');
+  if(!btn) return;
+  btn.disabled=b;
+  const lb=btn.querySelector('.shot-label');
+  if(lb) lb.textContent=b?'正在截图…':'立即截图';
+}
+function shotRender(){
+  const box=$('#shotGrid'); if(!box) return;
+  if(!SHOTS.list.length){
+    box.innerHTML='<div class="shot-empty">还没有截图。连接真机后点「立即截图」，PNG 会自动下载到电脑，并保存在上面的相册目录。</div>';
+    return;
+  }
+  box.innerHTML=SHOTS.list.map((s,i)=>
+    '<button class="shot-item" data-act="shot-open" data-i="'+i+'" title="'+esc(s.name)+'">'+
+      '<img src="'+s.url+'" alt="'+esc(s.name)+'">'+
+      '<span class="shot-meta">'+Math.max(1,Math.round(s.size/1024))+' KB · '+new Date(s.time).toLocaleTimeString('zh-CN',{hour12:false})+'</span>'+
+    '</button>').join('');
+}
+async function shotTake(){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  if(SHOTS.busy){ toast('正在截图，请稍候','warn'); return; }
+  SHOTS.busy=true; shotBusy(true);
+  const name=shotName();
+  let remote='/sdcard/'+name;
+  try{
+    /* 优先写入系统相册目录（相册里立刻可见），目录不可用则退回 /sdcard 根目录 */
+    let ok=false;
+    try{
+      await realShell('mkdir -p /sdcard/DCIM/Screenshots');
+      const album='/sdcard/DCIM/Screenshots/'+name;
+      await realShell('screencap -p '+album);
+      const size=parseInt(String(await realShell('stat -c %s '+album+' 2>/dev/null')).trim(),10);
+      if(size>1024){ remote=album; ok=true; }
+    }catch(_){ ok=false; }
+    if(!ok) await realShell('screencap -p '+remote);
+    let sync=null, u8=null;
+    try{
+      sync=await state.adb.sync();
+      u8=new Uint8Array(await withTimeout(new Response(sync.read(remote)).arrayBuffer(),15000,'读取截图超时'));
+    }finally{ if(sync){ try{ await sync.dispose(); }catch(_){} } }
+    if(!pngOK(u8)) throw new Error('设备未返回有效 PNG');
+    const blob=new Blob([u8],{type:'image/png'});
+    SHOTS.list.unshift({name,url:URL.createObjectURL(blob),size:u8.length,time:Date.now(),where:SHOTS.keep?remote:''});
+    if(SHOTS.list.length>8) SHOTS.list.length=8;
+    saveBlobAs(blob,name);
+    if(!SHOTS.keep){
+      try{ await realShell('rm -f '+remote); }catch(_){}
+      toast('截图已下载，手机内临时文件已删除','ok');
+    }else toast('截图已保存并下载到电脑','ok');
+  }catch(e){
+    toast('截图失败：'+String((e&&e.message)||e),'err');
+  }finally{
+    SHOTS.busy=false;
+    /* 重渲染整页可同步「清空列表」按钮的出现/消失；不在显示控制页时只更新网格 */
+    if(state.active==='display') renderDisplay(); else shotRender();
+  }
+}
+async function shotOpen(i){
+  const s=SHOTS.list[i]; if(!s) return;
+  const r=await dialog('截图预览',
+    '<div class="shot-preview"><img src="'+s.url+'" alt="'+esc(s.name)+'"></div>'+
+    '<div class="muted" style="font-size:12px;margin-top:10px">'+esc(s.name)+' · '+Math.max(1,Math.round(s.size/1024))+' KB'+
+    (s.where?' · 手机：<code class="code-inline">'+esc(s.where)+'</code>':'')+'</div>',
+    [{label:'关闭'},{label:'下载 PNG',primary:true}]);
+  if(r===1) saveUrlAs(s.url,s.name);
 }
 function rangeOnly(key,min,max,step,unit){ return '<div class="range-wrap"><input type="range" data-range="'+key+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+state.tuner[key]+'"><span class="range-val" id="v-'+key+'">'+state.tuner[key]+unit+'</span></div>'; }
 function sw(key,cmd){ return '<button class="switch'+(state.switches[key]?' on':'')+'" data-switch="'+key+'" data-cmd="'+esc(cmd)+'" aria-label="切换"></button>'; }
 
 /* ---------------- 页面：系统界面 ---------------- */
+/* 与 AOSP SystemUI 的 icon_blacklist 键名对齐；不在表内的键不会被本页改写 */
+const ICON_SLOTS=[
+  ['时间','clock'],['定位','location'],['耳机','headset'],['投射','cast'],
+  ['闹钟','alarm_clock'],['声音','volume'],['信号','mobile'],['飞行','airplane'],
+  ['蓝牙','bluetooth'],['电池','battery'],['无线','wifi'],['NFC','nfc']
+];
 function renderSystemUI(){
-  const t=state.tuner;
-  $('#page-systemui').innerHTML='<h1 class="page-title">系统界面</h1><div class="grid-2">'+
-    '<div class="card"><h2 class="card-title">界面行为</h2>'+
-      '<div class="row-item"><div><div class="label">动画速度</div><div class="desc">window / transition / animator 三个缩放值</div></div><div class="ctrl"><select data-select="anim">'+
-        [[0,'关闭动画'],[0.5,'0.5×'],[1,'1×（默认）'],[1.5,'1.5×'],[2,'2×']].map(o=>'<option value="'+o[0]+'"'+(t.anim==o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
-        '<button class="btn primary" data-act="anim-apply">应用</button></div></div>'+
+  const s=state.sysui;
+  const dis=state.mode!=='real'?' disabled':'';
+  const cardIcons='<div class="card"><h2 class="card-title">隐藏状态栏图标</h2>'+
+      '<div class="icon-grid">'+ICON_SLOTS.map(x=>'<label class="chk"><input type="checkbox" data-icon="'+x[1]+'"'+(s.icons[x[1]]?' checked':'')+'> '+x[0]+'</label>').join('')+'</div>'+
+      '<div class="info-divider"></div>'+
+      '<div class="icon-grid icon-grid-2">'+
+        '<label class="chk"><input type="checkbox" data-icon-opt="rot"'+(s.rotationHide?' checked':'')+'> 左下角旋转提示</label>'+
+        '<label class="chk"><input type="checkbox" data-icon-opt="clock"'+(s.clockSeconds?' checked':'')+'> 显示时钟秒数</label>'+
+      '</div>'+
+      '<div class="row-item" style="margin-top:8px"><div><div class="desc">勾选表示隐藏，点击后统一生效</div></div><div class="ctrl">'+
+        '<button class="btn" data-act="refresh-sysui">'+icon('refresh',15)+'读取当前</button>'+
+        '<button class="btn primary" data-act="hide-icons"'+dis+'>应用</button></div></div>'+
+      '<div class="notice mt16">写入 <code class="code-inline">settings put secure icon_blacklist</code>，只增删上面这 12 项，不会覆盖模块写入的其他图标。</div>'+
+    '</div>';
+  const cardImmersive='<div class="card"><h2 class="card-title">双栏自动沉浸</h2>'+
+      '<div class="btn-grid">'+
+        '<button class="btn" data-act="immersive" data-kind="status"'+dis+'>沉浸状态栏</button>'+
+        '<button class="btn" data-act="immersive" data-kind="navigation"'+dis+'>沉浸导航栏</button>'+
+        '<button class="btn" data-act="immersive" data-kind="full"'+dis+'>同时沉浸</button>'+
+        '<button class="btn" data-act="immersive" data-kind="reset"'+dis+'>全部恢复</button>'+
+      '</div>'+
+      '<div class="row-item"><div><div class="label">软件范围</div><div class="desc">留空表示全部软件；<code class="code-inline">apps,-com.android.settings</code> 表示排除指定软件</div></div>'+
+        '<div class="ctrl"><input class="input" id="suiScope" placeholder="留空 = 全部软件" style="min-width:200px"></div></div>'+
+      '<div class="notice mt16">写入 <code class="code-inline">settings put global policy_control</code>；「全部恢复」会清空整条策略，手势导航下需从屏幕边缘上滑一次状态栏才会回来。</div>'+
+    '</div>';
+  const cardSettings='<div class="card"><h2 class="card-title">状态栏图标设置</h2>'+
       '<div class="row-item"><div><div class="label">状态栏电量百分比</div><div class="desc">status_bar_show_battery_percent</div></div><div class="ctrl">'+sw('batteryPct','settings put system status_bar_show_battery_percent {v}')+'</div></div>'+
-      '<div class="row-item"><div><div class="label">沉浸式状态栏</div><div class="desc">policy_control immersive.full=*</div></div><div class="ctrl">'+sw('immersive','settings put global policy_control immersive.full=*')+'</div></div>'+
-      '<div class="row-item"><div><div class="label">隐藏导航栏</div><div class="desc">policy_control immersive.navigation=*</div></div><div class="ctrl">'+sw('nav','settings put global policy_control immersive.navigation=*')+'</div></div>'+
-    '</div>'+
-    '<div class="card"><h2 class="card-title">常用快捷指令</h2>'+
+      '<div class="row-item"><div><div class="label">下拉快捷图标数</div><div class="desc">sysui_qqs_count</div></div><div class="ctrl"><select id="suiQqs">'+
+        ['','3','4','5','6','7','8','9'].map(v=>'<option value="'+v+'"'+(s.qqs===v?' selected':'')+'>'+(v||'保持当前')+'</option>').join('')+'</select></div></div>'+
+      '<div class="row-item"><div><div class="label">图标距顶部间距</div><div class="desc">sysui_rounded_content_padding</div></div><div class="ctrl"><select id="suiPad">'+
+        ['','0','5','10','15','20','30'].map(v=>'<option value="'+v+'"'+(s.pad===v?' selected':'')+'>'+(v||'保持当前')+'</option>').join('')+'</select></div></div>'+
+      '<div class="row-item"><div><div class="label">应用设置</div><div class="desc">只下发非「保持当前」的项</div></div><div class="ctrl">'+
+        '<button class="btn primary" data-act="statusbar-apply"'+dis+'>应用设置</button></div></div>'+
+      '<div class="row-item"><div><div class="label">去除 Wi-Fi 的 × / !</div><div class="desc">改写联网检测探针与 NTP 服务器</div></div><div class="ctrl">'+
+        '<button class="btn" data-act="wifi-fix"'+dis+'>修复</button></div></div>'+
+      '<div class="notice mt16">部分状态栏设置由系统版本和厂商决定：MIUI / HyperOS 与原生 Android 的键名可能不同，写入后无变化属正常。</div>'+
+    '</div>';
+  const cardQuick='<div class="card"><h2 class="card-title">常用快捷指令</h2>'+
       quickCmd('返回主界面','input keyevent 3')+quickCmd('打开最近任务','input keyevent 187')+
       quickCmd('锁屏','input keyevent 26')+quickCmd('截图到 /sdcard','screencap -p /sdcard/screen.png')+
       quickCmd('下拉通知栏','input swipe 500 0 500 800 200')+quickCmd('重启系统界面','am force-stop com.android.systemui')+
       quickCmd('打开开发者选项','am start -a android.settings.APPLICATION_DEVELOPMENT_SETTINGS')+
       '<div class="notice mt16">以上指令通过 <code class="code-inline">adb shell</code> 下发，点击即执行。执行结果可在「ADB 终端」中查看。</div>'+
-    '</div></div>';
+    '</div>';
+  $('#page-systemui').innerHTML='<h1 class="page-title">系统界面</h1><div class="grid-2 align-start">'+
+      '<div class="stack">'+cardIcons+cardImmersive+'</div>'+
+      '<div class="stack">'+cardSettings+cardQuick+'</div>'+
+    '</div>';
+  if(state.mode==='real' && Date.now()-(state.sysui.at||0)>15000) loadSystemUI(true);
+}
+/* 读取设备当前状态栏设置，只回填控件、不重建 DOM，避免打断用户勾选 */
+async function loadSystemUI(silent){
+  if(state.mode!=='real'){ if(!silent) toast('请先连接真机','warn'); return; }
+  if(state.sysui.reading) return;
+  state.sysui.reading=true;
+  try{
+    const [bl,rot,sec,qqs,pad]=await Promise.all([
+      realShell('settings get secure icon_blacklist'),
+      realShell('settings get secure show_rotation_suggestions'),
+      realShell('settings get secure clock_seconds'),
+      realShell('settings get secure sysui_qqs_count'),
+      realShell('settings get secure sysui_rounded_content_padding')
+    ]);
+    const raw=String(bl).trim();
+    const list=(!raw||raw==='null')?[]:raw.split(',').map(x=>x.trim()).filter(Boolean);
+    state.sysui.raw=list.join(',');
+    const icons={}; ICON_SLOTS.forEach(x=>{ icons[x[1]]=list.includes(x[1]); });
+    state.sysui.icons=icons;
+    state.sysui.rotationHide=String(rot).trim()==='0';
+    state.sysui.clockSeconds=String(sec).trim()==='1';
+    const q=String(qqs).trim(), p=String(pad).trim();
+    state.sysui.qqs=/^[3-9]$/.test(q)?q:'';
+    state.sysui.pad=['0','5','10','15','20','30'].includes(p)?p:'';
+    state.sysui.at=Date.now();
+    applySystemUIState();
+  }catch(e){
+    if(!silent) toast('读取状态栏设置失败：'+esc(e.message||e),'err');
+  }finally{ state.sysui.reading=false; }
+}
+function applySystemUIState(){
+  const s=state.sysui;
+  $$('#page-systemui [data-icon]').forEach(el=>{ el.checked=!!s.icons[el.dataset.icon]; });
+  const rot=$('#page-systemui [data-icon-opt="rot"]'); if(rot) rot.checked=s.rotationHide;
+  const clk=$('#page-systemui [data-icon-opt="clock"]'); if(clk) clk.checked=s.clockSeconds;
+  const q=$('#suiQqs'); if(q) q.value=s.qqs||'';
+  const p=$('#suiPad'); if(p) p.value=s.pad||'';
+}
+async function applyIconBlacklist(){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  const controlled=ICON_SLOTS.map(x=>x[1]);
+  const kept=(state.sysui.raw||'').split(',').filter(x=>x&&!controlled.includes(x));
+  const picked=ICON_SLOTS.filter(x=>state.sysui.icons[x[1]]).map(x=>x[1]);
+  const value=Array.from(new Set(kept.concat(picked))).join(',');
+  await runCmd(value?'settings put secure icon_blacklist '+value:'settings delete secure icon_blacklist',true);
+  await runCmd('settings put secure show_rotation_suggestions '+(state.sysui.rotationHide?0:1),true);
+  await runCmd('settings put secure clock_seconds '+(state.sysui.clockSeconds?1:0),true);
+  state.sysui.raw=value;
+  toast(picked.length?('已隐藏 '+picked.length+' 个状态栏图标'):'已恢复全部状态栏图标','ok');
+}
+async function applyStatusbarSettings(){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  const q=$('#suiQqs'), p=$('#suiPad');
+  const qv=q?q.value:'', pv=p?p.value:'';
+  if(!qv&&!pv){ toast('请先选择要修改的项目','warn'); return; }
+  let n=0;
+  if(qv){ await runCmd('settings put secure sysui_qqs_count '+qv,true); state.sysui.qqs=qv; n++; }
+  if(pv){ await runCmd('settings put secure sysui_rounded_content_padding '+pv,true); state.sysui.pad=pv; n++; }
+  toast('已应用 '+n+' 项状态栏设置','ok');
+}
+async function fixWifiPortal(){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  await runCmd('settings put global captive_portal_http_url http://connect.rom.miui.com/generate_204',true);
+  await runCmd('settings put global captive_portal_https_url https://connect.rom.miui.com/generate_204',true);
+  await runCmd('settings put global ntp_server ntp1.aliyun.com',true);
+  toast('已写入探针与 NTP，Wi-Fi 图标上的 × / ! 会在下次联网检测后消失','ok');
+}
+async function applyImmersive(kind){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  if(kind==='reset'){ await runCmd('settings put global policy_control null',true); toast('已取消所有沉浸设置','ok'); return; }
+  const el=$('#suiScope');
+  let target=(el?el.value:'').trim();
+  if(target && !/^[\w.*,-]+$/.test(target)){ toast('软件范围只允许包名、逗号、* 和 -','warn'); return; }
+  target=target||'*';
+  await runCmd('settings put global policy_control immersive.'+kind+'='+target,true);
+  toast('已开启沉浸：'+kind+' → '+target,'ok');
 }
 function quickCmd(label,cmd){ return '<div class="row-item"><div><div class="label">'+label+'</div><div class="desc code-inline" style="display:inline-block;margin-top:4px">'+esc(cmd)+'</div></div><div class="ctrl"><button class="btn" data-act="run" data-cmd="'+esc(cmd)+'">执行</button></div></div>'; }
 
@@ -1841,25 +2100,112 @@ function renderBattery(){
 }
 function metric(k,v){ return '<div class="metric"><div class="m-k">'+k+'</div><div class="m-v">'+esc(v)+'</div></div>'; }
 
-/* ---------------- 页面：无极调节 ---------------- */
+/* ---------------- 页面：无级调节 ---------------- */
+function fmtScale(v){ const n=Math.round((Number(v)||0)*100)/100; return n+'×'; }
+function scaleRow(key,stKey,min,max,step){
+  const v=state.tuner[stKey];
+  return '<div class="range-wrap"><input type="range" data-scale="'+key+'" data-skey="'+stKey+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+v+'">'+
+    '<span class="range-val" id="v-'+stKey+'">'+fmtScale(v)+'</span></div>';
+}
+function scaleRowItem(label,key,stKey){
+  return '<div class="row-item"><div><div class="label">'+label+'</div><div class="desc">'+key+'</div></div>'+
+    '<div class="ctrl">'+scaleRow(key,stKey,0,4,0.01)+'</div></div>';
+}
 function renderTuner(){
   const t=state.tuner;
-  $('#page-tuner').innerHTML='<h1 class="page-title">无极调节</h1><div class="grid-2">'+
-    '<div class="card"><h2 class="card-title">性能调节</h2>'+
+  const dis=state.mode!=='real'?' disabled':'';
+  const cardFont='<div class="card"><h2 class="card-title">字体大小倍数</h2>'+
+      '<div class="row-item"><div><div class="label">缩放</div><div class="desc">settings put system font_scale，0.20 - 4.00</div></div>'+
+        '<div class="ctrl">'+scaleRow('font_scale','fontScale',0.2,4,0.01)+'</div></div>'+
+      '<div class="row-item"><div><div class="label">常用值</div><div class="desc">系统字体档位，点击即下发</div></div><div class="ctrl">'+
+        [[0.85,'小 0.85×'],[1,'标准 1×'],[1.15,'大 1.15×'],[1.3,'特大 1.3×']].map(o=>'<button class="btn'+(Math.abs(t.fontScale-o[0])<0.001?' primary':'')+'" data-act="font-preset" data-v="'+o[0]+'"'+dis+'>'+o[1]+'</button>').join('')+'</div></div>'+
+      '<div class="notice mt16">拖动松开即生效。字体过大可能导致部分界面排版异常，拖回 1× 即可恢复。</div>'+
+    '</div>';
+  const cardSleep='<div class="card"><h2 class="card-title">锁屏时间</h2>'+
+      '<div class="row-item"><div><div class="label">自动锁屏时间（秒）</div><div class="desc">screen_off_timeout，写入时自动换算为毫秒</div></div>'+
+        '<div class="ctrl"><input class="input num-md" id="sleepSec" type="number" min="1" max="2147483" placeholder="例如 300" value="'+t.timeoutSec+'">'+
+        '<span class="muted" id="sleepNow">当前：'+t.timeoutSec+' 秒</span>'+
+        '<button class="btn primary" data-act="set-timeout"'+dis+'>修改</button></div></div>'+
+      '<div class="row-item"><div><div class="label">常用值</div><div class="desc">点击直接写入并刷新当前值</div></div><div class="ctrl">'+
+        [[30,'30 秒'],[60,'1 分钟'],[300,'5 分钟'],[600,'10 分钟']].map(o=>'<button class="btn" data-act="sleep-preset" data-v="'+o[0]+'"'+dis+'>'+o[1]+'</button>').join('')+'</div></div>'+
+      '<div class="notice mt16">自定义范围 1 - 2147483 秒（约 24.8 天）；填 2147483 近似永不休眠。</div>'+
+    '</div>';
+  const cardAnim='<div class="card"><h2 class="card-title">动画倍率</h2>'+
+      scaleRowItem('窗口','window_animation_scale','winScale')+
+      scaleRowItem('过渡','transition_animation_scale','transScale')+
+      scaleRowItem('程序','animator_duration_scale','animScale')+
+      '<div class="notice mt16">倍率越小动画越快，0 表示关闭动画；三项分别写入 <code class="code-inline">settings put global</code>，与「开发者选项」里的动画缩放是同一组值。</div>'+
+    '</div>';
+  const cardPerf='<div class="card"><h2 class="card-title">性能调节</h2>'+
       rangeRow('CPU 最小频率','单位 MHz，写入 scaling_min_freq 需 root','cpuMin',300,2000,1,' MHz','echo {v}000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq')+
       rangeRow('CPU 最大频率','单位 MHz，写入 scaling_max_freq 需 root','cpuMax',600,3200,1,' MHz','echo {v}000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq')+
       rangeRow('媒体音量','media volume --stream 3 --set','volume',0,15,1,'','media volume --stream 3 --set {v}')+
       '<div class="row-item"><div><div class="label">性能预设</div><div class="desc">一键切换常用调度组合</div></div><div class="ctrl">'+
         ['省电','均衡','性能'].map(p=>'<button class="btn" data-act="preset" data-preset="'+p+'">'+p+'</button>').join('')+'</div></div>'+
-      '<div class="notice mt16">CPU / GPU 频率写入 sysfs 通常需要 root 权限；非 root 设备仅会返回权限错误，不会造成损害。屏幕刷新率、音量等通过系统公开接口调节，无需 root。</div>'+
-    '</div>'+
-    '<div class="card"><h2 class="card-title">当前状态</h2>'+
+      '<div class="notice mt16">CPU 频率写入 sysfs 通常需要 root；非 root 设备只会返回权限错误，不会造成损害。音量通过系统公开接口调节，无需 root。</div>'+
+    '</div>';
+  const cardState='<div class="card" style="margin-top:20px"><h2 class="card-title">当前状态</h2>'+
       '<div class="section-title">CPU 实时频率（'+(String(settings.refresh)==='0'?'自动刷新已关闭':'每 '+(settings.refresh||'2')+' 秒刷新')+'）</div>'+
-      '<div class="grid-2" style="gap:8px 20px">'+state.cpu.map((f,i)=>'<div class="kv"><span class="k">CPU '+i+'</span><span class="v '+(state.mode==='none'?'':'blue')+'" data-cpu="'+i+'">'+(state.mode==='none'?'—':f+' MHz')+'</span></div>').join('')+'</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 20px">'+state.cpu.map((f,i)=>'<div class="kv"><span class="k">CPU '+i+'</span><span class="v '+(state.mode==='none'?'':'blue')+'" data-cpu="'+i+'">'+(state.mode==='none'?'—':f+' MHz')+'</span></div>').join('')+'</div>'+
       '<div class="info-divider"></div>'+
       '<div class="section-title">已下发命令记录（最近 8 条）</div>'+
       '<div class="output-box">'+(state.logs.length?state.logs.slice(0,8).map(l=>'['+l.t+'] $ '+l.cmd+'  →  '+String(l.result).slice(0,90)).join('\n'):'暂无记录')+'</div>'+
-    '</div></div>';
+    '</div>';
+  $('#page-tuner').innerHTML='<div class="card-title-row" style="margin-bottom:18px"><h1 class="page-title" style="margin:0">无级调节</h1>'+
+      '<button class="btn" data-act="refresh-tuning">'+icon('refresh',15)+'刷新</button></div>'+
+    '<div class="grid-2 align-start">'+
+      '<div class="stack">'+cardFont+cardSleep+'</div>'+
+      '<div class="stack">'+cardAnim+cardPerf+'</div>'+
+    '</div>'+cardState;
+  if(state.mode==='real' && Date.now()-(state.tuning.at||0)>15000) loadTuning(true);
+}
+/* 读取设备当前字体 / 动画 / 锁屏参数，只回填控件不重建 DOM */
+async function loadTuning(silent){
+  if(state.mode!=='real'){ if(!silent) toast('请先连接真机','warn'); return; }
+  if(state.tuning.reading) return;
+  state.tuning.reading=true;
+  try{
+    const [f,w,tr,a,to]=await Promise.all([
+      realShell('settings get system font_scale'),
+      realShell('settings get global window_animation_scale'),
+      realShell('settings get global transition_animation_scale'),
+      realShell('settings get global animator_duration_scale'),
+      realShell('settings get system screen_off_timeout')
+    ]);
+    const num=(v,d)=>{ const n=parseFloat(String(v).trim()); return Number.isFinite(n)?n:d; };
+    const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+    state.tuner.fontScale=clamp(num(f,1),0.2,4);
+    state.tuner.winScale=clamp(num(w,1),0,4);
+    state.tuner.transScale=clamp(num(tr,1),0,4);
+    state.tuner.animScale=clamp(num(a,1),0,4);
+    state.tuner.timeoutSec=Math.round(clamp(num(to,60000),1000,2147483000)/1000);
+    state.tuning.at=Date.now();
+    applyTuningState();
+  }catch(e){
+    if(!silent) toast('读取调节参数失败：'+esc(e.message||e),'err');
+  }finally{ state.tuning.reading=false; }
+}
+function applyTuningState(){
+  ['fontScale','winScale','transScale','animScale'].forEach(k=>{
+    const el=$('[data-skey="'+k+'"]');
+    if(el) el.value=state.tuner[k];
+    const out=$('#v-'+k); if(out) out.textContent=fmtScale(state.tuner[k]);
+  });
+  const sleep=$('#sleepSec'); if(sleep) sleep.value=state.tuner.timeoutSec;
+  const now=$('#sleepNow'); if(now) now.textContent='当前：'+state.tuner.timeoutSec+' 秒';
+  $$('#page-tuner [data-act="font-preset"]').forEach(b=>{
+    b.classList.toggle('primary', Math.abs(state.tuner.fontScale-parseFloat(b.dataset.v))<0.001);
+  });
+}
+async function applySleepTimeout(){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  const el=$('#sleepSec');
+  const sec=parseInt(el?el.value:'',10);
+  if(!Number.isFinite(sec)||sec<1||sec>2147483){ toast('请输入 1 - 2147483 之间的秒数','warn'); return; }
+  await runCmd('settings put system screen_off_timeout '+(sec*1000),true);
+  state.tuner.timeoutSec=sec;
+  const now=$('#sleepNow'); if(now) now.textContent='当前：'+sec+' 秒';
+  toast('锁屏时间已设为 '+sec+' 秒','ok');
 }
 
 /* ---------------- 页面：控机脚本 ---------------- */
@@ -1979,11 +2325,11 @@ function renderSettings(){
 function renderAbout(){
   $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2 align-start">'+
     '<div class="card"><div class="about-hero"><div class="about-logo">'+logoSvg()+'</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
-      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.2.0</div></div></div>'+
-      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.2.0')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.2.3</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.2.3')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
       kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('版权','© 2026 維坦')+'</div>'+
       '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
-      '<div class="muted" style="font-size:12.8px;line-height:2">设备信息读取 · 投屏（画面镜像与触控） · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 应用管理 · 分辨率与 DPI 调节 · 系统界面设置 · 电池信息与电量模拟 · 无极调节 · 控机脚本 · ADB 终端 · 深浅色主题</div>'+
+      '<div class="muted" style="font-size:12.8px;line-height:2">设备信息 · 软件管理 · 手机投屏（画面镜像与触控） · 截图（相册保存与下载） · 显示控制（分辨率 / DPI / 截图） · 系统界面（状态栏图标 / 图标设置 / 双栏沉浸） · 电池管理（信息与电量模拟） · 无级调节（字体 / 动画 / 锁屏） · 控机脚本 · ADB 终端 · 软件设置 · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 深浅色主题</div>'+
     '</div>'+
     '<div class="card"><h2 class="card-title">真机连接</h2>'+
       '<div class="muted" style="font-size:13px;line-height:2.1">1. 手机开启「开发者选项 → USB 调试」并用数据线连接<br>2. 关闭电脑端 adb / 手机助手，只保留一个标签页<br>3. 点「连接设备」，选手机并在手机上允许授权</div>'+
@@ -2043,9 +2389,38 @@ document.addEventListener('click', async e=>{
       toast('动画速度已设置为 '+v+'×','ok'); break;
     }
     case 'app-refresh': appRefresh(); break;
+    case 'refresh-sysui': await loadSystemUI(); break;
+    case 'hide-icons': await applyIconBlacklist(); break;
+    case 'statusbar-apply': await applyStatusbarSettings(); break;
+    case 'wifi-fix': await fixWifiPortal(); break;
+    case 'immersive': await applyImmersive(el.dataset.kind); break;
+    case 'refresh-tuning': await loadTuning(); break;
+    case 'set-timeout': await applySleepTimeout(); break;
+    case 'font-preset': {
+      if(state.mode!=='real'){ toast('请先连接真机','warn'); break; }
+      const v=parseFloat(el.dataset.v);
+      state.tuner.fontScale=v;
+      await runCmd('settings put system font_scale '+v.toFixed(2),true);
+      renderTuner();
+      toast('字体大小已设为 '+fmtScale(v),'ok'); break;
+    }
+    case 'sleep-preset': {
+      if(state.mode!=='real'){ toast('请先连接真机','warn'); break; }
+      const sec=parseInt(el.dataset.v,10);
+      const inp=$('#sleepSec'); if(inp) inp.value=sec;
+      await applySleepTimeout(); break;
+    }
     case 'mirror-toggle': state.mirror.running?stopMirror():startMirror(); break;
     case 'mirror-once': if(state.mode==='real' && !state.mirror.busy) mirrorFrame(); else if(state.mode!=='real') toast('请先连接真机','warn'); break;
     case 'mirror-save': mirrorSave(); break;
+    case 'shot-take': shotTake(); break;
+    case 'shot-open': await shotOpen(+el.dataset.i); break;
+    case 'shot-keep': {
+      const cb=el.querySelector('input');
+      SHOTS.keep=cb?!!cb.checked:!SHOTS.keep;
+      break;
+    }
+    case 'shot-clear': SHOTS.list.length=0; renderDisplay(); toast('已清空截图列表（手机内文件不受影响）','ok'); break;
     case 'mirror-full': mirrorFull(); break;
     case 'mirror-key': await mirrorKey(el.dataset.key); break;
     case 'mirror-send': await mirrorSend(); break;
@@ -2145,11 +2520,30 @@ document.addEventListener('input', e=>{
     const out=$('#v-'+k); if(out) out.textContent=v+unit;
     return;
   }
+  if(t.dataset.scale){
+    const k=t.dataset.skey; state.tuner[k]=parseFloat(t.value);
+    const out=$('#v-'+k); if(out) out.textContent=fmtScale(state.tuner[k]);
+    return;
+  }
   if(t.dataset.num){ state.tuner[t.dataset.num]=parseInt(t.value,10)||0; return; }
   if(t.id==='scriptEditor'){ state.scriptText=t.value; return; }
 });
 document.addEventListener('change', async e=>{
   const t=e.target;
+  if(t.dataset.icon){ state.sysui.icons[t.dataset.icon]=!!t.checked; return; }
+  if(t.dataset.iconOpt){ if(t.dataset.iconOpt==='rot') state.sysui.rotationHide=!!t.checked; else state.sysui.clockSeconds=!!t.checked; return; }
+  if(t.id==='suiQqs'){ state.sysui.qqs=t.value; return; }
+  if(t.id==='suiPad'){ state.sysui.pad=t.value; return; }
+  if(t.dataset.scale){
+    const key=t.dataset.scale, k=t.dataset.skey;
+    const min=parseFloat(t.min)||0, max=parseFloat(t.max)||4;
+    const v=Math.min(max,Math.max(min,parseFloat(t.value)||0));
+    state.tuner[k]=v;
+    const scope=key==='font_scale'?'system':'global';
+    await runCmd('settings put '+scope+' '+key+' '+v.toFixed(2),true);
+    toast('已设置 '+key+' = '+fmtScale(v),'ok');
+    return;
+  }
   if(t.dataset.select==='timeout'){ state.tuner.timeout=+t.value; await runCmd('settings put system screen_off_timeout '+t.value,true); toast('休眠时间已设置','ok'); return; }
   if(t.dataset.select==='anim'){ state.tuner.anim=parseFloat(t.value); return; }
   if(t.dataset.setting){
