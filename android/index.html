@@ -113,9 +113,9 @@ a{color:var(--brand);text-decoration:none}
 .page{display:none;animation:fade .18s ease}
 .page.active{display:block}
 @keyframes fade{from{opacity:0}to{opacity:1}}
-.page-title{font-size:19px;font-weight:600;margin:0 0 18px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;min-width:0}
-.card-title{font-size:15px;font-weight:600;margin:0 0 16px}
+.page-title{font-size:19px;font-weight:600;margin:0 0 16px;letter-spacing:-.01em}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;min-width:0}
+.card-title{font-size:14.5px;font-weight:600;margin:0 0 12px}
 .card-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .card-title-row .card-title{margin:0}
 .badge-soft{font-size:11.5px;color:var(--muted);background:var(--card-hover);border:1px solid var(--border);padding:3px 8px;border-radius:6px}
@@ -139,14 +139,14 @@ a{color:var(--brand);text-decoration:none}
 .empty-hint{color:var(--muted)}
 
 /* ---------- 主页下半区 ---------- */
-.home-lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.home-lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
 .reboot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.btn-reboot{height:40px;border:1px solid var(--brand);border-radius:6px;background:var(--brand);color:var(--brand-on);font-size:13px;display:flex;align-items:center;justify-content:center;gap:7px;transition:.15s;font-weight:600}
-.btn-reboot:hover{background:var(--brand-600);border-color:var(--brand-600)}
+.btn-reboot{height:40px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-2);font-size:13px;display:flex;align-items:center;justify-content:center;gap:7px;transition:.15s;font-weight:500}
+.btn-reboot:hover{background:var(--field);border-color:var(--brand);color:var(--brand)}
 .btn-reboot:disabled{opacity:.4;filter:saturate(.5);cursor:not-allowed;transform:none}
-.btn-reboot:disabled:hover{background:var(--brand);transform:none}
-html[data-theme="dark"] .btn-reboot:disabled:hover{background:var(--brand-600)}
-.btn-reboot svg{width:15px;height:15px}
+.btn-reboot:disabled:hover{background:var(--card);transform:none}
+.btn-reboot svg{width:15px;height:15px;color:var(--brand)}
+.btn-reboot:hover svg{color:var(--brand)}
 .connected-line{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:500;margin-bottom:16px}
 .device-picker{display:flex;gap:10px}
 .device-picker select{flex:1;min-width:0;height:34px;padding:0 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);outline:none}
@@ -155,7 +155,7 @@ html[data-theme="dark"] .btn-reboot:disabled:hover{background:var(--brand-600)}
 .btn-outline:hover{border-color:var(--brand);color:var(--brand)}
 .btn-outline svg{width:15px;height:15px}
 #refreshIcon{display:inline-flex}
-.hint{color:var(--muted);font-size:12.5px;line-height:1.7;margin:18px 0 0}
+.hint{color:var(--muted);font-size:12px;line-height:1.7;margin:14px 0 0}
 
 /* ---------- 通用控件 ---------- */
 .btn{height:32px;padding:0 12px;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:6px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:.15s;white-space:nowrap}
@@ -174,7 +174,7 @@ textarea.input{height:auto;padding:10px 12px;resize:vertical;line-height:1.6}
 .toolbar .input{flex:1;max-width:320px}
 .stat{color:var(--muted);font-size:12.5px;margin-left:auto}
 .stat b{color:var(--text)}
-.grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
 .grid-2.align-start{align-items:start}
 .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .section-title{font-size:14px;font-weight:600;margin:0 0 12px}
@@ -211,10 +211,11 @@ tbody tr:hover{background:var(--field)}
 .app-pkg{font-size:11.5px;color:var(--muted);font-family:ui-monospace,Consolas,monospace}
 
 /* 设置行 */
-.row-item{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 18px;padding:13px 0;border-bottom:1px solid var(--line)}
+.row-item{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 16px;padding:11px 0;border-bottom:1px solid var(--line)}
 .row-item:last-child{border-bottom:none}
 .row-item .label{font-size:13.5px}
-.row-item .desc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+.row-item .desc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.row-item .desc code{font-size:11px}
 .row-item .ctrl{display:flex;align-items:center;flex-wrap:wrap;gap:10px;min-width:0}
 .row-item select{min-width:130px;height:34px;padding:0 10px;border:1px solid var(--border);border-radius:6px;background:var(--field);outline:none}
 .switch{position:relative;width:42px;height:23px;border-radius:20px;background:var(--border);border:none;transition:.2s;flex-shrink:0}
@@ -247,7 +248,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .btn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .btn-grid .btn{justify-content:center}
 .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
-.stack{display:flex;flex-direction:column;gap:20px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
 .range-wrap .range-val{min-width:60px;text-align:right}
 @media(max-width:640px){.icon-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
@@ -261,6 +262,26 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .metric-grid{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:14px 26px;flex:1}
 .metric .m-k{font-size:12px;color:var(--muted)}
 .metric .m-v{font-size:17px;font-weight:600;margin-top:4px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.card-head .card-title{margin:0}
+.bat-details{margin-top:14px}
+.bat-details summary{cursor:pointer;font-size:12px;color:var(--muted);user-select:none}
+.bat-details[open] summary{margin-bottom:8px}
+.bat-raw{margin:0;max-height:168px;overflow:auto;background:var(--field);border-radius:6px;padding:10px 12px;font-size:11.5px;line-height:1.6;color:var(--text-2);white-space:pre-wrap;word-break:break-all}
+.bat-src{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#page-battery .input.num-sm{width:100px}
+.bat-src button{height:30px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-2);font-size:12px;cursor:pointer;transition:.15s}
+.bat-src button:hover{border-color:var(--border-hover)}
+.bat-src button.on{border-color:var(--brand);color:var(--brand);background:var(--brand-soft);font-weight:600}
+.bat-ctrl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.bat-ctrl .btn.on{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
+.bat-log{min-height:150px;max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:6px;font-size:12px}
+.bat-row{display:grid;grid-template-columns:1fr .7fr .8fr;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.bat-log.power .bat-row{grid-template-columns:1fr .7fr .8fr .9fr}
+.bat-row.head{position:sticky;top:0;background:var(--card);color:var(--muted);font-size:11.5px;z-index:1}
+.bat-row span:not(:first-child){text-align:right}
+.bat-empty{padding:20px 12px;text-align:center;color:var(--muted);font-size:12px}
+.bat-foot{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:12px;color:var(--muted)}
 
 /* 终端 */
 .terminal{background:var(--term-bg);border:1px solid var(--term-border);border-radius:6px;padding:16px;height:400px;overflow-y:auto;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12.8px;line-height:1.75;color:var(--term-text)}
@@ -294,7 +315,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .kv-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 28px}
 .kv-list .kv{grid-template-columns:82px 1fr}
 .code-inline{font-family:ui-monospace,Consolas,monospace;background:var(--field);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:12px}
-.notice{background:var(--brand-soft);border:1px solid var(--border);border-radius:6px;padding:12px 14px;font-size:12.8px;line-height:1.8;color:var(--text-2)}
+.notice{background:transparent;border:0;border-left:2px solid var(--border);border-radius:0;padding:2px 0 2px 10px;font-size:12px;line-height:1.7;color:var(--muted)}
 
 /* toast & dialog */
 #toasts{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;gap:9px;z-index:100}
@@ -409,6 +430,10 @@ input[type=range]{width:clamp(120px,16vw,190px)}
   .kv,.info-bottom .kv{grid-template-columns:62px minmax(0,1fr)}
   .cpu-pane{column-gap:12px}
   .metric-grid{grid-template-columns:1fr}
+  #page-battery .battery-wrap{flex-direction:column;align-items:center;gap:16px}
+  #page-battery .metric-grid{grid-template-columns:1fr 1fr;width:100%;gap:12px 14px}
+  #page-battery .metric .m-k{font-size:11.5px}
+  #page-battery .metric .m-v{font-size:15px}
   .toolbar{gap:8px}
   .toolbar .input{flex:1 1 100%;max-width:none}
   .toolbar .btn{flex:1 1 auto}
@@ -436,8 +461,6 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 .mirror-layout{display:flex;gap:16px;align-items:stretch}
 .mirror-view{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;background:#070b14;border:1px solid var(--border);border-radius:8px;padding:16px;min-height:340px}
 .mirror-stage{position:relative;height:min(74vh,760px);aspect-ratio:var(--ar,9 / 19.5);width:auto;max-width:100%;background:#05080f;border:1px solid rgba(148,163,184,.26);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;box-shadow:0 10px 32px rgba(0,0,0,.42)}
-.mirror-stage img{width:100%;height:100%;object-fit:contain;display:none}
-.mirror-stage img.on{display:block}
 .mirror-stage:fullscreen{height:100vh;max-height:none;aspect-ratio:auto;width:100%;min-height:0;background:#000;border:none;border-radius:0}
 .mirror-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#94a3b8;font-size:13px;text-align:center;padding:24px;pointer-events:none;background:#070b14}
 .mirror-placeholder svg{width:36px;height:36px;opacity:.6}
@@ -453,7 +476,27 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 .mirror-input-row{display:flex;gap:8px;margin-top:12px}
 .mirror-input-row .input{flex:1;min-width:0}
 .mirror-rate{height:32px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--field);color:var(--text);font-size:12.5px}
+.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:4px}
+.quick-btn{height:34px;justify-content:flex-start;padding:0 11px;font-size:12.5px}
 .mirror-tip{margin-top:14px}
+/* --- 流式投屏（WebCodecs） --- */
+.mirror-stage canvas{width:100%;height:100%;object-fit:contain;display:none;background:#05080f}
+.mirror-stage canvas.on{display:block}
+.mirror-stage:focus{outline:none}
+.mirror-stage:focus-visible{box-shadow:0 0 0 2px var(--brand-40,rgba(37,99,235,.4))}
+.mirror-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.mirror-opt{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+/* 窄屏：标签文字收起（保留给读屏），两个下拉与开始按钮同一行 */
+@media(max-width:430px){
+  .mirror-opt{font-size:0;gap:0}
+  .mirror-opt .mirror-rate{font-size:12px;padding:0 6px}
+}
+.mirror-key-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.mirror-hint-kbd{font-size:11.5px;color:var(--muted);padding:0 2px;line-height:1.7}
+.mirror-hint-kbd code{font-size:11px;padding:1px 4px;border-radius:4px;background:var(--field);border:1px solid var(--border)}
+.mirror-stage.recording{border-color:rgba(248,113,113,.55);box-shadow:0 10px 32px rgba(0,0,0,.42),0 0 0 2px rgba(220,38,38,.25)}
+.mirror-stage:fullscreen{border-radius:0}
+.mirror-stage:fullscreen canvas{max-height:100vh}
 @media(max-width:900px){
   .mirror-layout{flex-direction:column}
   .mirror-side{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -491,7 +534,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.2.3</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.4.0</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -499,7 +542,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
       <!-- 主页 -->
       <section class="page active" id="page-home">
         <h1 class="page-title">设备信息</h1>
-        <div class="notice" id="homeNotice" style="margin-bottom:16px">当前未连接真机，设备信息与所有指令均不可用。请点击右上角「连接设备」，使用 Chrome / Edge 通过 USB 调试连接手机。</div>
+        <div class="notice" id="homeNotice" style="margin-bottom:14px">未连接设备。点右上角「连接设备」并用 USB 调试授权。</div>
         <div class="card info-card">
           <div class="info-grid" id="infoGrid"></div>
           <div class="info-divider"></div>
@@ -520,7 +563,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
               <select id="deviceSelect"></select>
               <button class="btn-outline" data-act="refresh"><span id="refreshIcon"></span>刷新</button>
             </div>
-            <p class="hint">使用 Chrome / Edge，开启手机的 USB 调试，连接后在手机上允许授权。未连接设备时所有指令不可下发。</p>
+            <p class="hint">Chrome / Edge · 手机开启 USB 调试后允许授权。</p>
           </div>
         </div>
       </section>
@@ -586,6 +629,8 @@ const P = {
   play:'<polygon points="5 3 19 12 5 21 5 3"/>',
   save:'<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
   trash:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',
+  bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  video:'<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>',
   download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
   cast:'<rect width="18" height="12" x="3" y="5" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/>',
@@ -618,7 +663,7 @@ function freshDevice(over){
 }
 
 /* ---------------- 状态 ---------------- */
-const DEFAULT_SETTINGS = { theme:'light', refresh:'2', confirm:true, autoReconnect:true };
+const DEFAULT_SETTINGS = { theme:'light', refresh:'2', confirm:true, autoReconnect:true, mirrorQuality:'720', mirrorBitrate:'8000' };
 let settings = Object.assign({}, DEFAULT_SETTINGS);
 try { Object.assign(settings, JSON.parse(localStorage.getItem('gjbox.settings')||'{}')); } catch(e){}
 // 剔除旧版本遗留的未知配置项
@@ -632,7 +677,9 @@ const state = {
   active:'home', showBoard:false,
   devices:[],
   apps:[], appFilter:'', appsAutoLoaded:false,
-  mirror:{running:false,busy:false,timer:null,rate:500,url:null,blob:null,w:0,h:0,frames:0,lastMs:0,capMs:0,capMode:null,err:'',fails:0,down:null},
+  mirror:{running:false,w:0,h:0,frames:0,err:'',down:null,
+    stream:null, streamErr:'', fps:0, kbps:0, dropped:0, decMs:0,
+    rec:null, recOn:false, recChunks:[], recAt:0, rotate:0, scale:1, wheelAt:0, hover:false},
   termLines:[], termHistory:[], termIdx:0,
   scriptText:'# 在此输入 shell 命令，每行一条\ngetprop ro.product.model\ndumpsys battery | grep level',
   scriptOutput:'', scripts:[],
@@ -845,7 +892,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.2.3';
+const BUILD='v1.4.0';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1141,11 +1188,12 @@ async function connectReal(preferPaired, targetSerial){
   }
 }
 async function disconnect(){
-  stopMirror();
-  if(state.mirror.url){ try{ URL.revokeObjectURL(state.mirror.url); }catch(_){} }
-  state.mirror.url=null; state.mirror.blob=null; state.mirror.w=0; state.mirror.h=0;
-  state.mirror.frames=0; state.mirror.lastMs=0; state.mirror.capMs=0; state.mirror.capMode=null;
-  state.mirror.err=''; state.mirror.fails=0;
+  try{ stopMirror(); }catch(_){}
+  try{ batStop(); }catch(_){}
+  BAT.info=parseBattery('');
+  BAT.stats.rows=[]; BAT.stats.power=false; BAT.stats.model='';
+  state.mirror.err=''; state.mirror.frames=0; state.mirror.streamErr='';
+  state.mirror.w=0; state.mirror.h=0; state.mirror.fps=0; state.mirror.kbps=0; state.mirror.dropped=0;
   state.apps=[]; state.appFilter=''; state.appsAutoLoaded=false;
   /* 断开后清空设备侧读取的状态栏 / 调节参数缓存，避免下次连接展示上一台设备的旧值 */
   state.sysui={raw:'',icons:{},rotationHide:false,clockSeconds:false,qqs:'',pad:'',reading:false};
@@ -1292,15 +1340,6 @@ function updateHomeLive(){
   const b=$('#v-battery'); if(b) b.textContent=val('battery');
   const u=$('#v-uptime'); if(u) u.textContent=uptimeText();
 }
-function updateBatteryView(){
-  const b=state.device.battery||EMPTY_DEVICE.battery;
-  const C=2*Math.PI*54;
-  const arc=$('#batteryArc'); if(arc) arc.setAttribute('stroke-dashoffset',String(C*(1-b.level/100)));
-  const lv=$('#batteryLv'); if(lv) lv.textContent=b.level+'%';
-  const st=$('#batteryStatus'); if(st) st.textContent=b.status;
-  const vals=[b.voltage,b.temp,b.health,b.plugged,b.status,state.device.model||'—'];
-  $$('#page-battery .metric-grid .m-v').forEach((el,i)=>{ if(vals[i]!=null) el.textContent=vals[i]; });
-}
 function updateTunerCpu(){
   $$('#page-tuner [data-cpu]').forEach(el=>{
     const i=+el.dataset.cpu;
@@ -1326,7 +1365,7 @@ function startPolling(){
         }
       }
       if(state.active==='home') updateHomeLive();
-      else if(state.active==='battery') updateBatteryView();
+      else if(state.active==='battery' && !BAT.stats.running) await batRefresh(true);
       else if(state.active==='tuner') updateTunerCpu();
     }catch(e){ /* 单次采样失败静默跳过，不影响下一轮 */ }
     finally{ polling=false; }
@@ -1510,7 +1549,7 @@ function renderApps(){
       :'')+
     '<tr id="noMatch" style="'+(list.length?'display:none':'')+'"><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">'+(state.mode!=='real'?'尚未连接真机，连接后点击「刷新列表」读取应用':(state.apps.length?'未找到匹配的应用':'应用列表为空，点击「刷新列表」读取'))+'</td></tr>'+
     '</tbody></table></div>'+
-    '<p class="hint">提示：禁用 / 启用使用 <code class="code-inline">pm disable-user</code> / <code class="code-inline">pm enable</code>；卸载系统应用需先解除用户安装或具备 root 权限。应用列表需连接真机后点击「刷新列表」读取。设备未提供显示名的应用按包名简称展示，完整包名见名称下方。窄屏下可左右滑动表格查看操作列。</p>';
+    '<p class="hint">禁用 / 启用走 <code class="code-inline">pm</code>，卸载系统应用需系统权限。</p>';
 }
 async function appRefresh(auto){
   if(state.mode!=='real'){ if(!auto){ toast('请先连接真机后再刷新应用列表','warn'); renderApps(); } return; }
@@ -1550,9 +1589,245 @@ async function appRefresh(auto){
 }
 
 /* ---------------- 页面：投屏 ---------------- */
-/* 用设备原生 screencap 逐帧取 PNG，再通过 input tap / swipe / keyevent / text 回注操作。
-   零外部依赖、不推送任何 server 二进制，复用已连接的 ADB 通道；约 1~2 帧/秒，
-   适合查看界面与点按操作，不是实时视频流（完整 scrcpy 需额外解码器与 server）。 */
+/* 单引擎：设备端 screenrecord --output-format=h264 输出 Annex-B 码流，
+   浏览器 WebCodecs 硬解后直接画到 canvas。控制统一走 input tap / swipe /
+   keyevent / text，零外部依赖、不推送任何 server 二进制。
+   解码队列积压时主动丢弃非关键帧，保证「当前画面」而不是「排队的历史画面」。 */
+/* 起始码：00 00 01 或 00 00 00 01（兼容部分设备在 SPS 前补 0） */
+function avcFindSC(b,from){
+  for(let i=from;i+2<b.length;i++){
+    if(b[i]===0&&b[i+1]===0){
+      if(b[i+2]===1) return {at:i,len:3};
+      if(b[i+2]===0&&i+3<b.length&&b[i+3]===1) return {at:i,len:4};
+    }
+  }
+  return null;
+}
+/* SPS 前三个字节决定 codec 字符串（profile / constraints / level） */
+function avcCodecStr(sps){
+  if(!sps||sps.length<4) return 'avc1.42E01E';
+  return 'avc1.'+[sps[1],sps[2],sps[3]].map(v=>('0'+v.toString(16)).slice(-2).toUpperCase()).join('');
+}
+/* 把 SPS/PPS 包成 AVCDecoderConfigurationRecord（WebCodecs 的 description） */
+function avcCBox(sps,pps){
+  const out=new Uint8Array(11+sps.length+pps.length);
+  out[0]=1; out[1]=sps[1]; out[2]=sps[2]; out[3]=sps[3];
+  out[4]=0xff;                       // lengthSizeMinusOne = 3（4 字节长度前缀）
+  out[5]=0xe1;                       // 1 个 SPS
+  out[6]=(sps.length>>8)&255; out[7]=sps.length&255;
+  out.set(sps,8);
+  let p=8+sps.length;
+  out[p]=1; p++;                     // 1 个 PPS
+  out[p]=(pps.length>>8)&255; out[p+1]=pps.length&255; p+=2;
+  out.set(pps,p);
+  return out;
+}
+/* Annex-B → 以访问单元（一帧）为单位输出，每帧内 NAL 改成 4 字节长度前缀 */
+class AvcParser{
+  constructor(onAU){ this.onAU=onAU; this.buf=new Uint8Array(0); this.cur=[]; this.hasVcl=false; this.key=false; this.sps=null; this.pps=null; }
+  push(chunk){
+    if(!chunk||!chunk.length) return;
+    const buf=new Uint8Array(this.buf.length+chunk.length);
+    buf.set(this.buf,0); buf.set(chunk,this.buf.length);
+    const first=avcFindSC(buf,0);
+    if(!first){ this.buf=buf.length>3?buf.slice(buf.length-3):buf; return; }
+    let start=first.at, len=first.len;
+    for(;;){
+      const nx=avcFindSC(buf,start+len);
+      if(!nx){
+        /* 下一个 NAL 的起始码已经出现，说明当前访问单元已经完整；
+           立即交付而不是等下一帧的全部字节到齐，少一帧（约 33ms）延迟 */
+        if(this.hasVcl && start>0) this.flush();
+        this.buf=buf.slice(start); return;
+      }
+      const nal=buf.subarray(start+len,nx.at);
+      if(nal.length) this.nalOf(nal);
+      start=nx.at; len=nx.len;
+    }
+  }
+  nalOf(nal){
+    const t=nal[0]&31;
+    if(t===7||t===8){
+      if(this.hasVcl) this.flush();          // 新参数集前先把上一帧交付
+      if(t===7) this.sps=nal; else this.pps=nal;
+      this.cur.push(nal); return;
+    }
+    if(t===1||t===5){
+      if(this.hasVcl) this.flush();          // 遇到新的 VCL NAL = 上一帧结束
+      this.cur.push(nal); this.hasVcl=true; if(t===5) this.key=true; return;
+    }
+    this.cur.push(nal);
+  }
+  flush(){
+    const nals=this.cur, key=this.key, has=this.hasVcl;
+    this.cur=[]; this.hasVcl=false; this.key=false;
+    if(!has||!nals.length||!this.sps||!this.pps) return;
+    let size=0; for(const n of nals) size+=4+n.length;
+    const out=new Uint8Array(size); let o=0;
+    for(const n of nals){
+      const l=n.length;
+      out[o]=(l>>>24)&255; out[o+1]=(l>>>16)&255; out[o+2]=(l>>>8)&255; out[o+3]=l&255;
+      out.set(n,o+4); o+=4+l;
+    }
+    this.onAU({data:out,key:key});
+  }
+}
+function shText(cmd,ms){
+  const svc=state.adb&&state.adb.subprocess, runner=(svc&&svc.noneProtocol)||svc;
+  if(!runner) return Promise.reject(new Error('设备未连接'));
+  if(typeof runner.spawnWaitText==='function') return withTimeout(runner.spawnWaitText(cmd),ms||6000,'命令超时');
+  return runner.spawn(cmd).then(async p=>{
+    const txt=await new Response(p.stdout||p.output).text();
+    return txt;
+  });
+}
+/* 编码尺寸：短边跟画质走，保持设备原始宽高比，宽高取偶数 */
+async function mirrorEncSize(){
+  const m=state.mirror;
+  let W=m.w||0, H=m.h||0;
+  if(!W||!H){
+    try{
+      const t=await shText('wm size',5000);
+      const a=/Override size:\s*(\d+)x(\d+)/.exec(t)||/Physical size:\s*(\d+)x(\d+)/.exec(t);
+      if(a){ W=+a[1]; H=+a[2]; }
+    }catch(_){}
+  }
+  if(!W||!H){ W=1080; H=1920; }
+  const want=parseInt(settings.mirrorQuality,10)||720;
+  const short=Math.min(W,H), long=Math.max(W,H);
+  /* H.264 编码器要求宽高为 16 的倍数，向下取整避免超过屏幕分辨率 */
+  const snap=v=>Math.max(16,Math.floor(v/16)*16);
+  if(want>=short) return {w:snap(W),h:snap(H)};         // 选「原始」时不放大
+  const k=want/short;
+  const sw=snap(short*k), lw=snap(long*k);
+  return W<=H ? {w:sw,h:lw} : {w:lw,h:sw};
+}
+async function mirrorStreamOpen(){
+  const m=state.mirror;
+  if(typeof window.VideoDecoder!=='function') throw new Error('当前浏览器不支持 WebCodecs，无法解码 H.264');
+  const svc=state.adb.subprocess, runner=(svc&&svc.noneProtocol)||svc;
+  if(!runner||typeof runner.spawn!=='function') throw new Error('当前 ADB 组件不支持流式投屏');
+  const size=await mirrorEncSize();
+  const br=Math.max(1000,(parseInt(settings.mirrorBitrate,10)||8000))*1000;
+  const cmd='screenrecord --output-format=h264 --bit-rate '+br+' --time-limit 180 --size '+size.w+'x'+size.h+' -';
+  const proc=await runner.spawn(cmd);
+  const st={proc:proc,reader:null,dec:null,cfgKey:'',sps:null,pps:null,closed:false,bytes:0,aus:0,ts:0,w:0,h:0,lastAt:Date.now(),err:''};
+  m.stream=st;
+  const parser=new AvcParser(au=>{
+    if(st.closed) return;
+    st.aus++; st.lastAt=Date.now();
+    mirrorStreamDecode(st,au);
+  });
+  st.reader=proc.stdout.getReader();
+  (async()=>{
+    try{
+      for(;;){
+        const r=await st.reader.read();
+        if(r.done||st.closed) break;
+        if(!r.value||!r.value.length) continue;
+        st.bytes+=r.value.length;
+        parser.push(r.value);
+      }
+    }catch(e){ if(!st.closed) st.err=String((e&&e.message)||e); }
+    finally{ if(!st.closed && st.w && m.running && m.stream===st) mirrorStreamRestart(); }
+  })();
+  const t0=Date.now();
+  while(Date.now()-t0<6500){
+    if(st.closed) throw new Error(st.err||'视频流已关闭');
+    if(st.w) return st;
+    await new Promise(r=>setTimeout(r,120));
+  }
+  const msg=st.aus?'视频流出帧但无法解码（'+avcCodecStr(st.sps)+'）':'设备未返回视频流（screenrecord 被限制或屏幕未点亮）';
+  try{ await mirrorStreamClose(); }catch(_){}
+  throw new Error(msg);
+}
+function mirrorStreamDecode(st,au){
+  if(!st.sps||!st.pps) return;
+  const key=avcCodecStr(st.sps)+'|'+st.sps.length+'-'+st.pps.length;
+  if(!st.dec||st.cfgKey!==key){
+    if(st.dec){ try{ st.dec.close(); }catch(_){} st.dec=null; }
+    const mk=()=>new VideoDecoder({
+      output:f=>mirrorDrawFrame(f,st),
+      error:e=>{ st.err='解码错误：'+((e&&e.message)||e); }
+    });
+    const base={ codec:avcCodecStr(st.sps), description:avcCBox(st.sps,st.pps), optimizeForLatency:true };
+    try{
+      st.dec=mk();
+      st.dec.configure(Object.assign({hardwareAcceleration:'prefer-hardware'},base));
+    }catch(e){
+      /* 部分平台不支持指定硬件加速，退回默认（可为软解） */
+      try{ if(st.dec) st.dec.close(); }catch(_){}
+      try{
+        st.dec=mk();
+        st.dec.configure(base);
+      }catch(e2){ st.err='解码器初始化失败：'+((e2&&e2.message)||e2); return; }
+    }
+    st.cfgKey=key;
+  }
+  /* 解码队列积压说明浏览器已经跟不上编码节奏：直接丢非关键帧，
+     宁可少几帧也不要让延迟越积越大（这是「越看越卡」的根因） */
+  if((st.dec.decodeQueueSize||0)>2 && !au.key){
+    st.dropped=(st.dropped||0)+1;
+    state.mirror.dropped=st.dropped;
+    return;
+  }
+  try{
+    st.ts+=Math.round(1e6/30);
+    st.dec.decode(new EncodedVideoChunk({type:au.key?'key':'delta',timestamp:st.ts,data:au.data}));
+  }catch(e){ st.err='解码失败：'+((e&&e.message)||e); }
+}
+function mirrorDrawFrame(frame,st){
+  const w=frame.displayWidth||frame.codedWidth, h=frame.displayHeight||frame.codedHeight;
+  const cv=$('#mirrorCanvas');
+  if(cv&&w&&h){
+    if(!st.ctx) st.ctx=cv.getContext('2d',{alpha:false});
+    if(cv.width!==w||cv.height!==h){
+      cv.width=w; cv.height=h; st.ctx=st.ctx||cv.getContext('2d',{alpha:false});
+      cv.classList.add('on');
+      const ph=$('#mirrorPlaceholder'); if(ph) ph.style.display='none';
+    }
+    try{ st.ctx.drawImage(frame,0,0,w,h); }catch(_){}
+  }
+  const m=state.mirror;
+  if(m.w!==w||m.h!==h){ m.w=w; m.h=h; mirrorFit(); }   // CSS 变量只在尺寸变化时写
+  m.frames++; m.err='';
+  st.w=w; st.h=h; st.lastAt=Date.now();
+  try{ frame.close(); }catch(_){}
+}
+async function mirrorStreamClose(){
+  const m=state.mirror, st=m.stream;
+  m.stream=null;
+  if(!st) return;
+  st.closed=true;
+  try{ if(st.reader) st.reader.cancel(); }catch(_){}
+  try{ if(st.dec){ st.dec.close(); st.dec=null; } }catch(_){}
+  try{ if(st.proc&&typeof st.proc.kill==='function') st.proc.kill(); }catch(_){}
+  try{ if(st.proc&&st.proc.stdout) st.proc.stdout.cancel&&st.proc.stdout.cancel(); }catch(_){}
+}
+/* screenrecord 单次上限 180 秒，到点静默续流；连续两次起不来才判定失败 */
+async function mirrorStreamRestart(){
+  const m=state.mirror;
+  if(!m.running) return;
+  try{ await mirrorStreamClose(); }catch(_){}
+  if(!m.running) return;
+  for(let i=0;i<2;i++){
+    try{
+      await mirrorStreamOpen();
+      if(!m.running){ await mirrorStreamClose(); return; }
+      m.streamErr='';
+      return;
+    }catch(e){
+      m.streamErr=String((e&&e.message)||e);
+      if(!m.running) return;
+      await new Promise(r=>setTimeout(r,600));
+    }
+  }
+  if(m.running){
+    stopMirror();
+    toast('投屏已中断：'+(m.streamErr||'设备未返回视频流'),'err');
+  }
+}
+
 const MIRROR_KEYS = [
   {k:4,label:'返回',ic:'back'},{k:3,label:'Home',ic:'home'},
   {k:187,label:'最近任务',ic:'square'},{k:66,label:'回车',ic:'terminal'},
@@ -1570,158 +1845,130 @@ function withTimeout(p,ms,label){
     new Promise((_,rej)=>{ t=setTimeout(()=>rej(new Error(label)),ms); })
   ]).finally(()=>{ if(t!=null) clearTimeout(t); });
 }
-/* screencap -p 走 exec service 时二进制安全；个别设备会改写 stdout，
-   则降级为「写文件 + sync 读回」，sync 传输同样二进制安全。 */
-async function grabScreen(){
-  if(!state.adb) throw new Error('设备未连接');
-  const svc=state.adb.subprocess;
-  const runner=(svc && svc.noneProtocol) || svc;
-  if(!runner) throw new Error('当前 ADB 组件不支持截屏');
-  let u8=null;
-  /* 记住输出路径：stdout 被改写的设备只探测一次，后续帧直接走文件，省掉一次 shell 调用 */
-  if(state.mirror.capMode!=='file' && typeof runner.spawnWait==='function'){
-    try{ u8=await withTimeout(runner.spawnWait('screencap -p'),10000,'截屏超时'); }catch(_){ u8=null; }
-  }
-  if(pngOK(u8)){ state.mirror.capMode='stdout'; return u8; }
-  state.mirror.capMode='file';
-  if(typeof runner.spawnWaitText==='function')
-    await withTimeout(runner.spawnWaitText('screencap -p /data/local/tmp/gjbox_screen.png'),10000,'截屏超时');
-  else
-    await withTimeout(runner.spawnWait('screencap -p /data/local/tmp/gjbox_screen.png'),10000,'截屏超时');
-  let file=null, sync=null;
-  try{
-    sync=await state.adb.sync();
-    file=new Uint8Array(await withTimeout(new Response(sync.read('/data/local/tmp/gjbox_screen.png')).arrayBuffer(),10000,'读取画面超时'));
-  }finally{ if(sync){ try{ await sync.dispose(); }catch(_){} } }
-  if(!pngOK(file)) throw new Error('设备未返回有效 PNG 画面');
-  return file;
-}
-function mirrorInfo(){
-  const m=state.mirror, el=$('#mirrorInfo');
-  if(!el) return;
-  el.innerHTML='画面 <b>'+(m.w?m.w+'×'+m.h:'—')+'</b> · 帧 <b>'+m.frames+'</b>'+
-    (m.frames?' · 抓取 <b>'+m.capMs+' ms</b>':'')+
-    (m.frames?' · 单帧 <b>'+m.lastMs+' ms</b>':'')+
-    (m.rate>0?' · 间隔 <b>'+m.rate+' ms</b>':' · <b>连续</b>')+
-    (m.err?' · <span style="color:var(--danger-text)">'+esc(m.err)+'</span>':'');
-}
 function mirrorSetBtn(){
   const b=$('[data-act="mirror-toggle"]');
   if(!b) return;
   b.innerHTML=icon(state.mirror.running?'stop':'play',15)+(state.mirror.running?'停止投屏':'开始投屏');
   b.classList.toggle('primary',!state.mirror.running);
 }
-/* 重渲染后恢复画面：blob 数据一直在，即使旧 blob URL 已被撤销也能重建，
-   避免把失效地址写进 <img src> 触发浏览器破图图标 */
 /* 显示框按设备画面宽高比自适应，让画面填满显示区（旧实现固定全宽+contain，竖屏被缩成一小条） */
 function mirrorFit(){
   const st=$('#mirrorStage'); if(!st) return;
   const m=state.mirror, w=m.w||9, hh=m.h||19.5;
   st.style.setProperty('--ar', (w>0&&hh>0)? w+' / '+hh : '9 / 19.5');
 }
-function mirrorPaint(){
-  mirrorFit();
-  const img=$('#mirrorImg'), ph=$('#mirrorPlaceholder');
-  if(!img) return;
-  const m=state.mirror;
-  if(!m.blob){
-    img.classList.remove('on'); img.removeAttribute('src');
-    if(ph) ph.style.display='';
-    return;
-  }
-  const url=URL.createObjectURL(m.blob);
-  img.onload=()=>{
-    img.classList.add('on');
-    if(ph) ph.style.display='none';
-    const old=m.url;
-    m.url=url;
-    if(old && old!==url){ try{ URL.revokeObjectURL(old); }catch(_){} }
-  };
-  img.onerror=()=>{
-    try{ URL.revokeObjectURL(url); }catch(_){}
-    img.classList.remove('on'); img.removeAttribute('src');
-    m.url=null; m.blob=null;
-    if(ph) ph.style.display='';
-  };
-  img.src=url;
-}
-async function mirrorFrame(){
-  const m=state.mirror;
-  if(m.busy || state.mode!=='real' || !state.adb) return;
-  m.busy=true;
-  const t0=Date.now();
-  try{
-    const u8=await grabScreen();
-    m.capMs=Date.now()-t0;                  // 纯抓取耗时，供调度扣除等待间隔
-    const blob=new Blob([u8],{type:'image/png'});
-    const url=URL.createObjectURL(blob);
-    const img=$('#mirrorImg');
-    if(!img){ try{ URL.revokeObjectURL(url); }catch(_){} return; }
-    const old=m.url;
-    img.onload=()=>{
-      if(img.src!==url) return;               // 已被下一帧覆盖，丢弃旧回调
-      const w=img.naturalWidth, h=img.naturalHeight;
-      m.w=w; m.h=h; m.blob=blob; m.url=url;
-      if(old && old!==url){ try{ URL.revokeObjectURL(old); }catch(_){} }
-      img.classList.add('on');               // 有效画面才显示，杜绝破图图标
-      const ph=$('#mirrorPlaceholder'); if(ph) ph.style.display='none';
-      mirrorFit(); mirrorInfo();
-    };
-    img.onerror=()=>{
-      try{ URL.revokeObjectURL(url); }catch(_){}
-      img.classList.remove('on'); img.removeAttribute('src');  // 立刻撤掉破图
-      m.blob=null; m.url=null; m.w=0; m.h=0;
-      const ph=$('#mirrorPlaceholder'); if(ph) ph.style.display='';
-      m.err='画面解码失败，已恢复占位'; m.fails++;
-      mirrorInfo();
-    };
-    img.src=url;
-    m.frames++; m.lastMs=Date.now()-t0; m.err=''; m.fails=0;
-    mirrorInfo();
-  }catch(e){
-    m.err=String((e&&e.message)||e); m.fails++;
-    mirrorInfo();
-    if(m.fails>=3){ stopMirror(); toast('投屏已停止：'+esc(m.err),'err'); }
-  }finally{ m.busy=false; }
-}
-function mirrorTick(){
-  const m=state.mirror;
-  if(m.timer){ clearTimeout(m.timer); m.timer=null; }
-  if(!m.running) return;
-  /* 旧实现周期 = 抓取耗时 T + rate，等待被叠加、延时近乎翻倍。
-     现在周期 ≈ max(T, rate)；rate=0 为「连续」档，以设备最快速度抓帧。 */
-  const gap = m.rate<=0 ? 0 : Math.max(0, m.rate - (m.capMs||0));
-  m.timer=setTimeout(async()=>{
-    if(!m.running) return;
-    await mirrorFrame();
-    mirrorTick();
-  }, gap);
-}
 function startMirror(){
   if(state.mode!=='real' || !state.adb){ toast('请先连接真机后再开始投屏','warn'); return; }
   const m=state.mirror;
   if(m.running) return;
-  m.running=true; m.err=''; m.fails=0;
+  m.running=true; m.err=''; m.frames=0; m.dropped=0;
+  m.streamErr=''; m.fps=0; m.kbps=0;
   mirrorSetBtn();
-  toast('投屏已开始','ok');
-  mirrorFrame().then(mirrorTick);
+  mirrorStreamOpen().then(()=>{
+    if(!m.running){ mirrorStreamClose(); return; }
+    const ph=$('#mirrorPlaceholder'); if(ph) ph.style.display='none';
+    toast('投屏已连接','ok');
+  }).catch(e=>{
+    m.streamErr=String((e&&e.message)||e);
+    if(!m.running) return;
+    stopMirror();
+    toast('投屏不可用：'+m.streamErr,'err');
+  });
 }
 function stopMirror(){
   const m=state.mirror;
-  if(!m.running && !m.timer) return;
+  if(!m.running && !m.stream) return;
   m.running=false;
-  if(m.timer){ clearTimeout(m.timer); m.timer=null; }
+  mirrorStreamClose();
+  if(m.recOn){ try{ m.rec.stop(); }catch(_){} }
+  m.fps=0; m.kbps=0;
+  const cv=$('#mirrorCanvas'); if(cv) cv.classList.remove('on');
+  const ph=$('#mirrorPlaceholder'); if(ph) ph.style.display='';
   mirrorSetBtn();
 }
-function mirrorSave(){
+function mirrorSetQuality(v){
+  if(!['720','1080','2160'].includes(v)) return;
+  settings.mirrorQuality=v; saveSettings();
+  if(state.mirror.running){ stopMirror(); startMirror(); }
+  else toast('画质：'+(v==='2160'?'原始':v+'P'),'ok');
+}
+/* 录制：直接录 canvas 流，不需要额外编码器 */
+function mirrorRecToggle(){
+  const m=state.mirror, cv=$('#mirrorCanvas');
+  if(m.recOn){ try{ m.rec.stop(); }catch(_){} return; }
+  if(!cv || !cv.width || !cv.classList.contains('on')){
+    toast('请先开始投屏并等到画面出现再录制','warn'); return;
+  }
+  if(typeof MediaRecorder!=='function' || !cv.captureStream){ toast('当前浏览器不支持录制','warn'); return; }
+  const stream=cv.captureStream(30);
+  const mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm';
+  let rec=null;
+  try{ rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:6000000}); }
+  catch(_){ try{ rec=new MediaRecorder(stream); }catch(e){ toast('无法开始录制','err'); return; } }
+  m.recChunks=[];
+  rec.ondataavailable=e=>{ if(e.data && e.data.size) m.recChunks.push(e.data); };
+  rec.onstop=()=>{
+    const wasOn=m.recOn;
+    m.recOn=false; m.rec=null;
+    const b=$('[data-act="mirror-rec"]'); if(b) b.innerHTML=icon('video',15)+'录制画面';
+    const st=$('#mirrorStage'); if(st) st.classList.remove('recording');
+    const blob=new Blob(m.recChunks,{type:mime.split(';')[0]});
+    m.recChunks=[];
+    if(!blob.size){ toast('录制为空，未保存','warn'); return; }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='gjbox-record-'+Date.now()+'.webm';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){} },30000);
+    if(wasOn) toast('录制已保存（'+(blob.size/1048576).toFixed(1)+' MB）','ok');
+  };
+  rec.start(1000);
+  m.rec=rec; m.recOn=true; m.recAt=Date.now();
+  const b=$('[data-act="mirror-rec"]'); if(b) b.innerHTML=icon('stop',15)+'停止录制';
+  const st=$('#mirrorStage'); if(st) st.classList.add('recording');
+  toast('开始录制画面','ok');
+}
+async function mirrorRotate(kind){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  const map={left:1,right:3,portrait:0};
+  const v=map[kind]||0;
+  await runCmd('settings put system accelerometer_rotation 0',true);
+  await runCmd('settings put system user_rotation '+v,true);
+  state.mirror.rotate=v;
+  toast(kind==='portrait'?'已恢复竖屏':'画面已旋转','ok');
+}
+async function mirrorNotify(kind){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  const cmd=kind==='settings'?'expand-settings':'expand-notifications';
+  try{ await runCmd('cmd statusbar '+cmd,true); }
+  catch(_){ await runCmd('service call statusbar '+(kind==='settings'?2:1),true); }
+}
+/* 滚轮 → 单指滑动（120ms 节流，避免指令排队把画面拖死） */
+async function mirrorWheel(e){
   const m=state.mirror;
-  if(!m.blob){ toast('还没有可保存的画面','warn'); return; }
-  const url=URL.createObjectURL(m.blob);
-  const a=document.createElement('a');
-  a.href=url; a.download='gjbox-screen-'+Date.now()+'.png';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){} }, 30000);
-  toast('截图已保存','ok');
+  if(state.mode!=='real' || !state.adb) return;
+  const p=mirrorPoint(e.clientX,e.clientY); if(!p) return;
+  const now=Date.now();
+  if(now-(m.wheelAt||0)<120) return;
+  m.wheelAt=now;
+  const dy=Math.max(-420,Math.min(420,e.deltaY));
+  const y2=Math.max(1,Math.min((m.h||1920)-1,Math.round(p.y-dy*1.2)));
+  await runCmd('input swipe '+p.x+' '+p.y+' '+p.x+' '+y2+' 140',true);
+}
+
+function mirrorSave(){
+  const cv=$('#mirrorCanvas');
+  if(!cv || !cv.width || !cv.classList.contains('on')){ toast('还没有可保存的画面','warn'); return; }
+  if(!cv.toBlob){ toast('当前浏览器不支持导出截图','warn'); return; }
+  cv.toBlob(blob=>{
+    if(!blob){ toast('截图导出失败','err'); return; }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='gjbox-screen-'+Date.now()+'.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){} }, 30000);
+    toast('截图已保存','ok');
+  },'image/png');
 }
 function mirrorFull(){
   const el=$('#mirrorStage'); if(!el) return;
@@ -1745,12 +1992,17 @@ async function mirrorSend(){
   if(el) el.value='';
   toast('文字已发送','ok');
 }
+function mirrorSurface(){
+  const cv=$('#mirrorCanvas');
+  return (cv && cv.classList.contains('on')) ? cv : null;
+}
 /* 把画面上的点换算成设备原始像素坐标（考虑 object-fit: contain 的黑边） */
 function mirrorPoint(cx,cy){
-  const img=$('#mirrorImg');
-  if(!img || !img.naturalWidth) return null;
+  const img=mirrorSurface();
+  if(!img) return null;
+  const nw=img.width, nh=img.height;
+  if(!nw||!nh) return null;
   const r=img.getBoundingClientRect();
-  const nw=img.naturalWidth, nh=img.naturalHeight;
   const scale=Math.min(r.width/nw, r.height/nh);
   if(!(scale>0)) return null;
   const ox=r.left+(r.width-nw*scale)/2, oy=r.top+(r.height-nh*scale)/2;
@@ -1762,45 +2014,57 @@ function renderMirror(){
   const ok=state.mode==='real' && !!state.adb, m=state.mirror;
   const dis=ok?'':' disabled style="opacity:.5;pointer-events:none" aria-disabled="true"';
   const keyBtn=k=>'<button class="btn" data-act="mirror-key" data-key="'+k.k+'"'+dis+'>'+icon(k.ic,15)+k.label+'</button>';
+  const quality=settings.mirrorQuality;
   $('#page-mirror').innerHTML='<h1 class="page-title">手机投屏</h1>'+
-    '<div class="toolbar">'+
+    '<div class="mirror-toolbar">'+
       '<button class="btn '+(m.running?'':'primary')+'" data-act="mirror-toggle"'+dis+'>'+icon(m.running?'stop':'play',15)+(m.running?'停止投屏':'开始投屏')+'</button>'+
-      '<label class="muted" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px">帧间隔 '+
-        '<select class="mirror-rate" data-change="mirror-rate"'+dis+'>'+
-        [['0','连续（最快）'],['250','0.25 秒'],['500','0.5 秒'],['1000','1 秒'],['2000','2 秒']].map(o=>'<option value="'+o[0]+'"'+(String(m.rate)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+
+      '<label class="mirror-opt">画质'+
+        '<select class="mirror-rate" aria-label="画质" data-change="mirror-quality"'+dis+'>'+
+        [['720','720P'],['1080','1080P'],['2160','原始']].map(o=>'<option value="'+o[0]+'"'+(String(quality)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+
         '</select></label>'+
-      '<span class="stat" id="mirrorInfo"></span>'+
+      '<label class="mirror-opt">码率'+
+        '<select class="mirror-rate" aria-label="码率" data-change="mirror-bitrate"'+dis+'>'+
+        [['2000','2 Mbps'],['4000','4 Mbps'],['8000','8 Mbps'],['16000','16 Mbps']].map(o=>'<option value="'+o[0]+'"'+(String(settings.mirrorBitrate)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+
+        '</select></label>'+
     '</div>'+
     '<div class="mirror-layout">'+
       '<div class="mirror-view">'+
-        '<div class="mirror-stage" id="mirrorStage">'+
-          '<img id="mirrorImg" alt="">'+
-          '<div class="mirror-placeholder" id="mirrorPlaceholder"'+(m.blob?' style="display:none"':'')+'>'+
-            icon('cast',36)+'<div>'+(ok?'点击「开始投屏」查看设备画面':'请先连接真机，再开始投屏')+'</div>'+
-            '<div style="font-size:12px;opacity:.8">画面可点击 / 滑动，操作会实时下发到手机</div>'+
+        '<div class="mirror-stage" id="mirrorStage" tabindex="0">'+
+          '<canvas id="mirrorCanvas"></canvas>'+
+          '<div class="mirror-placeholder" id="mirrorPlaceholder"'+(m.running?' style="display:none"':'')+'>'+
+            icon('cast',34)+'<div>'+(ok?'点「开始投屏」查看画面':'未连接设备')+'</div>'+
           '</div>'+
         '</div>'+
       '</div>'+
       '<aside class="mirror-side">'+
         '<div class="mirror-side-group"><span class="mirror-side-label">导航</span>'+
-          '<div class="mirror-keys">'+MIRROR_KEYS.slice(0,4).map(keyBtn).join('')+'</div></div>'+
+          '<div class="mirror-key-row">'+MIRROR_KEYS.slice(0,4).map(keyBtn).join('')+'</div>'+
+          '<div class="mirror-key-row">'+
+            '<button class="btn" data-act="mirror-notify" data-kind="notify"'+dis+'>'+icon('bell',15)+'通知栏</button>'+
+            '<button class="btn" data-act="mirror-notify" data-kind="settings"'+dis+'>'+icon('settings',15)+'快捷开关</button>'+
+          '</div>'+
+        '</div>'+
         '<div class="mirror-side-group"><span class="mirror-side-label">电源与音量</span>'+
-          '<div class="mirror-keys">'+MIRROR_KEYS.slice(4).map(keyBtn).join('')+'</div></div>'+
+          '<div class="mirror-key-row">'+MIRROR_KEYS.slice(4).map(keyBtn).join('')+'</div>'+
+          '<div class="mirror-key-row">'+
+            '<button class="btn" data-act="mirror-rotate" data-kind="left"'+dis+'>'+icon('refresh',15)+'左转</button>'+
+            '<button class="btn" data-act="mirror-rotate" data-kind="right"'+dis+'>'+icon('refresh',15)+'右转</button>'+
+          '</div>'+
+          '<button class="btn" data-act="mirror-rotate" data-kind="portrait"'+dis+'>'+icon('monitor',15)+'恢复竖屏</button>'+
+        '</div>'+
         '<div class="mirror-side-group"><span class="mirror-side-label">画面</span>'+
-          '<button class="btn" data-act="mirror-once"'+dis+'>'+icon('camera',15)+'单帧抓取</button>'+
           '<button class="btn" data-act="mirror-save">'+icon('download',15)+'保存截图</button>'+
+          '<button class="btn" data-act="mirror-rec">'+(m.recOn?icon('stop',15)+'停止录制':icon('video',15)+'录制画面')+'</button>'+
           '<button class="btn" data-act="mirror-full">'+icon('maximize',15)+'全屏显示</button>'+
         '</div>'+
         '<div class="mirror-side-group"><span class="mirror-side-label">文字输入</span>'+
-          '<div class="mirror-input-row"><input class="input" id="mirrorText" placeholder="输入英文 / 数字" autocomplete="off"><button class="btn primary" data-act="mirror-send"'+dis+'>'+icon('type',15)+'发送</button></div>'+
+          '<div class="mirror-input-row"><input class="input" id="mirrorText" placeholder="输入英文 / 数字" autocomplete="off"><button class="btn" data-act="mirror-send"'+dis+'>'+icon('type',15)+'发送</button></div>'+
           '<p class="hint" style="margin:2px 0 0;font-size:11.5px">仅支持 ASCII，中文请用设备输入法</p>'+
         '</div>'+
       '</aside>'+
     '</div>'+
-    '<p class="hint mirror-tip">画面按设备宽高比自适应填满显示区，可点击 / 滑动实时操控。延时主要来自设备端 <code class="code-inline">screencap</code> 编码与 USB 传输：「连续」档取消固定间隔、以设备最快速度抓帧（USB 占用较高），状态栏的「抓取」耗时即单帧瓶颈。离开本页会自动停止以释放带宽，首次画面为空请点亮手机屏幕后点「单帧抓取」。</p>';
-  mirrorInfo(); mirrorPaint();
+    '<p class="hint mirror-tip">设备端 <code class="code-inline">screenrecord</code> 编码 H.264、浏览器 WebCodecs 硬解；画面卡顿时优先把画质降到 720P。支持点击 / 拖动 / 滚轮 / 双击 / 长按，<code class="code-inline">Esc</code> 返回、<code class="code-inline">F</code> 全屏；离开页面自动停止以释放 USB 带宽。</p>';
 }
-
 /* ---------------- 页面：显示控制 ---------------- */
 function rangeRow(label,desc,key,min,max,step,unit,tpl){
   const v=state.tuner[key], id='r-'+key;
@@ -1812,7 +2076,7 @@ function rangeRow(label,desc,key,min,max,step,unit,tpl){
 function renderDisplay(){
   const t=state.tuner;
   const dis=state.mode!=='real'?' disabled':'';
-  $('#page-display').innerHTML='<h1 class="page-title">显示控制</h1><div class="grid-2">'+
+  $('#page-display').innerHTML='<h1 class="page-title">显示控制</h1><div class="grid-2 align-start">'+
     '<div class="card"><h2 class="card-title">屏幕参数</h2>'+
       '<div class="row-item"><div><div class="label">分辨率</div><div class="desc">当前 '+t.w+' × '+t.h+'</div></div><div class="ctrl">'+
         '<input class="input num-sm" type="number" data-num="w" value="'+t.w+'"><span class="muted">×</span>'+
@@ -1822,13 +2086,13 @@ function renderDisplay(){
         '<input class="input num-md" type="number" data-num="dpi" value="'+t.dpi+'">'+
         '<button class="btn primary" data-act="wm-density">应用</button></div></div>'+
       rangeRow('屏幕亮度','0 - 255，需关闭自动亮度','bright',0,255,1,'','settings put system screen_brightness {v}; settings put system screen_brightness_mode 0')+
-      '<div class="row-item"><div><div class="label">自动旋转</div><div class="desc">accelerometer_rotation</div></div><div class="ctrl">'+sw('rotate','settings put system accelerometer_rotation {v}')+'</div></div>'+
-      '<div class="row-item"><div><div class="label">深色模式</div><div class="desc">cmd uimode night</div></div><div class="ctrl">'+sw('night','cmd uimode night {v}')+'</div></div>'+
+      '<div class="row-item"><div><div class="label">自动旋转</div></div><div class="ctrl">'+sw('rotate','settings put system accelerometer_rotation {v}')+'</div></div>'+
+      '<div class="row-item"><div><div class="label">深色模式</div></div><div class="ctrl">'+sw('night','cmd uimode night {v}')+'</div></div>'+
     '</div>'+
     '<div class="card"><h2 class="card-title">显示策略</h2>'+
-      '<div class="row-item"><div><div class="label">字体缩放 / 锁屏时间</div><div class="desc">已归入「无级调节」，支持 0.2 - 4.0 倍率与任意秒数</div></div><div class="ctrl"><button class="btn" data-nav="tuner">前往无级调节</button></div></div>'+
-      '<div class="row-item"><div><div class="label">屏幕刷新率</div><div class="desc">peak_refresh_rate（需机型支持）</div></div><div class="ctrl">'+rangeOnly('refresh',60,144,1,' Hz')+'<button class="btn primary" data-act="apply" data-tpl="settings put system peak_refresh_rate {v}" data-key="refresh">应用</button></div></div>'+
-      '<div class="notice mt16">修改分辨率 / DPI 可能导致界面异常，若出现显示问题请点击「重置」恢复，或重启设备。所有修改均通过 <code class="code-inline">wm</code> / <code class="code-inline">settings</code> 命令下发，无需 ROOT。</div>'+
+      '<div class="row-item"><div><div class="label">字体与锁屏</div></div><div class="ctrl"><button class="btn" data-nav="tuner">前往无级调节</button></div></div>'+
+      '<div class="row-item"><div><div class="label">屏幕刷新率</div><div class="desc">需机型支持</div></div><div class="ctrl">'+rangeOnly('refresh',60,144,1,' Hz')+'<button class="btn primary" data-act="apply" data-tpl="settings put system peak_refresh_rate {v}" data-key="refresh">应用</button></div></div>'+
+      '<div class="notice mt16">改分辨率 / DPI 可能引起界面异常，点「重置」可恢复。</div>'+
     '</div>'+shotCard(dis)+'</div>';
   shotRender();
 }
@@ -1840,10 +2104,9 @@ function shotCard(dis){
       '<button class="btn primary" data-act="shot-take"'+(dis||'')+'>'+icon('camera',15)+'<span class="shot-label">立即截图</span></button>'+
       '<label class="chk" data-act="shot-keep"><input type="checkbox"'+(SHOTS.keep?' checked':'')+'> 同时保存到手机相册</label>'+
       (SHOTS.list.length?'<button class="btn" data-act="shot-clear">清空列表</button>':'')+
-      '<span class="muted" style="font-size:12px">保存路径 <code class="code-inline">/sdcard/DCIM/Screenshots</code></span>'+
     '</div>'+
     '<div class="shot-grid" id="shotGrid"></div>'+
-    '<div class="notice mt16">截图走设备原生 <code class="code-inline">screencap -p</code>，再经 ADB sync 拉回浏览器并自动下载；不勾选「保存到手机相册」时会删除手机内的临时文件。点缩略图可放大预览或重新下载。</div>'+
+    '<div class="notice mt16">点缩略图可预览或重新下载；不勾选相册时不保留手机内文件。</div>'+
   '</div>';
 }
 
@@ -1873,7 +2136,7 @@ function shotBusy(b){
 function shotRender(){
   const box=$('#shotGrid'); if(!box) return;
   if(!SHOTS.list.length){
-    box.innerHTML='<div class="shot-empty">还没有截图。连接真机后点「立即截图」，PNG 会自动下载到电脑，并保存在上面的相册目录。</div>';
+    box.innerHTML='<div class="shot-empty">还没有截图</div>';
     return;
   }
   box.innerHTML=SHOTS.list.map((s,i)=>
@@ -1953,7 +2216,7 @@ function renderSystemUI(){
       '<div class="row-item" style="margin-top:8px"><div><div class="desc">勾选表示隐藏，点击后统一生效</div></div><div class="ctrl">'+
         '<button class="btn" data-act="refresh-sysui">'+icon('refresh',15)+'读取当前</button>'+
         '<button class="btn primary" data-act="hide-icons"'+dis+'>应用</button></div></div>'+
-      '<div class="notice mt16">写入 <code class="code-inline">settings put secure icon_blacklist</code>，只增删上面这 12 项，不会覆盖模块写入的其他图标。</div>'+
+      '<div class="notice mt16">只增删上面这 12 项，不动模块写入的其他图标。</div>'+
     '</div>';
   const cardImmersive='<div class="card"><h2 class="card-title">双栏自动沉浸</h2>'+
       '<div class="btn-grid">'+
@@ -1962,28 +2225,26 @@ function renderSystemUI(){
         '<button class="btn" data-act="immersive" data-kind="full"'+dis+'>同时沉浸</button>'+
         '<button class="btn" data-act="immersive" data-kind="reset"'+dis+'>全部恢复</button>'+
       '</div>'+
-      '<div class="row-item"><div><div class="label">软件范围</div><div class="desc">留空表示全部软件；<code class="code-inline">apps,-com.android.settings</code> 表示排除指定软件</div></div>'+
-        '<div class="ctrl"><input class="input" id="suiScope" placeholder="留空 = 全部软件" style="min-width:200px"></div></div>'+
-      '<div class="notice mt16">写入 <code class="code-inline">settings put global policy_control</code>；「全部恢复」会清空整条策略，手势导航下需从屏幕边缘上滑一次状态栏才会回来。</div>'+
+      '<div class="row-item"><div><div class="label">软件范围</div><div class="desc">留空 = 全部，<code class="code-inline">-包名</code> 表示排除</div></div>'+
+        '<div class="ctrl"><input class="input" id="suiScope" placeholder="apps,-com.android.settings" style="min-width:200px"></div></div>'+
+      '<div class="notice mt16">「全部恢复」会清空整条策略，手势导航需上滑一次才恢复。</div>'+
     '</div>';
   const cardSettings='<div class="card"><h2 class="card-title">状态栏图标设置</h2>'+
-      '<div class="row-item"><div><div class="label">状态栏电量百分比</div><div class="desc">status_bar_show_battery_percent</div></div><div class="ctrl">'+sw('batteryPct','settings put system status_bar_show_battery_percent {v}')+'</div></div>'+
-      '<div class="row-item"><div><div class="label">下拉快捷图标数</div><div class="desc">sysui_qqs_count</div></div><div class="ctrl"><select id="suiQqs">'+
+      '<div class="row-item"><div><div class="label">状态栏电量百分比</div></div><div class="ctrl">'+sw('batteryPct','settings put system status_bar_show_battery_percent {v}')+'</div></div>'+
+      '<div class="row-item"><div><div class="label">下拉快捷图标数</div></div><div class="ctrl"><select id="suiQqs">'+
         ['','3','4','5','6','7','8','9'].map(v=>'<option value="'+v+'"'+(s.qqs===v?' selected':'')+'>'+(v||'保持当前')+'</option>').join('')+'</select></div></div>'+
-      '<div class="row-item"><div><div class="label">图标距顶部间距</div><div class="desc">sysui_rounded_content_padding</div></div><div class="ctrl"><select id="suiPad">'+
+      '<div class="row-item"><div><div class="label">图标距顶部间距</div></div><div class="ctrl"><select id="suiPad">'+
         ['','0','5','10','15','20','30'].map(v=>'<option value="'+v+'"'+(s.pad===v?' selected':'')+'>'+(v||'保持当前')+'</option>').join('')+'</select></div></div>'+
       '<div class="row-item"><div><div class="label">应用设置</div><div class="desc">只下发非「保持当前」的项</div></div><div class="ctrl">'+
         '<button class="btn primary" data-act="statusbar-apply"'+dis+'>应用设置</button></div></div>'+
       '<div class="row-item"><div><div class="label">去除 Wi-Fi 的 × / !</div><div class="desc">改写联网检测探针与 NTP 服务器</div></div><div class="ctrl">'+
         '<button class="btn" data-act="wifi-fix"'+dis+'>修复</button></div></div>'+
-      '<div class="notice mt16">部分状态栏设置由系统版本和厂商决定：MIUI / HyperOS 与原生 Android 的键名可能不同，写入后无变化属正常。</div>'+
+      '<div class="notice mt16">键名随系统版本 / 厂商不同，写入无变化属正常。</div>'+
     '</div>';
   const cardQuick='<div class="card"><h2 class="card-title">常用快捷指令</h2>'+
-      quickCmd('返回主界面','input keyevent 3')+quickCmd('打开最近任务','input keyevent 187')+
-      quickCmd('锁屏','input keyevent 26')+quickCmd('截图到 /sdcard','screencap -p /sdcard/screen.png')+
-      quickCmd('下拉通知栏','input swipe 500 0 500 800 200')+quickCmd('重启系统界面','am force-stop com.android.systemui')+
-      quickCmd('打开开发者选项','am start -a android.settings.APPLICATION_DEVELOPMENT_SETTINGS')+
-      '<div class="notice mt16">以上指令通过 <code class="code-inline">adb shell</code> 下发，点击即执行。执行结果可在「ADB 终端」中查看。</div>'+
+      quickGrid([['返回主界面','input keyevent 3'],['打开最近任务','input keyevent 187'],['锁屏','input keyevent 26'],
+        ['截图到 /sdcard','screencap -p /sdcard/screen.png'],['下拉通知栏','input swipe 500 0 500 800 200'],['重启系统界面','am force-stop com.android.systemui']])+
+      '<div class="notice mt16">执行结果可在「ADB 终端」查看。</div>'+
     '</div>';
   $('#page-systemui').innerHTML='<h1 class="page-title">系统界面</h1><div class="grid-2 align-start">'+
       '<div class="stack">'+cardIcons+cardImmersive+'</div>'+
@@ -2067,36 +2328,287 @@ async function applyImmersive(kind){
   await runCmd('settings put global policy_control immersive.'+kind+'='+target,true);
   toast('已开启沉浸：'+kind+' → '+target,'ok');
 }
-function quickCmd(label,cmd){ return '<div class="row-item"><div><div class="label">'+label+'</div><div class="desc code-inline" style="display:inline-block;margin-top:4px">'+esc(cmd)+'</div></div><div class="ctrl"><button class="btn" data-act="run" data-cmd="'+esc(cmd)+'">执行</button></div></div>'; }
+function quickCmd(label,cmd){ return '<button class="btn quick-btn" data-act="run" data-cmd="'+esc(cmd)+'" title="'+esc(cmd)+'">'+label+'</button>'; }
+function quickGrid(items){ return '<div class="quick-grid">'+items.map(o=>quickCmd(o[0],o[1])).join('')+'</div>'; }
 
 /* ---------------- 页面：电池管理 ---------------- */
+/* 数据来自 dumpsys battery；模拟走 dumpsys battery set / unplug，恢复走 reset。
+   统计在浏览器侧定时采样，退出页面不会中断；断开或刷新页面即丢弃（与参考实现一致）。 */
+const BAT={
+  info:{level:null,voltage:null,temp:null,status:null,health:null,ac:false,usb:false,wireless:false,stopped:false,raw:''},
+  reading:false,
+  stats:{running:false,rows:[],start:0,interval:3000,power:false,timer:null,busy:false,model:''}
+};
+const BAT_STATUS={1:'未知',2:'充电中',3:'放电中',4:'未充电',5:'已充满'};
+const BAT_HEALTH={1:'未知',2:'良好',3:'过热',4:'损坏',5:'过压',6:'故障',7:'过冷'};
+function parseBattery(text){
+  const kv={};
+  String(text||'').split(/\r?\n/).forEach(line=>{
+    const m=line.match(/^\s*([^:]+):\s*(.*?)\s*$/);
+    if(m) kv[m[1].trim().toLowerCase()]=m[2];
+  });
+  const num=k=>{ const v=kv[k]; if(v===undefined) return null; const n=Number(v); return Number.isFinite(n)?n:null; };
+  const volt=num('voltage'), temp=num('temperature');
+  return {
+    level:num('level'),
+    voltage:volt==null?null:volt/1000,
+    temp:temp==null?null:temp/10,
+    status:num('status'), health:num('health'),
+    ac:kv['ac powered']==='true', usb:kv['usb powered']==='true', wireless:kv['wireless powered']==='true',
+    stopped:/updates stopped/i.test(String(text||'')),
+    raw:String(text||'')
+  };
+}
+function batPlugged(b){
+  if(b.ac) return '直流充电';
+  if(b.usb) return 'USB 充电';
+  if(b.wireless) return '无线充电';
+  if(b.stopped) return '未插电';
+  return '电池';
+}
+function batSourceNow(b){
+  if(b.ac) return 'ac';
+  if(b.usb) return 'usb';
+  if(b.wireless) return 'wireless';
+  if(b.stopped) return 'unplugged';
+  return '';
+}
+function batRun(cmd){ return realShell(cmd).then(out=>{ log(cmd, out||'执行成功'); return out; }); }
+async function batRead(){
+  const info=parseBattery(await batRun('dumpsys battery'));
+  BAT.info=info;
+  /* 同步给主页「电池信息」，避免两处数值不一致 */
+  state.device.battery={
+    level:info.level==null?0:info.level,
+    voltage:info.voltage==null?'—':info.voltage.toFixed(3)+' V',
+    temp:info.temp==null?'—':info.temp.toFixed(1)+'°C',
+    health:BAT_HEALTH[info.health]||'—',
+    status:BAT_STATUS[info.status]||'—',
+    plugged:batPlugged(info)
+  };
+  return info;
+}
+async function batRefresh(quiet){
+  if(state.mode!=='real' || !state.adb){ batPaint(); if(!quiet) toast('请先连接真机','warn'); return; }
+  if(BAT.reading) return;
+  BAT.reading=true;
+  try{ await batRead(); batPaint(); }
+  catch(e){ if(!quiet) toast('读取失败：'+esc((e&&e.message)||e),'err'); }
+  finally{ BAT.reading=false; }
+}
+function batPaint(){
+  const b=BAT.info, real=state.mode==='real';
+  const lv=(b.level==null?0:b.level), C=2*Math.PI*54;
+  const arc=$('#batteryArc'); if(arc) arc.setAttribute('stroke-dashoffset',String(C*(1-lv/100)));
+  const l=$('#batteryLv'); if(l) l.textContent=real&&b.level!=null?b.level+'%':'—';
+  const st=$('#batteryStatus'); if(st) st.textContent=real?(BAT_STATUS[b.status]||'—'):'—';
+  const vals=[
+    b.voltage==null?'—':b.voltage.toFixed(3)+' V',
+    b.temp==null?'—':b.temp.toFixed(1)+' ℃',
+    b.health==null?'—':(BAT_HEALTH[b.health]||'—'),
+    real?batPlugged(b):'—',
+    real?(BAT_STATUS[b.status]||'—'):'—',
+    state.device.model||'—'
+  ];
+  $$('#page-battery .metric-grid .m-v').forEach((el,i)=>{ if(vals[i]!=null) el.textContent=vals[i]; });
+  const raw=$('#batRaw'); if(raw) raw.textContent=(real&&b.raw)?b.raw.trim():'连接设备后读取';
+  const now=batSourceNow(b);
+  $$('#page-battery [data-src]').forEach(btn=>btn.classList.toggle('on',btn.dataset.src===now));
+  batPaintLog();
+}
+function hms(sec){ const p=n=>String(n).padStart(2,'0'); return p(Math.floor(sec/3600))+':'+p(Math.floor(sec%3600/60))+':'+p(sec%60); }
+function batPaintLog(){
+  const st=BAT.stats, box=$('#batLog');
+  if(box){
+    box.classList.toggle('power',!!st.power);
+    const prev=box.scrollTop, near=box.scrollHeight-prev-box.clientHeight<40;
+    const rows=st.rows.slice(-200);
+    if(!rows.length){
+      box.innerHTML='<div class="bat-empty">开始后每 '+Math.round(st.interval/1000)+' 秒记录一次</div>';
+    }else{
+      box.innerHTML='<div class="bat-row head"><span>时间</span><span>电量</span><span>温度</span>'+(st.power?'<span>功率</span>':'')+'</div>'+
+        rows.map(r=>'<div class="bat-row"><span>'+r.time+'</span><span>'+(r.level==null?'—':r.level+'%')+'</span>'+
+          '<span>'+(r.temp==null?'—':r.temp.toFixed(1)+'℃')+'</span>'+
+          (st.power?'<span>'+(r.power==null?'—':r.power.toFixed(2)+'W')+'</span>':'')+'</div>').join('');
+      box.scrollTop=near?box.scrollHeight:prev;
+    }
+  }
+  const c=$('#batCount'); if(c) c.textContent=st.rows.length?st.rows.length+' 条':'0 条';
+  const s2=$('#batState');
+  if(s2) s2.textContent=st.running?('统计中 · 每 '+Math.round(st.interval/1000)+' 秒'):(st.rows.length?'已停止':'未开始');
+  const btn=$('#batStartBtn');
+  if(btn){
+    btn.innerHTML=icon(st.running?'stop':'play',15)+(st.running?'停止':'开始');
+    btn.classList.toggle('primary',!st.running);
+  }
+}
+async function readPower(){
+  try{
+    const t=await realShell('printf "c:"; cat /sys/class/power_supply/battery/current_now 2>/dev/null; printf " v:"; cat /sys/class/power_supply/battery/voltage_now 2>/dev/null');
+    const c=t.match(/c:\s*(-?\d+)/), v=t.match(/v:\s*(-?\d+)/);
+    if(c&&v){ const w=Math.abs(Number(c[1])*Number(v[1])/1e12); if(Number.isFinite(w)) return w; }
+  }catch(_){}
+  return null;
+}
+async function batSample(){
+  const st=BAT.stats;
+  if(!st.running || st.busy) return;
+  if(state.mode!=='real' || !state.adb){ batStop(); return; }
+  st.busy=true;
+  try{
+    const info=await batRead();
+    if(!st.running) return;
+    const power=st.power?await readPower():null;
+    const sec=Math.floor((Date.now()-st.start)/1000);
+    st.rows.push({time:hms(sec), level:info.level, temp:info.temp, power});
+    if(st.rows.length>=50000){ batStop(); toast('已记录 50000 条，请导出后重新开始','warn'); }
+    batPaint();
+  }catch(e){
+    batStop();
+    toast('统计已停止：'+esc((e&&e.message)||e),'err');
+  }finally{ st.busy=false; }
+}
+function batLoop(){
+  const st=BAT.stats;
+  if(st.timer){ clearTimeout(st.timer); st.timer=null; }
+  if(!st.running || st.interval<=0) return;
+  st.timer=setTimeout(async()=>{ if(!st.running) return; await batSample(); batLoop(); }, st.interval);
+}
+function batStop(){
+  const st=BAT.stats;
+  st.running=false;
+  if(st.timer){ clearTimeout(st.timer); st.timer=null; }
+  batPaintLog();
+}
+async function batToggle(){
+  const st=BAT.stats;
+  if(st.running){ batStop(); toast('已停止统计','ok'); return; }
+  if(state.mode!=='real' || !state.adb){ toast('请先连接真机','warn'); return; }
+  st.rows=[]; st.start=Date.now(); st.model=state.device.model||'';
+  const sel=$('#batInterval');
+  const sec=parseInt(sel&&sel.value,10);
+  st.interval=(Number.isFinite(sec)&&sec>0?sec:3)*1000;
+  if(st.power){
+    const p=await readPower();
+    if(p==null){
+      st.power=false;
+      const t=$('[data-act="bat-power"]');
+      if(t){ t.classList.remove('on'); t.setAttribute('aria-pressed','false'); }
+      toast('功率节点不可读，本次只记电量与温度','warn');
+    }
+  }
+  st.running=true;
+  batPaintLog();
+  await batSample();
+  batLoop();
+}
+async function batSet(key){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  let cmd='';
+  const raw=String((($(key==='level'?'#batLevel':'#batTemp')||{}).value)??'').trim();
+  if(raw===''){ toast('请先填写数值','warn'); return; }
+  if(key==='level'){
+    const v=Math.round(Number(raw));
+    if(!Number.isFinite(v)||v<0||v>100){ toast('电量需在 0 – 100 之间','warn'); return; }
+    cmd='dumpsys battery set level '+v;
+  }else{
+    const v=Number(raw);
+    if(!Number.isFinite(v)||v<-50||v>150){ toast('温度需在 -50 – 150 ℃ 之间','warn'); return; }
+    cmd='dumpsys battery set temp '+Math.round(v*10);
+  }
+  try{ await batRun(cmd); await batRead(); batPaint(); toast('已写入模拟值','ok'); }
+  catch(e){ toast('写入失败：'+esc((e&&e.message)||e),'err'); }
+}
+async function batSource(kind){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  const both='dumpsys battery set ac 1; dumpsys battery set usb 0; dumpsys battery set wireless 0; dumpsys battery set status 2';
+  const cmds={
+    unplugged:'dumpsys battery unplug',
+    usb:'dumpsys battery set ac 0; dumpsys battery set usb 1; dumpsys battery set wireless 0; dumpsys battery set status 2',
+    wireless:'dumpsys battery set ac 0; dumpsys battery set usb 0; dumpsys battery set wireless 1; dumpsys battery set status 2',
+    ac:both
+  };
+  const cmd=cmds[kind]; if(!cmd) return;
+  try{ await batRun(cmd); await batRead(); batPaint(); toast('已模拟：'+({unplugged:'非充电',usb:'USB 充电',wireless:'无线充电',ac:'直流充电'}[kind]),'ok'); }
+  catch(e){ toast('模拟失败：'+esc((e&&e.message)||e),'err'); }
+}
+async function batReset(){
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
+  try{ await batRun('dumpsys battery reset'); await batRead(); batPaint(); toast('已恢复真实电池参数','ok'); }
+  catch(e){ toast('恢复失败：'+esc((e&&e.message)||e),'err'); }
+}
+function batFileName(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  const ts=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+'-'+p(d.getMinutes())+'-'+p(d.getSeconds());
+  const model=String(BAT.stats.model||state.device.model||'未知机型').replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,60)||'未知机型';
+  return model+'_'+ts+'.csv';
+}
+function batCsvText(){
+  const st=BAT.stats;
+  const head='时间,电量(%),温度(℃)'+(st.power?',电池功率(W)':'');
+  const body=st.rows.map(r=>[r.time, r.level==null?'':r.level, r.temp==null?'':r.temp.toFixed(1)]
+    .concat(st.power?[r.power==null?'':r.power.toFixed(3)]:[]).join(','));
+  return '\uFEFF'+head+'\r\n'+body.join('\r\n');
+}
+function batExport(){
+  const st=BAT.stats;
+  if(!st.rows.length){ toast('暂无统计数据','warn'); return; }
+  saveBlobAs(new Blob([batCsvText()],{type:'text/csv;charset=utf-8'}),batFileName());
+  toast('已导出 '+st.rows.length+' 条记录','ok');
+}
 function renderBattery(){
-  const blank={level:0,voltage:'—',temp:'—',health:'—',status:'—',plugged:'—'};
-  const b=state.mode==='none'?blank:(state.device.battery||blank);
-  const lv=b.level;
+  const real=state.mode==='real';
+  const lv=real&&BAT.info.level!=null?BAT.info.level:0;
   const C=2*Math.PI*54;
-  $('#page-battery').innerHTML='<h1 class="page-title">电池管理</h1><div class="grid-2">'+
-    '<div class="card"><h2 class="card-title">实时电池信息</h2>'+
-      '<div class="battery-wrap"><div class="ring"><svg viewBox="0 0 128 128" width="128" height="128">'+
-        '<circle cx="64" cy="64" r="54" fill="none" stroke="var(--border)" stroke-width="10"/>'+
-        '<circle id="batteryArc" cx="64" cy="64" r="54" fill="none" stroke="var(--brand)" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-lv/100))+'"/></svg>'+
-        '<div class="ring-text"><b id="batteryLv">'+lv+'%</b><span id="batteryStatus">'+esc(b.status)+'</span></div></div>'+
-        '<div class="metric-grid">'+
-          metric('电压',b.voltage)+metric('温度',b.temp)+metric('健康状态',b.health)+metric('供电方式',b.plugged)+
-          metric('充电状态',b.status)+metric('设备型号',state.device.model||'—')+
-        '</div></div>'+
-      '<div class="mt20">'+rangeRow('模拟电量','cmd battery set level，用于调试与测试','level',0,100,1,'%','cmd battery set level {v}')+
-        '<div class="row-item"><div><div class="label">恢复真实电量</div><div class="desc">dumpsys battery reset</div></div><div class="ctrl"><button class="btn" data-act="run" data-cmd="dumpsys battery reset">重置</button></div></div></div>'+
+  const srcs=[['unplugged','非充电'],['usb','USB'],['wireless','无线'],['ac','直流']];
+  $('#page-battery').innerHTML='<h1 class="page-title">电池管理</h1><div class="grid-2 align-start">'+
+    '<div class="stack">'+
+      '<div class="card"><div class="card-head"><h2 class="card-title">电池信息</h2>'+
+        '<button class="btn" data-act="bat-refresh">'+icon('refresh',14)+'刷新</button></div>'+
+        '<div class="battery-wrap"><div class="ring"><svg viewBox="0 0 128 128" width="128" height="128">'+
+          '<circle cx="64" cy="64" r="54" fill="none" stroke="var(--border)" stroke-width="10"/>'+
+          '<circle id="batteryArc" cx="64" cy="64" r="54" fill="none" stroke="var(--brand)" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-lv/100))+'"/></svg>'+
+          '<div class="ring-text"><b id="batteryLv">'+(real?lv+'%':'—')+'</b><span id="batteryStatus">—</span></div></div>'+
+          '<div class="metric-grid">'+
+            metric('电压','—')+metric('温度','—')+metric('健康状态','—')+
+            metric('供电方式','—')+metric('充电状态','—')+metric('设备型号',state.device.model||'—')+
+          '</div></div>'+
+        '<details class="bat-details"><summary>原始数据</summary><pre class="bat-raw" id="batRaw">连接设备后读取</pre></details>'+
+      '</div>'+
+      '<div class="card"><h2 class="card-title">电池模拟</h2>'+
+        '<div class="row-item"><div class="label">电量</div><div class="ctrl">'+
+          '<input class="input num-sm" id="batLevel" type="number" min="0" max="100" placeholder="0 – 100"><button class="btn" data-act="bat-level">应用</button></div></div>'+
+        '<div class="row-item"><div class="label">温度</div><div class="ctrl">'+
+          '<input class="input num-sm" id="batTemp" type="number" min="-50" max="150" step="0.1" placeholder="-50 – 150"><button class="btn" data-act="bat-temp">应用</button></div></div>'+
+        '<div class="row-item" style="display:block"><div class="label" style="margin-bottom:8px">充电来源</div>'+
+          '<div class="bat-src">'+srcs.map(o=>'<button data-act="bat-src" data-src="'+o[0]+'">'+o[1]+'</button>').join('')+'</div></div>'+
+        '<div class="mt16"><button class="btn" data-act="bat-reset" style="width:100%;justify-content:center">'+icon('refresh',14)+'恢复真实电池参数</button></div>'+
+        '<div class="notice mt16">模拟只改系统上报值，重启或「恢复」即复原。</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="stack">'+
+    '<div class="card"><div class="card-head"><h2 class="card-title">定时统计</h2>'+
+      '<button class="btn" data-act="bat-export">'+icon('download',14)+'导出 CSV</button></div>'+
+      '<div class="bat-ctrl">'+
+        '<select class="mirror-rate" id="batInterval" data-change="bat-interval" aria-label="采样间隔">'+
+          [1,2,3,5,10,30,60].map(n=>'<option value="'+n+'"'+(n===3?' selected':'')+'>'+n+' 秒</option>').join('')+
+        '</select>'+
+        '<button class="btn'+(BAT.stats.power?' on':'')+'" data-act="bat-power" aria-pressed="'+(BAT.stats.power?'true':'false')+'">'+icon('power',14)+'记录功率</button>'+
+        '<button class="btn primary" id="batStartBtn" data-act="bat-start">'+icon('play',15)+'开始</button>'+
+      '</div>'+
+      '<div class="bat-log" id="batLog"></div>'+
+      '<div class="bat-foot"><span id="batCount">0 条</span><span id="batState">未开始</span></div>'+
+      '<div class="notice mt16">功率取自 <code class="code-inline">current_now</code> × <code class="code-inline">voltage_now</code>，部分机型不开放该节点。</div>'+
     '</div>'+
     '<div class="card"><h2 class="card-title">电源策略</h2>'+
-      '<div class="row-item"><div><div class="label">省电模式</div><div class="desc">cmd power set-mode 1</div></div><div class="ctrl">'+sw('powerSave','cmd power set-mode {v}')+'</div></div>'+
-      '<div class="row-item"><div><div class="label">充电上限保护</div><div class="desc">部分机型支持，需系统接口</div></div><div class="ctrl">'+sw('chargeLimit','settings put global charging_limit 80')+'</div></div>'+
-      quickCmd('电池校准统计重置','dumpsys batterystats --reset')+
-      quickCmd('查看电池服务状态','dumpsys battery')+
-      quickCmd('查看耗电排行','dumpsys batterystats --charged')+
-      quickCmd('关闭 Doze 深度休眠','dumpsys deviceidle disable')+
-      '<div class="notice mt16">模拟电量仅改变系统上报值，不影响真实电池；重启或执行「恢复真实电量」后复原。所有电池命令均来自 <code class="code-inline">dumpsys battery</code> / <code class="code-inline">cmd</code>。</div>'+
-    '</div></div>';
+      '<div class="row-item"><div class="label">省电模式</div><div class="ctrl">'+sw('powerSave','cmd power set-mode {v}')+'</div></div>'+
+      '<div class="row-item"><div class="label">充电上限保护</div><div class="ctrl">'+sw('chargeLimit','settings put global charging_limit 80')+'</div></div>'+
+      '<div class="mt16">'+quickGrid([['校准统计重置','dumpsys batterystats --reset'],['电池服务状态','dumpsys battery'],
+        ['耗电排行','dumpsys batterystats --charged'],['关闭 Doze 休眠','dumpsys deviceidle disable']])+'</div>'+
+    '</div>'+
+    '</div>'+
+  '</div>';
+  batPaint();
 }
 function metric(k,v){ return '<div class="metric"><div class="m-k">'+k+'</div><div class="m-v">'+esc(v)+'</div></div>'; }
 
@@ -2108,41 +2620,41 @@ function scaleRow(key,stKey,min,max,step){
     '<span class="range-val" id="v-'+stKey+'">'+fmtScale(v)+'</span></div>';
 }
 function scaleRowItem(label,key,stKey){
-  return '<div class="row-item"><div><div class="label">'+label+'</div><div class="desc">'+key+'</div></div>'+
+  return '<div class="row-item"><div class="label">'+label+'</div>'+
     '<div class="ctrl">'+scaleRow(key,stKey,0,4,0.01)+'</div></div>';
 }
 function renderTuner(){
   const t=state.tuner;
   const dis=state.mode!=='real'?' disabled':'';
   const cardFont='<div class="card"><h2 class="card-title">字体大小倍数</h2>'+
-      '<div class="row-item"><div><div class="label">缩放</div><div class="desc">settings put system font_scale，0.20 - 4.00</div></div>'+
+      '<div class="row-item"><div><div class="label">缩放</div><div class="desc">0.20 – 4.00 倍</div></div>'+
         '<div class="ctrl">'+scaleRow('font_scale','fontScale',0.2,4,0.01)+'</div></div>'+
-      '<div class="row-item"><div><div class="label">常用值</div><div class="desc">系统字体档位，点击即下发</div></div><div class="ctrl">'+
+      '<div class="row-item"><div><div class="label">常用值</div></div><div class="ctrl">'+
         [[0.85,'小 0.85×'],[1,'标准 1×'],[1.15,'大 1.15×'],[1.3,'特大 1.3×']].map(o=>'<button class="btn'+(Math.abs(t.fontScale-o[0])<0.001?' primary':'')+'" data-act="font-preset" data-v="'+o[0]+'"'+dis+'>'+o[1]+'</button>').join('')+'</div></div>'+
-      '<div class="notice mt16">拖动松开即生效。字体过大可能导致部分界面排版异常，拖回 1× 即可恢复。</div>'+
+      '<div class="notice mt16">拖动松开即生效，字体过大可能导致排版异常。</div>'+
     '</div>';
   const cardSleep='<div class="card"><h2 class="card-title">锁屏时间</h2>'+
-      '<div class="row-item"><div><div class="label">自动锁屏时间（秒）</div><div class="desc">screen_off_timeout，写入时自动换算为毫秒</div></div>'+
+      '<div class="row-item"><div><div class="label">自动锁屏时间（秒）</div></div>'+
         '<div class="ctrl"><input class="input num-md" id="sleepSec" type="number" min="1" max="2147483" placeholder="例如 300" value="'+t.timeoutSec+'">'+
         '<span class="muted" id="sleepNow">当前：'+t.timeoutSec+' 秒</span>'+
         '<button class="btn primary" data-act="set-timeout"'+dis+'>修改</button></div></div>'+
-      '<div class="row-item"><div><div class="label">常用值</div><div class="desc">点击直接写入并刷新当前值</div></div><div class="ctrl">'+
+      '<div class="row-item"><div><div class="label">常用值</div></div><div class="ctrl">'+
         [[30,'30 秒'],[60,'1 分钟'],[300,'5 分钟'],[600,'10 分钟']].map(o=>'<button class="btn" data-act="sleep-preset" data-v="'+o[0]+'"'+dis+'>'+o[1]+'</button>').join('')+'</div></div>'+
-      '<div class="notice mt16">自定义范围 1 - 2147483 秒（约 24.8 天）；填 2147483 近似永不休眠。</div>'+
+      '<div class="notice mt16">范围 1 – 2147483 秒，上限约 24.8 天。</div>'+
     '</div>';
   const cardAnim='<div class="card"><h2 class="card-title">动画倍率</h2>'+
       scaleRowItem('窗口','window_animation_scale','winScale')+
       scaleRowItem('过渡','transition_animation_scale','transScale')+
       scaleRowItem('程序','animator_duration_scale','animScale')+
-      '<div class="notice mt16">倍率越小动画越快，0 表示关闭动画；三项分别写入 <code class="code-inline">settings put global</code>，与「开发者选项」里的动画缩放是同一组值。</div>'+
+      '<div class="notice mt16">0 表示关闭动画，与开发者选项里的缩放是同一组值。</div>'+
     '</div>';
   const cardPerf='<div class="card"><h2 class="card-title">性能调节</h2>'+
-      rangeRow('CPU 最小频率','单位 MHz，写入 scaling_min_freq 需 root','cpuMin',300,2000,1,' MHz','echo {v}000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq')+
-      rangeRow('CPU 最大频率','单位 MHz，写入 scaling_max_freq 需 root','cpuMax',600,3200,1,' MHz','echo {v}000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq')+
-      rangeRow('媒体音量','media volume --stream 3 --set','volume',0,15,1,'','media volume --stream 3 --set {v}')+
-      '<div class="row-item"><div><div class="label">性能预设</div><div class="desc">一键切换常用调度组合</div></div><div class="ctrl">'+
+      rangeRow('CPU 最小频率','需 root','cpuMin',300,2000,1,' MHz','echo {v}000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq')+
+      rangeRow('CPU 最大频率','需 root','cpuMax',600,3200,1,' MHz','echo {v}000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq')+
+      rangeRow('媒体音量','0 – 15','volume',0,15,1,'','media volume --stream 3 --set {v}')+
+      '<div class="row-item"><div><div class="label">性能预设</div></div><div class="ctrl">'+
         ['省电','均衡','性能'].map(p=>'<button class="btn" data-act="preset" data-preset="'+p+'">'+p+'</button>').join('')+'</div></div>'+
-      '<div class="notice mt16">CPU 频率写入 sysfs 通常需要 root；非 root 设备只会返回权限错误，不会造成损害。音量通过系统公开接口调节，无需 root。</div>'+
+      '<div class="notice mt16">写 CPU 频率需 root；音量走系统公开接口。</div>'+
     '</div>';
   const cardState='<div class="card" style="margin-top:20px"><h2 class="card-title">当前状态</h2>'+
       '<div class="section-title">CPU 实时频率（'+(String(settings.refresh)==='0'?'自动刷新已关闭':'每 '+(settings.refresh||'2')+' 秒刷新')+'）</div>'+
@@ -2309,35 +2821,33 @@ function renderSettings(){
     '<div class="card"><h2 class="card-title">外观与刷新</h2>'+
       '<div class="row-item"><div><div class="label">主题模式</div><div class="desc">支持浅色 / 深色 / 跟随系统</div></div><div class="ctrl"><select data-setting="theme">'+
         [['light','浅色'],['dark','深色'],['auto','跟随系统']].map(o=>'<option value="'+o[0]+'"'+(s.theme===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div></div>'+
-      '<div class="row-item"><div><div class="label">系统外观偏好</div><div class="desc">选择「跟随系统」后，系统切换深浅色界面会自动同步</div></div><div class="ctrl"><span class="badge-soft">'+(systemPrefersDark()?'系统：深色':'系统：浅色')+'</span></div></div>'+
-      '<div class="row-item"><div><div class="label">设备信息刷新间隔</div><div class="desc">CPU 频率 / 电池 / 开机时长自动采样</div></div><div class="ctrl"><select data-setting="refresh">'+
+      '<div class="row-item"><div><div class="label">系统外观偏好</div><div class="desc">跟随系统深浅色</div></div><div class="ctrl"><span class="badge-soft">'+(systemPrefersDark()?'系统：深色':'系统：浅色')+'</span></div></div>'+
+      '<div class="row-item"><div><div class="label">刷新间隔</div><div class="desc">CPU / 电池 / 开机时长</div></div><div class="ctrl"><select data-setting="refresh">'+
         [['1','1 秒'],['2','2 秒'],['5','5 秒'],['10','10 秒'],['0','关闭']].map(o=>'<option value="'+o[0]+'"'+(s.refresh===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div></div>'+
     '</div>'+
     '<div class="card"><h2 class="card-title">连接与操作</h2>'+
       '<div class="row-item"><div><div class="label">危险操作二次确认</div><div class="desc">重启 / 关机 / 卸载类操作弹出确认框</div></div><div class="ctrl"><button class="switch'+(s.confirm?' on':'')+'" data-setting-sw="confirm"></button></div></div>'+
-      '<div class="row-item"><div><div class="label">自动重连已授权设备</div><div class="desc">页面加载时提示浏览器已授权的 USB 设备，便于一键重连</div></div><div class="ctrl"><button class="switch'+(s.autoReconnect?' on':'')+'" data-setting-sw="autoReconnect"></button></div></div>'+
-      '<div class="row-item"><div><div class="label">本地数据</div><div class="desc">保存的脚本与偏好设置存储于浏览器 localStorage</div></div><div class="ctrl"><button class="btn danger" data-act="clear-local">清空数据</button></div></div>'+
+      '<div class="row-item"><div><div class="label">自动重连已授权设备</div><div class="desc">加载时提示已授权设备</div></div><div class="ctrl"><button class="switch'+(s.autoReconnect?' on':'')+'" data-setting-sw="autoReconnect"></button></div></div>'+
+      '<div class="row-item"><div><div class="label">本地数据</div><div class="desc">脚本与偏好存于 localStorage</div></div><div class="ctrl"><button class="btn danger" data-act="clear-local">清空数据</button></div></div>'+
     '</div></div>'+
-    '<div class="notice mt20">所有设置仅保存在本机浏览器，不会上传。切换主题会立即生效；刷新间隔修改后自动重启采样定时器。</div>';
+    '<div class="notice mt20">设置仅存本机浏览器，不会上传。</div>';
 }
 
 /* ---------------- 页面：关于 ---------------- */
 function renderAbout(){
   $('#page-about').innerHTML='<h1 class="page-title">关于</h1><div class="grid-2 align-start">'+
-    '<div class="card"><div class="about-hero"><div class="about-logo">'+logoSvg()+'</div><div><div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
-      '<div class="muted" style="margin-top:4px;font-size:12.5px">全安卓通用免 ROOT 玩机神器 · v1.2.3</div></div></div>'+
-      '<div class="kv-list">'+kv('作者','維坦')+kv('版本','v1.2.3')+kv('构建',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行要求','Chrome / Edge')+
-      kv('安全上下文','HTTPS 或 localhost')+kv('ROOT 要求','非必需')+kv('版权','© 2026 維坦')+'</div>'+
-      '<div class="info-divider"></div><div class="section-title">功能清单</div>'+
-      '<div class="muted" style="font-size:12.8px;line-height:2">设备信息 · 软件管理 · 手机投屏（画面镜像与触控） · 截图（相册保存与下载） · 显示控制（分辨率 / DPI / 截图） · 系统界面（状态栏图标 / 图标设置 / 双栏沉浸） · 电池管理（信息与电量模拟） · 无级调节（字体 / 动画 / 锁屏） · 控机脚本 · ADB 终端 · 软件设置 · 快捷重启 / 关机 / Fastboot / EDL / Recovery · 深浅色主题</div>'+
+    '<div class="card"><div class="about-hero"><div class="about-logo">'+logoSvg()+'</div><div>'+
+      '<div style="font-size:18px;font-weight:700">搞机工具箱 <span class="muted" style="font-size:13px;font-weight:400">网页版</span></div>'+
+      '<div class="muted" style="margin-top:4px;font-size:12.5px">免 ROOT · 单文件 · 直连 ADB</div></div></div>'+
+      '<div class="kv-list">'+kv('作者','維坦')+kv('版本',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行环境','Chrome / Edge')+'</div>'+
+      '<div class="notice mt16">免安装、不联网、不推送任何服务端组件；所有命令仅在你点击时下发。</div>'+
     '</div>'+
-    '<div class="card"><h2 class="card-title">真机连接</h2>'+
-      '<div class="muted" style="font-size:13px;line-height:2.1">1. 手机开启「开发者选项 → USB 调试」并用数据线连接<br>2. 关闭电脑端 adb / 手机助手，只保留一个标签页<br>3. 点「连接设备」，选手机并在手机上允许授权</div>'+
-      '<div class="muted" style="font-size:12.5px;line-height:1.8;margin-top:14px">连接失败多为电脑端 adb 进程占用了 ADB 接口，关闭后重插数据线即可；卡住时顶栏会显示停在哪个阶段。</div>'+
+    '<div class="card"><h2 class="card-title">连接手机</h2>'+
+      '<div class="muted" style="font-size:13px;line-height:2">1. 手机开启「开发者选项 → USB 调试」，用数据线连接电脑<br>2. 关闭电脑端的 adb / 手机助手，只留本页面<br>3. 点「连接设备」，在手机上允许授权</div>'+
       '<div style="margin-top:12px"><button class="btn" data-act="diagnose">运行连接诊断</button></div>'+
-      '<div class="info-divider"></div><h2 class="card-title">技术实现</h2>'+
-      '<div class="muted" style="font-size:12.8px;line-height:1.9">纯静态单文件，无需后端。WebUSB 直连 adbd 执行 <code class="code-inline">getprop</code> / <code class="code-inline">dumpsys</code> / <code class="code-inline">pm</code> / <code class="code-inline">settings</code> 等指令。</div>'+
-      '<div class="notice mt16">免责声明：重启、清除数据、修改系统设置等操作可能影响设备状态，请确认已备份重要数据后再执行。本工具仅在用户明确点击时下发命令。</div>'+
+      '<div class="info-divider"></div>'+
+      '<div class="muted" style="font-size:12.5px;line-height:1.8">WebUSB 直连 ADB 执行 <code class="code-inline">getprop</code> / <code class="code-inline">settings</code> 等命令；投屏用 <code class="code-inline">screenrecord</code> 输出 H.264，交给浏览器 WebCodecs 硬解。</div>'+
+      '<div class="notice mt16">重启、清数据、改系统设置会影响设备状态，请先备份再操作。</div>'+
     '</div></div>';
 }
 
@@ -2410,8 +2920,22 @@ document.addEventListener('click', async e=>{
       const inp=$('#sleepSec'); if(inp) inp.value=sec;
       await applySleepTimeout(); break;
     }
+    case 'bat-refresh': await batRefresh(false); break;
+    case 'bat-level': await batSet('level'); break;
+    case 'bat-temp': await batSet('temp'); break;
+    case 'bat-src': await batSource(el.dataset.src); break;
+    case 'bat-reset': await batReset(); break;
+    case 'bat-start': await batToggle(); break;
+    case 'bat-export': batExport(); break;
+    case 'bat-power': {
+      BAT.stats.power=!BAT.stats.power;
+      el.classList.toggle('on',BAT.stats.power);
+      el.setAttribute('aria-pressed',BAT.stats.power?'true':'false');
+      batPaintLog();
+      if(BAT.stats.power) toast('采样时将记录电池功率','ok'); else toast('已关闭功率记录','');
+      break;
+    }
     case 'mirror-toggle': state.mirror.running?stopMirror():startMirror(); break;
-    case 'mirror-once': if(state.mode==='real' && !state.mirror.busy) mirrorFrame(); else if(state.mode!=='real') toast('请先连接真机','warn'); break;
     case 'mirror-save': mirrorSave(); break;
     case 'shot-take': shotTake(); break;
     case 'shot-open': await shotOpen(+el.dataset.i); break;
@@ -2424,6 +2948,9 @@ document.addEventListener('click', async e=>{
     case 'mirror-full': mirrorFull(); break;
     case 'mirror-key': await mirrorKey(el.dataset.key); break;
     case 'mirror-send': await mirrorSend(); break;
+    case 'mirror-rec': mirrorRecToggle(); break;
+    case 'mirror-rotate': await mirrorRotate(el.dataset.kind); break;
+    case 'mirror-notify': await mirrorNotify(el.dataset.kind); break;
     case 'app-toggle': {
       const a=state.apps.find(x=>x.pkg===el.dataset.pkg); if(!a) return;
       const next=a.state==='on'?'off':'on';
@@ -2552,7 +3079,20 @@ document.addEventListener('change', async e=>{
     if(t.dataset.setting==='refresh'){ startPolling(); toast('刷新间隔已更新','ok'); }
     return;
   }
-  if(t.dataset.change==='mirror-rate'){ const v=parseInt(t.value,10); state.mirror.rate=(Number.isFinite(v)&&v>=0)?v:500; if(state.mirror.running) mirrorTick(); mirrorInfo(); return; }
+  if(t.dataset.change==='bat-interval'){
+    const sec=parseInt(t.value,10);
+    BAT.stats.interval=(Number.isFinite(sec)&&sec>0?sec:3)*1000;
+    if(BAT.stats.running) batLoop();
+    batPaintLog();
+    return;
+  }
+  if(t.dataset.change==='mirror-quality'){ mirrorSetQuality(t.value); return; }
+  if(t.dataset.change==='mirror-bitrate'){
+    const v=parseInt(t.value,10);
+    settings.mirrorBitrate=String(Number.isFinite(v)&&v>=500?v:8000); saveSettings();
+    if(state.mirror.running){ toast('码率已改为 '+(settings.mirrorBitrate/1000)+' Mbps，正在重连视频流',''); stopMirror(); startMirror(); }
+    return;
+  }
   if(t.dataset.change==='apk'){
     const f=t.files&&t.files[0]; if(!f) return;
     toast('已选择 '+esc(f.name)+'（'+(f.size/1048576).toFixed(1)+' MB）','');
@@ -2576,23 +3116,58 @@ document.addEventListener('click', e=>{
   const k=s.dataset.settingSw; settings[k]=!settings[k]; saveSettings(); s.classList.toggle('on',settings[k]);
   toast('设置已'+(settings[k]?'开启':'关闭'),'ok');
 });
-/* 投屏画面：点击 = tap，拖动 = swipe；坐标按 object-fit:contain 换算回设备像素 */
+/* 投屏画面：点击 = tap，拖动 = swipe，停住 620ms = 长按，滚轮 = 单指滑动 */
 document.addEventListener('pointerdown', e=>{
   const st=e.target.closest && e.target.closest('#mirrorStage');
   if(!st || state.mode!=='real' || !state.adb) return;
   const p=mirrorPoint(e.clientX,e.clientY); if(!p) return;
-  state.mirror.down={x:p.x,y:p.y,t:Date.now()};
+  try{ st.focus({preventScroll:true}); }catch(_){}
+  const d={x:p.x,y:p.y,t:Date.now(),px:e.clientX,py:e.clientY,moved:false,fired:false,hold:null};
+  state.mirror.down=d;
+  d.hold=setTimeout(async()=>{
+    if(state.mirror.down!==d || d.moved || d.fired) return;
+    d.fired=true;
+    await runCmd('input swipe '+d.x+' '+d.y+' '+d.x+' '+d.y+' 800',true);
+  },620);
+});
+document.addEventListener('pointermove', e=>{
+  const d=state.mirror.down; if(!d) return;
+  if(Math.abs(e.clientX-d.px)+Math.abs(e.clientY-d.py)>6) d.moved=true;
 });
 document.addEventListener('pointerup', async e=>{
   const d=state.mirror.down; if(!d) return;
   state.mirror.down=null;
+  if(d.hold){ clearTimeout(d.hold); d.hold=null; }
+  if(d.fired) return;
   const p=mirrorPoint(e.clientX,e.clientY); if(!p) return;
   const dist=Math.abs(p.x-d.x)+Math.abs(p.y-d.y);
   const dur=Math.max(80,Math.min(900,Date.now()-d.t));
   if(dist>8) await runCmd('input swipe '+d.x+' '+d.y+' '+p.x+' '+p.y+' '+dur,true);
   else await runCmd('input tap '+p.x+' '+p.y,true);
 });
-document.addEventListener('pointercancel', ()=>{ state.mirror.down=null; });
+document.addEventListener('pointercancel', ()=>{
+  const d=state.mirror.down; if(d&&d.hold) clearTimeout(d.hold);
+  state.mirror.down=null;
+});
+document.addEventListener('wheel', e=>{
+  const st=e.target.closest && e.target.closest('#mirrorStage');
+  if(!st) return;
+  e.preventDefault();
+  mirrorWheel(e);
+},{passive:false});
+/* 画面聚焦时的键盘映射（Esc 返回 / F 全屏 / 方向键 / 空格电源键） */
+document.addEventListener('keydown', async e=>{
+  const st=$('#mirrorStage');
+  if(!st || document.activeElement!==st) return;
+  if(state.mode!=='real' || !state.adb) return;
+  const k=e.key;
+  if(e.ctrlKey && (k==='ArrowLeft'||k==='ArrowRight')){ e.preventDefault(); await mirrorKey(k==='ArrowLeft'?4:187); return; }
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
+  if(k==='f'||k==='F'){ e.preventDefault(); mirrorFull(); return; }
+  if(k===' '){ e.preventDefault(); await runCmd('input keyevent 26',true); return; }
+  const map={Escape:4,ArrowLeft:21,ArrowRight:22,ArrowUp:19,ArrowDown:20,Enter:66,Backspace:67};
+  if(map[k]!==undefined){ e.preventDefault(); await runCmd('input keyevent '+map[k],true); }
+});
 document.addEventListener('keydown', async e=>{
   const i=$('#termInput');
   if(e.target===i){
