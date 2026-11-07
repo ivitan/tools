@@ -460,12 +460,12 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 }
 /* ---------------- 投屏 ---------------- */
 .mirror-layout{display:flex;gap:16px;align-items:stretch}
-.mirror-view{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;background:#070b14;border:1px solid var(--border);border-radius:8px;padding:16px;min-height:340px}
+.mirror-view{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;background:#070b14;border:1px solid var(--border);border-radius:8px;padding:16px;min-height:240px}
 .mirror-stage{position:relative;height:min(74vh,760px);aspect-ratio:var(--ar,9 / 19.5);width:auto;max-width:100%;background:#05080f;border:1px solid rgba(148,163,184,.26);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;box-shadow:0 10px 32px rgba(0,0,0,.42)}
 .mirror-stage:fullscreen{height:100vh;max-height:none;aspect-ratio:auto;width:100%;min-height:0;background:#000;border:none;border-radius:0}
 .mirror-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#94a3b8;font-size:13px;text-align:center;padding:24px;pointer-events:none;background:#070b14}
 .mirror-placeholder svg{width:36px;height:36px;opacity:.6}
-.mirror-side{width:200px;flex:none;display:flex;flex-direction:column;gap:10px}
+.mirror-side{width:200px;flex:none;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin}
 .mirror-side-group{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .mirror-side-label{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);padding:2px 2px 4px}
 .mirror-keys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
@@ -505,7 +505,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
   .mirror-side .mirror-input-row .btn{width:auto}
 }
 @media(max-width:640px){
-  .mirror-view{min-height:260px;padding:10px}
+  .mirror-view{min-height:220px;padding:10px}
   .mirror-stage{height:min(60vh,480px)}
   .mirror-side{grid-template-columns:1fr}
   .mirror-keys{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -534,7 +534,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.4.4</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.4.5</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -893,7 +893,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.4.4';
+const BUILD='v1.4.5';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1944,12 +1944,67 @@ function mirrorSetBtn(){
   b.innerHTML=icon(state.mirror.running?'stop':'play',15)+(state.mirror.running?'停止投屏':'开始投屏');
   b.classList.toggle('primary',!state.mirror.running);
 }
-/* 显示框按设备画面宽高比自适应，让画面填满显示区（旧实现固定全宽+contain，竖屏被缩成一小条） */
+/* 显示区自适应：按「视口剩余高度 + 设备画面比例」算出画面能占的最大尺寸。
+   旧实现固定 height:74vh，竖屏长条机（20:9 / 21:9）或窗口较矮时整块画面会超出屏幕，
+   现在先量出显示区离页面顶部的距离，把剩余高度全部留给画面，再按比例收紧宽度。 */
 function mirrorFit(){
   const st=$('#mirrorStage'); if(!st) return;
-  const m=state.mirror, w=m.w||9, hh=m.h||19.5;
-  st.style.setProperty('--ar', (w>0&&hh>0)? w+' / '+hh : '9 / 19.5');
+  const m=state.mirror, has=m.w>0&&m.h>0;
+  const ar=has? m.w/m.h : 9/19.5;
+  st.style.setProperty('--ar', has? (m.w+' / '+m.h) : '9 / 19.5');
+  if(document.fullscreenElement){       // 全屏由 CSS 接管，内联尺寸必须让位
+    st.style.width=''; st.style.height='';
+    return;
+  }
+  const view=st.parentElement;
+  if(!view || !view.getClientRects().length) return;   // 页面不在前台（display:none）时不测量
+  /* 用 offsetTop 链取文档坐标，而不是 getBoundingClientRect().top：
+     后者随页面滚动变化，会让画面在滚动时忽大忽小 */
+  let docTop=0;
+  for(let el=view; el; el=el.offsetParent) docTop+=el.offsetTop;
+  /* visualViewport 更贴近手机地址栏收起/展开后的真实可视高度 */
+  const vh=Math.round((window.visualViewport&&window.visualViewport.height)||window.innerHeight||document.documentElement.clientHeight||720);
+  const cs=getComputedStyle(view);
+  const padX=(parseFloat(cs.paddingLeft)||0)+(parseFloat(cs.paddingRight)||0);
+  const padY=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0);
+  const availH=Math.max(240, Math.min(vh-docTop-16, 980));   // 底部留 16px 呼吸
+  const availW=Math.max(140, view.clientWidth-padX);
+  const hBox=Math.max(140, availH-padY);
+  const w=Math.max(120, Math.round(Math.min(availW, hBox*ar)));
+  const h=Math.round(w/ar);
+  /* 显示区高度 = 画面高度 + 内边距：
+     竖屏时正好占满剩余高度；横屏/窄窗口时宽度先到顶，高度随之收紧，不再留一大片黑边。
+     同时避免 flex 的 stretch 把显示区拉高、画面居中下移后底部跑出屏幕 */
+  const viewH=Math.round(Math.min(availH, h+padY));
+  view.style.height=viewH+'px';
+  st.style.width=w+'px';
+  st.style.height=h+'px';
+  /* 宽屏右侧按钮栏与画面等高：矮窗口下按钮栏比画面长，页面会被顶出一条滚动条，
+     让它自己内部滚动，整个投屏区仍在一屏内 */
+  const layout=view.parentElement;
+  const side=layout&&layout.querySelector('.mirror-side');
+  if(side){
+    if(getComputedStyle(layout).flexDirection!=='column'){
+      /* 用「视口剩余高度」而不是画面高度：横屏画面矮，按钮栏不该跟着被切成一小截 */
+      side.style.maxHeight=Math.round(availH)+'px';
+      side.style.overflowY='auto';
+    }else{
+      side.style.maxHeight='';
+      side.style.overflowY='';
+    }
+  }
 }
+/* 窗口尺寸变化（含手机地址栏收起）后重新贴合，节流避免拖动窗口时反复回流 */
+let mirrorFitTimer=0;
+function mirrorFitSoon(){
+  if(state.active!=='mirror') return;
+  clearTimeout(mirrorFitTimer);
+  mirrorFitTimer=setTimeout(()=>{ if(state.active==='mirror') mirrorFit(); },120);
+}
+window.addEventListener('resize',mirrorFitSoon);
+window.addEventListener('orientationchange',mirrorFitSoon);
+if(window.visualViewport) window.visualViewport.addEventListener('resize',mirrorFitSoon);
+document.addEventListener('fullscreenchange',()=>{ if(state.active==='mirror') setTimeout(mirrorFit,60); });
 function startMirror(){
   if(state.mode!=='real' || !state.adb){ toast('请先连接真机后再开始投屏','warn'); return; }
   const m=state.mirror;
@@ -2170,6 +2225,7 @@ function renderMirror(){
       '</aside>'+
     '</div>'+
     '<p class="hint mirror-tip">设备端 <code class="code-inline">screenrecord</code> 编码 H.264、浏览器 WebCodecs 硬解；画面卡顿时优先把画质降到 720P。支持点击 / 拖动 / 滚轮 / 双击 / 长按，<code class="code-inline">Esc</code> 返回、<code class="code-inline">F</code> 全屏；离开页面自动停止以释放 USB 带宽。</p>';
+  requestAnimationFrame(mirrorFit);   // 等样式生效后再量尺寸，避免按旧布局计算
 }
 /* ---------------- 页面：显示控制 ---------------- */
 function rangeRow(label,desc,key,min,max,step,unit,tpl){
