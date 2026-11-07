@@ -534,7 +534,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.4.0</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.4.1</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -892,7 +892,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.4.0';
+const BUILD='v1.4.1';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1672,6 +1672,22 @@ class AvcParser{
     this.onAU({data:out,key:key});
   }
 }
+function joinBytes(a,b){
+  const out=new Uint8Array(a.length+b.length);
+  out.set(a,0); out.set(b,a.length);
+  return out;
+}
+function hasStartCode(u8){
+  const n=Math.min(u8.length-3,64);
+  for(let i=0;i<n;i++) if(u8[i]===0&&u8[i+1]===0&&u8[i+2]===0&&u8[i+3]===1) return true;
+  return false;
+}
+function textOf(u8){
+  try{
+    const s=new TextDecoder('utf-8',{fatal:false}).decode(u8.slice(0,300)).trim();
+    return /^[\x09\x0a\x0d\x20-\x7e]+$/.test(s)?s:'';
+  }catch(_){ return ''; }
+}
 function shText(cmd,ms){
   const svc=state.adb&&state.adb.subprocess, runner=(svc&&svc.noneProtocol)||svc;
   if(!runner) return Promise.reject(new Error('设备未连接'));
@@ -1711,20 +1727,37 @@ async function mirrorStreamOpen(){
   const br=Math.max(1000,(parseInt(settings.mirrorBitrate,10)||8000))*1000;
   const cmd='screenrecord --output-format=h264 --bit-rate '+br+' --time-limit 180 --size '+size.w+'x'+size.h+' -';
   const proc=await runner.spawn(cmd);
-  const st={proc:proc,reader:null,dec:null,cfgKey:'',sps:null,pps:null,closed:false,bytes:0,aus:0,ts:0,w:0,h:0,lastAt:Date.now(),err:''};
+  /* shell 协议返回 {stdout,stderr}，noneProtocol 只有 {output}，两种都要兼容 */
+  const out=(proc&&(proc.stdout||proc.output))||null;
+  if(!out||typeof out.getReader!=='function'){
+    try{ if(proc&&typeof proc.kill==='function') proc.kill(); }catch(_){}
+    throw new Error('当前 ADB 组件不支持读取视频流');
+  }
+  const st={proc:proc,out:out,reader:null,dec:null,cfgKey:'',sps:null,pps:null,closed:false,bytes:0,aus:0,ts:0,w:0,h:0,lastAt:Date.now(),err:''};
   m.stream=st;
   const parser=new AvcParser(au=>{
     if(st.closed) return;
     st.aus++; st.lastAt=Date.now();
     mirrorStreamDecode(st,au);
   });
-  st.reader=proc.stdout.getReader();
+  st.reader=out.getReader();
   (async()=>{
     try{
       for(;;){
         const r=await st.reader.read();
         if(r.done||st.closed) break;
         if(!r.value||!r.value.length) continue;
+        if(!st.bytes){
+          /* 首包可能被拆开，先攒一小段再判断是不是 Annex-B */
+          st.head=st.head?joinBytes(st.head,r.value):r.value.slice();
+          if(!hasStartCode(st.head)){
+            const txt=textOf(st.head);
+            if(txt.length>=4){ st.err=txt; break; }   // screenrecord 的错误提示
+            if(st.head.length<96) continue;
+            st.err='设备未返回 H.264 视频流';
+            break;
+          }
+        }
         st.bytes+=r.value.length;
         parser.push(r.value);
       }
@@ -1735,6 +1768,11 @@ async function mirrorStreamOpen(){
   while(Date.now()-t0<6500){
     if(st.closed) throw new Error(st.err||'视频流已关闭');
     if(st.w) return st;
+    if(st.err){
+      const e=st.err;
+      try{ await mirrorStreamClose(); }catch(_){}
+      throw new Error(e);
+    }
     await new Promise(r=>setTimeout(r,120));
   }
   const msg=st.aus?'视频流出帧但无法解码（'+avcCodecStr(st.sps)+'）':'设备未返回视频流（screenrecord 被限制或屏幕未点亮）';
@@ -1799,10 +1837,13 @@ async function mirrorStreamClose(){
   m.stream=null;
   if(!st) return;
   st.closed=true;
-  try{ if(st.reader) st.reader.cancel(); }catch(_){}
+  /* 有 reader 时流已被锁定，只能取消 reader；再取消流会抛 Cannot cancel a locked stream */
+  try{
+    if(st.reader) Promise.resolve(st.reader.cancel()).catch(()=>{});
+    else if(st.out&&typeof st.out.cancel==='function') Promise.resolve(st.out.cancel()).catch(()=>{});
+  }catch(_){}
   try{ if(st.dec){ st.dec.close(); st.dec=null; } }catch(_){}
   try{ if(st.proc&&typeof st.proc.kill==='function') st.proc.kill(); }catch(_){}
-  try{ if(st.proc&&st.proc.stdout) st.proc.stdout.cancel&&st.proc.stdout.cancel(); }catch(_){}
 }
 /* screenrecord 单次上限 180 秒，到点静默续流；连续两次起不来才判定失败 */
 async function mirrorStreamRestart(){
