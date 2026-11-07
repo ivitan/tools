@@ -195,12 +195,12 @@ table th:nth-child(1){width:36%}
 table th:nth-child(2){width:14%}
 table th:nth-child(3){width:13%}
 table th:nth-child(4){width:13%}
-table th.col-ops{width:24%}
+table th.col-ops{width:28%}
 th{background:var(--field);color:var(--muted);font-weight:500;font-size:12.5px;white-space:nowrap}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover{background:var(--field)}
-.td-ops{display:flex;gap:6px;flex-wrap:wrap}
-.mini-btn{border:1px solid var(--border);background:var(--card);color:var(--text-2);border-radius:6px;padding:4px 9px;font-size:12px;white-space:nowrap}
+.td-ops{display:flex;gap:5px;flex-wrap:wrap}
+.mini-btn{border:1px solid var(--border);background:var(--card);color:var(--text-2);border-radius:6px;padding:4px 8px;font-size:12px;white-space:nowrap}
 .mini-btn:hover{border-color:var(--brand);color:var(--brand)}
 .mini-btn.red:hover{border-color:var(--danger);color:var(--danger)}
 .pill{font-size:11.5px;padding:2px 8px;border-radius:20px;background:var(--brand-soft-2);color:var(--brand);white-space:nowrap}
@@ -534,7 +534,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.4.5</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.4.6</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -676,7 +676,7 @@ const state = {
   cpu:EMPTY_CPU.slice(),
   active:'home', showBoard:false,
   devices:[],
-  apps:[], appFilter:'', appsAutoLoaded:false,
+  apps:[], appFilter:'', appsAutoLoaded:false, exporting:null,
   disconnecting:false,
   mirror:{running:false,w:0,h:0,devW:0,devH:0,frames:0,err:'',down:null,
     stream:null, streamErr:'', fps:0, kbps:0, dropped:0, decMs:0,
@@ -893,7 +893,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.4.5';
+const BUILD='v1.4.6';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1558,12 +1558,13 @@ function renderApps(){
       '<td>'+(a.state==='on'?'<span class="pill green">已启用</span>':'<span class="pill gray">已禁用</span>')+'</td>'+
       '<td><div class="td-ops"><button class="mini-btn" data-act="app-toggle" data-pkg="'+esc(a.pkg)+'">'+(a.state==='on'?'禁用':'启用')+'</button>'+
       '<button class="mini-btn" data-act="app-force" data-pkg="'+esc(a.pkg)+'">强停</button>'+
+      '<button class="mini-btn" data-act="app-export" data-pkg="'+esc(a.pkg)+'">导出</button>'+
       '<button class="mini-btn" data-act="app-clear" data-pkg="'+esc(a.pkg)+'">清数据</button>'+
       '<button class="mini-btn red" data-act="app-uninstall" data-pkg="'+esc(a.pkg)+'">卸载</button></div></td></tr>').join('')
       :'')+
     '<tr id="noMatch" style="'+(list.length?'display:none':'')+'"><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">'+(state.mode!=='real'?'尚未连接真机，连接后点击「刷新列表」读取应用':(state.apps.length?'未找到匹配的应用':'应用列表为空，点击「刷新列表」读取'))+'</td></tr>'+
     '</tbody></table></div>'+
-    '<p class="hint">禁用 / 启用走 <code class="code-inline">pm</code>，卸载系统应用需系统权限。</p>';
+    '<p class="hint">禁用 / 启用走 <code class="code-inline">pm</code>，卸载系统应用需系统权限。导出会读取设备上的安装包原件：单包直接下载 <code class="code-inline">.apk</code>，含拆分包的应用打包成 <code class="code-inline">.apks</code>（用 SAI 安装，或解压后 <code class="code-inline">adb install-multiple</code>）。</p>';
 }
 async function appRefresh(auto){
   if(state.mode!=='real'){ if(!auto){ toast('请先连接真机后再刷新应用列表','warn'); renderApps(); } return; }
@@ -1600,6 +1601,112 @@ async function appRefresh(auto){
   });
   toast((auto?'已自动刷新 ':'已读取 ')+state.apps.length+' 个第三方应用','ok');
   renderApps();
+}
+
+/* ---------------- 导出安装包 ---------------- */
+/* 只读设备上现成的 APK：pm path 拿到 base.apk 与各 split，再走 adb sync 读回。
+   单包直接下载 .apk；有拆分包的打包成 .apks（其实就是 zip，SAI 可直接安装）。 */
+const ZIP_CRC=(()=>{const t=new Uint32Array(256);for(let i=0;i<256;i++){let c=i;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c>>>0;}return t;})();
+function zipCrc(crc,u8){
+  let c=crc;
+  for(let i=0;i<u8.length;i++) c=ZIP_CRC[(c^u8[i])&0xFF]^(c>>>8);
+  return c>>>0;
+}
+/* store 模式（method=0）：APK 本身已压缩，再 deflate 既慢又几乎不减小 */
+function zipStore(files){
+  const enc=new TextEncoder();
+  const d=new Date();
+  const tm=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF;
+  const dt=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+  const parts=[], dirs=[]; let off=0;
+  for(const f of files){
+    const nm=enc.encode(f.name);
+    const lh=new Uint8Array(30+nm.length), lv=new DataView(lh.buffer);
+    lv.setUint32(0,0x04034b50,true); lv.setUint16(4,20,true); lv.setUint16(6,0x0800,true);
+    lv.setUint16(8,0,true); lv.setUint16(10,tm,true); lv.setUint16(12,dt,true);
+    lv.setUint32(14,f.crc,true); lv.setUint32(18,f.size,true); lv.setUint32(22,f.size,true);
+    lv.setUint16(26,nm.length,true); lv.setUint16(28,0,true);
+    lh.set(nm,30);
+    parts.push(lh,f.blob);
+    const ch=new Uint8Array(46+nm.length), cv=new DataView(ch.buffer);
+    cv.setUint32(0,0x02014b50,true); cv.setUint16(4,20,true); cv.setUint16(6,20,true);
+    cv.setUint16(8,0x0800,true); cv.setUint16(10,0,true); cv.setUint16(12,tm,true); cv.setUint16(14,dt,true);
+    cv.setUint32(16,f.crc,true); cv.setUint32(20,f.size,true); cv.setUint32(24,f.size,true);
+    cv.setUint16(28,nm.length,true); cv.setUint32(42,off,true);
+    ch.set(nm,46);
+    dirs.push(ch);
+    off+=lh.length+f.size;
+  }
+  const cdSize=dirs.reduce((n,x)=>n+x.length,0);
+  const eo=new Uint8Array(22), ev=new DataView(eo.buffer);
+  ev.setUint32(0,0x06054b50,true);
+  ev.setUint16(8,files.length,true); ev.setUint16(10,files.length,true);
+  ev.setUint32(12,cdSize,true); ev.setUint32(16,off,true);
+  return new Blob([...parts,...dirs,eo],{type:'application/zip'});
+}
+function appExportName(pkg,ver,ext){
+  const base=String(pkg||'app').replace(/[^\w.\-]+/g,'_');
+  const v=(ver&&ver!=='—')?('-'+String(ver).replace(/[^\w.\-]+/g,'_')):'';
+  return base+v+ext;
+}
+async function appExport(pkg,btn){
+  if(state.mode!=='real'||!state.adb){ toast('请先连接真机后再导出安装包','warn'); return; }
+  if(state.exporting){ toast('正在导出'+(state.exporting===pkg?'该应用':'另一个应用')+'，请等它完成','warn'); return; }
+  state.exporting=pkg;
+  const label=btn?btn.textContent:'导出';
+  const labelTitle=btn?btn.title:'';
+  const setBtn=t=>{ if(btn) btn.textContent=t; };
+  let sync=null;
+  try{
+    setBtn('查询…');
+    const out=String(await shell('pm path '+pkg)||'');
+    let paths=[...out.matchAll(/package:(\S+)/g)].map(m=>m[1]);
+    if(!paths.length){ toast('未找到安装包：该应用可能已卸载，或系统不提供可读的 APK','warn'); return; }
+    /* base.apk 排第一：SAI 靠它识别主包 */
+    paths=paths.sort((a,b)=>(/(^|\/)base\.apk$/.test(b)?1:0)-(/(^|\/)base\.apk$/.test(a)?1:0));
+    sync=await state.adb.sync();
+    const files=[]; let total=0, lastPaint=0;
+    for(let i=0;i<paths.length;i++){
+      const path=paths[i];
+      const name=path.split('/').pop()||('part'+i+'.apk');
+      let crc=0xFFFFFFFF, size=0;
+      const chunks=[];
+      setBtn(paths.length>1?('读取 '+(i+1)+'/'+paths.length):'读取中…');
+      /* sync.read() 返回 ReadableStream（也可被当作异步可迭代），for await 两种形态都吃得下 */
+      for await (const v of sync.read(path)){
+        if(!v||!v.length) continue;
+        total+=v.length;
+        if(total>800*1048576) throw new Error('安装包超过 800 MB，网页内导出会占满内存，建议改用 adb pull');
+        chunks.push(v); crc=zipCrc(crc,v); size+=v.length;
+        if(Date.now()-lastPaint>200){
+          lastPaint=Date.now();
+          /* 进度写 title 而不是按钮文案：文案每 120ms 变一次会让整行按钮左右乱跳 */
+          if(btn) btn.title='已读取 '+(total/1048576).toFixed(1)+' MB';
+          await new Promise(r2=>setTimeout(r2,0));   // 让出一帧，避免大包把页面卡死
+        }
+      }
+      if(!size) throw new Error(name+' 读到的内容为空（可能没有读取权限）');
+      files.push({name:name,size:size,crc:(crc^0xFFFFFFFF)>>>0,blob:new Blob(chunks)});
+    }
+    const ver=(state.apps.find(a=>a.pkg===pkg)||{}).ver||'';
+    const split=files.length>1;
+    const blob=split?zipStore(files):files[0].blob;
+    const fname=appExportName(pkg,ver,split?'.apks':'.apk');
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){} },120000);
+    toast('已导出 '+esc(fname)+'（'+(total/1048576).toFixed(1)+' MB'+(split?'，含 '+files.length+' 个拆分包':'')+'）','ok');
+  }catch(e){
+    const msg=String((e&&e.message)||e);
+    const hint=/permission|denied|EACCES/i.test(msg)?'（该机型限制读取 /data/app，需 root 或用系统自带的备份功能）':'';
+    toast('导出失败：'+esc(msg)+hint,'err');
+  }finally{
+    state.exporting=null;
+    if(btn){ btn.textContent=label; btn.title=labelTitle; btn.disabled=false; }
+    if(sync){ try{ await sync.dispose(); }catch(_){} }
+  }
 }
 
 /* ---------------- 页面：投屏 ---------------- */
@@ -3129,6 +3236,7 @@ document.addEventListener('click', async e=>{
       if(i===1){ await runCmd('pm clear '+el.dataset.pkg,true); toast('已清除应用数据','ok'); }
       break;
     }
+    case 'app-export': await appExport(el.dataset.pkg, el); break;
     case 'app-uninstall': {
       const i=await dialog('卸载应用？','将执行 <code class="code-inline">pm uninstall -k --user 0 '+esc(el.dataset.pkg)+'</code>。',[{label:'取消'},{label:'确认卸载',primary:true,danger:true}]);
       if(i===1){ await runCmd('pm uninstall -k --user 0 '+el.dataset.pkg,true); state.apps=state.apps.filter(x=>x.pkg!==el.dataset.pkg); renderApps(); toast('应用卸载指令已下发','ok'); }
