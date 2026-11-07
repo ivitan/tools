@@ -534,7 +534,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.4.1</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.4.2</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -892,7 +892,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.4.1';
+const BUILD='v1.4.2';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1603,10 +1603,27 @@ function avcFindSC(b,from){
   }
   return null;
 }
-/* SPS 前三个字节决定 codec 字符串（profile / constraints / level） */
-function avcCodecStr(sps){
+/* H.264 等级表：[level_idc, 最大宏块数, 最大宏块/秒]，按 30fps 估算 */
+const AVC_LEVELS=[[9,25344,1485],[10,99,1485],[11,396,3000],[12,396,6000],[13,396,11880],
+  [20,396,11880],[21,792,19800],[22,1620,40500],[30,1620,40500],[31,3600,108000],
+  [32,5120,216000],[40,8192,245760],[41,8192,245760],[42,8704,522240],
+  [50,22080,589824],[51,36864,983040],[52,36864,2073600],[60,139264,4177920],
+  [61,139264,8355840],[62,139264,16711680]];
+function avcLevelOK(v){ return AVC_LEVELS.some(l=>l[0]===v); }
+function avcLevelFor(w,h){
+  const mbs=Math.ceil(w/16)*Math.ceil(h/16), mbps=mbs*30;
+  for(const l of AVC_LEVELS){ if(l[1]>=mbs&&l[2]>=mbps) return l[0]; }
+  return 62;
+}
+/* SPS 前三个字节决定 codec 字符串（profile / constraints / level）。
+   部分设备的编码器会写出非法 level（如 0x0E 即 Level 1.4），Chrome 会直接判为
+   「Unsupported configuration」，这里用实际编码尺寸算出的合法等级兜底。 */
+function avcCodecStr(sps,w,h){
   if(!sps||sps.length<4) return 'avc1.42E01E';
-  return 'avc1.'+[sps[1],sps[2],sps[3]].map(v=>('0'+v.toString(16)).slice(-2).toUpperCase()).join('');
+  let lv=avcLevelOK(sps[3])?sps[3]:0;
+  if(w&&h){ const need=avcLevelFor(w,h); if(need>lv) lv=need; }
+  if(!lv) lv=31;
+  return 'avc1.'+[sps[1],sps[2],lv].map(v=>('0'+v.toString(16)).slice(-2).toUpperCase()).join('');
 }
 /* 把 SPS/PPS 包成 AVCDecoderConfigurationRecord（WebCodecs 的 description） */
 function avcCBox(sps,pps){
@@ -1669,7 +1686,7 @@ class AvcParser{
       out[o]=(l>>>24)&255; out[o+1]=(l>>>16)&255; out[o+2]=(l>>>8)&255; out[o+3]=l&255;
       out.set(n,o+4); o+=4+l;
     }
-    this.onAU({data:out,key:key});
+    this.onAU({data:out,key:key,sps:this.sps,pps:this.pps});
   }
 }
 function joinBytes(a,b){
@@ -1733,13 +1750,17 @@ async function mirrorStreamOpen(){
     try{ if(proc&&typeof proc.kill==='function') proc.kill(); }catch(_){}
     throw new Error('当前 ADB 组件不支持读取视频流');
   }
-  const st={proc:proc,out:out,reader:null,dec:null,cfgKey:'',sps:null,pps:null,closed:false,bytes:0,aus:0,ts:0,w:0,h:0,lastAt:Date.now(),err:''};
+  const st={proc:proc,out:out,reader:null,dec:null,cfgKey:'',sps:null,pps:null,closed:false,bytes:0,aus:0,ts:0,w:0,h:0,lastAt:Date.now(),err:'',encW:size.w,encH:size.h};
   m.stream=st;
   const parser=new AvcParser(au=>{
     if(st.closed) return;
     st.aus++; st.lastAt=Date.now();
+    /* 解码器要用 SPS/PPS 建 avcC，解析器每帧都带上，随流更新 */
+    if(au.sps&&au.pps){ st.sps=au.sps; st.pps=au.pps; }
     mirrorStreamDecode(st,au);
   });
+  /* screenrecord 提前退出时把退出码留作诊断信息 */
+  try{ Promise.resolve(proc.exited).then(c=>{ st.exitCode=c; }).catch(()=>{}); }catch(_){}
   st.reader=out.getReader();
   (async()=>{
     try{
@@ -1775,31 +1796,37 @@ async function mirrorStreamOpen(){
     }
     await new Promise(r=>setTimeout(r,120));
   }
-  const msg=st.aus?'视频流出帧但无法解码（'+avcCodecStr(st.sps)+'）':'设备未返回视频流（screenrecord 被限制或屏幕未点亮）';
+  const extra=st.lastCfgErr?('，'+String(st.lastCfgErr).slice(0,48)):'';
+  const msg=st.aus?('视频流出帧但无法解码（'+avcCodecStr(st.sps,st.encW,st.encH)+extra+'）'):('设备未返回视频流（screenrecord 被限制或屏幕未点亮'+(st.exitCode?'，退出码 '+st.exitCode:'')+'）');
   try{ await mirrorStreamClose(); }catch(_){}
   throw new Error(msg);
 }
+const MIRROR_MODES=[{},{hardwareAcceleration:'prefer-software'}];
 function mirrorStreamDecode(st,au){
   if(!st.sps||!st.pps) return;
-  const key=avcCodecStr(st.sps)+'|'+st.sps.length+'-'+st.pps.length;
+  const key=avcCodecStr(st.sps,st.encW,st.encH)+'|'+st.sps.length+'-'+st.pps.length;
   if(!st.dec||st.cfgKey!==key){
     if(st.dec){ try{ st.dec.close(); }catch(_){} st.dec=null; }
-    const mk=()=>new VideoDecoder({
-      output:f=>mirrorDrawFrame(f,st),
-      error:e=>{ st.err='解码错误：'+((e&&e.message)||e); }
-    });
-    const base={ codec:avcCodecStr(st.sps), description:avcCBox(st.sps,st.pps), optimizeForLatency:true };
-    try{
-      st.dec=mk();
-      st.dec.configure(Object.assign({hardwareAcceleration:'prefer-hardware'},base));
-    }catch(e){
-      /* 部分平台不支持指定硬件加速，退回默认（可为软解） */
-      try{ if(st.dec) st.dec.close(); }catch(_){}
+    const base={ codec:avcCodecStr(st.sps,st.encW,st.encH), description:avcCBox(st.sps,st.pps), optimizeForLatency:true };
+    /* 依次尝试：浏览器默认（有硬解会自己用硬解）→ 强制软解。
+       实测「prefer-hardware」在某些 Chrome 上是异步失败（configure 不报错、error 回调才报），
+       所以不主动指定，失败一次就往后挪一位 */
+    let built=false;
+    for(let i=st.tryIdx||0;i<MIRROR_MODES.length;i++){
+      let d=null;
       try{
-        st.dec=mk();
-        st.dec.configure(base);
-      }catch(e2){ st.err='解码器初始化失败：'+((e2&&e2.message)||e2); return; }
+        d=new VideoDecoder({
+          output:f=>mirrorDrawFrame(f,st),
+          error:e=>mirrorDecErr(st,String((e&&e.message)||e))
+        });
+        d.configure(Object.assign({},base,MIRROR_MODES[i]));
+        st.dec=d; st.tryIdx=i; built=true; break;
+      }catch(e){
+        try{ if(d) d.close(); }catch(_){}
+        st.lastCfgErr=String((e&&e.message)||e);
+      }
     }
+    if(!built){ st.err='解码器初始化失败：'+(st.lastCfgErr||'当前浏览器不支持该视频格式'); return; }
     st.cfgKey=key;
   }
   /* 解码队列积压说明浏览器已经跟不上编码节奏：直接丢非关键帧，
@@ -1812,7 +1839,18 @@ function mirrorStreamDecode(st,au){
   try{
     st.ts+=Math.round(1e6/30);
     st.dec.decode(new EncodedVideoChunk({type:au.key?'key':'delta',timestamp:st.ts,data:au.data}));
-  }catch(e){ st.err='解码失败：'+((e&&e.message)||e); }
+  }catch(e){
+    if(st.dec) st.err='解码失败：'+((e&&e.message)||e);   // 解码器已被 error 回调回收时忽略这次
+  }
+}
+/* 解码器异步报错：换下一种加速配置重试，全部失败才判定投屏失败 */
+function mirrorDecErr(st,msg){
+  if(st.closed) return;
+  try{ if(st.dec) st.dec.close(); }catch(_){}
+  st.dec=null; st.cfgKey='';
+  st.lastCfgErr=msg;
+  st.tryIdx=(st.tryIdx||0)+1;
+  if(st.tryIdx>=MIRROR_MODES.length) st.err='解码错误：'+msg;
 }
 function mirrorDrawFrame(frame,st){
   const w=frame.displayWidth||frame.codedWidth, h=frame.displayHeight||frame.codedHeight;
