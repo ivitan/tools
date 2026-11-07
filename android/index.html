@@ -95,6 +95,7 @@ a{color:var(--brand);text-decoration:none}
 .ghost-btn.icon{width:32px;padding:0;justify-content:center}
 .ghost-btn:disabled{opacity:.4;cursor:not-allowed}
 .ghost-btn svg{width:15px;height:15px}
+#connBtn{min-width:74px;justify-content:center}
 
 /* ---------- 布局 ---------- */
 .layout{display:flex;min-height:calc(100vh - 52px)}
@@ -526,15 +527,14 @@ input[type=range]{width:clamp(120px,16vw,190px)}
   <div class="top-right">
     <div class="status"><span class="dot" id="statusDot"></span><span id="statusName">未连接设备</span></div>
     <button class="ghost-btn icon" data-act="toggle-theme" title="切换深浅色主题" id="themeBtn"></button>
-    <button class="ghost-btn solid" data-act="connect">连接设备</button>
-    <button class="ghost-btn" data-act="disconnect" id="disconnectBtn">断开</button>
+    <button class="ghost-btn solid" data-act="conn-toggle" id="connBtn">连接设备</button>
   </div>
 </header>
 
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.4.2</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.4.4</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -677,7 +677,8 @@ const state = {
   active:'home', showBoard:false,
   devices:[],
   apps:[], appFilter:'', appsAutoLoaded:false,
-  mirror:{running:false,w:0,h:0,frames:0,err:'',down:null,
+  disconnecting:false,
+  mirror:{running:false,w:0,h:0,devW:0,devH:0,frames:0,err:'',down:null,
     stream:null, streamErr:'', fps:0, kbps:0, dropped:0, decMs:0,
     rec:null, recOn:false, recChunks:[], recAt:0, rotate:0, scale:1, wheelAt:0, hover:false},
   termLines:[], termHistory:[], termIdx:0,
@@ -829,7 +830,7 @@ function renderHome(){
   $('#connectedName').textContent = connected? state.device.name : '暂无设备连接';
   $('#modeBadge').textContent = state.mode==='real'?'真机已连接':'未连接';
   const notice=$('#homeNotice'); if(notice) notice.style.display = state.mode==='real'?'none':'';
-  $('#disconnectBtn').disabled = !connected;
+  syncConnBtn();
   $('#refreshIcon').innerHTML = icon('refresh',15);
 }
 
@@ -892,7 +893,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.4.2';
+const BUILD='v1.4.4';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1080,13 +1081,19 @@ async function releaseAllUsb(){
   try{ for(const d of await navigator.usb.getDevices()) n+=await releaseUsb(d); }catch(_){}
   return n;
 }
+/* 顶栏只有一个连接按钮，文案随状态切换：
+   未连接 →「连接设备」（实心主操作）／连接中 →「取消连接」（描边，可中止）／已连接 →「断开」（描边） */
+function syncConnBtn(){
+  const b=$('#connBtn');
+  if(!b) return;
+  const on=!!state.connecting, off=!!state.disconnecting, conn=state.mode!=='none';
+  b.textContent = on?'取消连接':(off?'断开中…':(conn?'断开':'连接设备'));
+  b.classList.toggle('solid', !on && !off && !conn);   // 只有「连接设备」是主操作，其余保持描边避免误点
+  b.title = on?'点击取消本次连接':(off?'正在释放 USB 接口':(conn?'断开当前设备并释放 USB 接口':'通过 WebUSB 连接真机'));
+  b.disabled=off;                                       // 连接中仍可点，作为取消出口
+}
 function setConnecting(on){
-  const b=document.querySelector('[data-act="connect"]');
-  if(b){
-    b.disabled=false;                       // 连接中保持可点，作为「取消连接」出口
-    b.textContent=on?'取消连接':'连接设备';
-    if(on) b.dataset.cancel='1'; else delete b.dataset.cancel;
-  }
+  syncConnBtn();
   const s=$('#statusName');
   if(s) s.textContent=on?'准备连接…':(state.mode==='real'?state.device.name:'未连接设备');
 }
@@ -1188,25 +1195,32 @@ async function connectReal(preferPaired, targetSerial){
   }
 }
 async function disconnect(){
-  try{ stopMirror(); }catch(_){}
-  try{ batStop(); }catch(_){}
-  BAT.info=parseBattery('');
-  BAT.stats.rows=[]; BAT.stats.power=false; BAT.stats.model='';
-  state.mirror.err=''; state.mirror.frames=0; state.mirror.streamErr='';
-  state.mirror.w=0; state.mirror.h=0; state.mirror.fps=0; state.mirror.kbps=0; state.mirror.dropped=0;
-  state.apps=[]; state.appFilter=''; state.appsAutoLoaded=false;
-  /* 断开后清空设备侧读取的状态栏 / 调节参数缓存，避免下次连接展示上一台设备的旧值 */
-  state.sysui={raw:'',icons:{},rotationHide:false,clockSeconds:false,qqs:'',pad:'',reading:false};
-  state.tuning.reading=false;
-  const dev=state.realDevice;
-  if(state.adb){ try{ await state.adb.close(); }catch(_){} }
-  state.adb=null; state.realDevice=null; state.manager=null;
-  state.mode='none'; state.devices=[]; state.showBoard=false; state.connectStage='';
-  state.device=freshDevice(); state.cpu=EMPTY_CPU.slice(); state.lastError=null;
-  const n=await releaseUsb(dev);
-  toast(n?'设备已断开，USB 接口已释放（可重新连接）':'设备已断开','');
-  renderHome();
-  if(state.active!=='home' && RENDER[state.active]) RENDER[state.active]();
+  if(state.disconnecting) return;
+  state.disconnecting=true; syncConnBtn();     // 释放 USB 需要时间，避免连点重复执行
+  try{
+    try{ stopMirror(); }catch(_){}
+    try{ batStop(); }catch(_){}
+    BAT.info=parseBattery('');
+    BAT.stats.rows=[]; BAT.stats.power=false; BAT.stats.model='';
+    state.mirror.err=''; state.mirror.frames=0; state.mirror.streamErr='';
+    state.mirror.w=0; state.mirror.h=0; state.mirror.fps=0; state.mirror.kbps=0; state.mirror.dropped=0;
+    state.mirror.devW=0; state.mirror.devH=0;
+    state.apps=[]; state.appFilter=''; state.appsAutoLoaded=false;
+    /* 断开后清空设备侧读取的状态栏 / 调节参数缓存，避免下次连接展示上一台设备的旧值 */
+    state.sysui={raw:'',icons:{},rotationHide:false,clockSeconds:false,qqs:'',pad:'',reading:false};
+    state.tuning.reading=false;
+    const dev=state.realDevice;
+    if(state.adb){ try{ await state.adb.close(); }catch(_){} }
+    state.adb=null; state.realDevice=null; state.manager=null;
+    state.mode='none'; state.devices=[]; state.showBoard=false; state.connectStage='';
+    state.device=freshDevice(); state.cpu=EMPTY_CPU.slice(); state.lastError=null;
+    const n=await releaseUsb(dev);
+    toast(n?'设备已断开，USB 接口已释放（可重新连接）':'设备已断开','');
+    renderHome();
+    if(state.active!=='home' && RENDER[state.active]) RENDER[state.active]();
+  }finally{
+    state.disconnecting=false; syncConnBtn();
+  }
 }
 function busyHelp(){
   return '<p>浏览器拿不到手机的 ADB 接口，通常<strong>不是</strong>浏览器或 HTTPS 的问题。</p>'+
@@ -1717,12 +1731,12 @@ function shText(cmd,ms){
 /* 编码尺寸：短边跟画质走，保持设备原始宽高比，宽高取偶数 */
 async function mirrorEncSize(){
   const m=state.mirror;
-  let W=m.w||0, H=m.h||0;
+  let W=m.devW||0, H=m.devH||0;
   if(!W||!H){
     try{
       const t=await shText('wm size',5000);
       const a=/Override size:\s*(\d+)x(\d+)/.exec(t)||/Physical size:\s*(\d+)x(\d+)/.exec(t);
-      if(a){ W=+a[1]; H=+a[2]; }
+      if(a){ W=+a[1]; H=+a[2]; m.devW=W; m.devH=H; }
     }catch(_){}
   }
   if(!W||!H){ W=1080; H=1920; }
@@ -2031,7 +2045,8 @@ async function mirrorWheel(e){
   if(now-(m.wheelAt||0)<120) return;
   m.wheelAt=now;
   const dy=Math.max(-420,Math.min(420,e.deltaY));
-  const y2=Math.max(1,Math.min((m.h||1920)-1,Math.round(p.y-dy*1.2)));
+  const dh=mirrorDevSize(m.w||0,m.h||0).h||1920;
+  const y2=Math.max(1,Math.min(dh-1,Math.round(p.y-dy*1.2)));
   await runCmd('input swipe '+p.x+' '+p.y+' '+p.x+' '+y2+' 140',true);
 }
 
@@ -2075,6 +2090,16 @@ function mirrorSurface(){
   const cv=$('#mirrorCanvas');
   return (cv && cv.classList.contains('on')) ? cv : null;
 }
+/* 画面像素 → 设备像素。投屏是降分辨率编码的（如 720x1600 投 1080x2400 的机器），
+   而 input tap / swipe 只认设备原生坐标，必须再按比例放大一次，否则点击全部偏移。
+   旋转后编码尺寸会变成横向，这里按长宽方向自动交换设备宽高。 */
+function mirrorDevSize(nw,nh){
+  const m=state.mirror;
+  let w=m.devW||0, h=m.devH||0;
+  if(!w||!h) return {w:nw,h:nh};
+  if(nw&&nh&&((nw>nh)!==(w>h))){ const t=w; w=h; h=t; }
+  return {w:w,h:h};
+}
 /* 把画面上的点换算成设备原始像素坐标（考虑 object-fit: contain 的黑边） */
 function mirrorPoint(cx,cy){
   const img=mirrorSurface();
@@ -2085,9 +2110,11 @@ function mirrorPoint(cx,cy){
   const scale=Math.min(r.width/nw, r.height/nh);
   if(!(scale>0)) return null;
   const ox=r.left+(r.width-nw*scale)/2, oy=r.top+(r.height-nh*scale)/2;
-  const x=Math.round((cx-ox)/scale), y=Math.round((cy-oy)/scale);
-  if(x<0 || y<0 || x>=nw || y>=nh) return null;
-  return {x,y};
+  const vx=(cx-ox)/scale, vy=(cy-oy)/scale;
+  if(vx<0 || vy<0 || vx>=nw || vy>=nh) return null;
+  const dev=mirrorDevSize(nw,nh);
+  const x=Math.round(vx*dev.w/nw), y=Math.round(vy*dev.h/nh);
+  return {x:Math.max(0,Math.min(dev.w-1,x)), y:Math.max(0,Math.min(dev.h-1,y))};
 }
 function renderMirror(){
   const ok=state.mode==='real' && !!state.adb, m=state.mirror;
@@ -2944,9 +2971,13 @@ document.addEventListener('click', async e=>{
       settings.theme = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
       saveSettings(); applyTheme(); break;
     }
-    case 'connect': connectFlow(); break;
+    case 'conn-toggle': {
+      if(state.connecting){ cancelConnect(); break; }
+      if(state.mode!=='none'){ await disconnect(); break; }
+      connectFlow();
+      break;
+    }
     case 'diagnose': showDiagnostics(); break;
-    case 'disconnect': await disconnect(); break;
     case 'refresh': refreshDevices(); break;
     case 'toggle-board': state.showBoard=!state.showBoard; renderHome(); break;
     case 'reboot': {
