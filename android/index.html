@@ -175,6 +175,16 @@ textarea.input{height:auto;padding:10px 12px;resize:vertical;line-height:1.6}
 .toolbar .input{flex:1;max-width:320px}
 .stat{color:var(--muted);font-size:12.5px;margin-left:auto}
 .stat b{color:var(--text)}
+/* 应用类型筛选：三个等宽胶囊按钮，数字随列表实时更新 */
+.app-kind{display:inline-flex;gap:0;padding:2px;border:1px solid var(--border);border-radius:9px;background:var(--field);flex-wrap:nowrap}
+.app-kind .chip{border:0;background:transparent;border-radius:7px;padding:5px 11px;color:var(--text-2);font-family:inherit;font-size:12.5px;line-height:1.4;white-space:nowrap;transition:background .15s,color .15s}
+.app-kind .chip:hover{color:var(--brand);background:transparent}
+.app-kind .chip.active{background:var(--card);color:var(--brand);font-weight:600;box-shadow:var(--shadow)}
+html[data-theme="dark"] .app-kind .chip.active{background:var(--brand-soft);box-shadow:none}
+.app-kind .chip i{font-style:normal;opacity:.55;margin-left:5px;font-weight:400;font-size:11.5px}
+.app-kind .chip.active i{opacity:.8}
+.list-meta{color:var(--muted);font-size:12.5px;margin:-4px 0 10px}
+.list-meta b{color:var(--text)}
 .grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
 .grid-2.align-start{align-items:start}
 .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
@@ -534,7 +544,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 <div class="layout">
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
-    <div class="side-foot">作者@<b>維坦</b><br>v1.4.6</div>
+    <div class="side-foot">作者@<b>維坦</b><br>v1.4.7</div>
   </aside>
   <main class="main">
     <div class="container">
@@ -676,7 +686,7 @@ const state = {
   cpu:EMPTY_CPU.slice(),
   active:'home', showBoard:false,
   devices:[],
-  apps:[], appFilter:'', appsAutoLoaded:false, exporting:null,
+  apps:[], appFilter:'', appKind:'all', appsAutoLoaded:false, exporting:null,
   disconnecting:false,
   mirror:{running:false,w:0,h:0,devW:0,devH:0,frames:0,err:'',down:null,
     stream:null, streamErr:'', fps:0, kbps:0, dropped:0, decMs:0,
@@ -893,7 +903,7 @@ async function runCmd(cmd, silent){
 }
 
 /* ---------------- 连接诊断 ---------------- */
-const BUILD='v1.4.6';
+const BUILD='v1.4.7';
 function hex4(n){ return '0x'+(Number(n)||0).toString(16).padStart(4,'0'); }
 function errText(e){
   if(!e) return '无';
@@ -1543,17 +1553,39 @@ function appDisplayName(pkg, rawLabel){
   return {name:prettyPkg(pkg), exact:false};                                  // 包名简称
 }
 
+/* 应用类型筛选：默认「全部」，系统应用（含系统预装与 Mainline 更新包）一并列出 */
+const APP_KINDS=[{k:'all',t:'全部'},{k:'third',t:'第三方'},{k:'sys',t:'系统'}];
+function appCounts(){
+  const sys=state.apps.filter(a=>a.sys).length;
+  return {all:state.apps.length, third:state.apps.length-sys, sys, off:state.apps.filter(a=>a.state==='off').length};
+}
+/* 搜索与类型筛选都只切行的 display，不重渲染，避免输入框失焦、按钮进度丢失 */
+function filterAppRows(){
+  const q=state.appFilter, kind=state.appKind;
+  let shown=0;
+  $$('#page-apps tbody tr[data-search]').forEach(r=>{
+    const raw=r.dataset.full?decodeURIComponent(r.dataset.full):r.dataset.search;
+    const okQ=!q||raw.indexOf(q)>=0;
+    const okK=kind==='all'||(kind==='sys'?r.dataset.kind==='sys':r.dataset.kind!=='sys');
+    const ok=okQ&&okK;
+    r.style.display=ok?'':'none';
+    if(ok) shown++;
+  });
+  const empty=$('#noMatch'); if(empty) empty.style.display=shown?'none':'';
+  const card=$('#page-apps .table-card'); if(card) card.classList.toggle('empty',!shown);
+  const cnt=$('#appShown'); if(cnt) cnt.textContent=shown;
+  return shown;
+}
 function renderApps(){
-  const q=state.appFilter.toLowerCase();
-  const list=state.apps.filter(a=>!q||a.name.toLowerCase().includes(q)||a.pkg.toLowerCase().includes(q));
-  const offCount=state.apps.filter(a=>a.state==='off').length;
+  const n=appCounts();
   $('#page-apps').innerHTML='<h1 class="page-title">软件管理</h1>'+
     '<div class="toolbar"><input class="input" id="appSearch" placeholder="搜索应用名 / 包名" value="'+esc(state.appFilter)+'">'+
+    '<div class="app-kind" role="tablist">'+APP_KINDS.map(x=>'<button class="chip'+(state.appKind===x.k?' active':'')+'" role="tab" aria-selected="'+(state.appKind===x.k)+'" data-act="app-kind" data-kind="'+x.k+'">'+x.t+'<i>'+n[x.k]+'</i></button>').join('')+'</div>'+
     '<button class="btn" data-act="app-refresh">'+icon('refresh',15)+'刷新列表</button>'+
-    '<label class="btn primary"'+(state.mode==='none'?' style="opacity:.5;pointer-events:none" aria-disabled="true"':'')+'>'+icon('download',15)+'安装 APK<input type="file" accept=".apk" hidden data-change="apk"'+(state.mode==='none'?' disabled':'')+'></label>'+
-    '<span class="stat">共 <b>'+state.apps.length+'</b> 个第三方应用 · 已禁用 <b>'+offCount+'</b></span></div>'+
-    '<div class="card table-card'+(list.length?'':' empty')+'"><table><thead><tr><th>应用</th><th>版本</th><th>类型</th><th>状态</th><th class="col-ops">操作</th></tr></thead><tbody>'+
-    (list.length?list.map(a=>'<tr data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'" data-full="'+encodeURIComponent((a.name+' '+a.pkg).toLowerCase())+'"><td><div class="app-cell"><div class="app-icon">'+esc(a.name.slice(0,1))+'</div><div><div class="app-name"'+(a.guess?' title="设备未提供显示名，此处为包名简称"':'')+'>'+esc(a.name)+(a.guess?'<span class="app-guess">包名</span>':'')+'</div><div class="app-pkg"'+(a.name===a.pkg?' style="display:none"':'')+'>'+esc(a.pkg)+'</div></div></div></td>'+
+    '<label class="btn primary"'+(state.mode==='none'?' style="opacity:.5;pointer-events:none" aria-disabled="true"':'')+'>'+icon('download',15)+'安装 APK<input type="file" accept=".apk" hidden data-change="apk"'+(state.mode==='none'?' disabled':'')+'></label></div>'+
+    '<div class="list-meta">共 <b>'+n.all+'</b> 个应用 · 已禁用 <b>'+n.off+'</b> · 当前显示 <b id="appShown">0</b> 个</div>'+
+    '<div class="card table-card'+(state.apps.length?'':' empty')+'"><table><thead><tr><th>应用</th><th>版本</th><th>类型</th><th>状态</th><th class="col-ops">操作</th></tr></thead><tbody>'+
+    (state.apps.length?state.apps.map(a=>'<tr data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'" data-full="'+encodeURIComponent((a.name+' '+a.pkg).toLowerCase())+'" data-kind="'+(a.sys?'sys':'third')+'"><td><div class="app-cell"><div class="app-icon">'+esc(a.name.slice(0,1))+'</div><div><div class="app-name"'+(a.guess?' title="设备未提供显示名，此处为包名简称"':'')+'>'+esc(a.name)+(a.guess?'<span class="app-guess">包名</span>':'')+'</div><div class="app-pkg"'+(a.name===a.pkg?' style="display:none"':'')+'>'+esc(a.pkg)+'</div></div></div></td>'+
       '<td>'+esc(a.ver)+'</td><td>'+(a.sys?'<span class="pill gray">系统应用</span>':'<span class="pill">第三方</span>')+'</td>'+
       '<td>'+(a.state==='on'?'<span class="pill green">已启用</span>':'<span class="pill gray">已禁用</span>')+'</td>'+
       '<td><div class="td-ops"><button class="mini-btn" data-act="app-toggle" data-pkg="'+esc(a.pkg)+'">'+(a.state==='on'?'禁用':'启用')+'</button>'+
@@ -1562,22 +1594,28 @@ function renderApps(){
       '<button class="mini-btn" data-act="app-clear" data-pkg="'+esc(a.pkg)+'">清数据</button>'+
       '<button class="mini-btn red" data-act="app-uninstall" data-pkg="'+esc(a.pkg)+'">卸载</button></div></td></tr>').join('')
       :'')+
-    '<tr id="noMatch" style="'+(list.length?'display:none':'')+'"><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">'+(state.mode!=='real'?'尚未连接真机，连接后点击「刷新列表」读取应用':(state.apps.length?'未找到匹配的应用':'应用列表为空，点击「刷新列表」读取'))+'</td></tr>'+
+    '<tr id="noMatch" style="display:none"><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">'+(state.mode!=='real'?'尚未连接真机，连接后点击「刷新列表」读取应用':(state.apps.length?'当前筛选下没有匹配的应用':'应用列表为空，点击「刷新列表」读取'))+'</td></tr>'+
     '</tbody></table></div>'+
     '<p class="hint">禁用 / 启用走 <code class="code-inline">pm</code>，卸载系统应用需系统权限。导出会读取设备上的安装包原件：单包直接下载 <code class="code-inline">.apk</code>，含拆分包的应用打包成 <code class="code-inline">.apks</code>（用 SAI 安装，或解压后 <code class="code-inline">adb install-multiple</code>）。</p>';
+  filterAppRows();
 }
 async function appRefresh(auto){
   if(state.mode!=='real'){ if(!auto){ toast('请先连接真机后再刷新应用列表','warn'); renderApps(); } return; }
   if(!auto) toast('正在读取应用列表…','');
   // 单条命令失败不影响其它数据；版本从一次全量 package dump 里解析，失败则降级为 —
   const safe=async c=>{ try{ return String(await shell(c)||''); }catch(e){ return ''; } };
-  const [out3,outD,dump]=await Promise.all([
-    safe('pm list packages -3'), safe('pm list packages -d'),
-    safe('dumpsys package | grep -E "Package \[|versionName=|nonLocalizedLabel=|application-label"')
+  const [outAll,outS,out3,outD,dump]=await Promise.all([
+    safe('pm list packages'), safe('pm list packages -s'), safe('pm list packages -3'),
+    safe('pm list packages -d'),
+    safe('dumpsys package | grep -E "Package \[|versionName=|nonLocalizedLabel=|application-label|codePath="')
   ]);
   const parse=t=>t.split('\n').map(x=>x.replace(/^package:/,'').trim()).filter(Boolean);
+  let allPkgs=Array.from(new Set(parse(outAll)));   // 个别 ROM 会重复输出同一包名
+  const thirdSet=new Set(parse(out3));
+  const sysSet=new Set(parse(outS));
+  if(!allPkgs.length) allPkgs=Array.from(new Set([].concat(parse(out3),parse(outS))));
   const disabled=new Set(parse(outD));
-  const verMap={}, labelMap={};
+  const verMap={}, labelMap={}, pathMap={};
   try{
     const chunks=dump.split(/^\s*Package \[/m);
     for(let i=1;i<chunks.length;i++){
@@ -1585,21 +1623,26 @@ async function appRefresh(auto){
       const m=chunks[i].match(/versionName=([^\s]+)/);
       const l=chunks[i].match(/nonLocalizedLabel=(.*)/);
       const a=chunks[i].match(/application-label(?:-[\w-]+)?[:=]\s*['"]?([^'"\r\n]+)/);
+      const cp=chunks[i].match(/codePath=([^\s]+)/);
       let lab=l?l[1]:'';
       if(!lab && a) lab=a[1];
       lab=String(lab||'').trim().replace(/^['"]|['"]$/g,'');
       if(pkg && m) verMap[pkg]=m[1];
+      if(pkg && cp) pathMap[pkg]=cp[1];
       if(pkg && lab && lab!=='null' && lab!=='0x0' && lab!=='0') labelMap[pkg]=lab;
     }
   }catch(_){}
+  // 系统应用判定：优先 pm list packages -s；部分 ROM 不支持 -s 时回退看安装路径
+  const isSys=p=>sysSet.size?sysSet.has(p):(!thirdSet.has(p)&&/^\/(system|system_ext|product|vendor|odm|apex|vendor_dlkm)\//.test(pathMap[p]||''));
   const olds={}; state.apps.forEach(a=>olds[a.pkg]=a);
-  state.apps=parse(out3).map(p=>{
+  state.apps=allPkgs.map(p=>{
     const d=appDisplayName(p,labelMap[p]);
     return {name:d.name, guess:!d.exact, pkg:p,
-      ver:verMap[p]||(olds[p]&&olds[p].ver)||'—', sys:false,
+      ver:verMap[p]||(olds[p]&&olds[p].ver)||'—', sys:isSys(p),
       state:disabled.has(p)?'off':'on'};
-  });
-  toast((auto?'已自动刷新 ':'已读取 ')+state.apps.length+' 个第三方应用','ok');
+  }).sort((a,b)=>(a.sys?1:0)-(b.sys?1:0)||a.name.localeCompare(b.name,'zh-Hans-CN'));
+  const n=appCounts();
+  toast((auto?'已自动刷新 ':'已读取 ')+n.all+' 个应用（第三方 '+n.third+' · 系统 '+n.sys+'）','ok');
   renderApps();
 }
 
@@ -3172,6 +3215,15 @@ document.addEventListener('click', async e=>{
       toast('动画速度已设置为 '+v+'×','ok'); break;
     }
     case 'app-refresh': appRefresh(); break;
+    case 'app-kind': {
+      const k=el.dataset.kind;
+      if(k!==state.appKind){ state.appKind=k; filterAppRows(); }
+      $$('#page-apps .app-kind .chip').forEach(c=>{
+        const on=c.dataset.kind===state.appKind;
+        c.classList.toggle('active',on); c.setAttribute('aria-selected',on?'true':'false');
+      });
+      break;
+    }
     case 'refresh-sysui': await loadSystemUI(); break;
     case 'hide-icons': await applyIconBlacklist(); break;
     case 'statusbar-apply': await applyStatusbarSettings(); break;
@@ -3309,10 +3361,7 @@ document.addEventListener('input', e=>{
   const t=e.target;
   if(t.id==='appSearch'){
     state.appFilter=t.value.trim().toLowerCase();
-    let shown=0;
-    $$('#page-apps tbody tr[data-search]').forEach(r=>{ const raw=r.dataset.full?decodeURIComponent(r.dataset.full):r.dataset.search; const ok=raw.indexOf(state.appFilter)>=0; r.style.display=ok?'':'none'; if(ok) shown++; });
-    const empty=$('#noMatch'); if(empty) empty.style.display=shown===0?'':'none';
-    const card=$('#page-apps .table-card'); if(card) card.classList.toggle('empty',shown===0);
+    filterAppRows();
     return;
   }
   if(t.dataset.range){
