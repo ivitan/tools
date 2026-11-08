@@ -638,41 +638,6 @@
   }
   .match-text { color: var(--primary); font-weight: 700; }
 
-  /* Toast */
-  /* 容器：同屏多个 toast 纵向堆叠、右对齐，不再各自 fixed 在同一坐标上互相重叠*/
-  .toast-container {
-    position: fixed;
-    top: calc(16px + env(safe-area-inset-top));
-    right: calc(16px + env(safe-area-inset-right));
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    z-index: 200;
-    pointer-events: none;   /* 纯提示层，不拦截下方点击 */
-  }
-  .toast {
-    background: var(--text);
-    color: var(--panel);
-    padding: 9px 16px;
-    border-radius: var(--r-sm);
-    font-size: 13px;
-    font-weight: 500;
-    box-shadow: var(--shadow-lg);
-    transition: opacity 0.18s ease, transform 0.18s ease;
-    @starting-style {
-      opacity: 0;
-      transform: translateX(20px);
-    }
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    max-width: calc(100vw - 32px);
-  }
-  .toast.success { background: var(--success); color: #052e1a; }
-  .toast.error { background: var(--danger); color: #450a0a; }
-  [data-theme="dark"] .toast.success { color: #02261a; }
-  [data-theme="dark"] .toast.error { color: #3b0808; }
 
   /* 确认弹窗（替代原生 confirm，深色友好） */
   .dialog-mask {
@@ -747,8 +712,6 @@
 
     textarea.auto-grow { min-height: 40px; }
     .add-stand-group { gap: 8px; margin-top: 10px; }
-    .toast-container { top: 56px; right: 10px; left: 10px; align-items: stretch; }
-    .toast { max-width: none; }
   }
 
   @media (max-width: 380px) {
@@ -756,6 +719,14 @@
     .panel-body { padding: 10px; }
     .stand-card { padding: 9px 10px; }
   }
+/* toast —— 与 android 工具统一（卡片样式 + 左侧语义色条），弹出位置沿用各工具原样 */
+#toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
+.toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
+.toast.ok{border-left-color:var(--success)}
+.toast.warn{border-left-color:var(--warn,var(--warning,#d97706))}
+.toast.err{border-left-color:var(--danger);color:var(--danger)}
+@keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@media(max-width:768px){#toasts{top:56px;right:10px;left:10px;align-items:stretch}.toast{min-width:0;max-width:none}}
 </style>
 </head>
 <body>
@@ -1004,27 +975,18 @@ btnTheme.addEventListener('click', () => {
 
 // Toast
 // duration：停留时长（毫秒），较长提示可传更久的停留时间
-function toast(msg, type = '', duration = 1800) {
-  const el = document.createElement('div');
-  el.className = 'toast ' + type;
-  el.textContent = msg;
-  (document.getElementById('toastContainer') || document.body).appendChild(el);   // 进容器，多条自动纵向堆叠
+/* toast —— 与 android 工具统一；兼容旧 type 命名与自定义停留时长 */
+function toast(msg, type = '', duration = 3200) {
+  const t = { success:'ok', ok:'ok', error:'err', err:'err', fail:'err',
+              warning:'warn', warn:'warn', info:'' }[type] || '';
+  const d = document.createElement('div');
+  d.className = 'toast ' + t;
+  d.textContent = msg;
+  (document.getElementById('toasts') || document.body).appendChild(d);
   setTimeout(() => {
-    // 同屏有多条时，先锁当前高度再收到 0，
-    // 让下方的 toast 平滑上移，而不是等这条被移除时瞬间跳位
-    el.style.height = el.offsetHeight + 'px';
-    el.style.overflow = 'hidden';
-    requestAnimationFrame(() => {
-      el.style.transition = 'opacity 0.2s, height 0.2s, margin 0.2s, padding 0.2s, border-width 0.2s';
-      el.style.opacity = '0';
-      el.style.height = '0px';
-      el.style.paddingTop = '0px';
-      el.style.paddingBottom = '0px';
-      el.style.borderWidth = '0px';
-      el.style.marginTop = '-8px';   // 抵消容器的 gap，收起后无缝
-    });
+    d.style.opacity = '0'; d.style.transform = 'translateX(16px)'; d.style.transition = '.25s';
+    setTimeout(() => d.remove(), 260);
   }, duration);
-  setTimeout(() => el.remove(), duration + 300);
 }
 
 // 自定义确认弹窗
@@ -1529,7 +1491,7 @@ function copyReport() {
 </script>
 
 <!-- Toast 容器：多条提示纵向堆叠、右对齐 -->
-<div class="toast-container" id="toastContainer"></div>
+<div id="toasts"></div>
 
 </body>
 </html>

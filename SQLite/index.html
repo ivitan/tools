@@ -1602,63 +1602,6 @@
     outline: none;
   }
   .pager-text { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
-  /* Toast */
-  /* 容器：同屏多个 toast（例如「导入成功」与「导入失败」同时出现）纵向堆叠、右对齐，
-     不再各自 fixed 在同一坐标上互相重叠*/
-  .toast-container {
-    position: fixed;
-    top: calc(16px + env(safe-area-inset-top, 0px));     /* 状态栏/灵动岛 */
-    right: calc(16px + env(safe-area-inset-right, 0px));  /* 侧边安全区（mobile-native §7） */
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    z-index: 200;
-    pointer-events: none;   /* 纯提示层，不拦截下方点击 */
-  }
-  .toast {
-    background: var(--text);
-    color: var(--panel);
-    padding: 9px 16px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.1px;
-    box-shadow: var(--shadow-lg);
-    /* 入场用 transition（可中断、可从当前值重定向），替代 keyframes slideIn
-       （review-animations 升级触发项 / emil-design-eng：动态 UI 用 transition 而非 keyframes） */
-    opacity: 1;
-    transform: translateX(0);
-    transition: opacity 0.18s ease, transform 0.18s ease;
-    @starting-style {
-      opacity: 0;
-      transform: translateX(20px);
-    }
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    max-width: calc(100vw - 32px);
-  }
-  .toast.success { background: var(--success); color: #052e1a; }
-  .toast.error { background: var(--danger); color: #450a0a; }
-  /* 重复导入（warn）与导入失败（fail）提示：绿底会把「够亮的红」压到 1.0:1 隐形、
-     把「够深的红」压成黑色，所以改用面板底色 + 主题危险红，让红色真正显示出来，
-     并配红色描边强化警示感。用 var(--danger) 自动适配：日间 #dc2626、暗色 #f87171，无需额外 dark 覆盖*/
-  .toast.warn,
-  .toast.fail {
-    background: var(--panel);
-    color: var(--danger);
-    border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
-    font-weight: 600;
-  }
-  /* 导入失败：多个文件时每个文件一行（「文件名 不是 SQLite 数据库文件」） */
-  .toast.fail {
-    white-space: pre-line;
-    line-height: 1.5;
-    align-items: flex-start;
-  }
-  [data-theme="dark"] .toast.success { color: #02261a; }
-  [data-theme="dark"] .toast.error { color: #3b0808; }
 
   /* 悬浮到底按钮 */
   .fab-end {
@@ -1845,10 +1788,6 @@
     /* 合并成单按钮后空间足够，手机端也保留「分页 / 无限」文字，与 PC 端一致 */
     .mode-toggle { padding: 0 9px; }
 
-    /* 手机端：整列 toast 下挪避开头部按钮，并左右留边 */
-    .toast-container { top: 56px; right: 10px; left: 10px; align-items: stretch; }
-    .toast { max-width: none; }
-
     /* 手机端筛选面板：窄屏下宽度自适应，避免被宽列挤到屏幕外 */
     .col-filter-float .col-filter-panel {
       width: min(250px, calc(100vw - 32px));
@@ -1856,6 +1795,14 @@
       min-width: 180px;
     }
   }
+/* toast —— 与 android 工具统一（卡片样式 + 左侧语义色条），弹出位置沿用各工具原样 */
+#toasts{position:fixed;top:calc(16px + env(safe-area-inset-top, 0px));right:calc(16px + env(safe-area-inset-right, 0px));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
+.toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
+.toast.ok{border-left-color:var(--success)}
+.toast.warn{border-left-color:var(--warn,var(--warning,#d97706))}
+.toast.err{border-left-color:var(--danger);color:var(--danger)}
+@keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@media(max-width:768px){#toasts{top:56px;right:10px;left:10px;align-items:stretch}.toast{min-width:0;max-width:none}}
 </style>
 
 <!-- 首屏防闪白：在首次绘制前同步应用已保存的主题。
@@ -2011,7 +1958,7 @@
 </button>
 
 <!-- Toast 容器：多条提示纵向堆叠、右对齐 -->
-<div class="toast-container" id="toastContainer"></div>
+<div id="toasts"></div>
 
 <script>
 // UI 构建标记：控制台执行 UI_BUILD 可确认当前打开的是否为最新版本的页面
@@ -2035,27 +1982,18 @@ const $ = (id) => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 // duration：停留时长（毫秒），失败信息较长/可能多行，调用方可传更久的停留时间
-function toast(msg, type = '', duration = 1800) {
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.textContent = msg;
-  ($('toastContainer') || document.body).appendChild(el);   // 进容器，多条自动纵向堆叠
+/* toast —— 与 android 工具统一；兼容旧 type 命名与自定义停留时长 */
+function toast(msg, type = '', duration = 3200) {
+  const t = { success:'ok', ok:'ok', error:'err', err:'err', fail:'err',
+              warning:'warn', warn:'warn', info:'' }[type] || '';
+  const d = document.createElement('div');
+  d.className = 'toast ' + t;
+  d.textContent = msg;
+  (document.getElementById('toasts') || document.body).appendChild(d);
   setTimeout(() => {
-    // 同屏有多条时（如成功 + 失败），先锁当前高度再收到 0，
-    // 让下方的 toast 平滑上移，而不是等这条被移除时瞬间跳位
-    el.style.height = el.offsetHeight + 'px';
-    el.style.overflow = 'hidden';
-    requestAnimationFrame(() => {
-      el.style.transition = 'opacity 0.2s, height 0.2s, margin 0.2s, padding 0.2s, border-width 0.2s';
-      el.style.opacity = '0';
-      el.style.height = '0px';
-      el.style.paddingTop = '0px';
-      el.style.paddingBottom = '0px';
-      el.style.borderWidth = '0px';
-      el.style.marginTop = '-8px';   // 抵消容器的 gap，收起后无缝
-    });
+    d.style.opacity = '0'; d.style.transform = 'translateX(16px)'; d.style.transition = '.25s';
+    setTimeout(() => d.remove(), 260);
   }, duration);
-  setTimeout(() => el.remove(), duration + 300);
 }
 
 // 自定义确认弹窗（替代浏览器原生 confirm，深色友好）
@@ -4408,11 +4346,11 @@ function showDropzone(show) {
 }
 
 // 导入失败提示
-// 复用页面原有 toast，只换文案与配色：统一「文件名 不是 SQLite 数据库文件」，红粉字体（.toast.fail）
+// 复用页面原有 toast：统一「文件名 不是 SQLite 数据库文件」，失败使用统一 err 语义色（左侧红条）
 // 多个失败文件逐行显示。失败不影响右侧视图：视图状态由调用方决定是否刷新，这里只负责提示
 function toastImportFailed(failedList) {
   if (!failedList || !failedList.length) return;
-  toast(failedList.map(f => f.reason ? `${f.fileName}：${f.reason}` : `${f.fileName} 不是 SQLite 数据库文件`).join('\n'), 'fail', 4000);
+  toast(failedList.map(f => f.reason ? `${f.fileName}：${f.reason}` : `${f.fileName} 不是 SQLite 数据库文件`).join('\n'), 'err', 4000);
 }
 
 // 悬浮到底按钮
@@ -4795,7 +4733,7 @@ async function handleFiles(files) {
     renderSidebar();   // 仅同步重复库的展开与高亮，右侧视图不动
   }
 
-  // 阶段 4：提示。失败统一按样板走 toast（红粉字体），成功/重复沿用原有 toast
+  // 阶段 4：提示。失败统一走 toast（err 语义色），成功/重复沿用原有 toast
   const added = results.filter(r => r.kind === 'added').length;
   const replaced = results.filter(r => r.kind === 'replaced').length;
   const skipped = results.filter(r => r.kind === 'duplicate').length;

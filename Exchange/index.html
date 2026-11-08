@@ -382,27 +382,6 @@
   .history-list li > span:last-child { flex-shrink: 0; color: var(--text-muted); font-size: 11.5px; }
   .history-list li b { color: var(--text); font-weight: 600; }
 
-  /* Toast */
-  .toast {
-    position: fixed;
-    top: calc(16px + env(safe-area-inset-top));
-    right: calc(16px + env(safe-area-inset-right));
-    background: var(--success);
-    color: #052e1a;
-    padding: 9px 16px;
-    border-radius: var(--r-sm);
-    font-size: 13px;
-    font-weight: 500;
-    box-shadow: var(--shadow-lg);
-    z-index: 200;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s, transform 0.25s;
-    transform: translateX(20px);
-    max-width: calc(100vw - 32px);
-  }
-  [data-theme="dark"] .toast { color: #02261a; }
-  .toast.show { opacity: 1; transform: translateX(0); }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -425,12 +404,19 @@
     .page { padding: 12px 10px; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
     .panel-body { padding: 12px; }
     .panel-header { padding: 9px 12px; }
-    .toast { top: 58px; right: 10px; left: 10px; max-width: none; }
   }
   @media (max-width: 420px) {
     .buttons-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .btn { padding: 0 8px; }
   }
+/* toast —— 与 android 工具统一（卡片样式 + 左侧语义色条），弹出位置沿用各工具原样 */
+#toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
+.toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
+.toast.ok{border-left-color:var(--success)}
+.toast.warn{border-left-color:var(--warn,var(--warning,#d97706))}
+.toast.err{border-left-color:var(--danger);color:var(--danger)}
+@keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@media(max-width:768px){#toasts{top:58px;right:10px;left:10px;align-items:stretch}.toast{min-width:0;max-width:none}}
 </style>
 </head>
 <body>
@@ -567,18 +553,17 @@ const theme = {
   }
 };
 
-function toast(msg, type = '', duration = 1800) {
-  const el = document.createElement('div');
-  el.textContent = msg;
-  el.style.cssText = 'position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));z-index:9999;max-width:80vw;' +
-    'padding:8px 14px;border-radius:8px;font:500 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;' +
-    'background:var(--text);color:var(--panel);box-shadow:0 4px 12px rgba(0,0,0,.15);' +
-    'opacity:0;transform:translateY(-6px);transition:opacity .2s ease,transform .2s ease;pointer-events:none;';
-  document.body.appendChild(el);
-  requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
+/* toast —— 与 android 工具统一；兼容旧 type 命名与自定义停留时长 */
+function toast(msg, type = '', duration = 3200) {
+  const t = { success:'ok', ok:'ok', error:'err', err:'err', fail:'err',
+              warning:'warn', warn:'warn', info:'' }[type] || '';
+  const d = document.createElement('div');
+  d.className = 'toast ' + t;
+  d.textContent = msg;
+  (document.getElementById('toasts') || document.body).appendChild(d);
   setTimeout(() => {
-    el.style.opacity = '0'; el.style.transform = 'translateY(-6px)';
-    setTimeout(() => el.remove(), 250);
+    d.style.opacity = '0'; d.style.transform = 'translateX(16px)'; d.style.transition = '.25s';
+    setTimeout(() => d.remove(), 260);
   }, duration);
 }
 
@@ -840,5 +825,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
+<div id="toasts"></div>
 </body>
 </html>
