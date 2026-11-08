@@ -70,9 +70,6 @@
     --dropzone-bg: #ffffff;
     --code-bg: #f1f5f9;
     --table-row-border: #f1f5f9;
-    --success-ink: #047857;
-    --danger-ink: #b91c1c;
-    --danger-on: #ffffff;
     --primary-on: #ffffff;}
 
   [data-theme="dark"] {
@@ -104,10 +101,6 @@
     --dropzone-bg: #0f172a;
     --code-bg: #0a1224;
     --table-row-border: #1e293b;
-    --tab-close-hover: rgba(255,255,255,0.12);
-    --success-ink: #6ee7b7;
-    --danger-ink: #fca5a5;
-    --danger-on: #0b1220;
 }
 
   html, body { height: 100%; }
@@ -548,12 +541,6 @@
     font-size: 15px;
     font-weight: 600;
     margin-bottom: 4px;
-  }
-  .dropzone-desc {
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 500;
-    margin-bottom: 14px;
   }
   .dropzone button {
     height: 30px;
@@ -1849,7 +1836,6 @@
     .dropzone { margin: 12px; }
     .dropzone-icon { width: 38px; height: 38px; margin-bottom: 10px; }
     .dropzone-title { font-size: 14px; }
-    .dropzone-desc { font-size: 12px; margin-bottom: 12px; }
     .dropzone button { height: 30px; padding: 0 16px; font-size: 12.5px; }
 
     .data-table th, .data-table td { padding: 5px 8px; font-size: 11.5px; }
@@ -2100,12 +2086,6 @@ function confirmDialog({ title = '确认', message = '', okText = '确定', canc
   });
 }
 
-function formatSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1024 / 1024).toFixed(2) + ' MB';
-}
-
 function formatNum(n) {
   return new Intl.NumberFormat('zh-CN').format(n);
 }
@@ -2196,20 +2176,6 @@ async function computeFingerprint(buf) {
     h = Math.imul(h, 16777619);
   }
   return `fb-${buf.length.toString(16)}-${(h >>> 0).toString(16)}`;
-}
-
-// 加载数据库
-async function loadDatabase(file) {
-  try {
-    const buf = new Uint8Array(await file.arrayBuffer());
-    const hash = await computeFingerprint(buf);
-    return await loadDatabaseFromBuffer(file, buf, hash, { silent: false });
-  } catch (e) {
-    console.error(e);
-    // 与批量导入统一：失败按样板走 toast
-    toastImportFailed([{ fileName: file.name }]);
-    return { kind: 'error', error: e, fileName: file.name };
-  }
 }
 
 // 从已读取的 buffer 建库。silent=true 时不渲染 UI、不弹 toast（批量导入时统一处理）
@@ -3116,9 +3082,6 @@ async function loadDatabaseFromSql(file, buf, opts = {}) {
 }
 
 // 抽屉控制
-function openDrawer() {
-  document.body.classList.add('sidebar-open');
-}
 function closeDrawer() {
   document.body.classList.remove('sidebar-open');
 }

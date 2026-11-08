@@ -66,13 +66,11 @@
       --weak: #64748b;             /* gray-400：占位符 / 空单元格 / 折叠箭头 */
       --text-dim: #475569;         /* 表头副标题（节点编码） */
       --primary: #3b82f6;
-      --primary-hover: #2563eb;
       --primary-on: #ffffff;
       --primary-light: #eff6ff;
       --primary-soft: rgba(59, 130, 246, .12);
       --nh-head-bg: #eff6ff;       /* 气泡标题栏实底色（primary-light 的不透明版） */
       --accent-blue: #1d4ed8;
-      --accent-sky: #0369a1;
       --accent-purple: #6d28d9;
       --success: #16a34a;
       --danger: #dc2626;
@@ -116,13 +114,11 @@
       --weak: #6b7280;
       --text-dim: #d1d5db;
       --primary: #60a5fa;
-      --primary-hover: #93c5fd;
       --primary-on: #0b1220;
       --primary-light: rgba(96, 165, 250, .14);
       --primary-soft: rgba(96, 165, 250, .22);
       --nh-head-bg: #1c2c45;       /* 上者叠加 panel 后的等效实色 */
       --accent-blue: #93c5fd;
-      --accent-sky: #7dd3fc;
       --accent-purple: #c4b5fd;
       --success: #4ade80;
       --danger: #f87171;
@@ -173,18 +169,14 @@
     .col   { display: flex; flex-direction: column; }
     .col-full { height: 100%; }
     .row   { display: flex; align-items: center; }
-    .row-between { display: flex; align-items: center; justify-content: space-between; }
-    .row-center  { display: flex; align-items: center; justify-content: center; }
     .grow  { flex: 1; min-height: 0; }
     .spacer { margin-left: auto; }
     /* 间距：语义档位，不沿用原子类命名 */
-    .g-xs { gap: 4px; } .g-sm { gap: 8px; } .g-md { gap: 12px; } .g-lg { gap: 10px; }
+    .g-xs { gap: 4px; } .g-md { gap: 12px; } .g-lg { gap: 10px; }
     /* 纵向撑满并两端对齐（A 区右侧：输入框组在上、状态提示在下） */
     .col-between { display: flex; flex-direction: column; justify-content: space-between; }
     .hidden { display: none !important; }
-    .relative { position: relative; }
 
-    .grid { display: grid; }
     /* 两栏：≥1024px 分栏，与 1180px 容器配套 */
     .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
     @media (min-width: 1024px) { .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
@@ -197,34 +189,24 @@
     @media (min-width: 640px) { .grid-form { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
     /* ── 5. 文字 ── */
-    .fs-10 { font-size: 10px; } .fs-11 { font-size: 11px; line-height: 16px; }
-    .fs-12 { font-size: 12px; line-height: 16px; } .fs-13 { font-size: 13px; } .fs-14 { font-size: 14px; }
-    .fw-normal { font-weight: 400; } .fw-medium { font-weight: 500; }
-    .fw-semibold { font-weight: 600; } .fw-bold { font-weight: 700; }
+    .fs-12 { font-size: 12px; line-height: 16px; }
+    .fw-bold { font-weight: 700; }
     .c-primary  { color: var(--primary); }
-    .c-strong   { color: var(--text); }
     .c-secondary{ color: var(--text-secondary); }
     .c-muted    { color: var(--text-muted); }
-    .c-weak     { color: var(--weak); }
     .c-success  { color: var(--success); }
     .c-danger   { color: var(--danger); }
     .c-warn     { color: var(--warn); }
     .c-orange   { color: var(--orange); }
     .c-blue     { color: var(--accent-blue); }
-    .c-sky      { color: var(--accent-sky); }
     .c-purple   { color: var(--accent-purple); }
-    .ta-left   { text-align: left; }
-    .ta-center { text-align: center; }
     .truncate { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .nowrap { white-space: nowrap; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .select-none { user-select: none; -webkit-user-select: none; }
     .cursor-pointer { cursor: pointer; }
 
     /* ── 6. 图标 ── */
     .ic { width: 14px; height: 14px; flex-shrink: 0; }
     .ic-16 { width: 16px; height: 16px; flex-shrink: 0; }
-    .ic-24 { width: 24px; height: 24px; flex-shrink: 0; }
 
     /* ── 7. 顶栏 ── */
     .header {
@@ -686,21 +668,6 @@
       border-color: var(--primary);
       box-shadow: 0 0 0 1px var(--primary);
     }
-    .paste-placeholder {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 16px;
-      font-size: 12px;
-      color: var(--weak);
-      pointer-events: none;
-      user-select: none;
-    }
-    .paste-placeholder svg { margin-bottom: 8px; color: var(--weak); }
 
     /* ── 14. 折叠箭头 / 轻提示 ── */
     .chev {

@@ -53,9 +53,7 @@
     user-select: none; -webkit-user-select: none;
   }
   button:active, a:active, [role="button"]:active,
-  .btn:active, .icon-btn:active, .mode-toggle:active, .tab-close:active,
-  .db-remove:active, .dropzone button:active, .col-filter-toggle:active,
-  .col-filter-tool-btn:active, .pager button:active, .fab-end:active {
+  .btn:active, .icon-btn:active {
     transform: scale(0.97);
   }
   @media (prefers-reduced-motion: reduce) {
@@ -79,8 +77,6 @@
     --text-muted: #64748b;
 
     --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --primary-light: #eff6ff;
     --primary-soft: rgba(37, 99, 235, 0.10);
     --primary-on: #ffffff;
 
@@ -90,7 +86,6 @@
     --danger-light: #fef2f2;
 
     --warn: #f59e0b;
-    --warn-light: #fef3c7;
     --warn-soft: rgba(245,158,11,0.12);
 
     /* 各转换按钮的语义色（仅用于图标与 hover 底色） */
@@ -104,19 +99,13 @@
     --scrollbar-thumb-hover: #94a3b8;
     --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
     --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
-    --code-bg: #f1f5f9;
 
     --r: 8px;
     --r-sm: 6px;
 
     /* 兼容旧变量名的别名（JS 内联样式仍在引用） */
-    --primary-color: var(--primary);
     --success-color: var(--success);
     --danger-color: var(--danger);
-    --text-light: var(--text-muted);
-    --border-color: var(--border);
-    --panel-bg: var(--panel);
-    --success-ink: #047857;
     --danger-ink: #b91c1c;
     --danger-on: #ffffff;
 }
@@ -131,8 +120,6 @@
     --text-secondary: #cbd5e1;
     --text-muted: #94a3b8;
     --primary: #60a5fa;
-    --primary-hover: #93c5fd;
-    --primary-light: rgba(96,165,250,0.18);
     --primary-soft: rgba(96,165,250,0.22);
     --primary-on: #0b1220;
     --success: #34d399;
@@ -140,7 +127,6 @@
     --danger: #f87171;
     --danger-light: rgba(248,113,113,0.18);
     --warn: #fbbf24;
-    --warn-light: rgba(251,191,36,0.18);
     --warn-soft: rgba(251,191,36,0.22);
     --violet: #a78bfa;      --violet-soft: rgba(167,139,250,0.20);
     --cyan: #22d3ee;        --cyan-soft: rgba(34,211,238,0.18);
@@ -151,8 +137,6 @@
     --scrollbar-thumb-hover: #64748b;
     --shadow: 0 1px 3px rgba(0,0,0,0.5);
     --shadow-lg: 0 10px 25px rgba(0,0,0,0.5);
-    --code-bg: #0a1224;
-    --success-ink: #6ee7b7;
     --danger-ink: #fca5a5;
     --danger-on: #0b1220;
 }

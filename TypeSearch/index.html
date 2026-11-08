@@ -53,9 +53,7 @@
     user-select: none; -webkit-user-select: none;
   }
   button:active, a:active, [role="button"]:active,
-  .btn:active, .icon-btn:active, .mode-toggle:active, .tab-close:active,
-  .db-remove:active, .dropzone button:active, .col-filter-toggle:active,
-  .col-filter-tool-btn:active, .pager button:active, .fab-end:active {
+  .btn:active, .icon-btn:active {
     transform: scale(0.97);
   }
   @media (prefers-reduced-motion: reduce) {
@@ -85,13 +83,11 @@
     --primary-on: #ffffff;
 
     --success: #059669;
-    --success-light: #ecfdf5;
     --danger: #dc2626;
     --danger-light: #fef2f2;
     --warn: #f59e0b;
     --warn-ink: #b45309;
     --warn-light: #fef3c7;
-    --warn-soft: rgba(245,158,11,0.12);
 
     --scrollbar-thumb: #cbd5e1;
     --scrollbar-thumb-hover: #94a3b8;
@@ -107,24 +103,8 @@
 
     /* 兼容旧变量名的别名（JS 内联样式与历史模板仍在引用） */
     --primary-color: var(--primary);
-    --primary-dark: var(--primary-hover);
-    --success-color: var(--success);
-    --danger-color: var(--danger);
-    --warning-color: var(--warn);
-    --text-color: var(--text);
-    --text-light: var(--text-secondary);
-    --text-inverse: #ffffff;
     --border-color: var(--border);
-    --panel-bg: var(--panel);
     --panel-secondary: var(--panel-hover);
-    --hover-bg: var(--primary-soft);
-    --shadow-color: rgba(0,0,0,0.08);
-    --radius: 8px;
-    --radius-sm: 6px;
-    --table-header-bg: var(--header-row);
-    --table-row-even: transparent;
-    --table-row-hover: var(--row-hover);
-    --success-ink: #047857;
     --danger-ink: #b91c1c;
     --danger-on: #ffffff;
 }
@@ -144,13 +124,11 @@
     --primary-soft: rgba(96,165,250,0.22);
     --primary-on: #0b1220;
     --success: #34d399;
-    --success-light: rgba(52,211,153,0.18);
     --danger: #f87171;
     --danger-light: rgba(248,113,113,0.18);
     --warn: #fbbf24;
     --warn-ink: #fbbf24;
     --warn-light: rgba(251,191,36,0.18);
-    --warn-soft: rgba(251,191,36,0.22);
     --scrollbar-thumb: #475569;
     --scrollbar-thumb-hover: #64748b;
     --shadow: 0 1px 3px rgba(0,0,0,0.5);
@@ -159,7 +137,6 @@
     --row-hover: #1e293b;
     --table-row-border: #1e293b;
     --dropzone-bg: #0f172a;
-    --success-ink: #6ee7b7;
     --danger-ink: #fca5a5;
     --danger-on: #0b1220;
 }
@@ -412,7 +389,7 @@
   .btn-group .btn { flex: 1 1 auto; min-height: 32px; }
 
   /* 结果区 */
-  .empty-content, .result-placeholder {
+  .result-placeholder {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -422,8 +399,8 @@
     color: var(--text-muted);
     text-align: center;
   }
-  .empty-content i, .result-placeholder i { font-size: 22px; opacity: 0.5; }
-  .empty-content p, .result-placeholder p { font-size: 12.5px; margin: 0; }
+  .result-placeholder i { font-size: 22px; opacity: 0.5; }
+  .result-placeholder p { font-size: 12.5px; margin: 0; }
 
   table {
     width: 100%;

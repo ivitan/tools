@@ -51,9 +51,7 @@
     user-select: none; -webkit-user-select: none;
   }
   button:active, a:active, [role="button"]:active,
-  .btn:active, .icon-btn:active, .mode-toggle:active, .tab-close:active,
-  .db-remove:active, .dropzone button:active, .col-filter-toggle:active,
-  .col-filter-tool-btn:active, .pager button:active, .fab-end:active {
+  .btn:active, .icon-btn:active {
     transform: scale(0.97);
   }
   @media (prefers-reduced-motion: reduce) {
@@ -77,20 +75,16 @@
     --text-muted: #64748b;
 
     --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --primary-light: #eff6ff;
     --primary-soft: rgba(37, 99, 235, 0.10);
     --primary-on: #ffffff;
 
     --success: #059669;
-    --success-light: #ecfdf5;
     --danger: #dc2626;
     --danger-light: #fef2f2;
 
     /* 近机位强调色（琥珀系，与 SQLite 工具 warning 语义一致） */
     --warn: #f59e0b;
     --warn-ink: #78350f;
-    --warn-light: #fef3c7;
     --warn-soft: rgba(245,158,11,0.12);
 
     /* 操作按钮：浅色填充 + 同系描边 + 深色文字（与工具组按钮风格统一） */
@@ -124,8 +118,6 @@
     --r-sm: 6px;
     --field-h: 34px;   /* 机位号输入框与类型徽章共用高度 */
     --font-ctl: 13px;
-    --success-ink: #047857;
-    --danger-ink: #b91c1c;
     --danger-on: #ffffff;
     --primary-ink: #1d4ed8;
 }
@@ -140,17 +132,13 @@
     --text-secondary: #cbd5e1;
     --text-muted: #94a3b8;
     --primary: #60a5fa;
-    --primary-hover: #93c5fd;
-    --primary-light: rgba(96,165,250,0.18);
     --primary-soft: rgba(96,165,250,0.22);
     --primary-on: #0b1220;
     --success: #34d399;
-    --success-light: rgba(52,211,153,0.18);
     --danger: #f87171;
     --danger-light: rgba(248,113,113,0.18);
     --warn: #fbbf24;
     --warn-ink: #fbbf24;
-    --warn-light: rgba(251,191,36,0.16);
     --warn-soft: rgba(251,191,36,0.20);
     --btn-far-bg: rgba(96,165,250,0.26);
     --btn-far-border: #3b82f6;
@@ -173,8 +161,6 @@
     --shadow: 0 1px 3px rgba(0,0,0,0.5);
     --shadow-lg: 0 10px 25px rgba(0,0,0,0.5);
     --code-bg: #0a1224;
-    --success-ink: #6ee7b7;
-    --danger-ink: #fca5a5;
     --danger-on: #0b1220;
     --primary-ink: #93c5fd;
 }
@@ -331,14 +317,12 @@
     --accent: var(--primary);
     --accent-ink: var(--primary-ink);
     --accent-soft: var(--primary-soft);
-    --accent-light: var(--primary-light);
     --accent-badge: var(--badge-far-bg);
   }
   .stand-card[data-type="近机位"] {
     --accent: var(--warn);
     --accent-ink: var(--warn-ink);
     --accent-soft: var(--warn-soft);
-    --accent-light: var(--warn-light);
     --accent-badge: var(--badge-near-bg);
   }
   /* 整圈已是主色，聚焦时改用外发光提示编辑位置 */

@@ -64,9 +64,7 @@
     user-select: none; -webkit-user-select: none;
   }
   button:active, a:active, [role="button"]:active,
-  .btn:active, .icon-btn:active, .mode-toggle:active, .tab-close:active,
-  .db-remove:active, .dropzone button:active, .col-filter-toggle:active,
-  .col-filter-tool-btn:active, .pager button:active, .fab-end:active {
+  .btn:active, .icon-btn:active {
     transform: scale(0.97);
   }
   @media (prefers-reduced-motion: reduce) {
@@ -87,12 +85,10 @@
       --text-secondary: #475569;
       --text-muted: #64748b;
       --primary: #2563eb;
-      --primary-hover: #1d4ed8;
       --primary-on: #ffffff;
       --primary-light: #eff6ff;
       --primary-soft: rgba(37, 99, 235, 0.10);
       --success: #059669;
-      --success-light: #ecfdf5;
       --danger: #dc2626;
       --code-bg: #f6f8fa;
       --shadow: 0 1px 3px rgba(0, 0, 0, .05), 0 1px 2px rgba(0, 0, 0, .03);
@@ -100,42 +96,10 @@
       --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", "Consolas", monospace;
 
       /* 旧变量别名（兼容历史命名） */
-      --bg-primary: var(--bg);
-      --bg-secondary: var(--panel);
-      --bg-tertiary: var(--panel-hover);
-      --bg-hover: var(--panel-hover);
-      --bg-code: var(--code-bg);
-      --bg-code-block: var(--code-bg);
-      --bg-toolbar: var(--panel);
-      --bg-input: var(--panel);
-      --text-primary: var(--text);
-      --text-color: var(--text);
-      --text-code: var(--text);
-      --text-tertiary: var(--text-muted);
-      --text-placeholder: var(--text-muted);
-      --border-primary: var(--border);
-      --border-secondary: var(--border);
-      --border-color: var(--border);
-      --border-focus: var(--primary);
-      --accent: var(--primary);
-      --accent-hover: var(--primary-hover);
-      --accent-light: var(--primary-light);
-      --accent-subtle: var(--primary-soft);
-      --primary-color: var(--primary);
-      --success-color: var(--success);
-      --danger-color: var(--danger);
-      --panel-bg: var(--panel);
-      --radius-sm: 6px;
       --radius-md: 8px;
-      --radius-lg: 12px;
       --gutter: 16px;
-      --shadow-sm: var(--shadow);
-      --shadow-md: var(--shadow);
       --transition-fast: .18s ease;
       --transition-normal: .18s ease;
-      --success-ink: #047857;
-      --danger-ink: #b91c1c;
-      --danger-on: #ffffff;
     --primary-ink: #1d4ed8;
 }
 
@@ -149,18 +113,13 @@
       --text-secondary: #cbd5e1;
       --text-muted: #94a3b8;
       --primary: #60a5fa;
-      --primary-hover: #93c5fd;
       --primary-on: #0b1220;
       --primary-light: rgba(96, 165, 250, .12);
       --primary-soft: rgba(96, 165, 250, .14);
       --success: #34d399;
-      --success-light: rgba(52, 211, 153, .12);
       --danger: #f87171;
       --code-bg: #0d1117;
       --shadow: 0 1px 3px rgba(0, 0, 0, .30), 0 1px 2px rgba(0, 0, 0, .20);
-      --success-ink: #6ee7b7;
-      --danger-ink: #fca5a5;
-      --danger-on: #0b1220;
     --primary-ink: #93c5fd;
 }
 
@@ -262,13 +221,6 @@
       white-space: nowrap;
     }
 
-    .header-subtitle {
-      font-size: 12px;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
 
     .header-actions {
       display: flex;
@@ -747,9 +699,6 @@
         padding: 0 var(--gutter);
       }
 
-      .header-subtitle {
-        display: none;
-      }
 
       .mobile-tabs {
         display: flex;
@@ -880,7 +829,6 @@
         .getElementById("preview")
         .querySelector(".markdown-body");
       const previewScroller = document.getElementById("preview");
-      const themeToggle = document.getElementById("btnTheme");
       const charCount = document.getElementById("charCount");
       const wordCount = document.getElementById("wordCount");
       const dividerBar = document.getElementById("dividerBar");
@@ -892,10 +840,8 @@
       const toolbar = document.getElementById("toolbar");
       const hljsThemeLink = document.getElementById("hljs-theme");
 
-      let isDarkMode = false;
       let isMobilePreview = false;
       const STORAGE_CONTENT = "md-editor-content";
-      const STORAGE_THEME = "md-editor-theme";
       const STORAGE_SPLIT = "md-editor-split";
 
       let renderTimeout;
