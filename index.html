@@ -429,10 +429,14 @@
       transition: opacity 0.22s ease;
     }
 
-    /* 移动端：左侧栏变抽屉覆盖 */
+    /* 窄屏间距微调（保持原 768px 断点，不改变布局） */
     @media (max-width: 768px) {
       .header { top: 8px; }
       .layout { padding: 0 12px; }
+    }
+
+    /* 手机端：左侧栏变抽屉覆盖（断点对齐 android 工具的 720px） */
+    @media (max-width: 720px) {
       .sidebar {
         position: fixed;
         top: calc(var(--header-h) + 20px);
@@ -446,6 +450,24 @@
       body.cat-open .sidebar { width: min(80vw, 260px); border-width: 1px; }
       .sidebar-inner { width: min(80vw, 260px); }
       body.cat-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
+
+      /* 对齐 android 工具手机端侧栏：38px 触控目标 + 选中态左侧指示条 */
+      .cat-item { position: relative; min-height: 38px; }
+      .cat-item.active { font-weight: 600; }
+      .cat-item.active::before {
+        content: "";
+        position: absolute;
+        left: 0; top: 6px; bottom: 6px;
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: var(--primary);
+      }
+      [data-theme="dark"] .cat-item.active::before { background: var(--primary-hover); }
+    }
+
+    /* 触屏无 hover：给分类项按压即时反馈（对齐 android 的 coarse pointer 处理） */
+    @media (hover: none) and (pointer: coarse) {
+      .cat-item:active { background: var(--panel-hover); color: var(--text); }
     }
 
     @media (max-width: 500px) {
@@ -639,8 +661,8 @@
       // 左侧分类栏展开/收起（点最前 Logo 图标）
       const logoToggle = document.getElementById("logoToggle");
       const sidebar = document.getElementById("sidebar");
-      // 移动端断点（与 CSS 768px 保持一致）
-      const mqMobile = window.matchMedia("(max-width: 768px)");
+      // 移动端抽屉断点（对齐 android 工具的 720px，与 CSS 保持一致）
+      const mqMobile = window.matchMedia("(max-width: 720px)");
       function closeCat() {
         document.body.classList.remove("cat-open");
         logoToggle.title = "展开分类";
