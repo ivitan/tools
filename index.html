@@ -263,17 +263,9 @@
       background: var(--primary-soft);
       color: var(--primary);
       font-weight: 600;
+      /* 选中态左侧指示条：与 SQLite 工具一致，3px 整高 inset 阴影，弧度随容器圆角 */
+      box-shadow: inset 3px 0 0 var(--primary);
     }
-    /* 选中态左侧指示条（对齐 android 工具 .nav-item.active::before，两端统一） */
-    .cat-item.active::before {
-      content: "";
-      position: absolute;
-      left: 0; top: 6px; bottom: 6px;
-      width: 3px;
-      border-radius: 0 3px 3px 0;
-      background: var(--primary);
-    }
-    [data-theme="dark"] .cat-item.active::before { background: var(--primary-hover); }
     [data-theme="dark"] .cat-item.active { color: var(--primary-hover); }
     .cat-item .cat-count {
       margin-left: auto;
