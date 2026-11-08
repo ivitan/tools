@@ -1849,7 +1849,7 @@
         <circle cx="11" cy="11" r="7"/>
         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
-      <input type="text" class="sidebar-search-input" id="sidebarSearch" placeholder="搜索所有数据库中的表…" inputmode="search" enterkeyhint="search" autocapitalize="none" autocorrect="off" aria-label="搜索表">
+      <input type="text" class="sidebar-search-input" id="sidebarSearch" placeholder="搜索所有数据库中的表" inputmode="search" enterkeyhint="search" autocapitalize="none" autocorrect="off" aria-label="搜索表">
       <button type="button" class="sidebar-search-clear" id="sidebarSearchClear" aria-label="清空搜索" hidden>×</button>
     </div>
     <div class="db-list" id="dbList">
@@ -1874,7 +1874,7 @@
         <div class="breadcrumb" id="breadcrumb"></div>
         <!-- 统计信息由 renderToolbarStats() 填充，替代原先内容区里独立的 .status-bar 行 -->
         <div class="toolbar-stats" id="toolbarStats"></div>
-        <input type="text" class="toolbar-input" id="searchInput" placeholder="筛选所有列…" inputmode="search" enterkeyhint="search" autocapitalize="none" autocorrect="off">
+        <input type="text" class="toolbar-input" id="searchInput" placeholder="筛选所有列" inputmode="search" enterkeyhint="search" autocapitalize="none" autocorrect="off">
         <button type="button" class="search-clear" id="searchInputClear" aria-label="清空搜索" hidden>×</button>
         <div class="toolbar-actions">
         <button class="mode-toggle" id="modeToggle" data-tip="切换到分页模式" aria-label="切换加载模式">
@@ -3134,7 +3134,7 @@ function bindSidebarEvents(list) {
       const db = state.databases.find(d => d.id === id);
       const ok = await confirmDialog({
         title: '移除数据库',
-        message: `确定要移除「${db?.name || ''}」吗？相关标签页也会关闭。`,
+        message: `确定要移除「${db?.name || ''}」吗？相关标签页也会关闭`,
         okText: '移除',
         danger: true,
       });
@@ -3634,7 +3634,7 @@ function renderInfiniteGrid(db, tab) {
         </table>
         <div class="infinite-sentinel" id="infiniteSentinel">
           <span class="spinner"></span>
-          <span>正在加载…</span>
+          <span>正在加载</span>
         </div>
       </div>
     </div>`;
@@ -3811,7 +3811,7 @@ function buildFilterPanelHtml(tab, colName) {
     <div class="col-filter-input-wrap" data-col-input="${escapeHtml(colName)}">
       <div class="col-filter-panel">
         <div class="col-filter-input-row">
-          <input type="text" class="col-filter-input" placeholder="模糊筛选 / 过滤候选…" value="${escapeHtml(pendingLike)}" data-col-input-field="${escapeHtml(colName)}" inputmode="text" enterkeyhint="search" autocapitalize="none" autocorrect="off">
+          <input type="text" class="col-filter-input" placeholder="模糊筛选 / 过滤候选" value="${escapeHtml(pendingLike)}" data-col-input-field="${escapeHtml(colName)}" inputmode="text" enterkeyhint="search" autocapitalize="none" autocorrect="off">
           <button type="button" class="search-clear" data-col-clear-input="${escapeHtml(colName)}" data-tip="清空输入" aria-label="清空输入"${pendingLike ? '' : ' hidden'}>×</button>
         </div>
         <div class="col-filter-tools">
@@ -4269,7 +4269,7 @@ function loadInfiniteBatch(db, tab) {
     const sentinel = $('infiniteSentinel');
     if (sentinel) sentinel.innerHTML = `<span style="color:var(--danger);">加载失败，点击重试</span>`;
     if (sentinel) sentinel.onclick = () => {
-      sentinel.innerHTML = `<span class="spinner"></span><span>正在加载…</span>`;
+      sentinel.innerHTML = `<span class="spinner"></span><span>正在加载</span>`;
       sentinel.onclick = null;
       tab._loading = false;
       loadInfiniteBatch(db, tab);
@@ -4304,7 +4304,7 @@ function loadInfiniteBatch(db, tab) {
   } else {
     // 还有更多，恢复 sentinel 文案
     const sentinel = $('infiniteSentinel');
-    if (sentinel) sentinel.innerHTML = `<span class="spinner"></span><span>继续加载…</span>`;
+    if (sentinel) sentinel.innerHTML = `<span class="spinner"></span><span>继续加载</span>`;
   }
 
   tab._loading = false;
@@ -4776,7 +4776,7 @@ document.addEventListener('click', (e) => {
 $('btnClear').onclick = async () => {
   const ok = await confirmDialog({
     title: '清空所有数据库',
-    message: '此操作将关闭并移除所有已加载的数据库，已打开的标签页也会关闭。',
+    message: '此操作将关闭并移除所有已加载的数据库，已打开的标签页也会关闭',
     okText: '清空',
     danger: true,
   });
@@ -4808,7 +4808,7 @@ $('btnHome').onclick = async () => {
   }
   const ok = await confirmDialog({
     title: '返回主页',
-    message: '将离开本工具，跳转到站点主页（根目录 /）。当前打开的数据库不会被保存。',
+    message: '将离开本工具，跳转到站点主页（根目录 /）。当前打开的数据库不会被保存',
     okText: '返回主页',
   });
   if (ok) location.href = '/';

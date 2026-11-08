@@ -365,7 +365,7 @@
     font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace;
     line-height: 1.4;
   }
-  #resultText:empty::before { content: "等待输入..."; color: var(--text-muted); font-weight: 400; }
+  #resultText:empty::before { content: "等待输入"; color: var(--text-muted); font-weight: 400; }
 
   /* 历史记录 */
   .history-list { list-style: none; max-height: 180px; overflow-y: auto; }
@@ -457,7 +457,7 @@
       <div class="panel-body">
         <div class="input-group">
           <label for="inputValue">输入源数据</label>
-          <input type="text" id="inputValue" placeholder="例如: 25%, 3/4, 0x1A, 0b1010..." autocomplete="off">
+          <input type="text" id="inputValue" placeholder="例如: 25%, 3/4, 0x1A, 0b1010" autocomplete="off">
           <div class="hint">融合格式转换与进制计算，自动识别 0x / 0b / 0o 前缀，回车默认转十进制</div>
         </div>
 
@@ -490,7 +490,7 @@
           <button class="icon-btn" id="copyBtn" title="复制结果"><i class="far fa-copy"></i></button>
         </div>
         <div class="panel-body">
-          <p id="resultText">等待输入...</p>
+          <p id="resultText">等待输入</p>
         </div>
       </section>
 
@@ -591,7 +591,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   document.getElementById("copyBtn").addEventListener("click", () => {
     const text = resultText.textContent;
-    if (text && text !== "等待输入..." && !text.includes("错误")) {
+    if (text && text !== "等待输入" && !text.includes("错误")) {
       navigator.clipboard.writeText(text).then(showToast);
     }
   });
@@ -808,7 +808,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // 清空输入
   document.getElementById("clearBtn").addEventListener("click", () => {
     inputValue.value = "";
-    resultText.textContent = "等待输入...";
+    resultText.textContent = "等待输入";
     resultText.style.color = "var(--success-color)";
     inputValue.focus();
   });

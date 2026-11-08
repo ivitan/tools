@@ -543,7 +543,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
       <!-- 主页 -->
       <section class="page active" id="page-home">
         <h1 class="page-title">设备信息</h1>
-        <div class="notice" id="homeNotice" style="margin-bottom:14px">未连接设备。点右上角「连接设备」并用 USB 调试授权。</div>
+        <div class="notice" id="homeNotice" style="margin-bottom:14px">未连接设备。点右上角「连接设备」并用 USB 调试授权</div>
         <div class="card info-card">
           <div class="info-grid" id="infoGrid"></div>
           <div class="info-divider"></div>
@@ -564,7 +564,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
               <select id="deviceSelect"></select>
               <button class="btn-outline" data-act="refresh"><span id="refreshIcon"></span>刷新</button>
             </div>
-            <p class="hint">Chrome / Edge · 手机开启 USB 调试后允许授权。</p>
+            <p class="hint">Chrome / Edge · 手机开启 USB 调试后允许授权</p>
           </div>
         </div>
       </section>
@@ -1026,12 +1026,12 @@ async function showDiagnostics(){
   try{ await _showDiagnostics(); } finally{ diagBusy=false; }
 }
 async function _showDiagnostics(){
-  toast('正在检测 WebUSB 状态…','');
+  toast('正在检测 WebUSB 状态','');
   let text;
   try{ text=await runDiagnostics(); }
   catch(e){ text='诊断过程异常：'+errText(e); }
   const body='<div class="output-box" id="diagBox" style="max-height:52vh;min-height:210px">'+esc(text)+'</div>'+
-    '<div class="hint" style="margin-top:10px">复制结果发给开发者即可。</div>';
+    '<div class="hint" style="margin-top:10px">复制结果发给开发者即可</div>';
   const i=await dialog('连接诊断 · '+BUILD, body, [{label:'复制诊断结果',primary:true},{label:'关闭'}]);
   if(i===0){
     try{ await navigator.clipboard.writeText(text); toast('诊断结果已复制','ok'); }
@@ -1087,7 +1087,7 @@ function syncConnBtn(){
   const b=$('#connBtn');
   if(!b) return;
   const on=!!state.connecting, off=!!state.disconnecting, conn=state.mode!=='none';
-  b.textContent = on?'取消连接':(off?'断开中…':(conn?'断开':'连接设备'));
+  b.textContent = on?'取消连接':(off?'断开中':(conn?'断开':'连接设备'));
   b.classList.toggle('solid', !on && !off && !conn);   // 只有「连接设备」是主操作，其余保持描边避免误点
   b.title = on?'点击取消本次连接':(off?'正在释放 USB 接口':(conn?'断开当前设备并释放 USB 接口':'通过 WebUSB 连接真机'));
   b.disabled=off;                                       // 连接中仍可点，作为取消出口
@@ -1095,7 +1095,7 @@ function syncConnBtn(){
 function setConnecting(on){
   syncConnBtn();
   const s=$('#statusName');
-  if(s) s.textContent=on?'准备连接…':(state.mode==='real'?state.device.name:'未连接设备');
+  if(s) s.textContent=on?'准备连接':(state.mode==='real'?state.device.name:'未连接设备');
 }
 /* 连接阶段实时显示在顶栏；卡住时能一眼看出停在哪一步，而不是只看到「连接中」 */
 function setStage(full, short){
@@ -1126,25 +1126,25 @@ function stage(promise, ms, label, optional){
 }
 async function connectReal(preferPaired, targetSerial){
   if(state.connecting) throw new Error('正在连接中，请稍候');
-  if(!navigator.usb) throw new Error('当前浏览器或页面环境不支持 WebUSB。请使用 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页。');
+  if(!navigator.usb) throw new Error('当前浏览器或页面环境不支持 WebUSB。请使用 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页');
   state.connecting=true; setConnecting(true); beginConnect();
   let dev=null, connection=null;
   try{
-    setStage('加载 ADB 组件','加载组件…');
-    toast(preferPaired?'正在重连已授权设备（不会弹出系统选择器）…':'正在连接真机，请在系统弹窗中选择设备…','');
+    setStage('加载 ADB 组件','加载组件');
+    toast(preferPaired?'正在重连已授权设备（不会弹出系统选择器）':'正在连接真机，请在系统弹窗中选择设备','');
     const libs=await stage(loadLibs(),15000,'ADB 组件加载超时，请刷新页面重试');
     const Manager=libs.b.AdbDaemonWebUsbDeviceManager.BROWSER;
     if(!Manager) throw new Error('WebUSB 不可用（需要安全上下文：HTTPS 或 localhost）');
     state.manager=Manager;
     // 已有授权设备时直接复用，避免重复弹出系统选择器、减少 USB 句柄累积
     if(preferPaired){
-      setStage('枚举已授权设备','查找设备…');
+      setStage('枚举已授权设备','查找设备');
       const list=await stage(Manager.getDevices(),8000,'枚举已授权设备超时');
       if(list.length) dev=(targetSerial && list.find(d=>d.serial===targetSerial)) || list[0];
     }
     if(!dev){
       // 库内部已默认按 ADB 接口过滤 (class 0xff / sub 0x42 / proto 1)，无需额外 filters
-      setStage('等待选择设备（系统弹窗）','等待系统弹窗…');
+      setStage('等待选择设备（系统弹窗）','等待系统弹窗');
       let slowTip=null;
       try{
         slowTip=setTimeout(()=>{ if(state.connecting) toast('还没弹出系统选择器？检查手机 USB 调试已开启、且本站点 USB 权限未被禁用','warn'); },15000);
@@ -1154,7 +1154,7 @@ async function connectReal(preferPaired, targetSerial){
     }
     // 先释放本页可能残留的句柄
     if(state.realDevice) await releaseUsb(state.realDevice);
-    setStage('打开 USB 接口','打开接口…');
+    setStage('打开 USB 接口','打开接口');
     try{ connection=await stage(dev.connect(),20000,'打开 USB 接口超时（20 秒）'); }
     catch(e){
       if(!isBusyError(e)) throw e;
@@ -1163,7 +1163,7 @@ async function connectReal(preferPaired, targetSerial){
       await releaseUsb(dev);
       connection=await stage(dev.connect(),20000,'打开 USB 接口超时（20 秒）');
     }
-    setStage('ADB 授权握手','ADB 授权…');
+    setStage('ADB 授权握手','ADB 授权');
     const Store=libs.c.AdbWebCredentialStore||libs.c.default;
     if(typeof Store!=='function') throw new Error('ADB 凭证组件加载失败，请检查网络后重试');
     const store=new Store('GeekToolboxWeb');
@@ -1176,7 +1176,7 @@ async function connectReal(preferPaired, targetSerial){
     state.device=freshDevice({name:devName,serial:dev.serial||'unknown'});
     state.lastError=null; state.appsAutoLoaded=false; state.apps=[]; state.appFilter='';
     state.devices=[{id:dev.serial||'adb',label:devName+' · '+(dev.serial||'adb')}];
-    setStage('读取设备信息','读取信息…');
+    setStage('读取设备信息','读取信息');
     // 读取设备信息失败不应判定为连接失败，否则残留接口会导致下次连接报「被占用」
     try{ await stage(loadRealInfo(),8000,'读取设备信息超时'); }catch(e){ console.warn('设备信息读取部分失败',e); }
     setStage('已连接','已连接');
@@ -1223,7 +1223,7 @@ async function disconnect(){
   }
 }
 function busyHelp(){
-  return '<p>浏览器拿不到手机的 ADB 接口，通常<strong>不是</strong>浏览器或 HTTPS 的问题。</p>'+
+  return '<p>浏览器拿不到手机的 ADB 接口，通常<strong>不是</strong>浏览器或 HTTPS 的问题</p>'+
     '<ol>'+
     '<li>关闭电脑端 <b>adb / 手机助手 / scrcpy</b>（<code class="code-inline">adb kill-server</code>），只留一个标签页、一台设备</li>'+
     '<li>手机切回<b>「传输文件(MTP)」</b>，撤销 USB 调试授权后重插数据线、重新允许</li>'+
@@ -1247,13 +1247,13 @@ async function attemptConnect(preferPaired, targetSerial){
     }
     let hint;
     if(/ADB 组件加载超时|凭证组件|WebUSB|安全上下文|HTTPS|localhost|不支持/.test(msg))
-      hint='<br>请刷新页面重试；确认使用 Chrome / Edge 并通过 HTTPS 打开。';
+      hint='<br>请刷新页面重试；确认使用 Chrome / Edge 并通过 HTTPS 打开';
     else if(/ADB 授权握手超时/.test(msg))
-      hint='<br>解锁手机并点「允许 USB 调试」；若无弹窗，撤销授权后重插数据线。';
+      hint='<br>解锁手机并点「允许 USB 调试」；若无弹窗，撤销授权后重插数据线';
     else if(/超时/.test(msg))
-      hint='<br>已释放浏览器占用的 USB 接口，请重插数据线后重试。';
+      hint='<br>已释放浏览器占用的 USB 接口，请重插数据线后重试';
     else
-      hint='<br>可重插数据线后重试，或运行连接诊断。';
+      hint='<br>可重插数据线后重试，或运行连接诊断';
     toast('真机连接失败：'+esc(msg)+hint,'warn');
   }
 }
@@ -1266,7 +1266,7 @@ async function connectFlow(){
   const body='连接真机需要 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页。<br><br>'+
     '请先关闭电脑端 adb / Android Studio / scrcpy / 手机助手，只保留一个标签页（否则会提示设备被占用）；手机开启 USB 调试后，在系统弹窗中选择设备并允许授权。'+
     '<div class="hint" style="margin-top:12px">构建 '+BUILD+'</div>'+
-    (paired?'<div class="notice mt16">检测到 '+paired+' 台已授权设备，可直接重连（不会弹出系统选择器）。</div>':'');
+    (paired?'<div class="notice mt16">检测到 '+paired+' 台已授权设备，可直接重连（不会弹出系统选择器）</div>':'');
   const i=await dialog('连接设备 · '+BUILD,body,paired
     ? [{label:'重连已授权设备',primary:true},{label:'选择其他设备'},{label:'取消'}]
     : [{label:'连接真机（WebUSB）',primary:true},{label:'取消'}]);
@@ -1624,13 +1624,13 @@ function renderApps(){
       :'')+
     '<tr id="noMatch" style="display:none"><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">'+(state.mode!=='real'?'尚未连接真机，连接后点击「刷新列表」读取应用':(state.apps.length?'当前筛选下没有匹配的应用':'应用列表为空，点击「刷新列表」读取'))+'</td></tr>'+
     '</tbody></table></div>'+
-    '<p class="hint">禁用 / 启用走 <code class="code-inline">pm</code>，卸载系统应用需系统权限。导出会读取设备上的安装包原件：单包直接下载 <code class="code-inline">.apk</code>，含拆分包的应用打包成 <code class="code-inline">.apks</code>（用 SAI 安装，或解压后 <code class="code-inline">adb install-multiple</code>）。</p>';
+    '<p class="hint">禁用 / 启用走 <code class="code-inline">pm</code>，卸载系统应用需系统权限。导出会读取设备上的安装包原件：单包直接下载 <code class="code-inline">.apk</code>，含拆分包的应用打包成 <code class="code-inline">.apks</code>（用 SAI 安装，或解压后 <code class="code-inline">adb install-multiple</code>）</p>';
   filterAppRows();
   bindSearchClear($('#appSearch'), $('#appSearchClear'));
 }
 async function appRefresh(auto){
   if(state.mode!=='real'){ if(!auto){ toast('请先连接真机后再刷新应用列表','warn'); renderApps(); } return; }
-  if(!auto) toast('正在读取应用列表…','');
+  if(!auto) toast('正在读取应用列表','');
   // 单条命令失败不影响其它数据；版本从一次全量 package dump 里解析，失败则降级为 —
   const safe=async c=>{ try{ return String(await shell(c)||''); }catch(e){ return ''; } };
   const [outAll,outS,out3,outD,dump]=await Promise.all([
@@ -1730,7 +1730,7 @@ async function appExport(pkg,btn){
   const setBtn=t=>{ if(btn) btn.textContent=t; };
   let sync=null;
   try{
-    setBtn('查询…');
+    setBtn('查询');
     const out=String(await shell('pm path '+pkg)||'');
     let paths=[...out.matchAll(/package:(\S+)/g)].map(m=>m[1]);
     if(!paths.length){ toast('未找到安装包：该应用可能已卸载，或系统不提供可读的 APK','warn'); return; }
@@ -1743,7 +1743,7 @@ async function appExport(pkg,btn){
       const name=path.split('/').pop()||('part'+i+'.apk');
       let crc=0xFFFFFFFF, size=0;
       const chunks=[];
-      setBtn(paths.length>1?('读取 '+(i+1)+'/'+paths.length):'读取中…');
+      setBtn(paths.length>1?('读取 '+(i+1)+'/'+paths.length):'读取中');
       /* sync.read() 返回 ReadableStream（也可被当作异步可迭代），for await 两种形态都吃得下 */
       for await (const v of sync.read(path)){
         if(!v||!v.length) continue;
@@ -2403,7 +2403,7 @@ function renderMirror(){
         '</div>'+
       '</aside>'+
     '</div>'+
-    '<p class="hint mirror-tip">设备端 <code class="code-inline">screenrecord</code> 编码 H.264、浏览器 WebCodecs 硬解；画面卡顿时优先把画质降到 720P。支持点击 / 拖动 / 滚轮 / 双击 / 长按，<code class="code-inline">Esc</code> 返回、<code class="code-inline">F</code> 全屏；离开页面自动停止以释放 USB 带宽。</p>';
+    '<p class="hint mirror-tip">设备端 <code class="code-inline">screenrecord</code> 编码 H.264、浏览器 WebCodecs 硬解；画面卡顿时优先把画质降到 720P。支持点击 / 拖动 / 滚轮 / 双击 / 长按，<code class="code-inline">Esc</code> 返回、<code class="code-inline">F</code> 全屏；离开页面自动停止以释放 USB 带宽</p>';
   requestAnimationFrame(mirrorFit);   // 等样式生效后再量尺寸，避免按旧布局计算
 }
 /* ---------------- 页面：显示控制 ---------------- */
@@ -2433,7 +2433,7 @@ function renderDisplay(){
     '<div class="card"><h2 class="card-title">显示策略</h2>'+
       '<div class="row-item"><div><div class="label">字体与锁屏</div></div><div class="ctrl"><button class="btn" data-nav="tuner">前往无级调节</button></div></div>'+
       '<div class="row-item"><div><div class="label">屏幕刷新率</div><div class="desc">需机型支持</div></div><div class="ctrl">'+rangeOnly('refresh',60,144,1,' Hz')+'<button class="btn primary" data-act="apply" data-tpl="settings put system peak_refresh_rate {v}" data-key="refresh">应用</button></div></div>'+
-      '<div class="notice mt16">改分辨率 / DPI 可能引起界面异常，点「重置」可恢复。</div>'+
+      '<div class="notice mt16">改分辨率 / DPI 可能引起界面异常，点「重置」可恢复</div>'+
     '</div>'+shotCard(dis)+'</div>';
   shotRender();
 }
@@ -2447,7 +2447,7 @@ function shotCard(dis){
       (SHOTS.list.length?'<button class="btn" data-act="shot-clear">清空列表</button>':'')+
     '</div>'+
     '<div class="shot-grid" id="shotGrid"></div>'+
-    '<div class="notice mt16">点缩略图可预览或重新下载；不勾选相册时不保留手机内文件。</div>'+
+    '<div class="notice mt16">点缩略图可预览或重新下载；不勾选相册时不保留手机内文件</div>'+
   '</div>';
 }
 
@@ -2472,7 +2472,7 @@ function shotBusy(b){
   if(!btn) return;
   btn.disabled=b;
   const lb=btn.querySelector('.shot-label');
-  if(lb) lb.textContent=b?'正在截图…':'立即截图';
+  if(lb) lb.textContent=b?'正在截图':'立即截图';
 }
 function shotRender(){
   const box=$('#shotGrid'); if(!box) return;
@@ -2557,7 +2557,7 @@ function renderSystemUI(){
       '<div class="row-item" style="margin-top:8px"><div><div class="desc">勾选表示隐藏，点击后统一生效</div></div><div class="ctrl">'+
         '<button class="btn" data-act="refresh-sysui">'+icon('refresh',15)+'读取当前</button>'+
         '<button class="btn primary" data-act="hide-icons"'+dis+'>应用</button></div></div>'+
-      '<div class="notice mt16">只增删上面这 12 项，不动模块写入的其他图标。</div>'+
+      '<div class="notice mt16">只增删上面这 12 项，不动模块写入的其他图标</div>'+
     '</div>';
   const cardImmersive='<div class="card"><h2 class="card-title">双栏自动沉浸</h2>'+
       '<div class="btn-grid">'+
@@ -2568,7 +2568,7 @@ function renderSystemUI(){
       '</div>'+
       '<div class="row-item"><div><div class="label">软件范围</div><div class="desc">留空 = 全部，<code class="code-inline">-包名</code> 表示排除</div></div>'+
         '<div class="ctrl"><input class="input" id="suiScope" placeholder="apps,-com.android.settings" style="min-width:200px"></div></div>'+
-      '<div class="notice mt16">「全部恢复」会清空整条策略，手势导航需上滑一次才恢复。</div>'+
+      '<div class="notice mt16">「全部恢复」会清空整条策略，手势导航需上滑一次才恢复</div>'+
     '</div>';
   const cardSettings='<div class="card"><h2 class="card-title">状态栏图标设置</h2>'+
       '<div class="row-item"><div><div class="label">状态栏电量百分比</div></div><div class="ctrl">'+sw('batteryPct','settings put system status_bar_show_battery_percent {v}')+'</div></div>'+
@@ -2580,12 +2580,12 @@ function renderSystemUI(){
         '<button class="btn primary" data-act="statusbar-apply"'+dis+'>应用设置</button></div></div>'+
       '<div class="row-item"><div><div class="label">去除 Wi-Fi 的 × / !</div><div class="desc">改写联网检测探针与 NTP 服务器</div></div><div class="ctrl">'+
         '<button class="btn" data-act="wifi-fix"'+dis+'>修复</button></div></div>'+
-      '<div class="notice mt16">键名随系统版本 / 厂商不同，写入无变化属正常。</div>'+
+      '<div class="notice mt16">键名随系统版本 / 厂商不同，写入无变化属正常</div>'+
     '</div>';
   const cardQuick='<div class="card"><h2 class="card-title">常用快捷指令</h2>'+
       quickGrid([['返回主界面','input keyevent 3'],['打开最近任务','input keyevent 187'],['锁屏','input keyevent 26'],
         ['截图到 /sdcard','screencap -p /sdcard/screen.png'],['下拉通知栏','input swipe 500 0 500 800 200'],['重启系统界面','am force-stop com.android.systemui']])+
-      '<div class="notice mt16">执行结果可在「ADB 终端」查看。</div>'+
+      '<div class="notice mt16">执行结果可在「ADB 终端」查看</div>'+
     '</div>';
   $('#page-systemui').innerHTML='<h1 class="page-title">系统界面</h1><div class="grid-2 align-start">'+
       '<div class="stack">'+cardIcons+cardImmersive+'</div>'+
@@ -2924,7 +2924,7 @@ function renderBattery(){
         '<div class="row-item" style="display:block"><div class="label" style="margin-bottom:8px">充电来源</div>'+
           '<div class="bat-src">'+srcs.map(o=>'<button data-act="bat-src" data-src="'+o[0]+'">'+o[1]+'</button>').join('')+'</div></div>'+
         '<div class="mt16"><button class="btn" data-act="bat-reset" style="width:100%;justify-content:center">'+icon('refresh',14)+'恢复真实电池参数</button></div>'+
-        '<div class="notice mt16">模拟只改系统上报值，重启或「恢复」即复原。</div>'+
+        '<div class="notice mt16">模拟只改系统上报值，重启或「恢复」即复原</div>'+
       '</div>'+
     '</div>'+
     '<div class="stack">'+
@@ -2939,7 +2939,7 @@ function renderBattery(){
       '</div>'+
       '<div class="bat-log" id="batLog"></div>'+
       '<div class="bat-foot"><span id="batCount">0 条</span><span id="batState">未开始</span></div>'+
-      '<div class="notice mt16">功率取自 <code class="code-inline">current_now</code> × <code class="code-inline">voltage_now</code>，部分机型不开放该节点。</div>'+
+      '<div class="notice mt16">功率取自 <code class="code-inline">current_now</code> × <code class="code-inline">voltage_now</code>，部分机型不开放该节点</div>'+
     '</div>'+
     '<div class="card"><h2 class="card-title">电源策略</h2>'+
       '<div class="row-item"><div class="label">省电模式</div><div class="ctrl">'+sw('powerSave','cmd power set-mode {v}')+'</div></div>'+
@@ -2972,7 +2972,7 @@ function renderTuner(){
         '<div class="ctrl">'+scaleRow('font_scale','fontScale',0.2,4,0.01)+'</div></div>'+
       '<div class="row-item"><div><div class="label">常用值</div></div><div class="ctrl">'+
         [[0.85,'小 0.85×'],[1,'标准 1×'],[1.15,'大 1.15×'],[1.3,'特大 1.3×']].map(o=>'<button class="btn'+(Math.abs(t.fontScale-o[0])<0.001?' primary':'')+'" data-act="font-preset" data-v="'+o[0]+'"'+dis+'>'+o[1]+'</button>').join('')+'</div></div>'+
-      '<div class="notice mt16">拖动松开即生效，字体过大可能导致排版异常。</div>'+
+      '<div class="notice mt16">拖动松开即生效，字体过大可能导致排版异常</div>'+
     '</div>';
   const cardSleep='<div class="card"><h2 class="card-title">锁屏时间</h2>'+
       '<div class="row-item"><div><div class="label">自动锁屏时间（秒）</div></div>'+
@@ -2981,13 +2981,13 @@ function renderTuner(){
         '<button class="btn primary" data-act="set-timeout"'+dis+'>修改</button></div></div>'+
       '<div class="row-item"><div><div class="label">常用值</div></div><div class="ctrl">'+
         [[30,'30 秒'],[60,'1 分钟'],[300,'5 分钟'],[600,'10 分钟']].map(o=>'<button class="btn" data-act="sleep-preset" data-v="'+o[0]+'"'+dis+'>'+o[1]+'</button>').join('')+'</div></div>'+
-      '<div class="notice mt16">范围 1 – 2147483 秒，上限约 24.8 天。</div>'+
+      '<div class="notice mt16">范围 1 – 2147483 秒，上限约 24.8 天</div>'+
     '</div>';
   const cardAnim='<div class="card"><h2 class="card-title">动画倍率</h2>'+
       scaleRowItem('窗口','window_animation_scale','winScale')+
       scaleRowItem('过渡','transition_animation_scale','transScale')+
       scaleRowItem('程序','animator_duration_scale','animScale')+
-      '<div class="notice mt16">0 表示关闭动画，与开发者选项里的缩放是同一组值。</div>'+
+      '<div class="notice mt16">0 表示关闭动画，与开发者选项里的缩放是同一组值</div>'+
     '</div>';
   const cardPerf='<div class="card"><h2 class="card-title">性能调节</h2>'+
       rangeRow('CPU 最小频率','需 root','cpuMin',300,2000,1,' MHz','echo {v}000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq')+
@@ -2995,7 +2995,7 @@ function renderTuner(){
       rangeRow('媒体音量','0 – 15','volume',0,15,1,'','media volume --stream 3 --set {v}')+
       '<div class="row-item"><div><div class="label">性能预设</div></div><div class="ctrl">'+
         ['省电','均衡','性能'].map(p=>'<button class="btn" data-act="preset" data-preset="'+p+'">'+p+'</button>').join('')+'</div></div>'+
-      '<div class="notice mt16">写 CPU 频率需 root；音量走系统公开接口。</div>'+
+      '<div class="notice mt16">写 CPU 频率需 root；音量走系统公开接口</div>'+
     '</div>';
   const cardState='<div class="card" style="margin-top:20px"><h2 class="card-title">当前状态</h2>'+
       '<div class="section-title">CPU 实时频率（'+(String(settings.refresh)==='0'?'自动刷新已关闭':'每 '+(settings.refresh||'2')+' 秒刷新')+'）</div>'+
@@ -3084,7 +3084,7 @@ function renderScripts(){
       '<button class="btn" data-act="script-clear">清空</button>'+
       '<span class="stat">共 '+state.scriptText.split('\n').filter(x=>x.trim()&&!x.trim().startsWith('#')).length+' 条有效命令</span></div></div>'+
       '<div class="card mt20"><div class="card-title-row"><h2 class="card-title">执行输出</h2><span class="badge-soft">'+(state.mode==='real'?'真机':'未连接')+'</span></div>'+
-      '<div class="output-box" id="scriptOutput">'+(esc(state.scriptOutput)||'<span class="muted">点击「运行脚本」查看输出…</span>')+'</div></div>'+
+      '<div class="output-box" id="scriptOutput">'+(esc(state.scriptOutput)||'<span class="muted">点击「运行脚本」查看输出</span>')+'</div></div>'+
     '</div></div>';
 }
 async function runScript(){
@@ -3092,7 +3092,7 @@ async function runScript(){
   state.scriptText=$('#scriptEditor').value;
   const lines=state.scriptText.split('\n').map(x=>x.trim()).filter(x=>x&&!x.startsWith('#'));
   let out='';
-  $('#scriptOutput').textContent='正在执行…';
+  $('#scriptOutput').textContent='正在执行';
   for(const line of lines){
     out+='$ '+line+'\n';
     try{ const r=await shell(line); if(r && r!=='__CLEAR__') out+=r+'\n'; log(line,r||'成功'); }
@@ -3171,7 +3171,7 @@ function renderSettings(){
       '<div class="row-item"><div><div class="label">自动重连已授权设备</div><div class="desc">加载时提示已授权设备</div></div><div class="ctrl"><button class="switch'+(s.autoReconnect?' on':'')+'" data-setting-sw="autoReconnect"></button></div></div>'+
       '<div class="row-item"><div><div class="label">本地数据</div><div class="desc">脚本与偏好存于 localStorage</div></div><div class="ctrl"><button class="btn danger" data-act="clear-local">清空数据</button></div></div>'+
     '</div></div>'+
-    '<div class="notice mt20">设置仅存本机浏览器，不会上传。</div>';
+    '<div class="notice mt20">设置仅存本机浏览器，不会上传</div>';
 }
 
 /* ---------------- 页面：关于 ---------------- */
@@ -3181,14 +3181,14 @@ function renderAbout(){
       '<div style="font-size:18px;font-weight:700">搞机工具箱</div>'+
       '<div class="muted" style="margin-top:4px;font-size:12.5px">免 ROOT · 单文件 · 直连 ADB</div></div></div>'+
       '<div class="kv-list">'+kv('作者','維坦')+kv('版本',BUILD)+kv('连接方式','WebUSB / ADB')+kv('运行环境','Chrome / Edge')+'</div>'+
-      '<div class="notice mt16">免安装、不联网、不推送任何服务端组件；所有命令仅在你点击时下发。</div>'+
+      '<div class="notice mt16">免安装、不联网、不推送任何服务端组件；所有命令仅在你点击时下发</div>'+
     '</div>'+
     '<div class="card"><h2 class="card-title">连接手机</h2>'+
       '<div class="muted" style="font-size:13px;line-height:2">1. 手机开启「开发者选项 → USB 调试」，用数据线连接电脑<br>2. 关闭电脑端的 adb / 手机助手，只留本页面<br>3. 点「连接设备」，在手机上允许授权</div>'+
       '<div style="margin-top:12px"><button class="btn" data-act="diagnose">运行连接诊断</button></div>'+
       '<div class="info-divider"></div>'+
-      '<div class="muted" style="font-size:12.5px;line-height:1.8">WebUSB 直连 ADB 执行 <code class="code-inline">getprop</code> / <code class="code-inline">settings</code> 等命令；投屏用 <code class="code-inline">screenrecord</code> 输出 H.264，交给浏览器 WebCodecs 硬解。</div>'+
-      '<div class="notice mt16">重启、清数据、改系统设置会影响设备状态，请先备份再操作。</div>'+
+      '<div class="muted" style="font-size:12.5px;line-height:1.8">WebUSB 直连 ADB 执行 <code class="code-inline">getprop</code> / <code class="code-inline">settings</code> 等命令；投屏用 <code class="code-inline">screenrecord</code> 输出 H.264，交给浏览器 WebCodecs 硬解</div>'+
+      '<div class="notice mt16">重启、清数据、改系统设置会影响设备状态，请先备份再操作</div>'+
     '</div></div>';
 }
 
@@ -3220,7 +3220,7 @@ document.addEventListener('click', async e=>{
       const label=el.dataset.label;
       const go=async()=>{ await runCmd(cmd,true); toast('已下发「'+label+'」指令：'+esc(cmd),'ok'); };
       if(settings.confirm){
-        const i=await dialog('确认执行「'+label+'」？','将向设备下发命令：<br><code class="code-inline">'+esc(cmd)+'</code><br><br>设备会立即重启或关机，此操作不可撤销。',[{label:'取消'},{label:'确认执行',primary:true,danger:true}]);
+        const i=await dialog('确认执行「'+label+'」','将向设备下发命令：<br><code class="code-inline">'+esc(cmd)+'</code><br><br>设备会立即重启或关机，此操作不可撤销',[{label:'取消'},{label:'确认执行',primary:true,danger:true}]);
         if(i===1) go();
       }else go();
       break;
@@ -3313,13 +3313,13 @@ document.addEventListener('click', async e=>{
     }
     case 'app-force': await runCmd('am force-stop '+el.dataset.pkg); break;
     case 'app-clear': {
-      const i=await dialog('清除应用数据？','将执行 <code class="code-inline">pm clear '+esc(el.dataset.pkg)+'</code>，该应用的登录状态与本地数据会被清空。',[{label:'取消'},{label:'确认清除',primary:true,danger:true}]);
+      const i=await dialog('清除应用数据','将执行 <code class="code-inline">pm clear '+esc(el.dataset.pkg)+'</code>，该应用的登录状态与本地数据会被清空',[{label:'取消'},{label:'确认清除',primary:true,danger:true}]);
       if(i===1){ await runCmd('pm clear '+el.dataset.pkg,true); toast('已清除应用数据','ok'); }
       break;
     }
     case 'app-export': await appExport(el.dataset.pkg, el); break;
     case 'app-uninstall': {
-      const i=await dialog('卸载应用？','将执行 <code class="code-inline">pm uninstall -k --user 0 '+esc(el.dataset.pkg)+'</code>。',[{label:'取消'},{label:'确认卸载',primary:true,danger:true}]);
+      const i=await dialog('卸载应用','将执行 <code class="code-inline">pm uninstall -k --user 0 '+esc(el.dataset.pkg)+'</code>',[{label:'取消'},{label:'确认卸载',primary:true,danger:true}]);
       if(i===1){ await runCmd('pm uninstall -k --user 0 '+el.dataset.pkg,true); state.apps=state.apps.filter(x=>x.pkg!==el.dataset.pkg); renderApps(); toast('应用卸载指令已下发','ok'); }
       break;
     }
@@ -3355,7 +3355,7 @@ document.addEventListener('click', async e=>{
     case 'term-run': { const i=$('#termInput'); await termExec(i.value); i.value=''; i.focus(); break; }
     case 'term-quick': { const i=$('#termInput'); i.value=cmd; await termExec(cmd); i.value=''; i.focus(); break; }
     case 'clear-local': {
-      const i=await dialog('清空本地数据？','将删除保存的脚本与所有偏好设置，页面将恢复默认值。',[{label:'取消'},{label:'确认清空',primary:true,danger:true}]);
+      const i=await dialog('清空本地数据','将删除保存的脚本与所有偏好设置，页面将恢复默认值',[{label:'取消'},{label:'确认清空',primary:true,danger:true}]);
       if(i===1){ localStorage.removeItem('gjbox.scripts'); localStorage.removeItem('gjbox.settings'); toast('已清空，即将刷新页面','ok'); setTimeout(()=>location.reload(),900); }
       break;
     }
@@ -3535,8 +3535,8 @@ $('#deviceSelect').addEventListener('change', async e=>{
   if(!id || state.mode!=='real'){ toast('请先连接真机','warn'); return; }
   const cur=(state.realDevice&&state.realDevice.serial)||'adb';
   if(id===cur){ toast('当前已连接该设备',''); return; }
-  if(state.connecting){ toast('正在连接中，请稍候…',''); return; }
-  toast('正在切换到设备 '+esc(id)+'…','');
+  if(state.connecting){ toast('正在连接中，请稍候',''); return; }
+  toast('正在切换到设备 '+esc(id),'');
   await disconnect();
   await attemptConnect(true,id);
 });

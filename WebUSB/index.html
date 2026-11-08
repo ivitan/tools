@@ -747,7 +747,7 @@
       <div class="card-body">
         <div class="alert alert-warning" style="margin-top: 0">
           <span class="alert-icon"><i class="fas fa-triangle-exclamation"></i></span>
-          <span><strong>警告：</strong>写入将完全覆盖 U 盘所有数据！</span>
+          <span><strong>警告：</strong>写入将完全覆盖 U 盘所有数据</span>
         </div>
         <div class="checkbox-group">
           <input type="checkbox" id="chkVerifyWrite" checked>
@@ -761,7 +761,7 @@
         <div class="progress-section" id="progressSection">
           <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
           <div class="progress-text"><span id="progressPercent">0%</span><span class="speed" id="progressSpeed">—</span></div>
-          <div class="progress-text"><span id="progressDetail">准备中...</span><span id="progressEta"></span></div>
+          <div class="progress-text"><span id="progressDetail">准备中</span><span id="progressEta"></span></div>
         </div>
         <div id="writeStatusArea"></div>
       </div>
@@ -1104,7 +1104,7 @@
               : [{ classCode: 0x08, subclassCode: 0x06, protocolCode: 0x50 }]; // 严格：标准BOT
 
             addLog(
-              `正在请求USB设备 (${useWide ? "宽松模式 - class=0x08" : "标准模式 - 仅BOT"})...`,
+              `正在请求USB设备 (${useWide ? "宽松模式 - class=0x08" : "标准模式 - 仅BOT"})`,
               "info",
             );
             const device = await navigator.usb.requestDevice({ filters });
@@ -1117,7 +1117,7 @@
             addLog(`连接失败: ${err.message}`, "error");
             if (err.name === "NotFoundError")
               addLog(
-                '没有找到兼容设备。请尝试勾选"搜索所有大容量存储设备"，并确保U盘已从系统中卸载。',
+                '没有找到兼容设备。请尝试勾选"搜索所有大容量存储设备"，并确保U盘已从系统中卸载',
                 "warn",
               );
             showStatus("连接失败", "disconnected");
@@ -1149,7 +1149,7 @@
           );
           if (usbSpeed === "USB 2.0" || usbSpeed === "USB 1.1") {
             addLog(
-              '<i class="fas fa-triangle-exclamation"></i> 设备连接速率较慢，写入大镜像可能需要较长时间。建议插入 USB 3.0 接口。',
+              '<i class="fas fa-triangle-exclamation"></i> 设备连接速率较慢，写入大镜像可能需要较长时间。建议插入 USB 3.0 接口',
               "warn",
             );
             connectionSpeedInfo.style.display = "flex";
@@ -1329,7 +1329,7 @@
           if (!usbDevice || !selectedFile || isWriting) return;
           if (
             !confirm(
-              `确定将 ${selectedFile.name} 写入 ${usbDevice.productName || "设备"}？此操作不可逆！${chkVerifyWrite.checked ? "\n\n将执行写入后验证，确保数据完整。" : ""}`,
+              `确定将 ${selectedFile.name} 写入 ${usbDevice.productName || "设备"}？此操作不可逆${chkVerifyWrite.checked ? "\n\n将执行写入后验证，确保数据完整" : ""}`,
             )
           )
             return;
@@ -1346,7 +1346,7 @@
           progressBar.style.width = "0%";
           progressPercent.textContent = "0%";
           progressSpeed.textContent = "—";
-          progressDetail.textContent = "准备写入...";
+          progressDetail.textContent = "准备写入";
           progressEta.textContent = "";
           writeStatusArea.innerHTML = "";
           cardStep3.classList.add("highlight");
@@ -1373,7 +1373,7 @@
             addLog("写入阶段完成", "success");
             if (chkVerifyWrite.checked) {
               setStage("verify");
-              progressDetail.textContent = "正在验证数据...";
+              progressDetail.textContent = "正在验证数据";
               progressBar.style.width = "0%";
               progressPercent.textContent = "0%";
               writeStartTime = performance.now();
@@ -1389,17 +1389,17 @@
             progressBar.style.width = "100%";
             progressPercent.textContent = "100%";
             progressDetail.innerHTML =
-              '<i class="fas fa-circle-check"></i> 全部完成！';
+              '<i class="fas fa-circle-check"></i> 全部完成';
             progressSpeed.textContent = "";
             progressEta.textContent = "";
             writeStatusArea.innerHTML =
-              '<div class="alert alert-success"><span class="alert-icon"><i class="fas fa-champagne-glasses"></i></span> 写入成功！数据已验证，可以安全弹出U盘。</div>';
+              '<div class="alert alert-success"><span class="alert-icon"><i class="fas fa-champagne-glasses"></i></span> 写入成功！数据已验证，可以安全弹出U盘</div>';
             addLog("===== 全部完成 =====", "success");
           } catch (e) {
             if (e.name === "AbortError" || e.message === "用户取消") {
               progressDetail.innerHTML = '<i class="fas fa-stop"></i> 已取消';
               writeStatusArea.innerHTML =
-                '<div class="alert alert-warning"><span class="alert-icon"><i class="fas fa-triangle-exclamation"></i></span> 操作已取消，数据不完整。</div>';
+                '<div class="alert alert-warning"><span class="alert-icon"><i class="fas fa-triangle-exclamation"></i></span> 操作已取消，数据不完整</div>';
               addLog("用户取消操作", "warn");
             } else {
               progressBar.style.width = "0%";
@@ -1492,7 +1492,7 @@
                 if (e.message === "用户取消") throw e;
                 if (attempt < MAX_RETRIES) {
                   addLog(
-                    `LBA ${lba} 写入失败(第${attempt}次): ${e.message}，重试中...`,
+                    `LBA ${lba} 写入失败(第${attempt}次): ${e.message}，重试中`,
                     "warn",
                   );
                   await recoverFromError();
@@ -1553,7 +1553,7 @@
                 if (e.message === "用户取消") throw e;
                 if (attempt < MAX_RETRIES) {
                   addLog(
-                    `LBA ${lba} 验证读取失败(第${attempt}次): ${e.message}，重试中...`,
+                    `LBA ${lba} 验证读取失败(第${attempt}次): ${e.message}，重试中`,
                     "warn",
                   );
                   await recoverFromError();
@@ -1582,7 +1582,7 @@
               }
             }
             if (mismatch && verifyErrors > 10) {
-              addLog("验证错误过多，停止详细报告...", "warn");
+              addLog("验证错误过多，停止详细报告", "warn");
             }
             offset += curBytes;
             verifiedBytes = offset;
@@ -1639,12 +1639,12 @@
             if (massDevs.length === 0) {
               showStatus("无已授权U盘", "disconnected");
               addLog(
-                '没有已授权的大容量存储设备。请插入U盘并点击"选择U盘"。',
+                '没有已授权的大容量存储设备。请插入U盘并点击"选择U盘"',
                 "warn",
               );
               return;
             }
-            addLog(`找到 ${massDevs.length} 个已授权U盘，尝试连接...`, "info");
+            addLog(`找到 ${massDevs.length} 个已授权U盘，尝试连接`, "info");
             for (const d of massDevs) {
               try {
                 await d.open();
@@ -1652,12 +1652,12 @@
                 await setupDevice(d);
                 return;
               } catch (e) {
-                addLog(`设备 ${d.productName} 不在线或无法连接。`, "warn");
+                addLog(`设备 ${d.productName} 不在线或无法连接`, "warn");
               }
             }
             showStatus("所有已授权U盘均不在线", "disconnected");
             addLog(
-              '所有已授权U盘都未连接。请插入U盘后重试，或点击"选择U盘"重新授权。',
+              '所有已授权U盘都未连接。请插入U盘后重试，或点击"选择U盘"重新授权',
               "error",
             );
           } catch (e) {
@@ -1713,18 +1713,18 @@
               resetDeviceState();
               showStatus("设备已断开", "disconnected");
               writeStatusArea.innerHTML =
-                '<div class="alert alert-danger"><span class="alert-icon"><i class="fas fa-plug-circle-xmark"></i></span> USB设备已断开！</div>';
+                '<div class="alert alert-danger"><span class="alert-icon"><i class="fas fa-plug-circle-xmark"></i></span> USB设备已断开</div>';
             }
           });
         }
         if (!navigator.usb) {
           writeStatusArea.innerHTML =
-            '<div class="alert alert-danger"><span class="alert-icon"><i class="fas fa-ban"></i></span> 浏览器不支持 WebUSB，请使用 Chrome/Edge 并确保 HTTPS/localhost。</div>';
+            '<div class="alert alert-danger"><span class="alert-icon"><i class="fas fa-ban"></i></span> 浏览器不支持 WebUSB，请使用 Chrome/Edge 并确保 HTTPS/localhost</div>';
           btnConnectUSB.disabled = true;
           btnStartWrite.disabled = true;
         } else {
           addLog(
-            'WebUSB 就绪。请先卸载U盘（Windows删除盘符 / macOS卸载），然后点击"选择U盘"。',
+            'WebUSB 就绪。请先卸载U盘（Windows删除盘符 / macOS卸载），然后点击"选择U盘"',
             "info",
           );
         }

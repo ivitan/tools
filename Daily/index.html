@@ -855,7 +855,7 @@
         <div class="panel-title"><i class="fas fa-file-lines"></i>实时预览</div>
       </div>
       <div class="panel-body">
-        <div id="preview-box" data-placeholder="左侧填写数据，此处自动实时排版..."></div>
+        <div id="preview-box" data-placeholder="左侧填写数据，此处自动实时排版"></div>
         <button class="btn btn-primary copy-btn" onclick="copyReport()"><i class="fas fa-copy"></i>一键复制</button>
       </div>
     </section>
@@ -1370,7 +1370,7 @@ function removeStandCard(btnElement) {
 async function clearAllCards() {
   const ok = await confirmDialog({
     title: '清空所有数据',
-    message: '将删除当前全部机位卡片与异常明细，且无法恢复。',
+    message: '将删除当前全部机位卡片与异常明细，且无法恢复',
     okText: '清空',
     danger: true
   });
