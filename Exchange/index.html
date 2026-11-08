@@ -510,8 +510,6 @@
   </div>
 </div>
 
-<div class="toast" id="toast">已复制到剪贴板</div>
-
 <script>
 // 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态）
 const theme = {
@@ -588,9 +586,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let historyData = [];
 
   function showToast() {
-    const toast = document.getElementById("toast");
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 2000);
+    toast('已复制到剪贴板', 'ok');
   }
 
   document.getElementById("copyBtn").addEventListener("click", () => {
