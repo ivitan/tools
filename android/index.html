@@ -505,6 +505,13 @@ input[type=range]{width:clamp(120px,16vw,190px)}
   .mirror-stage{height:min(60vh,480px)}
   .mirror-side{grid-template-columns:1fr}
 }
+/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏。
+   position:fixed 浮层，不参与页面布局，位置由 JS 按输入框实时定位 */
+.search-clear{position:fixed;left:0;top:0;width:18px;height:18px;border:none;border-radius:50%;background:var(--muted);color:var(--card);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;transition:opacity .15s,transform .15s;z-index:50}
+.search-clear[hidden]{display:none}
+.search-clear:hover{opacity:1}
+.search-clear:active{transform:scale(.9);opacity:1}
+#appSearch{padding-right:30px}
 </style>
 </head>
 <body>
@@ -1559,10 +1566,43 @@ function filterAppRows(){
   const cnt=$('#appShown'); if(cnt) cnt.textContent=shown;
   return shown;
 }
+/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏、Esc 清空、点击清空并聚焦。
+   按钮为 position:fixed 浮层（不参与布局），位置由 placeAllSearchClears() 按输入框实时定位。*/
+function placeAllSearchClears(){
+  document.querySelectorAll('.search-clear:not([hidden])').forEach(btn => {
+    const input = btn.previousElementSibling;
+    if (!input || typeof input.getBoundingClientRect !== 'function') return;
+    const r = input.getBoundingClientRect();
+    if (!r.width && !r.height) return;
+    btn.style.left = (r.right - 26) + 'px';
+    btn.style.top  = (r.top + (r.height - 18) / 2) + 'px';
+  });
+}
+function bindSearchClear(input, btn){
+  if(!input||!btn) return;
+  const sync=()=>{ btn.hidden = input.value.length === 0; placeAllSearchClears(); };
+  sync();
+  input.addEventListener('input', sync);
+  input.addEventListener('focus', placeAllSearchClears);
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Escape' && input.value){
+      input.value='';
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      input.blur();
+    }
+  });
+  btn.addEventListener('click', ()=>{
+    input.value='';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    input.focus();
+  });
+}
+window.addEventListener('resize', placeAllSearchClears);
+window.addEventListener('scroll', placeAllSearchClears, true);
 function renderApps(){
   const n=appCounts();
   $('#page-apps').innerHTML='<h1 class="page-title">软件管理</h1>'+
-    '<div class="toolbar"><input class="input" id="appSearch" placeholder="搜索应用名 / 包名" value="'+esc(state.appFilter)+'">'+
+    '<div class="toolbar"><input class="input" id="appSearch" placeholder="搜索应用名 / 包名" value="'+esc(state.appFilter)+'"><button type="button" class="search-clear" id="appSearchClear" aria-label="清空搜索"'+(state.appFilter?'':' hidden')+'>×</button>'+
     '<div class="app-kind" role="tablist">'+APP_KINDS.map(x=>'<button class="chip'+(state.appKind===x.k?' active':'')+'" role="tab" aria-selected="'+(state.appKind===x.k)+'" data-act="app-kind" data-kind="'+x.k+'">'+x.t+'<i>'+n[x.k]+'</i></button>').join('')+'</div>'+
     '<button class="btn" data-act="app-refresh">'+icon('refresh',15)+'刷新列表</button>'+
     '<label class="btn primary"'+(state.mode==='none'?' style="opacity:.5;pointer-events:none" aria-disabled="true"':'')+'>'+icon('download',15)+'安装 APK<input type="file" accept=".apk" hidden data-change="apk"'+(state.mode==='none'?' disabled':'')+'></label></div>'+
@@ -1581,6 +1621,7 @@ function renderApps(){
     '</tbody></table></div>'+
     '<p class="hint">禁用 / 启用走 <code class="code-inline">pm</code>，卸载系统应用需系统权限。导出会读取设备上的安装包原件：单包直接下载 <code class="code-inline">.apk</code>，含拆分包的应用打包成 <code class="code-inline">.apks</code>（用 SAI 安装，或解压后 <code class="code-inline">adb install-multiple</code>）。</p>';
   filterAppRows();
+  bindSearchClear($('#appSearch'), $('#appSearchClear'));
 }
 async function appRefresh(auto){
   if(state.mode!=='real'){ if(!auto){ toast('请先连接真机后再刷新应用列表','warn'); renderApps(); } return; }

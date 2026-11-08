@@ -1119,42 +1119,6 @@
   .col-filter-input-row .col-filter-input {
     width: 100%;
   }
-  /* 面板关闭按钮：嵌入到输入框内右侧，跟输入框同高、垂直居中。
-     默认透明、有内容时才显示，避免长期压在字段名上 */
-  .col-filter-close {
-    position: absolute;
-    /* 紧贴输入框内右边缘，左右各留 2px 让 × 不贴死在边框上 */
-    right: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    line-height: 1;
-    font-weight: 700;
-    opacity: 0;
-    transition: opacity 0.12s, background 0.12s, color 0.12s;
-    z-index: 2;
-    /* 按钮在输入框内：把点击事件拦在自身，不让 input 失焦 */
-    pointer-events: auto;
-  }
-  /* 输入框内有内容时才显示 ×（不再默认压在输入框线上） */
-  .col-filter-input-row.has-value .col-filter-close { opacity: 0.7; }
-@media (hover: hover) and (pointer: fine) {
-  .col-filter-close:hover {
-    background: var(--danger-light);
-    color: var(--danger);
-    opacity: 1;
-  }
-}
   /* 输入框自身：右侧给 × 留出 22px 内边距，避免文字压到按钮 */
   .col-filter-input {
     width: 100%;
@@ -1803,6 +1767,13 @@
 .toast.err{border-left-color:var(--danger);color:var(--danger)}
 @keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 @media(max-width:768px){#toasts{top:56px;right:10px;left:10px;align-items:stretch}.toast{min-width:0;max-width:none}}
+/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏。
+   position:fixed 浮层，不参与页面布局，位置由 JS 按输入框实时定位 */
+.search-clear{position:fixed;left:0;top:0;width:18px;height:18px;border:none;border-radius:50%;background:var(--text-muted);color:var(--panel);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;transition:opacity .15s,transform .15s;z-index:50}
+.search-clear[hidden]{display:none}
+.search-clear:hover{opacity:1}
+.search-clear:active{transform:scale(.9);opacity:1}
+#searchInput{padding-right:26px}
 </style>
 
 <!-- 首屏防闪白：在首次绘制前同步应用已保存的主题。
@@ -1904,6 +1875,7 @@
         <!-- 统计信息由 renderToolbarStats() 填充，替代原先内容区里独立的 .status-bar 行 -->
         <div class="toolbar-stats" id="toolbarStats"></div>
         <input type="text" class="toolbar-input" id="searchInput" placeholder="筛选所有列…" inputmode="search" enterkeyhint="search" autocapitalize="none" autocorrect="off">
+        <button type="button" class="search-clear" id="searchInputClear" aria-label="清空搜索" hidden>×</button>
         <div class="toolbar-actions">
         <button class="mode-toggle" id="modeToggle" data-tip="切换到分页模式" aria-label="切换加载模式">
           <!-- 默认 loadMode 为 infinite，这里初始就显示 ∞，避免 JS 未执行时图标与模式不符 -->
@@ -3426,6 +3398,8 @@ function renderContent() {
 
   if ($('searchInput').value !== (tab.filter || '')) {
     $('searchInput').value = tab.filter || '';
+    const sc = $('searchInputClear'); if (sc) sc.hidden = !$('searchInput').value.length;
+    placeAllSearchClears();
   }
 
   // 同步模式切换按钮（分页 / 无限 合并为单按钮）
@@ -3836,9 +3810,9 @@ function buildFilterPanelHtml(tab, colName) {
   return `
     <div class="col-filter-input-wrap" data-col-input="${escapeHtml(colName)}">
       <div class="col-filter-panel">
-        <div class="col-filter-input-row${pendingLike ? ' has-value' : ''}">
+        <div class="col-filter-input-row">
           <input type="text" class="col-filter-input" placeholder="模糊筛选 / 过滤候选…" value="${escapeHtml(pendingLike)}" data-col-input-field="${escapeHtml(colName)}" inputmode="text" enterkeyhint="search" autocapitalize="none" autocorrect="off">
-          <button type="button" class="col-filter-close" data-col-clear-input="${escapeHtml(colName)}" data-tip="清空输入" aria-label="清空输入">×</button>
+          <button type="button" class="search-clear" data-col-clear-input="${escapeHtml(colName)}" data-tip="清空输入" aria-label="清空输入"${pendingLike ? '' : ' hidden'}>×</button>
         </div>
         <div class="col-filter-tools">
           <button type="button" class="col-filter-tool-btn" data-col-selectall="${escapeHtml(colName)}">全选</button>
@@ -4892,6 +4866,41 @@ window.addEventListener('drop', e => {
   handleFiles([...e.dataTransfer.files]);
 });
 
+/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏、Esc 清空、点击清空并聚焦。
+   按钮为 position:fixed 浮层（不参与布局），位置由 placeAllSearchClears() 按输入框实时定位。*/
+function placeAllSearchClears(){
+  document.querySelectorAll('.search-clear:not([hidden])').forEach(btn => {
+    const input = btn.previousElementSibling;
+    if (!input || typeof input.getBoundingClientRect !== 'function') return;
+    const r = input.getBoundingClientRect();
+    if (!r.width && !r.height) return;
+    btn.style.left = (r.right - 26) + 'px';
+    btn.style.top  = (r.top + (r.height - 18) / 2) + 'px';
+  });
+}
+function bindSearchClear(input, btn){
+  if(!input||!btn) return;
+  const sync=()=>{ btn.hidden = input.value.length === 0; placeAllSearchClears(); };
+  sync();
+  input.addEventListener('input', sync);
+  input.addEventListener('focus', placeAllSearchClears);
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Escape' && input.value){
+      input.value='';
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      input.blur();
+    }
+  });
+  btn.addEventListener('click', ()=>{
+    input.value='';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    input.focus();
+  });
+}
+window.addEventListener('resize', placeAllSearchClears);
+window.addEventListener('scroll', placeAllSearchClears, true);
+bindSearchClear($('searchInput'), $('searchInputClear'));
+
 // 搜索
 let searchTimer;
 $('searchInput').oninput = (e) => {
@@ -5099,6 +5108,7 @@ function setFilterPanelOpen(tab, colName) {
   // preventScroll：焦点不触发浏览器自动滚动（面板就在点击位置，无需滚动）
   const input = document.querySelector(`[data-col-input-field="${cssEscape(colName)}"]`);
   if (input) { input.focus({ preventScroll: true }); input.select(); }
+  placeAllSearchClears();
 }
 
 // 关闭并丢弃 pending（用于 ESC / 点击外部 / 再次点 ⌕）
@@ -5287,8 +5297,7 @@ document.addEventListener('click', (e) => {
       if (input) {
         input.value = '';
         tab._pendingLike[colName] = '';
-        const row = clearInputBtn.closest('.col-filter-input-row');
-        if (row) row.classList.remove('has-value');
+        clearInputBtn.hidden = true;
         filterPanelOptions(colName, '');
       }
     }
@@ -5336,9 +5345,11 @@ document.addEventListener('input', (e) => {
   if (!tab) return;
   pendingLikeOf(tab, colName);   // 确保 pendingLike 已初始化
   tab._pendingLike[colName] = input.value;
-  // 输入框有内容时才显示右侧 × 清空按钮；空内容时隐藏，避免压在边框线上
+  // 输入框有内容时才显示右侧 × 清空按钮；空内容时隐藏
   const row = input.closest('.col-filter-input-row');
-  if (row) row.classList.toggle('has-value', !!input.value);
+  const clearBtn = row && row.querySelector('.search-clear');
+  if (clearBtn) clearBtn.hidden = !input.value;
+  placeAllSearchClears();
   filterPanelOptions(colName, input.value);
 });
 

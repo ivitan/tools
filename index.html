@@ -469,6 +469,12 @@
       .tool-card h3 { font-size: 0.9rem; }
       .tool-card p { font-size: 0.72rem; }
     }
+/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏。
+   position:fixed 浮层，不参与页面布局，位置由 JS 按输入框实时定位 */
+.search-clear{position:fixed;left:0;top:0;width:18px;height:18px;border:none;border-radius:50%;background:var(--text-muted);color:var(--panel);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;transition:opacity .15s,transform .15s;z-index:50}
+.search-clear[hidden]{display:none}
+.search-clear:hover{opacity:1}
+.search-clear:active{transform:scale(.9);opacity:1}
   </style>
 </head>
 
@@ -489,6 +495,7 @@
       <!-- 主题切换按钮左侧的搜索框（所有端一致） -->
       <div class="search-box">
         <input type="text" id="toolSearch" placeholder="搜索工具..." inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" />
+        <button type="button" class="search-clear" id="toolSearchClear" aria-label="清空搜索" hidden>×</button>
         <i class="fas fa-search"></i>
       </div>
 
@@ -768,6 +775,41 @@
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => { searchTerm = searchInput.value; applyFilter(); }, 180);
       });
+
+/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏、Esc 清空、点击清空并聚焦。
+   按钮为 position:fixed 浮层（不参与布局），位置由 placeAllSearchClears() 按输入框实时定位。*/
+function placeAllSearchClears(){
+  document.querySelectorAll('.search-clear:not([hidden])').forEach(btn => {
+    const input = btn.previousElementSibling;
+    if (!input || typeof input.getBoundingClientRect !== 'function') return;
+    const r = input.getBoundingClientRect();
+    if (!r.width && !r.height) return;
+    btn.style.left = (r.right - 26) + 'px';
+    btn.style.top  = (r.top + (r.height - 18) / 2) + 'px';
+  });
+}
+function bindSearchClear(input, btn){
+  if(!input||!btn) return;
+  const sync=()=>{ btn.hidden = input.value.length === 0; placeAllSearchClears(); };
+  sync();
+  input.addEventListener('input', sync);
+  input.addEventListener('focus', placeAllSearchClears);
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Escape' && input.value){
+      input.value='';
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      input.blur();
+    }
+  });
+  btn.addEventListener('click', ()=>{
+    input.value='';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    input.focus();
+  });
+}
+window.addEventListener('resize', placeAllSearchClears);
+window.addEventListener('scroll', placeAllSearchClears, true);
+      bindSearchClear(searchInput, document.getElementById('toolSearchClear'));
 
       // 初始化
       renderTools();
