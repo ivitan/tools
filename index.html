@@ -496,7 +496,7 @@
       <div class="search-box">
         <input type="text" id="toolSearch" placeholder="搜索工具..." inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" />
         <button type="button" class="search-clear" id="toolSearchClear" aria-label="清空搜索" hidden>×</button>
-        <i class="fas fa-search"></i>
+        <i class="fas fa-search" data-search-icon></i>
       </div>
 
       <div class="header-actions">
@@ -786,6 +786,11 @@ function placeAllSearchClears(){
     if (!r.width && !r.height) return;
     btn.style.left = (r.right - 26) + 'px';
     btn.style.top  = (r.top + (r.height - 18) / 2) + 'px';
+  });
+  // 有内容时隐藏放大镜图标，避免与清空按钮重合；空内容时恢复
+  document.querySelectorAll('[data-search-icon]').forEach(icon => {
+    const input = icon.parentElement && icon.parentElement.querySelector('input');
+    if (input) icon.style.display = input.value.length ? 'none' : '';
   });
 }
 function bindSearchClear(input, btn){
