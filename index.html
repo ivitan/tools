@@ -243,6 +243,8 @@
     /* 分类项：点击即筛选；侧栏默认收起，展开后列表直接可点 */
     .cat-item {
       width: 100%;
+      position: relative;
+      min-height: 38px;
       padding: 8px 10px;
       border: none;
       background: transparent;
@@ -260,7 +262,18 @@
     .cat-item.active {
       background: var(--primary-soft);
       color: var(--primary);
+      font-weight: 600;
     }
+    /* 选中态左侧指示条（对齐 android 工具 .nav-item.active::before，两端统一） */
+    .cat-item.active::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 6px; bottom: 6px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--primary);
+    }
+    [data-theme="dark"] .cat-item.active::before { background: var(--primary-hover); }
     [data-theme="dark"] .cat-item.active { color: var(--primary-hover); }
     .cat-item .cat-count {
       margin-left: auto;
@@ -450,19 +463,6 @@
       body.cat-open .sidebar { width: min(80vw, 260px); border-width: 1px; }
       .sidebar-inner { width: min(80vw, 260px); }
       body.cat-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
-
-      /* 对齐 android 工具手机端侧栏：38px 触控目标 + 选中态左侧指示条 */
-      .cat-item { position: relative; min-height: 38px; }
-      .cat-item.active { font-weight: 600; }
-      .cat-item.active::before {
-        content: "";
-        position: absolute;
-        left: 0; top: 6px; bottom: 6px;
-        width: 3px;
-        border-radius: 0 3px 3px 0;
-        background: var(--primary);
-      }
-      [data-theme="dark"] .cat-item.active::before { background: var(--primary-hover); }
     }
 
     /* 触屏无 hover：给分类项按压即时反馈（对齐 android 的 coarse pointer 处理） */
