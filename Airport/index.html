@@ -306,7 +306,7 @@
       .header { height: 48px; padding: 0 12px; }
       .page { padding: 12px 10px; }
     }
-    /* 大屏：与主页统一，内容区随视口流式放宽且有上限（顶栏与内容区同步对齐） */
+    /* 大屏：内容区随视口流式放宽且有上限 */
     @media (min-width: 1400px) {
       .header-inner, .page { max-width: clamp(1180px, 84vw, 1760px); }
     }
@@ -547,7 +547,7 @@
       white-space: nowrap;
       text-align: center;
     }
-    /* 边框只保留「右侧竖线 + 表头下横线」，与旧版一致：
+    /* 边框只保留「右侧竖线 + 表头下横线」：
        多画上下/左边框会让表格整体高出 2px，并改变首列起始位置 */
     .tbl th { border: 0 solid var(--table-border); border-width: 0 1px 1px 0; }
     .tbl td { border: 0 solid var(--table-border); border-width: 0 1px 0 0; }
@@ -767,7 +767,7 @@
       white-space: nowrap;
     }
     .nh-empty { color: var(--weak); }
-/* toast —— 与 android 工具统一（卡片样式 + 左侧语义色条），弹出位置沿用各工具原样 */
+/* toast —— 卡片样式 + 左侧语义色条，弹出位置沿用各工具原样 */
 #toasts{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
 .toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
 .toast.ok{border-left-color:var(--success)}
@@ -987,7 +987,7 @@
     const SPLIT_REGEX = /[\t, |，]/;
     const MAX_RENDER_ROWS = 5000;
 
-    // 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态）
+    // 主题管理（默认跟随系统，system/light/dark 三态）
     const theme = {
       KEY: 'airport-theme-v2',
       get mode() { return localStorage.getItem(this.KEY) || 'system'; },
@@ -1032,7 +1032,7 @@
       }
     };
 
-    /* toast —— 与 android 工具统一；兼容旧 type 命名与自定义停留时长 */
+    /* toast —— 兼容旧 type 命名与自定义停留时长 */
     function toast(msg, type = '', duration = 3200) {
       const t = { success:'ok', ok:'ok', error:'err', err:'err', fail:'err',
                   warning:'warn', warn:'warn', info:'' }[type] || '';
@@ -1808,7 +1808,7 @@
       return true;
     }
 
-    // 文件内容指纹：优先 SHA-256，回退 FNV-1a。用于内容级去重（与 SQLite 工具对齐），
+    // 文件内容指纹：优先 SHA-256，回退 FNV-1a。用于内容级去重，
     // 比单纯比对文件名更可靠——同名不同内容视为新版本，内容完全一致则跳过重复导入
     async function computeFingerprint(buf) {
       try {
@@ -1851,7 +1851,7 @@
         return;
       }
 
-      // 与 SQLite 工具对齐：不再整体清空 databases，改为「追加 + 内容去重 + 同名替换」模型，
+      // 不再整体清空 databases，改为「追加 + 内容去重 + 同名替换」模型，
       // 多次导入的数据可合并参与提取，而非每次导入覆盖掉之前已载入的库
       const tableMap = new Map();
       const failed = [];

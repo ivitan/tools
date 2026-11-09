@@ -33,7 +33,7 @@
   <script>
     /* 首屏防闪白：提前同步主题并联动代码高亮主题，避免刷新时闪白。
        默认（无偏好或偏好为「跟随系统」）按浏览器 prefers-color-scheme 计算；
-       与 SQLite 工具统一采用 system/light/dark 三态方案*/
+       采用 system/light/dark 三态方案*/
     (function () {
       var saved = localStorage.getItem("md-editor-theme");
       var dark = (saved && saved !== "system")
@@ -243,7 +243,7 @@
       transition: background-color, color, border-color, box-shadow, opacity, transform var(--transition-fast);
     }
 
-    /* 「返回主页」按钮：与 SQLite 蓝本一致（浅底蓝图标，hover 反转为蓝底） */
+    /* 「返回主页」按钮：浅底蓝图标，hover 反转为蓝底 */
     .home-btn {
       margin-left: 4px;
       background: var(--panel-hover);
@@ -739,7 +739,7 @@
         padding: 14px 16px;
       }
     }
-/* toast —— 与 android 工具统一（卡片样式 + 左侧语义色条），弹出位置沿用各工具原样 */
+/* toast —— 卡片样式 + 左侧语义色条，弹出位置沿用各工具原样 */
 #toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
 .toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
 .toast.ok{border-left-color:var(--success)}
@@ -1024,7 +1024,7 @@ print(fibonacci(10))  # 55
         wordCount.textContent = `${chinese + words} 字`;
       }
 
-      // 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态）
+      // 主题管理（默认跟随系统，system/light/dark 三态）
       function applyHljs(dark) {
         hljsThemeLink.href = dark
           ? "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
@@ -1073,7 +1073,7 @@ print(fibonacci(10))  # 55
 
       theme.onApply = (dark) => { applyHljs(dark); };
 
-      /* toast —— 与 android 工具统一；兼容旧 type 命名与自定义停留时长 */
+      /* toast —— 兼容旧 type 命名与自定义停留时长 */
       function toast(msg, type = '', duration = 3200) {
         const t = { success:'ok', ok:'ok', error:'err', err:'err', fail:'err',
                     warning:'warn', warn:'warn', info:'' }[type] || '';

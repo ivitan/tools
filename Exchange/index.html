@@ -27,7 +27,7 @@
 <script>
   /* 首屏防闪白：提前同步主题，避免刷新时闪白。
      默认（无偏好或偏好为「跟随系统」）按浏览器 prefers-color-scheme 计算；
-     与 SQLite 工具统一采用 system/light/dark 三态方案*/
+     采用 system/light/dark 三态方案*/
   (function () {
     try {
       var saved = localStorage.getItem('exchange-theme');
@@ -409,7 +409,7 @@
     .buttons-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .btn { padding: 0 8px; }
   }
-/* toast —— 与 android 工具统一（卡片样式 + 左侧语义色条），弹出位置沿用各工具原样 */
+/* toast —— 卡片样式 + 左侧语义色条，弹出位置沿用各工具原样 */
 #toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
 .toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
 .toast.ok{border-left-color:var(--success)}
@@ -417,7 +417,7 @@
 .toast.err{border-left-color:var(--danger);color:var(--danger)}
 @keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 @media(max-width:768px){#toasts{top:58px;right:10px;left:10px;align-items:stretch}.toast{min-width:0;max-width:none}}
-    /* 超大屏：与主页统一，内容区随视口流式放宽且有上限（顶栏与内容区同步对齐） */
+    /* 超大屏：内容区随视口流式放宽且有上限 */
     @media (min-width: 1400px) {
       .header-inner, .page { max-width: clamp(1180px, 84vw, 1760px); }
     }
@@ -518,7 +518,7 @@
 </div>
 
 <script>
-// 主题管理（与 SQLite 工具统一：默认跟随系统，system/light/dark 三态）
+// 主题管理（默认跟随系统，system/light/dark 三态）
 const theme = {
   KEY: 'exchange-theme',
   get mode() { return localStorage.getItem(this.KEY) || 'system'; },
@@ -558,7 +558,7 @@ const theme = {
   }
 };
 
-/* toast —— 与 android 工具统一；兼容旧 type 命名与自定义停留时长 */
+/* toast —— 兼容旧 type 命名与自定义停留时长 */
 function toast(msg, type = '', duration = 3200) {
   const t = { success:'ok', ok:'ok', error:'err', err:'err', fail:'err',
               warning:'warn', warn:'warn', info:'' }[type] || '';

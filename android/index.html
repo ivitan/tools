@@ -72,7 +72,7 @@ a{color:var(--brand);text-decoration:none}
 ::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:var(--scrollbar-thumb-hover)}
 
-/* ---------- 顶栏（对齐站点 .header：52px 白底 + 底部细线） ---------- */
+/* ---------- 顶栏（52px 白底 + 底部细线） ---------- */
 .topbar{height:52px;background:var(--card);border-bottom:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px;position:sticky;top:0;z-index:30;box-shadow:var(--shadow)}
 .brand-group{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto}
 .logo-icon{width:28px;height:28px;border-radius:6px;background:var(--brand);color:var(--brand-on);display:flex;align-items:center;justify-content:center;flex-shrink:0;user-select:none;transition:background-color .15s}
@@ -505,14 +505,14 @@ input[type=range]{width:clamp(120px,16vw,190px)}
   .mirror-stage{height:min(60vh,480px)}
   .mirror-side{grid-template-columns:1fr}
 }
-/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏。
+/* 搜索框清空按钮：有内容显示、空隐藏。
    position:fixed 浮层，不参与页面布局，位置由 JS 按输入框实时定位 */
 .search-clear{position:fixed;left:0;top:0;width:18px;height:18px;border:none;border-radius:50%;background:var(--muted);color:var(--card);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;transition:opacity .15s,transform .15s;z-index:50}
 .search-clear[hidden]{display:none}
 .search-clear:hover{opacity:1}
 .search-clear:active{transform:scale(.9);opacity:1}
 #appSearch{padding-right:30px}
-/* 超大屏：与主页统一，内容区随视口流式放宽且有上限（原有 1600px 字号/间距增强保留） */
+/* 超大屏：内容区随视口流式放宽且有上限（原有 1600px 字号/间距增强保留） */
 @media (min-width: 1400px) {
   .container { max-width: clamp(1180px, 84vw, 1760px); }
 }
@@ -1573,7 +1573,7 @@ function filterAppRows(){
   const cnt=$('#appShown'); if(cnt) cnt.textContent=shown;
   return shown;
 }
-/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏、Esc 清空、点击清空并聚焦。
+/* 搜索框清空按钮：有内容显示、空隐藏、Esc 清空、点击清空并聚焦。
    按钮为 position:fixed 浮层（不参与布局），位置由 placeAllSearchClears() 按输入框实时定位。*/
 function placeAllSearchClears(){
   document.querySelectorAll('.search-clear:not([hidden])').forEach(btn => {
@@ -2545,7 +2545,7 @@ function rangeOnly(key,min,max,step,unit){ return '<div class="range-wrap"><inpu
 function sw(key,cmd){ return '<button class="switch'+(state.switches[key]?' on':'')+'" data-switch="'+key+'" data-cmd="'+esc(cmd)+'" aria-label="切换"></button>'; }
 
 /* ---------------- 页面：系统界面 ---------------- */
-/* 与 AOSP SystemUI 的 icon_blacklist 键名对齐；不在表内的键不会被本页改写 */
+/* icon_blacklist 键名：不在表内的键不会被本页改写 */
 const ICON_SLOTS=[
   ['时间','clock'],['定位','location'],['耳机','headset'],['投射','cast'],
   ['闹钟','alarm_clock'],['声音','volume'],['信号','mobile'],['飞行','airplane'],
@@ -2681,7 +2681,7 @@ function quickGrid(items){ return '<div class="quick-grid">'+items.map(o=>quickC
 
 /* ---------------- 页面：电池管理 ---------------- */
 /* 数据来自 dumpsys battery；模拟走 dumpsys battery set / unplug，恢复走 reset。
-   统计在浏览器侧定时采样，退出页面不会中断；断开或刷新页面即丢弃（与参考实现一致）。 */
+   统计在浏览器侧定时采样，退出页面不会中断；断开或刷新页面即丢弃。 */
 const BAT={
   info:{level:null,voltage:null,temp:null,status:null,health:null,ac:false,usb:false,wireless:false,stopped:false,raw:''},
   reading:false,

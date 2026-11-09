@@ -3,7 +3,7 @@
 
 <head>
   <script>
-    // 早期注入主题，避免浅/深色闪烁（与 SQLite 一致：用 data-theme 控制）
+    // 早期注入主题，避免浅/深色闪烁（用 data-theme 控制）
     // 三态：auto（默认，跟随系统）/ light / dark
     (function () {
       try {
@@ -134,7 +134,7 @@
 }
     * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
-    /* 顶部 Header（对齐 SQLite） */
+    /* 顶部 Header */
     .header {
       max-width: 1180px;
       width: 100%;
@@ -263,7 +263,7 @@
       background: var(--primary-soft);
       color: var(--primary);
       font-weight: 600;
-      /* 选中态左侧指示条：与 SQLite 工具一致，3px 整高 inset 阴影，弧度随容器圆角 */
+      /* 选中态左侧指示条：3px 整高 inset 阴影，弧度随容器圆角 */
       box-shadow: inset 3px 0 0 var(--primary);
     }
     [data-theme="dark"] .cat-item.active { color: var(--primary-hover); }
@@ -440,7 +440,7 @@
       .layout { padding: 0 12px; }
     }
 
-    /* 手机端：左侧栏变抽屉覆盖（断点对齐 android 工具的 720px） */
+    /* 手机端：左侧栏变抽屉覆盖 */
     @media (max-width: 720px) {
       .sidebar {
         position: fixed;
@@ -457,7 +457,7 @@
       body.cat-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
     }
 
-    /* 触屏无 hover：给分类项按压即时反馈（对齐 android 的 coarse pointer 处理） */
+    /* 触屏无 hover：给分类项按压即时反馈 */
     @media (hover: none) and (pointer: coarse) {
       .cat-item:active { background: var(--panel-hover); color: var(--text); }
     }
@@ -469,7 +469,7 @@
       .tool-card h3 { font-size: 0.9rem; }
       .tool-card p { font-size: 0.72rem; }
     }
-/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏。
+/* 搜索框清空按钮：有内容显示、空隐藏。
    position:fixed 浮层，不参与页面布局，位置由 JS 按输入框实时定位 */
 .search-clear{position:fixed;left:0;top:0;width:18px;height:18px;border:none;border-radius:50%;background:var(--text-muted);color:var(--panel);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;transition:opacity .15s,transform .15s;z-index:50}
 .search-clear[hidden]{display:none}
@@ -713,7 +713,7 @@
       // 左侧分类栏展开/收起（点最前 Logo 图标）
       const logoToggle = document.getElementById("logoToggle");
       const sidebar = document.getElementById("sidebar");
-      // 移动端抽屉断点（对齐 android 工具的 720px，与 CSS 保持一致）
+      // 移动端抽屉断点
       const mqMobile = window.matchMedia("(max-width: 720px)");
       function closeCat() {
         document.body.classList.remove("cat-open");
@@ -829,7 +829,7 @@
         debounceTimer = setTimeout(() => { searchTerm = searchInput.value; applyFilter(); }, 180);
       });
 
-/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏、Esc 清空、点击清空并聚焦。
+/* 搜索框清空按钮：有内容显示、空隐藏、Esc 清空、点击清空并聚焦。
    按钮为 position:fixed 浮层（不参与布局），位置由 placeAllSearchClears() 按输入框实时定位。*/
 function placeAllSearchClears(){
   document.querySelectorAll('.search-clear:not([hidden])').forEach(btn => {

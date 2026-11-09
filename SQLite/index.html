@@ -1430,7 +1430,7 @@
     overflow: hidden;
     text-overflow: clip;   /* 不用省略号：列宽已按完整长度算，理论上不会溢出 */
   }
-  /* 列宽被固定后，表头字段名同样保持单行，与 Excel 表头一致 */
+  /* 列宽被固定后，表头字段名同样保持单行 */
   .data-table.col-fit th .col-name {
     white-space: nowrap;
     /* 字段名与类型必须完整显示：去掉基础样式的 ellipsis 裁切，
@@ -1683,7 +1683,7 @@
 }
 
   /* Responsive: 平板 */
-  /* 与 PC、手机抽屉统一为 320px（原 200px 比手机还窄，已修）。
+  /* 抽屉宽度 320px（原 200px 比手机还窄，已修）。
      若觉得 800px 左右的小窗口下主区偏挤，可把这档单独降到 280px*/
   @media (max-width: 1024px) {
     .sidebar { width: 320px; }
@@ -1726,7 +1726,7 @@
     /* 手机端同样缩一半：原来 flex:1 + width:auto 实测 232px，会把整行吃掉；
        改定宽 110px 后与右侧按钮组同排，仍有富余 */
     .toolbar-input { flex: 0 0 auto; order: 2; width: 110px; min-width: 0; }
-    /* 手机端顺序与 PC 端一致：主题 → 模式切换 → 显示字段 → 导出（按钮间距同样收紧） */
+    /* 手机端顺序：主题 → 模式切换 → 显示字段 → 导出（按钮间距收紧） */
     .toolbar-actions { order: 3; gap: 2px; }
 
     .tabs { padding: 0 10px; }
@@ -1749,7 +1749,7 @@
     .data-table th .col-type { font-size: 10px; }
     .row-num { width: 40px; }
 
-    /* 合并成单按钮后空间足够，手机端也保留「分页 / 无限」文字，与 PC 端一致 */
+    /* 合并成单按钮后空间足够，手机端保留「分页 / 无限」文字 */
     .mode-toggle { padding: 0 9px; }
 
     /* 手机端筛选面板：窄屏下宽度自适应，避免被宽列挤到屏幕外 */
@@ -1759,7 +1759,7 @@
       min-width: 180px;
     }
   }
-/* toast —— 与 android 工具统一（卡片样式 + 左侧语义色条），弹出位置沿用各工具原样 */
+/* toast —— 卡片样式 + 左侧语义色条，弹出位置沿用各工具原样 */
 #toasts{position:fixed;top:calc(16px + env(safe-area-inset-top, 0px));right:calc(16px + env(safe-area-inset-right, 0px));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
 .toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
 .toast.ok{border-left-color:var(--success)}
@@ -1767,7 +1767,7 @@
 .toast.err{border-left-color:var(--danger);color:var(--danger)}
 @keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 @media(max-width:768px){#toasts{top:56px;right:10px;left:10px;align-items:stretch}.toast{min-width:0;max-width:none}}
-/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏。
+/* 搜索框清空按钮：有内容显示、空隐藏。
    position:fixed 浮层，不参与页面布局，位置由 JS 按输入框实时定位 */
 .search-clear{position:fixed;left:0;top:0;width:18px;height:18px;border:none;border-radius:50%;background:var(--text-muted);color:var(--panel);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;transition:opacity .15s,transform .15s;z-index:50}
 .search-clear[hidden]{display:none}
@@ -1954,7 +1954,7 @@ const $ = (id) => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 // duration：停留时长（毫秒），失败信息较长/可能多行，调用方可传更久的停留时间
-/* toast —— 与 android 工具统一；兼容旧 type 命名与自定义停留时长 */
+/* toast —— 兼容旧 type 命名与自定义停留时长 */
 function toast(msg, type = '', duration = 3200) {
   const t = { success:'ok', ok:'ok', error:'err', err:'err', fail:'err',
               warning:'warn', warn:'warn', info:'' }[type] || '';
@@ -2095,7 +2095,6 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
   // 空文件 / 非 SQLite 文件前置拦截：SQL.js 收到空 buffer 不会报错，
   // 而是直接新建一个空白内存库（无表、无异常），导致空 .sig/.txt 等被「成功」导入；
   // 这里先按文件头魔数 "SQLite format 3\0" 严格校验，空文件与非 SQLite 一并拒掉
-  // 逻辑与 Airport 工具保持一致（见 Airport/index.html 的 isSqliteBuffer）
   const SQLITE_MAGIC = [0x53,0x51,0x4c,0x69,0x74,0x65,0x20,0x66,0x6f,0x72,0x6d,0x61,0x74,0x20,0x33,0x00];
   if (!buf || buf.length < SQLITE_MAGIC.length ||
       !SQLITE_MAGIC.every((b, i) => buf[i] === b)) {
@@ -3910,7 +3909,7 @@ function openColumnsPopover() {
     </div>`;
   document.body.appendChild(wrap);
 
-  // 定位在「字段」按钮正下方（与筛选面板一致用 fixed 定位）
+  // 定位在「字段」按钮正下方（fixed 定位）
   const btn = $('btnColumns');
   const r = btn.getBoundingClientRect();
   const pw = wrap.offsetWidth || 240;
@@ -4609,7 +4608,7 @@ function syncModeToggle(mode) {
   const btn = $('modeToggle');
   if (!btn) return;
   const isPage = mode !== 'infinite';
-  // 用 style.display 切换，与主题按钮（日/月图标）做法一致
+  // 用 style.display 切换
   // 注意：不能用 svg.hidden —— hidden 是 HTML 属性，SVG 元素不识别，
   // 设 svg.hidden 只会挂个普通 JS 属性，CSS 的 svg[hidden] 匹配不到，两个图标会同时显示
   btn.querySelectorAll('[data-mode-icon]').forEach(svg => {
@@ -4766,7 +4765,7 @@ sidebarSearchClear.addEventListener('click', () => {
 });
 
 // 上传区点击激活态：点击后虚线边框变蓝、内部浅蓝（.drop-focus），
-// 点击上传区以外任意位置即恢复原状（与 Airport 工具行为一致）
+// 点击上传区以外任意位置即恢复原状
 document.addEventListener('click', (e) => {
   const dz = $('dropzone');
   if (dz.contains(e.target)) dz.classList.add('drop-focus');
@@ -4866,7 +4865,7 @@ window.addEventListener('drop', e => {
   handleFiles([...e.dataTransfer.files]);
 });
 
-/* 搜索框清空按钮 —— 与 SQLite 侧边栏一致：有内容显示、空隐藏、Esc 清空、点击清空并聚焦。
+/* 搜索框清空按钮：有内容显示、空隐藏、Esc 清空、点击清空并聚焦。
    按钮为 position:fixed 浮层（不参与布局），位置由 placeAllSearchClears() 按输入框实时定位。*/
 function placeAllSearchClears(){
   document.querySelectorAll('.search-clear:not([hidden])').forEach(btn => {
@@ -5003,7 +5002,7 @@ document.addEventListener('click', (e) => {
     closeColumnsPopover();
   }
 });
-// 滚动时关闭（与筛选面板一致，避免错位）
+// 滚动时关闭（避免错位）
 document.addEventListener('scroll', (e) => {
   if (e.target instanceof Element && e.target.closest('#colManager')) return;
   if ($('colManager')) closeColumnsPopover();

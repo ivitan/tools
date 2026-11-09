@@ -82,12 +82,12 @@
     --danger: #dc2626;
     --danger-light: #fef2f2;
 
-    /* 近机位强调色（琥珀系，与 SQLite 工具 warning 语义一致） */
+    /* 近机位强调色（琥珀系，warning 语义） */
     --warn: #f59e0b;
     --warn-ink: #78350f;
     --warn-soft: rgba(245,158,11,0.12);
 
-    /* 操作按钮：浅色填充 + 同系描边 + 深色文字（与工具组按钮风格统一） */
+    /* 操作按钮：浅色填充 + 同系描边 + 深色文字 */
     --btn-far-bg: #93c5fd;            /* blue-300 */
     --btn-far-border: #3b82f6;        /* blue-500 */
     --btn-far-ink: #1e3a8a;           /* blue-900 */
@@ -443,7 +443,7 @@
 @media (hover: hover) and (pointer: fine) {
   .btn-danger:hover { background: var(--danger); border-color: var(--danger); color: var(--danger-on); filter: brightness(0.94); }
 }
-  /* 危险操作：浅红填充 + 红描边，hover 才填实底红（与工具组清空按钮一致） */
+  /* 危险操作：浅红填充 + 红描边，hover 才填实底红 */
   .btn-danger-ghost {
     background: var(--btn-danger-bg);
     border-color: var(--btn-danger-border);
@@ -719,7 +719,7 @@
     .panel-body { padding: 10px; }
     .stand-card { padding: 9px 10px; }
   }
-/* toast —— 与 android 工具统一（卡片样式 + 左侧语义色条），弹出位置沿用各工具原样 */
+/* toast —— 卡片样式 + 左侧语义色条，弹出位置沿用各工具原样 */
 #toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
 .toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
 .toast.ok{border-left-color:var(--success)}
@@ -727,7 +727,7 @@
 .toast.err{border-left-color:var(--danger);color:var(--danger)}
 @keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 @media(max-width:768px){#toasts{top:56px;right:10px;left:10px;align-items:stretch}.toast{min-width:0;max-width:none}}
-    /* 超大屏：与主页统一，内容区随视口流式放宽且有上限（顶栏与内容区同步对齐） */
+    /* 超大屏：内容区随视口流式放宽且有上限 */
     @media (min-width: 1400px) {
       .header-inner, .page { max-width: clamp(1180px, 84vw, 1760px); }
     }
@@ -908,7 +908,7 @@ const theme = {
      想恢复跟随系统，用长按（≥600ms）或双击主题按钮，触发 theme.reset()*/
   toggle() {
     this.set(this.effective === 'dark' ? 'light' : 'dark');
-    // 单击后的状态反馈走 toast，与 SQLite 一致（不再用 title 预测「下一步」）
+    // 单击后的状态反馈走 toast（不再用 title 预测「下一步」）
     const label = this.effective === 'dark' ? '深色' : '浅色';
     toast(`已切换为${label}模式（长按/双击恢复跟随系统）`, 'success');
   },
@@ -982,7 +982,7 @@ btnTheme.addEventListener('click', () => {
 
 // Toast
 // duration：停留时长（毫秒），较长提示可传更久的停留时间
-/* toast —— 与 android 工具统一；兼容旧 type 命名与自定义停留时长 */
+/* toast —— 兼容旧 type 命名与自定义停留时长 */
 function toast(msg, type = '', duration = 3200) {
   const t = { success:'ok', ok:'ok', error:'err', err:'err', fail:'err',
               warning:'warn', warn:'warn', info:'' }[type] || '';
