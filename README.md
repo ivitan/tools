@@ -23,35 +23,16 @@
 
 ### 📱 工具集合
 
-#### 1. **Type 搜索**
-快速搜索和查找 Type 相关信息的工具
+与主页菜单一致，共 8 个工具：
 
-#### 2. **百分比与小数转换工具**
-- ⇄ 百分比 ↔️ 小数快速转换
-- 支持多种输入格式（50%, 0.5 等）
-- 实时转换显示结果
-- 使用示例：
-  - `25%` → `0.25`
-  - `0.75` → `75%`
-  - 带 % 符号小数转换
-
-#### 3. **Markdown 编辑器** 📝
-一个功能完整的纯前端 Markdown 编辑器
-- 🎨 **实时预览**: 编写 Markdown 时即时查看效果
-- 🔄 **双向滚动同步**: 编辑区和预览区互相跟随滚动
-- 🌙 **深色模式**: 支持深色/浅色主题切换
-- 📱 **响应式**: 完美适配各种屏幕尺寸
-- 💾 **本地自动保存**: 编写内容自动保存到本地存储
-- ⌨️ **工具栏和快捷键**:
-  - `Ctrl/Cmd + B` - 加粗
-  - `Ctrl/Cmd + I` - 斜体
-  - `Ctrl/Cmd + K` - 链接
-  - `Tab` - 缩进
-- 📊 **支持的 Markdown 元素**:
-  - 标题、加粗、斜体、链接、图片
-  - 代码块和行内代码（支持代码高亮）
-  - 引用、列表、表格
-  - 分隔线和任务列表
+1. **Type Search**（数据处理）— 智能类型检索 & 快速定位
+2. **Exchange**（计算工具）— 百分数 · 小数 · 单位互换
+3. **Markdown Editor**（编辑工具）— 即时编写与预览
+4. **WebUSB Imager**（烧录工具）— 制作启动盘
+5. **WebADB**（烧录工具）— android 玩机
+6. **Daily Report**（编辑工具）— 日报生成
+7. **Airport Information**（数据处理）— 航班节点时间提取
+8. **SQLite**（数据库工具）— 数据库读取工具
 
 ## 🚀 快速开始
 
@@ -88,20 +69,28 @@ npx http-server
 ```
 tools/
 ├── index.html              # 主页 - 工具导航界面
-├── icon.svg               # 项目图标
-├── CNAME                  # 自定义域名配置
-├── README.md              # 项目说明文档
-├── .editorconfig          # 编辑器配置
-├── LICENSE                # Apache 2.0 许可证
+├── CNAME                   # 自定义域名配置
+├── README.md               # 项目说明文档
+├── .editorconfig           # 编辑器配置
+├── LICENSE                 # Apache 2.0 许可证
+├── img/                    # 工具图标（SVG）
 │
-├── Exchange/              # 百分比与小数转换工具
-│   └── index.html         # 转换工具界面
-│
-├── TypeSearch/            # Type 搜索工具
-│   └── index.html         # Type 搜索界面
-│
-└── Markdown/              # Markdown 编辑器
-    └── index.html         # 编辑器界面
+├── TypeSearch/             # Type Search
+│   └── index.html
+├── Exchange/               # Exchange
+│   └── index.html
+├── Markdown/               # Markdown Editor
+│   └── index.html
+├── WebUSB/                 # WebUSB Imager
+│   └── index.html
+├── android/                # WebADB
+│   └── index.html
+├── Daily/                  # Daily Report
+│   └── index.html
+├── Airport/                # Airport Information
+│   └── index.html
+└── SQLite/                 # SQLite
+    └── index.html
 ```
 
 ## 🛠️ 技术栈
@@ -151,21 +140,9 @@ tools/
 
 ## 📖 使用说明
 
-### 主界面
-1. 浏览工具卡片，点击需要的工具
-2. 使用搜索框快速查找特定工具
+1. 在主页浏览工具卡片，点击需要的工具
+2. 使用搜索框快速查找特定工具，或按左侧分类筛选
 3. 点击右上角按钮切换深色/浅色主题
-
-### 百分比与小数转换
-1. 在输入框中输入数值（支持 50% 或 0.5 的格式）
-2. 点击"转换为小数"或"转换为百分比"按钮
-3. 查看即时转换结果
-
-### Markdown 编辑器
-1. 在左侧编辑区编写 Markdown
-2. 右侧实时显示预览效果
-3. 使用工具栏快速插入元素或使用键盘快捷键
-4. 编写内容自动保存到本地
 
 ## 🌐 浏览器兼容性
 
@@ -191,11 +168,6 @@ tools/
 ## 🎯 未来计划
 
 - [ ] 更多实用工具
-- [ ] JSON 格式化和验证工具
-- [ ] 文本转换工具
-- [ ] 时间和日期工具
-- [ ] 代码生成工具
-- [ ] 导出功能
 
 ---
 
