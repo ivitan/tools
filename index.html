@@ -475,6 +475,59 @@
 .search-clear[hidden]{display:none}
 .search-clear:hover{opacity:1}
 .search-clear:active{transform:scale(.9);opacity:1}
+
+    /* ── 超大屏增强（≥1400px）──────────────────────────────────
+       保持 header / 分类侧栏 / 卡片网格 / footer 的结构与各断点行为不变，
+       仅把固定 1180px 容器改为有上限的流式宽度，并同比放大密度与字号，
+       避免宽屏上内容挤在中间一条、四周大面积留白。 */
+    @media (min-width: 1400px) {
+      .header, .layout, footer { max-width: clamp(1180px, 84vw, 1760px); }
+      .header-inner { max-width: none; } /* 跟随外层宽度，避免内容被 1180px 卡住 */
+      .layout { margin-top: 34px; gap: 20px; }
+      footer { margin-top: 30px; font-size: 0.8125rem; padding-top: 26px; }
+
+      /* 侧栏随容器等比放宽，保持与主区的比例 */
+      body.cat-open .sidebar { width: 248px; }
+      .sidebar-inner { width: 248px; padding: 14px; }
+      .sidebar-title { font-size: 13px; padding: 6px 10px 12px; }
+      .cat-item { min-height: 44px; padding: 10px 12px; font-size: 14px; }
+
+      /* 卡片放大下限与间距：宽屏上让卡片更舒展，而不是挤成更多小列 */
+      .tools-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 18px;
+      }
+      .tool-card { padding: 26px 16px 24px; border-radius: 10px; }
+      .tool-card i.tool-icon {
+        width: 64px; height: 64px; font-size: 2.25rem;
+        border-radius: 14px; margin-bottom: 14px;
+      }
+      .tool-card h3 { font-size: 1.075rem; margin-bottom: 8px; }
+      .tool-card p { font-size: 0.875rem; }
+      .no-result { padding: 60px 20px; font-size: 1rem; }
+    }
+
+    /* ── 超宽屏 / 4K（≥2200px）：进一步放宽上限，加大留白与卡片尺度 ── */
+    @media (min-width: 2200px) {
+      .header, .layout, footer { max-width: clamp(1760px, 80vw, 2080px); }
+      .layout { margin-top: 40px; gap: 24px; }
+      .search-box { width: 240px; }
+      .search-box input { height: 36px; font-size: 15px; }
+      .icon-btn { width: 36px; height: 36px; }
+
+      .tools-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 22px;
+      }
+      .tool-card { padding: 32px 20px 28px; }
+      .tool-card i.tool-icon {
+        width: 72px; height: 72px; font-size: 2.5rem;
+        border-radius: 16px; margin-bottom: 16px;
+      }
+      .tool-card h3 { font-size: 1.15rem; margin-bottom: 10px; }
+      .tool-card p { font-size: 0.9375rem; }
+      .tool-card .card-badge { font-size: 0.6875rem; padding: 3px 9px; }
+    }
   </style>
 </head>
 

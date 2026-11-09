@@ -746,6 +746,13 @@
 .toast.warn{border-left-color:var(--warn,var(--warning,#d97706))}
 .toast.err{border-left-color:var(--danger);color:var(--danger)}
 @keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+    /* 超大屏：预览区适度放宽并放大正文字号，保持舒适阅读行长 */
+    @media (min-width: 1400px) {
+      .markdown-body { max-width: clamp(820px, 58vw, 1040px); font-size: 15px; }
+    }
+    @media (min-width: 2200px) {
+      .markdown-body { max-width: clamp(1040px, 47vw, 1100px); font-size: 16px; }
+    }
   </style>
 </head>
 

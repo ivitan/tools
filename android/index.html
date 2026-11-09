@@ -512,6 +512,13 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 .search-clear:hover{opacity:1}
 .search-clear:active{transform:scale(.9);opacity:1}
 #appSearch{padding-right:30px}
+/* 超大屏：与主页统一，内容区随视口流式放宽且有上限（原有 1600px 字号/间距增强保留） */
+@media (min-width: 1400px) {
+  .container { max-width: clamp(1180px, 84vw, 1760px); }
+}
+@media (min-width: 2200px) {
+  .container { max-width: clamp(1760px, 80vw, 2080px); }
+}
 </style>
 </head>
 <body>

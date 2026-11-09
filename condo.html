@@ -149,6 +149,13 @@
     .res-top b{font-size:21px}
     .presets button{font-size:12px;padding:6px 11px}
   }
+    /* 超大屏：文档型页面适度放宽，保留舒适阅读宽度 */
+    @media (min-width: 1400px) {
+      .page { max-width: clamp(980px, 70vw, 1280px); padding-left: 40px; padding-right: 40px; }
+    }
+    @media (min-width: 2200px) {
+      .page { max-width: clamp(1280px, 58vw, 1440px); }
+    }
 </style>
 </head>
 <body>
