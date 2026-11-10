@@ -4,6 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>购房测算</title>
+<meta name="description" content="广州购房组合贷测算：首付、公积金可贷额度、月供、税费与月结余一屏算清。">
+
+<!-- ===== 网页 Tab 角标（内嵌 SVG，无外链请求） ===== -->
+<link rel="icon" type="image/svg+xml" sizes="any" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20width%3D%2264%22%20height%3D%2264%22%20role%3D%22img%22%20aria-labelledby%3D%22hp-title%22%3E%20%3Ctitle%20id%3D%22hp-title%22%3E%E8%B4%AD%E6%88%BF%E6%B5%8B%E7%AE%97%3C%2Ftitle%3E%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%231f6f6b%22%2F%3E%20%3Cpath%20d%3D%22M18%2029h28v23H18z%22%20fill%3D%22%23f0c274%22%2F%3E%20%3Cpath%20d%3D%22M10.5%2032.5%2032%2012l21.5%2020.5%22%20fill%3D%22none%22%20stroke%3D%22%23f0c274%22%20stroke-width%3D%226.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%20%3Cpath%20d%3D%22M26.5%2052v-9a5.5%205.5%200%200%201%2011%200v9z%22%20fill%3D%22%231f6f6b%22%2F%3E%20%3C%2Fsvg%3E">
+<link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: dark)" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20width%3D%2264%22%20height%3D%2264%22%20role%3D%22img%22%20aria-labelledby%3D%22hp-title%22%3E%20%3Ctitle%20id%3D%22hp-title%22%3E%E8%B4%AD%E6%88%BF%E6%B5%8B%E7%AE%97%3C%2Ftitle%3E%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%232a827c%22%2F%3E%20%3Cpath%20d%3D%22M18%2029h28v23H18z%22%20fill%3D%22%23f0c274%22%2F%3E%20%3Cpath%20d%3D%22M10.5%2032.5%2032%2012l21.5%2020.5%22%20fill%3D%22none%22%20stroke%3D%22%23f0c274%22%20stroke-width%3D%226.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%20%3Cpath%20d%3D%22M26.5%2052v-9a5.5%205.5%200%200%201%2011%200v9z%22%20fill%3D%22%232a827c%22%2F%3E%20%3C%2Fsvg%3E">
+<meta name="theme-color" content="#fbfaf6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15181d" media="(prefers-color-scheme: dark)">
+
+<!-- 主题需在首帧前写好，否则深色系统会先闪一下白 -->
+<script>
+(function(){
+  var KEY = 'hp-theme', root = document.documentElement;
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  function get(){ try { return localStorage.getItem(KEY) || 'auto'; } catch(e){ return 'auto'; } }
+  function effective(mode){ return mode === 'auto' ? (mq.matches ? 'dark' : 'light') : mode; }
+  function set(mode){
+    var eff = effective(mode);
+    root.setAttribute('data-theme', eff);
+    var btn = document.getElementById('themeBtn');
+    if (btn){
+      var label = '当前' + (eff === 'dark' ? '深色' : '浅色')
+                + (mode === 'auto' ? '（跟随系统）' : '') + ' · 点击切换';
+      btn.setAttribute('data-mode', eff);
+      btn.title = label;
+      btn.setAttribute('aria-label', label);
+    }
+    return eff;
+  }
+  window.HPTheme = {
+    get: get,
+    set: set,
+    save: function(mode){ try { localStorage.setItem(KEY, mode); } catch(e){} },
+    mq: mq
+  };
+  set(get());
+})();
+</script>
+
 <style>
   :root{
     color-scheme:light;
@@ -15,18 +53,7 @@
     --bar-track:#eceae2; --teal-line:#bcd8d5;
     --amber-line:#e0c49a; --red-line:#d9b3ad;
   }
-  @media (prefers-color-scheme:dark){
-    :root:not([data-theme="light"]){
-      color-scheme:dark;
-      --paper:#15181d; --ink:#e9e6de; --mute:#8e97a3; --line:#2c323a;
-      --teal:#5cc0b7; --teal-lt:#16302e; --amber:#d9a04f; --amber-lt:#33260f;
-      --red:#e0776b; --red-lt:#3a1f1c; --white:#1c2128; --white-2:#191e24;
-      --body-2:#aab2bd; --faint:#78828f;
-      --field:#232932; --field-line:#333a44;
-      --bar-track:#262c33; --teal-line:#2f5d59;
-      --amber-line:#5a4520; --red-line:#5a2f2a;
-    }
-  }
+  /* 深色只由 data-theme 驱动（head 里的脚本在首帧前写入），一套变量即可，避免两份色板走样 */
   :root[data-theme="dark"]{
     color-scheme:dark;
     --paper:#15181d; --ink:#e9e6de; --mute:#8e97a3; --line:#2c323a;
@@ -53,6 +80,7 @@
     border:1px solid var(--line);background:var(--white);color:var(--body-2);
     border-radius:50%;transition:.18s;box-shadow:0 1px 4px rgba(0,0,0,.06)}
   .theme-btn:hover{border-color:var(--teal);color:var(--teal)}
+  .theme-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
   .theme-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;
     stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
   .theme-btn .i-sun,.theme-btn .i-moon{display:none}
@@ -77,6 +105,7 @@
     background:var(--white);border:1px solid var(--field-line);color:var(--body-2);transition:all .15s;border-radius:1px;
   }
   .presets button:hover{border-color:var(--teal);color:var(--teal)}
+  .presets button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
   .presets button.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 
   /* ---------- Calculator ---------- */
@@ -89,7 +118,7 @@
   .grp-t{font-size:11.5px;letter-spacing:1.2px;color:var(--mute);font-weight:700;
     margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
   .fld{display:grid;grid-template-columns:1fr 96px;align-items:center;gap:10px;margin:9px 0}
-  .fld label{font-size:13px;color:var(--body-2);line-height:1.4}
+  .fld label{font-size:13px;color:var(--body-2);line-height:1.4;cursor:pointer}
   .fld label i{font-style:normal;display:block;font-size:11px;color:var(--faint);font-weight:400}
   .fld input,.fld select{
     width:100%;padding:7px 9px;font-size:13.5px;font-family:inherit;
@@ -112,8 +141,10 @@
   .gauge{margin:14px 0 8px}
   .gauge-bar{height:8px;background:var(--bar-track);position:relative;overflow:hidden}
   .gauge-fill{height:100%;width:0;background:var(--teal);transition:width .25s,background .25s}
+  .gauge-tick{position:absolute;top:0;bottom:0;width:1px;background:var(--ink);opacity:.38}
   .gauge-marks{position:relative;height:14px;font-size:10.5px;color:var(--faint);margin-top:4px}
   .gauge-marks i{position:absolute;top:0;font-style:normal;transform:translateX(-50%)}
+  .gauge-marks i:last-child{transform:translateX(-50%)}
 
   .rline{display:flex;justify-content:space-between;align-items:baseline;
     padding:8px 0;border-bottom:1px dashed var(--line);font-size:13.5px;gap:12px}
@@ -121,12 +152,13 @@
   .rline span{color:var(--body-2)}
   .rline.sub span{color:var(--mute)}
   .rline b{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  .rline b.wrap{white-space:normal;text-align:right;max-width:64%}
 
   .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
   .bd{font-size:11.5px;padding:3px 9px;border:1px solid;letter-spacing:.3px}
   .bd.ok{border-color:var(--teal-line);background:var(--teal-lt);color:var(--teal)}
-  .bd.caution{border-color:var(--amber-line,#e0c49a);background:var(--amber-lt);color:var(--amber)}
-  .bd.no{border-color:var(--red-line,#d9b3ad);background:var(--red-lt);color:var(--red)}
+  .bd.caution{border-color:var(--amber-line);background:var(--amber-lt);color:var(--amber)}
+  .bd.no{border-color:var(--red-line);background:var(--red-lt);color:var(--red)}
 
   .reset{font-family:inherit;font-size:12px;background:none;border:0;color:var(--mute);
     cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0;margin-top:4px}
@@ -137,10 +169,12 @@
     border-top:1px solid var(--line);padding-top:16px}
   .note b{color:var(--body-2)}
   .note p+p{margin-top:6px}
+  .note a{color:var(--teal);text-underline-offset:3px}
 
 
   @media (max-width:820px){
     .page{padding:32px 18px 64px}
+    .eyebrow{padding-right:46px}      /* 让开右上角固定的主题按钮 */
     h1{font-size:22px}
     .facts{grid-template-columns:repeat(2,1fr)}
     .calc-grid{grid-template-columns:1fr}
@@ -162,8 +196,8 @@
 <div class="page">
 
   <button class="theme-btn" id="themeBtn" data-mode="light" aria-label="切换深色 / 浅色模式" title="切换深色 / 浅色模式">
-    <svg class="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-    <svg class="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
   </button>
 
   <div class="head">
@@ -171,10 +205,10 @@
     <h1>购房测算</h1>
     <p class="sub">公积金 + 商贷组合贷 · 所有金额以「万元」为单位</p>
     <div class="facts">
-      <div><span>默认总价</span><b>135 万</b></div>
-      <div><span>默认首付</span><b>40%</b></div>
-      <div><span>默认月供</span><b id="f-pay">—</b></div>
-      <div><span>默认月供/税后</span><b id="f-ratio">—</b></div>
+      <div><span>当前总价</span><b id="f-price">135 万</b></div>
+      <div><span>当前首付</span><b id="f-dp">40%</b></div>
+      <div><span>当前月供</span><b id="f-pay">—</b></div>
+      <div><span>月供 / 税后</span><b id="f-ratio">—</b></div>
     </div>
   </div>
 
@@ -191,54 +225,64 @@
       <div class="calc-in">
         <div class="grp">
           <div class="grp-t">房 子 与 首 付</div>
-          <div class="fld"><label>房屋总价 <i>万元</i></label><input type="number" id="in-price" value="135" step="1" min="20" inputmode="decimal"></div>
-          <div class="fld"><label>首付比例 <i>%</i></label><input type="number" id="in-dprate" value="40" step="1" min="15" max="100" inputmode="decimal"></div>
-          <div class="fld"><label>契税率 <i>1% = 90–140㎡ 唯一住房</i></label>
+          <div class="fld"><label for="in-price">房屋总价 <i>万元</i></label><input type="number" id="in-price" value="135" step="1" min="20" inputmode="decimal"></div>
+          <div class="fld"><label for="in-dprate">首付比例 <i>%</i></label><input type="number" id="in-dprate" value="40" step="1" min="15" max="100" inputmode="decimal"></div>
+          <div class="fld"><label for="in-deed">契税率 <i>按面积与套次，见下注</i></label>
             <select id="in-deed">
-              <option value="1">1%</option><option value="1.5">1.5%</option><option value="2">2%</option><option value="3">3%</option>
+              <option value="1">1%</option>
+              <option value="1.5">1.5%</option>
+              <option value="2">2%</option>
+              <option value="3">3%</option>
             </select>
           </div>
-          <div class="fld"><label>其他费用 <i>中介 / 登记 / 评估，万元</i></label><input type="number" id="in-fee" value="0.8" step="0.1" min="0" inputmode="decimal"></div>
+          <div class="fld"><label for="in-fee">其他费用 <i>中介 / 登记 / 评估，万元</i></label><input type="number" id="in-fee" value="0.8" step="0.1" min="0" inputmode="decimal"></div>
         </div>
 
         <div class="grp">
           <div class="grp-t">公 积 金</div>
-          <div class="fld"><label>账户余额 <i>万元</i></label><input type="number" id="in-bal" value="10" step="0.5" min="0" inputmode="decimal"></div>
-          <div class="fld"><label>月缴存合计 <i>个人 + 单位，万元/月</i></label><input type="number" id="in-mon" value="0.2" step="0.01" min="0" inputmode="decimal"></div>
-          <div class="fld"><label>距退休 <i>年</i></label><input type="number" id="in-years" value="27" step="1" min="1" max="35" inputmode="numeric"></div>
-          <div class="fld"><label>公积金利率 <i>%</i></label><input type="number" id="in-gjrate" value="2.6" step="0.05" inputmode="decimal"></div>
+          <div class="fld"><label for="in-bal">账户余额 <i>万元</i></label><input type="number" id="in-bal" value="10" step="0.5" min="0" inputmode="decimal"></div>
+          <div class="fld"><label for="in-mon">月缴存合计 <i>个人 + 单位，万元/月</i></label><input type="number" id="in-mon" value="0.2" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="fld"><label for="in-years">距退休 <i>年</i></label><input type="number" id="in-years" value="27" step="1" min="1" max="35" inputmode="numeric"></div>
+          <div class="fld"><label for="in-gjrate">公积金利率 <i>%</i></label><input type="number" id="in-gjrate" value="2.6" step="0.05" inputmode="decimal"></div>
         </div>
 
         <div class="grp">
           <div class="grp-t">商 贷 与 收 支</div>
-          <div class="fld"><label>商贷利率 <i>%</i></label><input type="number" id="in-comrate" value="3.0" step="0.05" inputmode="decimal"></div>
-          <div class="fld"><label>贷款年限 <i>年</i></label><input type="number" id="in-term" value="30" step="1" min="5" max="40" inputmode="numeric"></div>
-          <div class="fld"><label>月税后收入 <i>万元/月</i></label><input type="number" id="in-net" value="1.2" step="0.05" min="0" inputmode="decimal"></div>
-          <div class="fld"><label>月生活支出 <i>房贷以外，万元/月</i></label><input type="number" id="in-life" value="0.32" step="0.02" min="0" inputmode="decimal"></div>
-          <div class="fld"><label>可动用现金 <i>存款 + 父母赞助，万元</i></label><input type="number" id="in-cash" value="70" step="1" min="0" inputmode="decimal"></div>
+          <div class="fld"><label for="in-comrate">商贷利率 <i>%</i></label><input type="number" id="in-comrate" value="3.0" step="0.05" inputmode="decimal"></div>
+          <div class="fld"><label for="in-term">贷款年限 <i>年</i></label><input type="number" id="in-term" value="30" step="1" min="5" max="40" inputmode="numeric"></div>
+          <div class="fld"><label for="in-net">月税后收入 <i>万元/月</i></label><input type="number" id="in-net" value="1.2" step="0.05" min="0" inputmode="decimal"></div>
+          <div class="fld"><label for="in-life">月生活支出 <i>房贷以外，万元/月</i></label><input type="number" id="in-life" value="0.32" step="0.02" min="0" inputmode="decimal"></div>
+          <div class="fld"><label for="in-cash">可动用现金 <i>存款 + 父母赞助，万元</i></label><input type="number" id="in-cash" value="70" step="1" min="0" inputmode="decimal"></div>
         </div>
         <button class="reset" id="btn-reset">恢复默认值</button>
       </div>
 
       <div class="calc-out">
         <div class="res-top">
-          <div class="hl"><span>月供合计</span><b id="o-pay">—</b><small id="o-paysub"></small><small id="o-paysplit"></small></div>
+          <div class="hl"><span>月供合计</span><b id="o-pay" aria-live="polite" aria-atomic="true">—</b><small id="o-paysub"></small><small id="o-paysplit"></small></div>
           <div><span>占税后收入</span><b id="o-ratio">—</b><small id="o-ratiojudge"></small></div>
         </div>
 
-        <div class="gauge">
-          <div class="gauge-bar"><div class="gauge-fill" id="g-fill"></div></div>
-          <div class="gauge-marks"><i style="left:0">0</i><i style="left:50%">50%</i><i style="left:100%">100%</i></div>
+        <div class="gauge" id="gauge" role="img" aria-label="月供占税后收入">
+          <div class="gauge-bar">
+            <div class="gauge-fill" id="g-fill"></div>
+            <span class="gauge-tick" style="left:35%"></span>
+            <span class="gauge-tick" style="left:50%"></span>
+          </div>
+          <div class="gauge-marks" aria-hidden="true">
+            <i style="left:35%">35%</i><i style="left:50%">50%</i>
+          </div>
         </div>
 
         <div class="rline"><span>贷款总额</span><b id="o-loan">—</b></div>
         <div class="rline sub"><span>其中 公积金 / 商贷</span><b id="o-split">—</b></div>
-        <div class="rline"><span>公积金可贷上限</span><b id="o-gjmax">—</b></div>
+        <div class="rline"><span>公积金可贷上限</span><b id="o-gjmax" class="wrap">—</b></div>
         <div class="rline"><span>贷款期总利息</span><b id="o-int">—</b></div>
         <div class="rline"><span>首付 + 税费（一次性）</span><b id="o-cash">—</b></div>
         <div class="rline"><span>剩余自有资金</span><b id="o-left">—</b></div>
-        <div class="rline"><span>公积金账户可代扣月供</span><b id="o-cover">—</b></div>
+        <div class="rline"><span>公积金账户可代扣月供</span><b id="o-cover" class="wrap">—</b></div>
         <div class="rline"><span>月结余（房贷 + 生活后）</span><b id="o-save">—</b></div>
+        <div class="rline sub"><span>其中 代扣期内月结余</span><b id="o-save2">—</b></div>
 
         <div class="badge-row" id="o-badges"></div>
       </div>
@@ -248,6 +292,8 @@
   <div class="note">
     <p><b>单位说明</b>　所有金额均以 <b>万元</b> 为单位输入与输出（月缴存、月收入、月支出为「万元/月」）；月供卡片下方同时给出「元/月」折算，便于直观感受</p>
     <p><b>口径说明</b>　等额本息；公积金可贷额度取「余额×10 + 月缴×距退休月数」「单人 100 万封顶」「房价×80%」三者最低值，缺口自动转商贷；账户代扣按「余额 + 月缴逐年递减」模拟；月供/收入比以月税后收入为分母；「剩余自有资金」= 可动用现金 − 首付 − 契税 − 其他费用</p>
+    <p><b>契税口径</b>　2024-12-01 起：家庭唯一住房 ≤140㎡ 按 1%、&gt;140㎡ 按 1.5%；家庭第二套 ≤140㎡ 按 1%、&gt;140㎡ 按 2%；3% 仅适用于非住宅等情形（<a href="https://www.gov.cn/zhengce/zhengceku/202411/content_6986750.htm" target="_blank" rel="noopener">财政部等 2024 年第 16 号公告</a>）</p>
+    <p><b>公积金额度</b>　2026-04-30《广州市人民政府办公厅关于进一步促进房地产市场平稳健康发展的实施意见》：一人申请最高 100 万、两人及以上共同申请最高 200 万、符合相关条件最高 360 万（<a href="https://www.gz.gov.cn/zt/shb/content/post_10803958.html" target="_blank" rel="noopener">原文</a>）。本测算按「单人 100 万」口径，未纳入双人额度与上浮条件</p>
     <p><b>利率假设</b>　公积金首套 5 年以上 2.6%，商贷 3.0%（5 年期以上 LPR 3.5%，主流银行首套 LPR−50BP）。政策与利率可能调整，实际以公积金管理中心及贷款银行审批为准</p>
     <p><b>免责</b>　本工具为个人测算参考，不构成投资建议</p>
   </div>
@@ -272,18 +318,26 @@
     maxgj: { 'in-price':143,'in-dprate':30 }
   };
 
+  // 月供/税后收入 警戒线：35% 偏紧，50% 银行红线。全页只用这一处定义
+  var WARN = 35, HARD = 50;
+  // 单人 100 万：广州 2026-04-30 新政（两人及以上 200 万，未纳入）
+  var GJ_SINGLE_CAP = 100;
+
   function num(id){ var v = parseFloat($(id).value); return isNaN(v) ? 0 : v; }
+  function clamp(v, lo, hi){ return Math.min(Math.max(v, lo), hi); }
 
   // 等额本息：P 万元 → 月供 万元
   function pmt(P, annualRate, years){
-    var r = annualRate/12/100, n = Math.round(years*12);
+    var n = Math.max(1, Math.round(years * 12));
+    var r = annualRate / 12 / 100;
     if (P <= 0) return 0;
-    if (r === 0) return P/n;
-    var f = Math.pow(1+r, n);
+    if (r === 0) return P / n;
+    var f = Math.pow(1 + r, n);
     return P * r * f / (f - 1);
   }
-  function totalInterest(P, annualRate, years){
-    return P <= 0 ? 0 : pmt(P, annualRate, years) * Math.round(years*12) - P;
+  function interestOf(P, annualRate, years){
+    var n = Math.max(1, Math.round(years * 12));
+    return P <= 0 ? 0 : pmt(P, annualRate, years) * n - P;
   }
   // 万元自适应精度：<1 万保留 3 位，<10 万保留 2 位，其余 1 位
   function dec(x){
@@ -291,89 +345,111 @@
     return a < 1 ? 3 : a < 10 ? 2 : 1;
   }
   function sign(x){ return x.toFixed(dec(x)) + ' 万'; }
+  function yuan(x){ return Math.round(x * 10000).toLocaleString('en-US'); }
+  function tone(x){ return x <= WARN ? 'var(--teal)' : x <= HARD ? 'var(--amber)' : 'var(--red)'; }
 
   function calc(){
-    var price  = num('in-price');          // 万
-    var dpRate = num('in-dprate') / 100;
+    var price  = clamp(num('in-price'), 1, 9999);        // 万
+    var dpRate = clamp(num('in-dprate'), 0, 100) / 100;
     var deedR  = parseFloat($('in-deed').value) / 100;
-    var fee    = num('in-fee');            // 万
-    var bal    = num('in-bal');            // 万
-    var mon    = num('in-mon');            // 万/月
-    var yrs    = num('in-years');
-    var gjR    = num('in-gjrate');
-    var comR   = num('in-comrate');
-    var term   = num('in-term');
-    var net    = num('in-net');            // 万/月
-    var life   = num('in-life');           // 万/月
+    var fee    = Math.max(num('in-fee'), 0);            // 万
+    var bal    = Math.max(num('in-bal'), 0);            // 万
+    var mon    = Math.max(num('in-mon'), 0);            // 万/月
+    var yrs    = clamp(num('in-years'), 1, 40);
+    var gjR    = Math.max(num('in-gjrate'), 0);
+    var comR   = Math.max(num('in-comrate'), 0);
+    var term   = clamp(num('in-term'), 1, 40);
+    var net    = Math.max(num('in-net'), 0);            // 万/月
+    var life   = Math.max(num('in-life'), 0);           // 万/月
+    var cash0  = Math.max(num('in-cash'), 0);           // 万
 
     // 首付与贷款（万）
-    var dp     = price * dpRate;
-    var cash   = dp + price * deedR + fee;
-    var loan   = Math.max(price - dp, 0);
+    var dp       = price * dpRate;
+    var cashNeed = dp + price * deedR + fee;
+    var loan     = Math.max(price - dp, 0);
 
-    // 公积金可贷额：三道上限取最低（万）
+    // 公积金可贷额：三道上限取最低，并记录是哪一道卡住（万）
     var byFormula = bal * 10 + mon * yrs * 12;   // 余额×10 + 月缴×距退休月数
-    var byCeil    = 100;                          // 单人封顶 100 万
-    var byPrice   = price * 0.8;                  // 房价 × 80%
-    var gjMax     = Math.max(Math.min(byFormula, byCeil, byPrice), 0);
-    var gjLoan    = Math.min(loan, gjMax);
-    var comLoan   = Math.max(loan - gjLoan, 0);
+    var caps = [
+      { name: '余额/缴存公式', short: '公式', v: byFormula },
+      { name: '单人 100 万封顶', short: '单人封顶', v: GJ_SINGLE_CAP },
+      { name: '房价 80%', short: '房价 80%', v: price * 0.8 }
+    ];
+    var cap = caps.reduce(function(a, b){ return b.v < a.v ? b : a; });
+    var gjMax  = Math.max(cap.v, 0);
+    var gjLoan = Math.min(loan, gjMax);
+    var comLoan = Math.max(loan - gjLoan, 0);
 
     var payGj  = pmt(gjLoan, gjR, term);
     var payCom = pmt(comLoan, comR, term);
     var pay    = payGj + payCom;
-    var interest = totalInterest(gjLoan, gjR, term) + totalInterest(comLoan, comR, term);
+    var interest = interestOf(gjLoan, gjR, term) + interestOf(comLoan, comR, term);
 
     // 公积金账户可代扣月供（仅公积金部分）
-    var cover;
-    if (gjLoan <= 0) { cover = '无需公积金贷款'; }
-    else if (payGj <= mon) { cover = '永久（月缴已覆盖）'; }
-    else {
+    var cover, coverMonths = 0, covered = false;
+    if (gjLoan <= 0) {
+      cover = '无需公积金贷款';
+    } else if (payGj <= mon) {
+      cover = '永久（月缴已覆盖）'; covered = true;
+    } else {
       var b = bal, k = 0;
       while (b >= payGj && k < 600) { b = b + mon - payGj; k++; }
-      cover = k >= 600 ? '永久' : (k/12).toFixed(1) + ' 年（第 ' + (Math.floor(k/12)+1) + ' 年起全额自付）';
+      coverMonths = k; covered = k > 0;
+      cover = k >= 600 ? '永久（50 年以上）'
+            : k === 0 ? '0 年 · 首月即自付'
+            : (k / 12).toFixed(1) + ' 年 · 第 ' + Math.ceil((k + 1) / 12) + ' 年起自付';
     }
 
     var ratio   = net > 0 ? pay / net * 100 : 0;
-    var surplus = net - pay - life;          // 万/月
-    var left    = num('in-cash') - cash;     // 万
+    var surplus = net - pay - life;                       // 万/月，按全额自付（保守）
+    var surplusNow = covered ? net - Math.max(pay - Math.min(mon, payGj), 0) - life : surplus;
+    var left    = cash0 - cashNeed;                        // 万
 
     // ---------- 输出 ----------
     $('o-pay').textContent = sign(pay);
-    $('o-paysub').textContent = '元/月 · 约 ' + Math.round(pay*10000).toLocaleString('en-US') + ' 元';
+    $('o-paysub').textContent = '≈ ' + yuan(pay) + ' 元/月';
     $('o-paysplit').textContent = comLoan > 0
-      ? '公积金 ' + payGj.toFixed(dec(payGj)) + ' + 商贷 ' + payCom.toFixed(dec(payCom))
+      ? '公积金 ' + yuan(payGj) + ' + 商贷 ' + yuan(payCom) + ' 元'
       : '纯公积金贷款';
     $('o-ratio').textContent = ratio.toFixed(1) + '%';
     $('o-ratiojudge').textContent = '月供 / 税后 ' + net.toFixed(2) + ' 万';
-    $('o-ratio').style.color = ratio <= 35 ? '#1f6f6b' : ratio <= 50 ? '#b06a17' : '#a8332a';
+    $('o-ratio').style.color = tone(ratio);
 
     var fill = $('g-fill');
     fill.style.width = Math.min(ratio, 100) + '%';
-    fill.style.background = ratio <= 35 ? '#1f6f6b' : ratio <= 50 ? '#b06a17' : '#a8332a';
+    fill.style.background = tone(ratio);
+    $('gauge').setAttribute('aria-label',
+      '月供占税后收入 ' + ratio.toFixed(1) + '%，警戒线 35%、上限 50%');
 
     $('o-loan').textContent = loan.toFixed(1) + ' 万';
     $('o-split').textContent = gjLoan.toFixed(1) + ' / ' + comLoan.toFixed(1);
-    $('o-gjmax').textContent = gjMax.toFixed(1) + ' 万（公式 ' + byFormula.toFixed(0) + ' 万）';
+    $('o-gjmax').textContent = gjMax.toFixed(1) + ' 万 · ' +
+      (loan <= gjMax + 0.01 ? '未触顶' : '受「' + cap.short + '」限制');
     $('o-int').textContent = interest.toFixed(1) + ' 万';
-    $('o-cash').textContent = cash.toFixed(1) + ' 万';
-    $('o-left').textContent = sign(left);
+    $('o-cash').textContent = cashNeed.toFixed(1) + ' 万';
+    $('o-left').textContent = sign(left) + (left < 0 ? '（缺口）' : '');
     $('o-cover').textContent = cover;
     $('o-save').textContent = sign(surplus);
+    $('o-save2').textContent = covered ? sign(surplusNow) : '—（无代扣）';
 
     // 顶部摘要
+    $('f-price').textContent = price.toFixed(0) + ' 万';
+    $('f-dp').textContent = (dpRate * 100).toFixed(0) + '%';
     $('f-pay').textContent = sign(pay);
     $('f-ratio').textContent = ratio.toFixed(1) + '%';
+    $('f-ratio').style.color = tone(ratio);
 
     // ---------- 预警标签 ----------
     var badges = [];
     if (comLoan > 0.1) badges.push(['caution', '公积金额度不足，缺口 ' + comLoan.toFixed(1) + ' 万走商贷']);
-    if (ratio > 50) badges.push(['no', '月供超收入 50%，银行可能拒贷']);
-    else if (ratio > 40) badges.push(['caution', '月供超收入 40%，还款偏紧']);
-    if (left < 10) badges.push(['no', '剩余自有资金低于 10 万']);
+    if (loan > gjMax + 0.01 && cap.name === '单人 100 万封顶')
+      badges.push(['caution', '公积金已顶到单人 100 万上限']);
+    if (ratio > HARD) badges.push(['no', '月供占收入 ' + ratio.toFixed(0) + '%，越过 50% 红线，银行可能拒贷']);
+    else if (ratio > WARN) badges.push(['caution', '月供占收入 ' + ratio.toFixed(0) + '%，高于 35% 警戒线']);
+    if (left < 0) badges.push(['no', '首付与税费还差 ' + Math.abs(left).toFixed(1) + ' 万']);
+    else if (left < 10) badges.push(['no', '剩余自有资金低于 10 万']);
     else if (left < 20) badges.push(['caution', '剩余自有资金 ' + left.toFixed(1) + ' 万，略薄']);
     if (surplus < 0) badges.push(['no', '月结余为负，需动用存款']);
-    if (price > 150) badges.push(['caution', '总价超 150 万，失去购房贴息']);
     if (!badges.length) badges.push(['ok', '各项指标健康']);
 
     var box = $('o-badges');
@@ -392,7 +468,14 @@
       document.querySelectorAll('.presets button').forEach(function(b){ b.classList.remove('on'); });
       calc();
     });
-    el.addEventListener('change', calc);
+    el.addEventListener('blur', function(){          // 手输越界时回到合法区间
+      var lo = parseFloat(el.getAttribute('min')), hi = parseFloat(el.getAttribute('max'));
+      var v = parseFloat(el.value);
+      if (isNaN(v)) return;
+      if (!isNaN(lo)) v = Math.max(v, lo);
+      if (!isNaN(hi)) v = Math.min(v, hi);
+      if (v !== parseFloat(el.value)) { el.value = v; calc(); }
+    });
   });
 
   document.querySelectorAll('.presets button').forEach(function(btn){
@@ -418,28 +501,18 @@
 
 <script>
 (function(){
-  var root = document.documentElement, btn = document.getElementById('themeBtn');
-  var mq = window.matchMedia('(prefers-color-scheme: dark)');
-  function systemMode(){ return mq.matches ? 'dark' : 'light'; }
-  function apply(mode){
-    if (mode === 'auto') { root.removeAttribute('data-theme'); }
-    else { root.setAttribute('data-theme', mode); }
-    btn.setAttribute('data-mode', mode === 'auto' ? systemMode() : mode);
-    btn.title = (btn.getAttribute('data-mode') === 'dark' ? '当前深色 · ' : '当前浅色 · ')
-              + '点击切换（' + (mode === 'auto' ? '跟随系统' : '手动') + '）';
-  }
-  var saved = null;
-  try { saved = localStorage.getItem('hp-theme'); } catch(e){}
-  apply(saved || 'auto');
+  var T = window.HPTheme, btn = document.getElementById('themeBtn');
+  if (!T || !btn) return;
+  var ORDER = ['auto', 'light', 'dark'];     // 点一下轮转：跟随系统 → 浅色 → 深色
   btn.addEventListener('click', function(){
-    var next = btn.getAttribute('data-mode') === 'dark' ? 'light' : 'dark';
-    apply(next);
-    try { localStorage.setItem('hp-theme', next); } catch(e){}
+    var i = ORDER.indexOf(T.get());
+    var next = ORDER[(i + 1) % ORDER.length];
+    T.save(next);
+    T.set(next);
   });
-  mq.addEventListener('change', function(){
-    var st = null; try { st = localStorage.getItem('hp-theme'); } catch(e){}
-    if (!st) apply('auto');
-  });
+  var onChange = function(){ if (T.get() === 'auto') T.set('auto'); };
+  if (T.mq.addEventListener) T.mq.addEventListener('change', onChange);
+  else if (T.mq.addListener) T.mq.addListener(onChange);
 })();
 </script>
 </body>
