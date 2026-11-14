@@ -519,6 +519,24 @@ input[type=range]{width:clamp(120px,16vw,190px)}
 @media (min-width: 2200px) {
   .container { max-width: clamp(1760px, 80vw, 2080px); }
 }
+/* ---------------- 软件管理 · 卡片网格 ---------------- */
+.app-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:12px}
+.app-grid.empty{display:none}
+.app-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}
+.app-card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-lg)}
+.app-card.off{opacity:.6}
+.app-ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-size:20px;font-weight:700;flex:none;color:#fff}
+.app-info{min-width:0;flex:1}
+.app-hd{display:flex;align-items:center;min-width:0}
+.app-card .app-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.app-card .app-pkg{font-size:11.5px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.app-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.app-acts{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}
+.app-acts .mini-btn{flex:0 0 auto;min-width:52px;padding:3px 6px;font-size:11.5px;line-height:1.5;border-radius:5px;text-align:center}
+.apps-empty{display:grid;place-items:center;padding:48px 20px;color:var(--muted);border:1px dashed var(--border);border-radius:var(--radius);font-size:13px;text-align:center}
+@media(max-width:640px){
+  .app-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -1133,7 +1151,7 @@ function stage(promise, ms, label, optional){
 }
 async function connectReal(preferPaired, targetSerial){
   if(state.connecting) throw new Error('正在连接中，请稍候');
-  if(!navigator.usb) throw new Error('当前浏览器或页面环境不支持 WebUSB。请使用 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页');
+  if(!navigator.usb) throw new Error('当前浏览器或页面环境不支持 WebUSB。请使用 Chrome / Edge，并通过 HTTPS 打开本页');
   state.connecting=true; setConnecting(true); beginConnect();
   let dev=null, connection=null;
   try{
@@ -1141,7 +1159,7 @@ async function connectReal(preferPaired, targetSerial){
     toast(preferPaired?'正在重连已授权设备（不会弹出系统选择器）':'正在连接真机，请在系统弹窗中选择设备','');
     const libs=await stage(loadLibs(),15000,'ADB 组件加载超时，请刷新页面重试');
     const Manager=libs.b.AdbDaemonWebUsbDeviceManager.BROWSER;
-    if(!Manager) throw new Error('WebUSB 不可用（需要安全上下文：HTTPS 或 localhost）');
+    if(!Manager) throw new Error('WebUSB 不可用（请通过 HTTPS 访问本页）');
     state.manager=Manager;
     // 已有授权设备时直接复用，避免重复弹出系统选择器、减少 USB 句柄累积
     if(preferPaired){
@@ -1253,7 +1271,7 @@ async function attemptConnect(preferPaired, targetSerial){
       return;
     }
     let hint;
-    if(/ADB 组件加载超时|凭证组件|WebUSB|安全上下文|HTTPS|localhost|不支持/.test(msg))
+    if(/ADB 组件加载超时|凭证组件|WebUSB|安全上下文|HTTPS|不支持/.test(msg))
       hint='<br>请刷新页面重试；确认使用 Chrome / Edge 并通过 HTTPS 打开';
     else if(/ADB 授权握手超时/.test(msg))
       hint='<br>解锁手机并点「允许 USB 调试」；若无弹窗，撤销授权后重插数据线';
@@ -1270,7 +1288,7 @@ async function connectFlow(){
   if(state.mode!=='none'){ toast('设备已连接，如需切换请先断开',''); return; }
   let paired=0;
   try{ paired=navigator.usb?(await navigator.usb.getDevices()).length:0; }catch(_){}
-  const body='连接真机需要 Chrome / Edge，并通过 HTTPS 或 localhost 打开本页。<br><br>'+
+  const body='连接真机需要 Chrome / Edge，并通过 HTTPS 打开本页。<br><br>'+
     '请先关闭电脑端 adb / Android Studio / scrcpy / 手机助手，只保留一个标签页（否则会提示设备被占用）；手机开启 USB 调试后，在系统弹窗中选择设备并允许授权。'+
     '<div class="hint" style="margin-top:12px">构建 '+BUILD+'</div>'+
     (paired?'<div class="notice mt16">检测到 '+paired+' 台已授权设备，可直接重连（不会弹出系统选择器）</div>':'');
@@ -1560,7 +1578,7 @@ function appCounts(){
 function filterAppRows(){
   const q=state.appFilter, kind=state.appKind;
   let shown=0;
-  $$('#page-apps tbody tr[data-search]').forEach(r=>{
+  $$('#page-apps .app-card[data-search]').forEach(r=>{
     const raw=r.dataset.full?decodeURIComponent(r.dataset.full):r.dataset.search;
     const okQ=!q||raw.indexOf(q)>=0;
     const okK=kind==='all'||(kind==='sys'?r.dataset.kind==='sys':r.dataset.kind!=='sys');
@@ -1569,7 +1587,7 @@ function filterAppRows(){
     if(ok) shown++;
   });
   const empty=$('#noMatch'); if(empty) empty.style.display=shown?'none':'';
-  const card=$('#page-apps .table-card'); if(card) card.classList.toggle('empty',!shown);
+  const grid=$('#appGrid'); if(grid) grid.classList.toggle('empty',!shown);
   const cnt=$('#appShown'); if(cnt) cnt.textContent=shown;
   return shown;
 }
@@ -1611,6 +1629,31 @@ function bindSearchClear(input, btn){
 }
 window.addEventListener('resize', placeAllSearchClears);
 window.addEventListener('scroll', placeAllSearchClears, true);
+/* 卡片布局：图标底色按包名生成稳定色相，操作按钮铺在卡片底部 */
+function appIconHue(s){ s=String(s||''); let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return 'hsl('+(h%360)+' 52% 42%)'; }
+function appCardHtml(a){
+  const letter=esc((a.name||a.pkg||'?').trim().charAt(0).toUpperCase()||'?');
+  const tags=(a.sys?'<span class="pill gray">系统应用</span>':'<span class="pill">第三方</span>')+
+    '<span class="pill '+(a.state==='on'?'green':'gray')+'">'+(a.state==='on'?'已启用':'已禁用')+'</span>'+
+    (a.ver&&a.ver!=='—'?'<span class="pill gray">v'+esc(a.ver)+'</span>':'');
+  return '<div class="app-card'+(a.state==='off'?' off':'')+'"'+
+    ' data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'"'+
+    ' data-full="'+encodeURIComponent((a.name+' '+a.pkg).toLowerCase())+'"'+
+    ' data-kind="'+(a.sys?'sys':'third')+'">'+
+    '<div class="app-ic" style="background:'+appIconHue(a.pkg)+'">'+letter+'</div>'+
+    '<div class="app-info">'+
+      '<div class="app-hd"><span class="app-name"'+(a.guess?' title="设备未提供显示名，此处为包名简称"':'')+'>'+esc(a.name)+(a.guess?'<span class="app-guess">包名</span>':'')+'</span></div>'+
+      '<div class="app-pkg">'+esc(a.pkg)+'</div>'+
+      '<div class="app-tags">'+tags+'</div>'+
+      '<div class="app-acts">'+
+        '<button class="mini-btn" data-act="app-toggle" data-pkg="'+esc(a.pkg)+'">'+(a.state==='on'?'禁用':'启用')+'</button>'+
+        '<button class="mini-btn" data-act="app-force" data-pkg="'+esc(a.pkg)+'">强停</button>'+
+        '<button class="mini-btn" data-act="app-export" data-pkg="'+esc(a.pkg)+'">导出</button>'+
+        '<button class="mini-btn" data-act="app-clear" data-pkg="'+esc(a.pkg)+'">清数据</button>'+
+        '<button class="mini-btn red" data-act="app-uninstall" data-pkg="'+esc(a.pkg)+'">卸载</button>'+
+      '</div>'+
+    '</div></div>';
+}
 function renderApps(){
   const n=appCounts();
   $('#page-apps').innerHTML='<h1 class="page-title">软件管理</h1>'+
@@ -1619,18 +1662,8 @@ function renderApps(){
     '<button class="btn" data-act="app-refresh">'+icon('refresh',15)+'刷新列表</button>'+
     '<label class="btn primary"'+(state.mode==='none'?' style="opacity:.5;pointer-events:none" aria-disabled="true"':'')+'>'+icon('download',15)+'安装 APK<input type="file" accept=".apk" hidden data-change="apk"'+(state.mode==='none'?' disabled':'')+'></label></div>'+
     '<div class="list-meta">共 <b>'+n.all+'</b> 个应用 · 已禁用 <b>'+n.off+'</b> · 当前显示 <b id="appShown">0</b> 个</div>'+
-    '<div class="card table-card'+(state.apps.length?'':' empty')+'"><table><thead><tr><th>应用</th><th>版本</th><th>类型</th><th>状态</th><th class="col-ops">操作</th></tr></thead><tbody>'+
-    (state.apps.length?state.apps.map(a=>'<tr data-search="'+esc((a.name+' '+a.pkg).toLowerCase())+'" data-full="'+encodeURIComponent((a.name+' '+a.pkg).toLowerCase())+'" data-kind="'+(a.sys?'sys':'third')+'"><td><div class="app-cell"><div class="app-icon">'+esc(a.name.slice(0,1))+'</div><div><div class="app-name"'+(a.guess?' title="设备未提供显示名，此处为包名简称"':'')+'>'+esc(a.name)+(a.guess?'<span class="app-guess">包名</span>':'')+'</div><div class="app-pkg"'+(a.name===a.pkg?' style="display:none"':'')+'>'+esc(a.pkg)+'</div></div></div></td>'+
-      '<td>'+esc(a.ver)+'</td><td>'+(a.sys?'<span class="pill gray">系统应用</span>':'<span class="pill">第三方</span>')+'</td>'+
-      '<td>'+(a.state==='on'?'<span class="pill green">已启用</span>':'<span class="pill gray">已禁用</span>')+'</td>'+
-      '<td><div class="td-ops"><button class="mini-btn" data-act="app-toggle" data-pkg="'+esc(a.pkg)+'">'+(a.state==='on'?'禁用':'启用')+'</button>'+
-      '<button class="mini-btn" data-act="app-force" data-pkg="'+esc(a.pkg)+'">强停</button>'+
-      '<button class="mini-btn" data-act="app-export" data-pkg="'+esc(a.pkg)+'">导出</button>'+
-      '<button class="mini-btn" data-act="app-clear" data-pkg="'+esc(a.pkg)+'">清数据</button>'+
-      '<button class="mini-btn red" data-act="app-uninstall" data-pkg="'+esc(a.pkg)+'">卸载</button></div></td></tr>').join('')
-      :'')+
-    '<tr id="noMatch" style="display:none"><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">'+(state.mode!=='real'?'尚未连接真机，连接后点击「刷新列表」读取应用':(state.apps.length?'当前筛选下没有匹配的应用':'应用列表为空，点击「刷新列表」读取'))+'</td></tr>'+
-    '</tbody></table></div>'+
+    '<div class="app-grid'+(state.apps.length?'':' empty')+'" id="appGrid">'+state.apps.map(appCardHtml).join('')+'</div>'+
+    '<div class="apps-empty" id="noMatch"'+(state.apps.length?' style="display:none"':'')+'>'+(state.mode!=='real'?'尚未连接设备，连接后点击「刷新列表」读取应用':'当前筛选下没有匹配的应用')+'</div>'+
     '<p class="hint">禁用 / 启用走 <code class="code-inline">pm</code>，卸载系统应用需系统权限。导出会读取设备上的安装包原件：单包直接下载 <code class="code-inline">.apk</code>，含拆分包的应用打包成 <code class="code-inline">.apks</code>（用 SAI 安装，或解压后 <code class="code-inline">adb install-multiple</code>）</p>';
   filterAppRows();
   bindSearchClear($('#appSearch'), $('#appSearchClear'));
