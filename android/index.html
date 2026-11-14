@@ -520,23 +520,23 @@ input[type=range]{width:clamp(120px,16vw,190px)}
   .container { max-width: clamp(1760px, 80vw, 2080px); }
 }
 /* ---------------- 软件管理 · 卡片网格 ---------------- */
-.app-grid{display:grid;grid-template-columns:repeat(auto-fill,290px);grid-auto-rows:1fr;gap:10px;justify-content:center}
+.app-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(0,290px));grid-auto-rows:1fr;gap:10px;justify-content:center}
 .app-grid.empty{display:none}
-.app-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;gap:10px;align-items:flex-start;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}
+.app-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;gap:10px;align-items:flex-start;min-width:0;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}
 .app-card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-lg)}
 .app-card.off{opacity:.6}
 .app-ic{width:40px;height:40px;border-radius:9px;display:grid;place-items:center;font-size:18px;font-weight:700;flex:none;color:#fff}
 .app-info{min-width:0;flex:1}
 .app-hd{display:flex;align-items:center;min-width:0}
 .app-card .app-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.app-card .app-pkg{font-size:11.5px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.app-card .app-pkg{font-size:11.5px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;margin-top:2px}
 .app-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .app-acts{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
 .app-acts .mini-btn{flex:0 0 auto;min-width:42px;padding:3px 5px;font-size:11px;line-height:1.5;border-radius:5px;text-align:center}
 .apps-empty{display:grid;place-items:center;padding:48px 20px;color:var(--muted);border:1px dashed var(--border);border-radius:var(--radius);font-size:13px;text-align:center}
 /* 手机端单卡片左右铺满，这个宽度即其他端卡片的统一尺寸基准 */
 @media(max-width:430px){
-  .app-grid{grid-template-columns:1fr}
+  .app-grid{grid-template-columns:minmax(0,1fr)}
 }
 </style>
 </head>
