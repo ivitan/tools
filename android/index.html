@@ -1150,7 +1150,7 @@ function stage(promise, ms, label, optional){
   if(limit>0) parts.push(new Promise((_,rej)=>{ timer=setTimeout(()=>rej(new Error(label)),limit); }));
   return Promise.race(parts).finally(()=>{ if(timer!=null) clearTimeout(timer); });
 }
-async function connectReal(preferPaired, targetSerial){
+async function connectReal(preferPaired, targetSerial, noPrompt){
   if(state.connecting) throw new Error('正在连接中，请稍候');
   if(!navigator.usb) throw new Error('当前浏览器或页面环境不支持 WebUSB。请使用 Chrome / Edge，并通过 HTTPS 打开本页');
   state.connecting=true; setConnecting(true); beginConnect();
@@ -1169,6 +1169,8 @@ async function connectReal(preferPaired, targetSerial){
       if(list.length) dev=(targetSerial && list.find(d=>d.serial===targetSerial)) || list[0];
     }
     if(!dev){
+      // 自动重连没有用户手势，绝不能退回系统选择器（会永久挂起）
+      if(noPrompt) throw new Error('没有可静默重连的已授权设备');
       // 库内部已默认按 ADB 接口过滤 (class 0xff / sub 0x42 / proto 1)，无需额外 filters
       setStage('等待选择设备（系统弹窗）','等待系统弹窗');
       let slowTip=null;
@@ -3209,7 +3211,7 @@ function renderSettings(){
     '</div>'+
     '<div class="card"><h2 class="card-title">连接与操作</h2>'+
       '<div class="row-item"><div><div class="label">危险操作二次确认</div><div class="desc">重启 / 关机 / 卸载类操作弹出确认框</div></div><div class="ctrl"><button class="switch'+(s.confirm?' on':'')+'" data-setting-sw="confirm"></button></div></div>'+
-      '<div class="row-item"><div><div class="label">自动重连已授权设备</div><div class="desc">加载时提示已授权设备</div></div><div class="ctrl"><button class="switch'+(s.autoReconnect?' on':'')+'" data-setting-sw="autoReconnect"></button></div></div>'+
+      '<div class="row-item"><div><div class="label">自动重连已授权设备</div><div class="desc">刷新后自动重连已授权设备</div></div><div class="ctrl"><button class="switch'+(s.autoReconnect?' on':'')+'" data-setting-sw="autoReconnect"></button></div></div>'+
       '<div class="row-item"><div><div class="label">本地数据</div><div class="desc">脚本与偏好存于 localStorage</div></div><div class="ctrl"><button class="btn danger" data-act="clear-local">清空数据</button></div></div>'+
     '</div></div>'+
     '<div class="notice mt20">设置仅存本机浏览器，不会上传</div>';
@@ -3591,8 +3593,15 @@ function boot(){
   if(settings.refresh!=='0') startPolling();
   // 自动重连（仅在开启且已获得过 USB 授权时静默尝试，不弹系统选择器）
   if(settings.autoReconnect && navigator.usb && location.protocol!=='file:'){
-    navigator.usb.getDevices().then(list=>{
-      if(list.length) toast('检测到 '+list.length+' 台已授权设备，点击「连接设备」即可重连','');
+    navigator.usb.getDevices().then(async list=>{
+      if(!list.length || state.connecting || state.mode!=='none') return;
+      try{
+        await connectReal(true, null, true);
+        showPage(state.active);   // 重渲染当前页，不跳转；软件管理页会顺带自动读取应用
+      }catch(e){
+        // 自动重连失败保持静默，用户仍可手动点「连接设备」
+        console.warn('自动重连未成功',e);
+      }
     }).catch(()=>{});
   }
 }
