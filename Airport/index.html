@@ -775,6 +775,18 @@
 .toast.err{border-left-color:var(--danger);color:var(--danger)}
 @keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
   </style>
+
+  <style id="mysql-extra-css">
+    /* MySQL 引擎渲染所需的补充类（index 已有同名的规则不重复定义） */
+    .fs-11 { font-size: 11px; line-height: 15px; }
+    .btn-act[disabled] { opacity: .55; cursor: not-allowed; }
+    .btn-act[disabled]:active { transform: none; }
+    /* A 区「勾选要提取的表」面板：固定为 index 的最大高度。
+       MySQL dump 常常只有 1 张表，自适应高度会收缩成一条，明显小于
+       SQLite 多表导入时的尺寸；固定后两种数据源的 A 区布局完全一致。 */
+    .table-panel { min-height: 192px; }
+  </style>
+
 </head>
 
 <body>
@@ -812,14 +824,14 @@
                 <span class="badge">A</span>
                 <span class="section-title section-title--inline c-secondary nowrap">数据库导入</span>
                 <div id="dropZoneSmall" class="dropzone--sm hidden"
-                  title="点击选择 SQLite 文件，或将文件拖拽到此导入">
+                  title="点击选择数据库或将文件拖拽至此导入">
                   <svg class="ic-16 c-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                   </svg>
-                  <input type="file" id="dbFilesSmall" multiple accept=".db,.db3,.db4,.sqlite,.sqlite3,.s3db,.sl3,application/x-sqlite3,application/vnd.sqlite3" class="file-input" />
+                  <input type="file" id="dbFilesSmall" multiple accept=".db,.db3,.db4,.sqlite,.sqlite3,.s3db,.sl3,.sql,.txt,text/plain,application/sql,application/x-sqlite3,application/vnd.sqlite3" class="file-input" />
                 </div>
                 <span id="fileInfo" class="spacer truncate fs-12 fw-bold c-primary hidden"></span>
               </div>
@@ -831,8 +843,12 @@
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                   </svg>
-                  点击选择 SQLite 文件，或将文件拖拽到此导入</span>
-                <input type="file" id="dbFilesLarge" multiple accept=".db,.db3,.db4,.sqlite,.sqlite3,.s3db,.sl3,application/x-sqlite3,application/vnd.sqlite3" class="file-input" />
+                  点击选择数据库或将文件拖拽至此导入</span>
+                <input type="file" id="dbFilesLarge" multiple accept=".db,.db3,.db4,.sqlite,.sqlite3,.s3db,.sl3,.sql,.txt,text/plain,application/sql,application/x-sqlite3,application/vnd.sqlite3" class="file-input" />
+              </div>
+              <div class="hidden" aria-hidden="true">
+                <input type="hidden" id="encodingSel" value="auto" />
+                <button id="btnSample" type="button" tabindex="-1"></button>
               </div>
               <div id="tableSelectionSection" class="table-panel custom-scrollbar hidden">
                 <p class="panel-title">勾选要提取的表:</p>
@@ -851,7 +867,7 @@
                     title="开始时间格式:2026-06-08 08:08:08" class="input" />
                   <input type="text" id="endTime" placeholder="结束:2026-09-09 09:09:09" title="结束时间格式:2026-09-09 09:09:09"
                     class="input" />
-                  <input type="text" id="aproCode" placeholder="机位号:933" title="机位号格式:933" class="input" />
+                  <input type="text" id="aproCode" placeholder="机位号:933" title="机位号（SQLite: aproCode / MySQL: apron_code）" class="input" />
                 </div>
                 <div class="grid-3">
                   <button id="btnParseNear" class="btn-act btn-blue">
@@ -981,6 +997,1324 @@
       </div>
     </div>
   </main>
+
+  <script id="mysql-engine-js">
+  /* MySQL / sanxia 引擎：独立命名空间，DOM 容器映射到 index 的界面 */
+  window.MYSQL_ENGINE = (function () {
+
+    /* ============================================================
+       0. 基础工具
+       ============================================================ */
+    const ID_MAP = {
+      nodeThead: 'exactTableHeader',
+      nodeTbody: 'exactTableBody',
+      echoThead: 'pasteVisualThead',
+      echoTbody: 'pasteVisualTbody',
+      echoTable: 'pasteVisualTable',
+      echoCount: 'filteredTextCount',
+      echoTruncNote: 'bAreaTruncNote',
+      echoWrapper: 'pasteGridWrapper',
+      rawThead: 'rawTableHeader',
+      rawTbody: 'rawTableBody',
+      btnParse: 'btnParseNear',
+      btnCopyVisual: 'btnCopyTableNums',
+    };
+    const $ = (id) => document.getElementById(ID_MAP[id] || id);
+
+    /* 主题统一由 index 的全局 theme 管理 */
+
+    function toast(msg, type = '', duration = 2600) {
+      const cls = { ok: 'ok', success: 'ok', err: 'err', error: 'err', warn: 'warn', warning: 'warn' }[type] || '';
+      const d = document.createElement('div');
+      d.className = 'toast ' + cls;
+      d.textContent = msg;
+      $('toasts').appendChild(d);
+      setTimeout(() => {
+        d.style.opacity = '0';
+        d.style.transform = 'translateX(16px)';
+        d.style.transition = '.25s';
+        setTimeout(() => d.remove(), 260);
+      }, duration);
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function copyText(text) {
+      return new Promise((resolve) => {
+        if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(resolve).catch(() => { fallbackCopy(text); resolve(); });
+        } else {
+          fallbackCopy(text);
+          resolve();
+        }
+      });
+    }
+    function fallbackCopy(text) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '0';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch (e) { }
+    }
+    const fmt = (n) => (n || 0).toLocaleString('zh-CN');
+
+    /* ============================================================
+       1. 节点配置（node_code → 中文名）
+       ============================================================ */
+    const NODES = [
+      { code: 'guidecarArr', name: '引导车到达' },
+      { code: 'guidecarDep', name: '引导车离开' },
+      { code: 'aircraftIns', name: '飞机入位' },
+      { code: 'refuTruckArr', name: '加油车到达' },
+      { code: 'refuTruckDep', name: '加油车开' },
+      { code: 'openGueststa', name: '开客舱门' },
+      { code: 'closeGuestEnd', name: '关客舱门' },
+      { code: 'cateringsta', name: '配餐开始' },
+      { code: 'cateringEnd', name: '配餐结束' },
+      { code: 'aircraftInt', name: '飞机推出' },
+    ];
+    const DICT = {};
+    const CODE_LOOKUP = {}; // 归一化编码 → node_code：兼容 GuidecarArr / guidecar_arr 这类写法
+    const ORDER = [];
+    NODES.forEach((n) => {
+      DICT[n.code] = n.name;
+      CODE_LOOKUP[n.code.toLowerCase().replace(/[\s_\-]/g, '')] = n.code;
+      ORDER.push(n.code);
+    });
+
+    const NODE_HELP = {
+      guidecarArr: {
+        desc: '引导车到位、开始引导飞机入位的时间点，与「引导车离开」配对计算引导时长。',
+        tips: [
+          '确认引导车检测区域（followme_mask）覆盖实际滑行引导路径；',
+          '路过车辆可能被误判为引导车，需结合飞机入位节点交叉校验；',
+          '检测框频繁丢失时，调大缓存帧数（item_length）或降低 has_ratio。',
+        ],
+      },
+      guidecarDep: {
+        desc: '引导车完成引导任务后驶离机位的时间点。',
+        tips: [
+          '离场判定依赖「缓存帧内完全无目标」的占比（out_ratio）；',
+          '引导车停留等待时可能提前判离场，需结合画面复核；',
+          '与「引导车到达」差值过短（如只有几十秒）通常说明是误判。',
+        ],
+      },
+      refuTruckArr: {
+        desc: '加油车驶入机位并停靠到位的时间点，是加油作业时长的起点。',
+        tips: [
+          '确认加油位检测区域（oil_mask）覆盖加油车实际停靠范围；',
+          '车辆检测框抖动会让到位时间提前或延后，检查帧稳定参数；',
+          '取流中断时该节点整体缺失，先排查视频通道。',
+        ],
+      },
+      refuTruckDep: {
+        desc: '加油车完成加油、驶离机位的时间点，与「加油车到达」配对得到加油时长。',
+        tips: [
+          '驶离判定依赖车辆移动距离阈值（move_dis），阈值过大易判晚；',
+          '加油车在场内挪位可能被误判为离开；',
+          '若离开时间早于到达时间，说明检测错位，需回看视频。',
+        ],
+      },
+      cateringsta: {
+        desc: '配餐车到位并开始配餐作业的时间点。',
+        tips: [
+          '确认配餐车位检测区域正确，车厢升起能被连续多帧识别到；',
+          '帧数不足时会判不出「开始」，可适当增加缓存帧数；',
+          '同一航班多次配餐会出现多条记录，页面会把它们都列出来。',
+        ],
+      },
+      cateringEnd: {
+        desc: '配餐作业结束、配餐车撤离的时间点。',
+        tips: [
+          '若全程无车厢升起画面，可能直接被判为结束，需核对起始节点是否缺失；',
+          '车辆长时间停留会让结束时间后移；',
+          '与「配餐开始」差值异常时，优先核对视频时间轴。',
+        ],
+      },
+      aircraftIns: {
+        desc: '飞机滑入机位并停稳（机头/主轮到达停止线）的时间点，是过站保障的起点。',
+        tips: [
+          '确认机位停止线与 area_mask 配置是否准确；',
+          '检测框抖动会让入位时间前后漂移，可调整 moving_dis / 帧稳定参数；',
+          '大机型容易超出画面，需检查相机视野是否覆盖整机。',
+        ],
+      },
+      aircraftInt: {
+        desc: '飞机推出机位（开始离位、被推出）的时间点，是过站保障的结束标志。',
+        tips: [
+          '推出判定依赖飞机与机位基准距离持续增大的连续帧，参数同入位；',
+          '牵引车或廊桥遮挡会造成漏检，优先核对该时段画面；',
+          '与「飞机入位」的时间差即过站时长，差值异常先看视频时间轴。',
+        ],
+      },
+      openGueststa: {
+        desc: '客舱门开启、开始上下客的时间点（下客与登机共用该节点）。',
+        tips: [
+          '确认客舱门检测区域与机型模板匹配；',
+          '多舱门同时开启时取最早一次开门时间；',
+          '廊桥或客梯车挡住舱门时会漏检，需换视角或补标。',
+        ],
+      },
+      closeGuestEnd: {
+        desc: '旅客上下客结束、客舱门关闭的时间点。',
+        tips: [
+          '关门动作过快可能落在两帧之间，检查采样帧率；',
+          '确认与「开客舱门」成对出现，缺失一侧通常说明中途被遮挡；',
+          '与开门时间差值明显偏短时，先怀疑误判。',
+        ],
+      },
+    };
+
+
+    /* ============================================================
+       2. MySQL dump 解析器（纯函数，无 DOM 依赖）
+          —— 只做「够用且可靠」的子集：CREATE TABLE / INSERT / REPLACE
+       ============================================================ */
+    /* ==== PARSER START ==== */
+    /**
+     * 把 SQL 脚本切成语句数组。
+     * 处理：行注释(-- / #)、块注释(/* *\/)、单/双引号字符串、反引号标识符、转义与重复引号。
+     * 注释内容会被丢弃（不参与语句拼接），避免注释里的分号被误判为语句结束。
+     */
+    function splitStatements(src) {
+      const out = [];
+      let parts = [];
+      let start = 0;
+      let i = 0;
+      const n = src.length;
+      let quote = 0; // 0 | 39(') | 34(") | 96(`)
+
+      const finish = (end) => {
+        if (end > start) parts.push(src.slice(start, end));
+        const s = parts.join('').trim();
+        parts = [];
+        start = end + 1;
+        if (s) out.push(s);
+      };
+
+      while (i < n) {
+        const c = src.charCodeAt(i);
+        if (quote !== 0) {
+          if (c === 92) { i += 2; continue; }            // 反斜杠转义
+          if (c === quote) {
+            if (src.charCodeAt(i + 1) === quote) { i += 2; continue; } // 重复引号
+            quote = 0; i += 1; continue;
+          }
+          i += 1; continue;
+        }
+        if (c === 39 || c === 34 || c === 96) { quote = c; i += 1; continue; }
+        if (c === 45 && src.charCodeAt(i + 1) === 45) {   // -- 行注释
+          if (i > start) parts.push(src.slice(start, i));
+          const nl = src.indexOf('\n', i);
+          i = nl === -1 ? n : nl + 1;
+          start = i;
+          continue;
+        }
+        if (c === 35) {                                   // # 行注释
+          if (i > start) parts.push(src.slice(start, i));
+          const nl = src.indexOf('\n', i);
+          i = nl === -1 ? n : nl + 1;
+          start = i;
+          continue;
+        }
+        if (c === 47 && src.charCodeAt(i + 1) === 42) {   // /* 块注释 */
+          if (i > start) parts.push(src.slice(start, i));
+          const close = src.indexOf('*/', i + 2);
+          i = close === -1 ? n : close + 2;
+          start = i;
+          continue;
+        }
+        if (c === 59) { finish(i); i += 1; continue; }    // ;
+        i += 1;
+      }
+
+      if (n > start) {
+        parts.push(src.slice(start, n));
+        const s = parts.join('').trim();
+        if (s) out.push(s);
+      }
+      return out;
+    }
+
+    /** 按分隔符切分，跳过括号内与引号内的分隔符 */
+    function splitTopLevel(str, sep) {
+      const out = [];
+      let depth = 0, quote = 0, start = 0;
+      for (let i = 0; i < str.length; i++) {
+        const c = str[i];
+        if (quote) {
+          if (c === '\\') { i += 1; continue; }
+          if (c === quote) {
+            if (str[i + 1] === quote) { i += 1; continue; }
+            quote = 0;
+          }
+          continue;
+        }
+        if (c === "'" || c === '"' || c === '`') { quote = c; continue; }
+        if (c === '(') { depth += 1; continue; }
+        if (c === ')') { depth -= 1; continue; }
+        if (c === sep && depth === 0) { out.push(str.slice(start, i)); start = i + 1; }
+      }
+      out.push(str.slice(start));
+      return out;
+    }
+
+    /** 从 openIdx 处的左括号找到配对的右括号位置 */
+    function findMatching(str, openIdx) {
+      let depth = 0, quote = 0;
+      for (let i = openIdx; i < str.length; i++) {
+        const c = str[i];
+        if (quote) {
+          if (c === '\\') { i += 1; continue; }
+          if (c === quote) {
+            if (str[i + 1] === quote) { i += 1; continue; }
+            quote = 0;
+          }
+          continue;
+        }
+        if (c === "'" || c === '"' || c === '`') { quote = c; continue; }
+        if (c === '(') depth += 1;
+        else if (c === ')') { depth -= 1; if (depth === 0) return i; }
+      }
+      return -1;
+    }
+
+    function stripIdent(s) {
+      s = String(s).trim();
+      const first = s[0];
+      if ((first === '`' && s[s.length - 1] === '`') || (first === '"' && s[s.length - 1] === '"') || (first === '[' && s[s.length - 1] === ']')) {
+        const q = first === '[' ? ']' : first;
+        return s.slice(1, -1).split(q + q).join(q);
+      }
+      return s;
+    }
+
+    /** 读一个标识符（支持 `db`.`tbl`、db.tbl、`tbl`），返回最后一段与结束位置 */
+    function readQualifiedName(s, i) {
+      const parts = [];
+      const n = s.length;
+      while (i < n) {
+        while (i < n && /\s/.test(s[i])) i += 1;
+        const c = s[i];
+        if (c === '`' || c === '"') {
+          const q = c;
+          let j = i + 1, buf = '';
+          while (j < n) {
+            if (s[j] === '\\' && q === '"') { buf += s[j + 1] || ''; j += 2; continue; }
+            if (s[j] === q) {
+              if (s[j + 1] === q) { buf += q; j += 2; continue; }
+              j += 1; break;
+            }
+            buf += s[j]; j += 1;
+          }
+          parts.push(buf);
+          i = j;
+        } else {
+          const m = /^[A-Za-z0-9_$\-]+/.exec(s.slice(i, i + 128));
+          if (!m) break;
+          parts.push(m[0]);
+          i += m[0].length;
+        }
+        let k = i;
+        while (k < n && /\s/.test(s[k])) k += 1;
+        if (s[k] === '.') { i = k + 1; continue; }
+        break;
+      }
+      return { name: parts.length ? parts[parts.length - 1] : '', end: i };
+    }
+
+    /** 读带引号的字符串值，处理 MySQL 反斜杠转义 */
+    function readStringValue(s, pos) {
+      const quote = s[pos];
+      const n = s.length;
+      let i = pos + 1;
+      let out = '';
+      while (i < n) {
+        const c = s[i];
+        if (c === '\\') {
+          const e = s[i + 1];
+          switch (e) {
+            case '0': out += '\0'; break;
+            case 'b': out += '\b'; break;
+            case 'n': out += '\n'; break;
+            case 'r': out += '\r'; break;
+            case 't': out += '\t'; break;
+            case 'Z': out += '\x1a'; break;
+            case '\\': out += '\\'; break;
+            case "'": out += "'"; break;
+            case '"': out += '"'; break;
+            case '%': out += '\\%'; break;
+            case '_': out += '\\_'; break;
+            default: out += (e === undefined ? '' : e);
+          }
+          i += 2;
+          continue;
+        }
+        if (c === quote) {
+          if (s[i + 1] === quote) { out += quote; i += 2; continue; }
+          i += 1;
+          break;
+        }
+        let j = i;
+        while (j < n && s[j] !== quote && s[j] !== '\\') j += 1;
+        out += s.slice(i, j);
+        i = j;
+      }
+      return { value: out, next: i };
+    }
+
+    /** 读单个 VALUES 元素：字符串 / NULL / 数字 / 十六进制 / 兜底裸值 */
+    function readValue(s, pos) {
+      const n = s.length;
+      while (pos < n && /\s/.test(s[pos])) pos += 1;
+      const c = s[pos];
+      if (c === "'" || c === '"') return readStringValue(s, pos);
+
+      // _binary'..' / _utf8mb4'..' 之类的前缀
+      if (c === '_') {
+        const m = /^_[A-Za-z0-9]+\s*/.exec(s.slice(pos, pos + 24));
+        if (m) {
+          const p2 = pos + m[0].length;
+          if (s[p2] === "'" || s[p2] === '"') return readStringValue(s, p2);
+        }
+      }
+      // NULL
+      if ((c === 'N' || c === 'n') && /^null\b/i.test(s.slice(pos, pos + 5))) {
+        return { value: null, next: pos + 4 };
+      }
+      // 十六进制
+      if (c === '0' && (s[pos + 1] === 'x' || s[pos + 1] === 'X')) {
+        let j = pos + 2;
+        while (j < n && /[0-9a-fA-F]/.test(s[j])) j += 1;
+        const hex = s.slice(pos + 2, j);
+        let str = '';
+        for (let k = 0; k + 1 < hex.length; k += 2) {
+          str += String.fromCharCode(parseInt(hex.substr(k, 2), 16));
+        }
+        return { value: str, next: j };
+      }
+      // 数字
+      const num = /^-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/.exec(s.slice(pos, pos + 48));
+      if (num) return { value: num[0], next: pos + num[0].length };
+
+      // 兜底：读到分隔符为止
+      let j = pos;
+      while (j < n && !/[),;]/.test(s[j])) j += 1;
+      const raw = s.slice(pos, j).trim();
+      return { value: raw === '' ? null : raw, next: j };
+    }
+
+    /** 解析 VALUES 后面的多组 (..),(..) */
+    function parseTuples(s, pos) {
+      const rows = [];
+      const n = s.length;
+      while (pos < n) {
+        while (pos < n && /[\s,]/.test(s[pos])) pos += 1;
+        if (pos >= n || s[pos] !== '(') break;
+        pos += 1;
+        const row = [];
+        while (pos < n) {
+          while (pos < n && /\s/.test(s[pos])) pos += 1;
+          if (pos >= n) break;
+          if (s[pos] === ')') { pos += 1; break; }
+          const r = readValue(s, pos);
+          row.push(r.value);
+          pos = r.next;
+          while (pos < n && /\s/.test(s[pos])) pos += 1;
+          if (s[pos] === ',') { pos += 1; continue; }
+          if (s[pos] === ')') { pos += 1; break; }
+          // 异常：直接跳出，避免死循环
+          break;
+        }
+        rows.push(row);
+      }
+      return rows;
+    }
+
+    const SKIP_DEF = /^(primary|unique|key|index|constraint|fulltext|spatial|check|foreign|period)\b/i;
+
+    function parseCreateTable(stmt) {
+      const m = /^create\s+(?:temporary\s+)?table\s+(?:if\s+not\s+exists\s+)?/i.exec(stmt);
+      if (!m) return null;
+      const rest = stmt.slice(m[0].length);
+      const open = rest.indexOf('(');
+      if (open === -1) return null;
+      const head = rest.slice(0, open);
+      if (/\blike\b/i.test(head) || /\bas\s+select\b/i.test(head)) return null;
+
+      const name = stripIdent(head.split('.').pop());
+      if (!name) return null;
+
+      const close = findMatching(rest, open);
+      const body = rest.slice(open + 1, close === -1 ? rest.length : close);
+      const columns = [];
+      splitTopLevel(body, ',').forEach((part) => {
+        const p = part.trim();
+        if (!p || SKIP_DEF.test(p)) return;
+        const q = p[0];
+        if (q === '`' || q === '"') {
+          const end = p.indexOf(q, 1);
+          columns.push(stripIdent(end === -1 ? p : p.slice(0, end + 1)));
+        } else {
+          const mm = /^[A-Za-z0-9_$]+/.exec(p);
+          if (mm) columns.push(mm[0]);
+        }
+      });
+      return { name, columns };
+    }
+
+    function parseInsert(stmt) {
+      const m = /^(?:insert|replace)\s+(?:(?:low_priority|delayed|high_priority)\s+)?(?:ignore\s+)?(?:into\s+)?/i.exec(stmt);
+      if (!m) return null;
+
+      let i = m[0].length;
+      const tn = readQualifiedName(stmt, i);
+      if (!tn.name) return null;
+      i = tn.end;
+
+      while (i < stmt.length && /\s/.test(stmt[i])) i += 1;
+
+      let cols = null;
+      if (stmt[i] === '(') {
+        const close = findMatching(stmt, i);
+        if (close === -1) return null;
+        cols = splitTopLevel(stmt.slice(i + 1, close), ',')
+          .map((c) => stripIdent(c.trim()))
+          .filter(Boolean);
+        i = close + 1;
+      }
+
+      const vm = /^\s*(?:values|value)\b/i.exec(stmt.slice(i, i + 12));
+      if (!vm) return null; // 形如 INSERT ... SET / INSERT ... SELECT 的结构化写入，不支持
+      i += vm[0].length;
+
+      const rows = parseTuples(stmt, i);
+      return { name: tn.name, columns: cols, rows };
+    }
+
+    /**
+     * 解析整份 dump，返回 { tables: [{name, columns, rows, inserts}], stats }
+     */
+    function parseDump(text) {
+      const stats = { statements: 0, creates: 0, inserts: 0, skipped: 0 };
+      const statements = splitStatements(text);
+      stats.statements = statements.length;
+
+      const tables = [];
+      const byName = new Map();
+
+      const ensure = (name) => {
+        let t = byName.get(name);
+        if (!t) {
+          t = { name, columns: [], rows: [], inserts: 0 };
+          byName.set(name, t);
+          tables.push(t);
+        }
+        return t;
+      };
+
+      for (let k = 0; k < statements.length; k++) {
+        const st = statements[k];
+        const c0 = st.charCodeAt(0) | 32; // 小写化首字符
+        if (c0 === 99) { // c: create
+          const t = parseCreateTable(st);
+          if (t) {
+            stats.creates += 1;
+            const tb = ensure(t.name);
+            if (!tb.columns.length) tb.columns = t.columns.slice();
+            else t.columns.forEach((c) => { if (tb.columns.indexOf(c) === -1) tb.columns.push(c); });
+          } else stats.skipped += 1;
+          continue;
+        }
+        if (c0 === 105 || c0 === 114) { // i: insert, r: replace
+          const ins = parseInsert(st);
+          if (!ins) { stats.skipped += 1; continue; }
+          const t = ensure(ins.name);
+          addRows(t, ins.columns, ins.rows);
+          stats.inserts += 1;
+          continue;
+        }
+        stats.skipped += 1;
+      }
+
+      // 无 CREATE 的纯 INSERT 表：用首行长度补列名
+      tables.forEach((t) => {
+        if (!t.columns.length) {
+          const w = t.rows.reduce((mx, r) => Math.max(mx, r.length), 0);
+          t.columns = Array.from({ length: w }, (_, i) => 'col' + (i + 1));
+        }
+      });
+
+      return { tables, stats };
+    }
+
+    /** 把一组行写入表，按 INSERT 的列清单映射到表列 */
+    function addRows(t, cols, rows) {
+      const CAP = 1500000; // 单表行数上限，防止超大 dump 撑爆浏览器内存
+      let map = null;
+      if (cols && cols.length) {
+        if (!t.columns.length) {
+          t.columns = cols.slice();
+        } else {
+          map = cols.map((c) => {
+            let idx = t.columns.indexOf(c);
+            if (idx === -1) { t.columns.push(c); idx = t.columns.length - 1; }
+            return idx;
+          });
+        }
+      }
+      if (!rows.length) return;
+      if (t.rows.length >= CAP) {
+        t.truncated = (t.truncated || 0) + rows.length;
+        return;
+      }
+      if (t.rows.length + rows.length > CAP) {
+        const allow = CAP - t.rows.length;
+        t.truncated = (t.truncated || 0) + (rows.length - allow);
+        rows = rows.slice(0, allow);
+      }
+      if (map) {
+        const w = t.columns.length;
+        for (let i = 0; i < rows.length; i++) {
+          const src = rows[i];
+          const row = new Array(w).fill(null);
+          for (let j = 0; j < src.length; j++) {
+            const mi = map[j];
+            if (mi !== undefined) row[mi] = src[j];
+          }
+          t.rows.push(row);
+        }
+      } else {
+        for (let i = 0; i < rows.length; i++) t.rows.push(rows[i]);
+      }
+      t.inserts += rows.length;
+    }
+    /* ==== PARSER END ==== */
+
+    /* ============================================================
+       3. 列名识别 + 时间归一化
+       ============================================================ */
+    const COL_ALIAS = {
+      // vsap_flight_node：safeguard_time（时间）/ node_code（节点）/ apron_code（机位）/ visual_id（飞机唯一识别编码）
+      time: ['safeguardtime', 'safeguard_time', 'reporttime', 'report_time', 'nodetime', 'node_time', 'eventtime', 'event_time', 'happentime', 'happen_time', 'time', 'ts'],
+      code: ['nodecode', 'node_code', 'node', 'nodeid', 'node_id', 'code', 'type'],
+      stand: ['aproncode', 'apron_code', 'aprocode', 'apro_code', 'apron', 'standcode', 'stand_code', 'stand', 'gate', 'gatecode', 'position', 'berth'],
+      visual: ['visualid', 'visual_id', 'aircraftid', 'aircraft_id', 'acreg', 'regno', 'tailno'],
+      appid: ['appid', 'app_id', 'scene', 'scenetype'],
+    };
+
+    function resolveColumns(columns) {
+      const norm = columns.map((c) => String(c).toLowerCase().replace(/[\s\-_]/g, ''));
+      const find = (list) => {
+        for (let i = 0; i < list.length; i++) {
+          const key = list[i].replace(/[\s\-_]/g, '');
+          const idx = norm.indexOf(key);
+          if (idx !== -1) return idx;
+        }
+        return -1;
+      };
+      const out = {
+        time: find(COL_ALIAS.time),
+        code: find(COL_ALIAS.code),
+        stand: find(COL_ALIAS.stand),
+        visual: find(COL_ALIAS.visual),
+        appid: find(COL_ALIAS.appid),
+      };
+      out.names = {
+        time: out.time === -1 ? '' : columns[out.time],
+        code: out.code === -1 ? '' : columns[out.code],
+        stand: out.stand === -1 ? '' : columns[out.stand],
+        visual: out.visual === -1 ? '' : columns[out.visual],
+      };
+      return out;
+    }
+
+    const pad2 = (v) => String(v).padStart(2, '0');
+
+    /** 归一化为 'YYYY-MM-DD HH:MM:SS'，无法识别返回 '' */
+    function normDateTime(v) {
+      if (v == null) return '';
+      const s = String(v).trim();
+      if (!s) return '';
+      let m = /(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/.exec(s);
+      if (m) return `${m[1]}-${pad2(m[2])}-${pad2(m[3])} ${pad2(m[4])}:${pad2(m[5])}:${pad2(m[6] || 0)}`;
+      m = /(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/.exec(s);
+      if (m) return `${m[1]}-${pad2(m[2])}-${pad2(m[3])} 00:00:00`;
+      m = /^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/.exec(s);
+      if (m) return `1970-01-01 ${pad2(m[1])}:${pad2(m[2])}:${pad2(m[3] || 0)}`;
+      return '';
+    }
+
+    /** 解析时间输入框：支持「日期 时间」「只有日期」「只有时间」 */
+    function parseBound(raw, isEnd) {
+      const s = String(raw || '').trim();
+      if (!s) return null;
+      const full = /^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/.exec(s);
+      if (full) {
+        const d = `${full[1]}-${pad2(full[2])}-${pad2(full[3])}`;
+        if (full[4] === undefined) {
+          return { hasDate: true, key: `${d} ${isEnd ? '23:59:59' : '00:00:00'}` };
+        }
+        return { hasDate: true, key: `${d} ${pad2(full[4])}:${pad2(full[5])}:${pad2(full[6] || 0)}` };
+      }
+      const t = /^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/.exec(s);
+      if (t) return { hasDate: false, key: `${pad2(t[1])}:${pad2(t[2])}:${pad2(t[3] || 0)}` };
+      return { hasDate: true, key: normDateTime(s) || s };
+    }
+
+    function inWindow(nt, start, end) {
+      if (!nt) return false;
+      if (start) {
+        const v = start.hasDate ? nt : nt.slice(11);
+        if (v < start.key) return false;
+      }
+      if (end) {
+        const v = end.hasDate ? nt : nt.slice(11);
+        if (v > end.key) return false;
+      }
+      return true;
+    }
+
+    /* ============================================================
+       4. 状态
+       ============================================================ */
+    const state = {
+      databases: [],     // [{ file, hash, tables: [{name, columns, rows, inserts}] }]
+      result: null,      // 最近一次提取结果
+    };
+    const MAX_RENDER_ROWS = 3000;
+    const MAX_FILE_MB = 200;
+
+    /* ============================================================
+       5. 导入流程
+       ============================================================ */
+    function showFileStatus(msg, isError) {
+      const el = $('fileInfo');
+      el.textContent = msg;
+      el.title = msg;
+      el.className = isError
+        ? 'spacer truncate fs-12 fw-bold c-danger'
+        : 'spacer truncate fs-12 fw-bold c-primary';
+    }
+
+    async function decodeFile(file) {
+      const buf = await file.arrayBuffer();
+      const pref = $('encodingSel').value;
+      if (pref !== 'auto') {
+        try { return new TextDecoder(pref).decode(buf); } catch (e) { }
+      }
+      try {
+        return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+      } catch (e) {
+        try { return new TextDecoder('gbk').decode(buf); } catch (e2) { }
+        return new TextDecoder('utf-8').decode(buf);
+      }
+    }
+
+    function quickHash(text) {
+      let h = 2166136261;
+      const step = Math.max(1, Math.floor(text.length / 8192));
+      for (let i = 0; i < text.length; i += step) {
+        h ^= text.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return text.length.toString(16) + '-' + (h >>> 0).toString(16);
+    }
+
+    async function handleFiles(files) {
+      const list = Array.from(files || []);
+      if (!list.length) return;
+
+      $('queryStatus').innerHTML = '<span class="c-primary">正在解析 .sql 文件，请稍候…</span>';
+      await new Promise((r) => setTimeout(r, 30)); // 让 loading 先渲染
+
+      const added = [], replaced = [], skipped = [], failed = [];
+      const priorCount = state.databases.length;
+
+      for (const file of list) {
+        if (file.size > MAX_FILE_MB * 1024 * 1024) {
+          failed.push({ name: file.name, reason: `文件超过 ${MAX_FILE_MB}MB` });
+          continue;
+        }
+        try {
+          const text = await decodeFile(file);
+          const hash = quickHash(text);
+          if (state.databases.some((d) => d.hash === hash)) {
+            skipped.push(file.name);
+            continue;
+          }
+          const t0 = performance.now();
+          const { tables } = parseDump(text);
+          const cost = ((performance.now() - t0) / 1000).toFixed(1);
+
+          if (!tables.length) {
+            failed.push({ name: file.name, reason: '未解析到 CREATE TABLE / INSERT 语句' });
+            continue;
+          }
+          const dbObj = { file: file.name, hash, tables, cost };
+          const sameIdx = state.databases.findIndex((d) => d.file === file.name);
+          if (sameIdx !== -1) {
+            state.databases[sameIdx] = dbObj;
+            replaced.push(file.name);
+          } else {
+            state.databases.push(dbObj);
+            added.push(file.name);
+          }
+        } catch (e) {
+          console.warn(e);
+          failed.push({ name: file.name, reason: '读取或解析失败' });
+        }
+      }
+
+      renderTableList();
+      refreshStatusAfterImport({ added, replaced, skipped, failed, priorCount });
+    }
+
+    function refreshStatusAfterImport({ added, replaced, skipped, failed, priorCount }) {
+      if (!state.databases.length) {
+        $('dropZoneLarge').classList.remove('hidden');
+        $('dropZoneSmall').classList.add('hidden');
+        $('tableSelectionSection').classList.add('hidden');
+        const msg = failed.length === 1
+          ? `${failed[0].name}：${failed[0].reason}`
+          : `${failed.length || 1} 个文件导入失败`;
+        showFileStatus(msg, true);
+        $('queryStatus').innerHTML = '<span class="c-danger fw-bold">请导入包含 CREATE TABLE / INSERT 的 .sql 文件</span>';
+        return;
+      }
+
+      $('dropZoneLarge').classList.add('hidden');
+      $('dropZoneSmall').classList.remove('hidden');
+      $('tableSelectionSection').classList.remove('hidden');
+
+      const totalRows = state.databases.reduce(
+        (s, d) => s + d.tables.reduce((s2, t) => s2 + t.rows.length, 0), 0);
+      const totalTables = state.databases.reduce((s, d) => s + d.tables.length, 0);
+
+      const isAppend = priorCount > 0;
+      const parts = [];
+      if (added.length) parts.push(`${isAppend ? '新增' : '已载入'} ${added.length} 个文件`);
+      if (replaced.length) parts.push(`更新 ${replaced.length} 个`);
+      if (skipped.length) parts.push(`跳过 ${skipped.length} 个重复`);
+      if (failed.length) parts.push(`${failed.length} 个失败`);
+
+      const suffix = isAppend ? `（累计 ${state.databases.length} 个文件）` : '';
+      const head = parts.join('，') || '已载入';
+      showFileStatus(`${head}${suffix}`, failed.length > 0);
+      $('queryStatus').innerHTML =
+        `<span class="c-success fw-bold">已载入 ${fmt(totalTables)} 张表 / ${fmt(totalRows)} 行</span>` +
+        `<span class="c-muted"> · 请勾选要提取的表并填写条件</span>`;
+    }
+
+    function renderTableList() {
+      const prev = new Map();
+      document.querySelectorAll('.table-checkbox').forEach((cb) => prev.set(cb.value, cb.checked));
+
+      // 跨文件按表名聚合，同时统计行数
+      const agg = new Map();
+      state.databases.forEach((db) => {
+        db.tables.forEach((t) => {
+          const item = agg.get(t.name) || { rows: 0, cols: t.columns.length, files: new Set(), trunc: 0 };
+          item.rows += t.rows.length;
+          item.trunc += (t.truncated || 0);
+          item.files.add(db.file);
+          agg.set(t.name, item);
+        });
+      });
+
+      const names = Array.from(agg.keys()).sort();
+      const html = names.map((name) => {
+        const info = agg.get(name);
+        const checked = prev.has(name) ? (prev.get(name) ? 'checked' : '') : 'checked';
+        return `<div class="table-item">
+          <input type="checkbox" value="${escapeHtml(name)}" class="table-checkbox" ${checked}>
+          <label class="cursor-pointer truncate" title="${escapeHtml(name)}" onclick="this.previousElementSibling.click()">${escapeHtml(name)}</label>
+        </div>`;
+      }).join('');
+      $('tableList').innerHTML = html || '<p class="fs-11 c-muted">未发现数据表</p>';
+    }
+
+    /* ============================================================
+       6. 提取核心
+       ============================================================ */
+    function selectedTables() {
+      return Array.from(document.querySelectorAll('.table-checkbox:checked')).map((cb) => cb.value);
+    }
+
+    function executeExtraction() {
+      const tables = selectedTables();
+      const startRaw = $('startTime').value.trim();
+      const endRaw = $('endTime').value.trim();
+      const standRaw = $('aproCode').value.trim();
+
+      if (!state.databases.length) {
+        setStatus('请先导入 .sql 文件', 'danger');
+        return;
+      }
+      if (!tables.length) {
+        setStatus('请勾选要提取的数据表', 'danger');
+        renderEmptyTable();
+        return;
+      }
+      if (!standRaw) {
+        setStatus('请填写机位号（apron_code）', 'danger');
+        renderEmptyTable();
+        return;
+      }
+      if (!startRaw || !endRaw) {
+        setStatus('请完整填写开始时间与结束时间', 'danger');
+        renderEmptyTable();
+        return;
+      }
+
+      const start = parseBound(startRaw, false);
+      const end = parseBound(endRaw, true);
+      if (start && end && start.hasDate && end.hasDate && start.key > end.key) {
+        setStatus('开始时间晚于结束时间，请检查', 'danger');
+        renderEmptyTable();
+        return;
+      }
+
+      setStatus('正在扫描数据…', 'primary');
+
+      setTimeout(() => {
+        const t0 = performance.now();
+        const timesMap = new Map();   // code -> Set('YYYY-MM-DD HH:MM:SS')
+        const hits = [];
+        let scanned = 0, totalHits = 0;
+        let standColMissing = false;
+        const tableWarn = [];
+        const colInfo = [];
+
+        for (const db of state.databases) {
+          for (const t of db.tables) {
+            if (tables.indexOf(t.name) === -1) continue;
+            const cols = resolveColumns(t.columns);
+            if (cols.time === -1 || cols.code === -1) {
+              tableWarn.push(`${t.name}（缺少时间列或节点编码列）`);
+              continue;
+            }
+            if (cols.stand === -1) standColMissing = true;
+            colInfo.push(`${t.name}: 时间=${cols.names.time || '—'} 节点=${cols.names.code || '—'} 机位=${cols.names.stand || '—'}`);
+
+            for (let r = 0; r < t.rows.length; r++) {
+              scanned += 1;
+              const row = t.rows[r];
+
+              if (cols.stand !== -1) {
+                const standVal = String(row[cols.stand] == null ? '' : row[cols.stand]).trim();
+                if (standVal !== standRaw) continue;
+              }
+
+              const nt = normDateTime(row[cols.time]);
+              if (!nt || !inWindow(nt, start, end)) continue;
+
+              let code = String(row[cols.code] == null ? '' : row[cols.code]).trim();
+              if (!DICT[code]) {
+                // 大小写/下划线/空格不同（GuidecarArr、guidecar_arr）→ 归一化后再匹配
+                const alt = CODE_LOOKUP[code.toLowerCase().replace(/[\s_\-]/g, '')];
+                if (!alt) continue;
+                code = alt;
+              }
+
+              totalHits += 1;
+              const visual = cols.visual === -1 ? '' : String(row[cols.visual] == null ? '' : row[cols.visual]).trim();
+
+              let s = timesMap.get(code);
+              if (!s) { s = new Set(); timesMap.set(code, s); }
+              s.add(nt);
+
+              if (hits.length < 20000) {
+                hits.push({ file: db.file, table: t.name, stand: standRaw, code, name: DICT[code], dt: nt, visual, row, columns: t.columns });
+              }
+            }
+          }
+        }
+
+        if (!totalHits) {
+          state.result = null;
+          renderEmptyTable();
+          const extra = tableWarn.length ? `（已跳过：${tableWarn.join('、')}）` : '';
+          setStatus(`未在机位 ${escapeHtml(standRaw)} 下提取到任何节点${extra}`, 'warn');
+          renderEcho([], []);
+          renderRaw([], []);
+          return;
+        }
+
+        const times = {};
+        ORDER.forEach((code) => {
+          const s = timesMap.get(code);
+          times[code] = s ? Array.from(s).sort() : [];
+        });
+
+        let date = '';
+        for (const code of ORDER) {
+          const arr = times[code];
+          if (arr.length && arr[0].slice(0, 10) !== '1970-01-01') { date = arr[0].slice(0, 10); break; }
+        }
+
+        const cost = ((performance.now() - t0) / 1000).toFixed(2);
+        const nodeHitCount = ORDER.filter((c) => times[c].length).length;
+        state.result = {
+          stands: [{ stand: standRaw, times, hitNodes: nodeHitCount }],
+          date, hits, totalHits, scanned, cost, stand: standRaw, tableWarn, colInfo,
+        };
+
+        renderNodeTable();
+        renderEcho(hits, []);
+        renderRaw(hits, []);
+        showDate(date);
+
+        // 状态栏与 index 原生保持一致：单行「解析完毕，提取到 N 个节点」
+        let msg = `<span class="c-blue fw-bold">[机位 ${escapeHtml(standRaw)}]</span> 解析完毕，提取到 <span class="c-danger fw-bold">${nodeHitCount}</span> 个节点`;
+        setStatus(msg, '');
+        if (tableWarn.length) toast(`已跳过：${tableWarn.join('、')}`, 'warn');
+        if (standColMissing) toast('所选表未识别到机位号列（apron_code），已跳过机位过滤', 'warn');
+      }, 30);
+    }
+
+    function setStatus(html, tone) {
+      const el = $('queryStatus');
+      el.innerHTML = tone
+        ? `<span class="c-${tone} fw-bold">${html}</span>`
+        : html;
+    }
+
+    /* ============================================================
+       7. 渲染
+       ============================================================ */
+    function helpBtnHtml(code) {
+      return `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="节点说明">?</button>`;
+    }
+
+    function cellHtml(times) {
+      if (!times || !times.length) return '<td class="is-empty">-</td>';
+      const list = times.map((t) => (t.length > 10 && t.slice(0, 10) !== '1970-01-01' ? t.slice(11) : t.slice(11) || t));
+      if (list.length === 1) return `<td class="cell-time">${escapeHtml(list[0])}</td>`;
+      if (list.length === 2) return `<td class="cell-time">${escapeHtml(list[0])}<br>${escapeHtml(list[1])}</td>`;
+      const rest = list.slice(1).map((v) => escapeHtml(v)).join('<br>');
+      return `<td class="cell-time">
+        <details class="more-row">
+          <summary>
+            <div>${escapeHtml(list[0])}</div>
+            <div class="more-btn">▼ 展开 ${list.length - 1} 条</div>
+          </summary>
+          <div class="more-divider">${rest}
+            <div class="more-btn" onclick="event.preventDefault();this.closest('details').removeAttribute('open')">▲ 收起</div>
+          </div>
+        </details>
+      </td>`;
+    }
+
+    function renderEmptyTable() {
+      let thead = '<tr>';
+      ORDER.forEach((code) => {
+        thead += `<th><div class="th-main">${DICT[code]}${helpBtnHtml(code)}</div><div class="th-sub">${code}</div></th>`;
+      });
+      thead += '</tr>';
+      $('nodeThead').innerHTML = thead;
+
+      let tbody = '<tr>';
+      ORDER.forEach(() => { tbody += '<td class="is-empty">-</td>'; });
+      tbody += '</tr>';
+      $('nodeTbody').innerHTML = tbody;
+
+      showDate('');
+    }
+
+    function renderNodeTable() {
+      const res = state.result;
+      if (!res) return renderEmptyTable();
+
+      let thead = '<tr>';
+      ORDER.forEach((code) => {
+        thead += `<th><div class="th-main">${DICT[code]}${helpBtnHtml(code)}</div><div class="th-sub">${code}</div></th>`;
+      });
+      thead += '</tr>';
+      $('nodeThead').innerHTML = thead;
+
+      const st = res.stands[0];
+      let body = '<tr>';
+      ORDER.forEach((code) => { body += cellHtml(st.times[code]); });
+      body += '</tr>';
+      $('nodeTbody').innerHTML = body;
+
+    }
+
+    function showDate(date) {
+      const el = $('extractedDateDisplay');
+      const txt = el.querySelector('.date-text');
+      if (date) {
+        txt.textContent = date;
+        el.classList.remove('hidden');
+      } else {
+        txt.textContent = '';
+        el.classList.add('hidden');
+      }
+    }
+
+    function renderEcho(hits, columns) {
+      // 完全复用 index 原生渲染：表头取 dump 原始列名，跳过 image_path、高度自适应、截断提示均一致
+      if (!hits.length) { renderPasteTableGrid(''); return; }
+      const cols = [];
+      hits.slice(0, 200).forEach((h) => {
+        (h.columns || []).forEach((c) => { if (cols.indexOf(c) === -1) cols.push(c); });
+      });
+      if (!cols.length) { renderPasteTableGrid(''); return; }
+      const esc = (v) => String(v == null ? '' : v).replace(/[\t\r\n]/g, ' ');
+      const rows = [cols.join('\t')];
+      hits.slice(0, MAX_RENDER_ROWS).forEach((h) => {
+        rows.push(cols.map((c) => {
+          const i = (h.columns || []).indexOf(c);
+          return esc(i === -1 ? '' : h.row[i]);
+        }).join('\t'));
+      });
+      renderPasteTableGrid(rows.join('\n'));
+    }
+
+    function renderRaw(hits, hitColumns) {
+      // 完全复用 index 原生渲染：来源库 / 来源表 + 原始列，高度与截断提示一致
+      const cols = [];
+      hits.slice(0, 200).forEach((h) => {
+        (h.columns || []).forEach((c) => { if (cols.indexOf(c) === -1) cols.push(c); });
+      });
+      const data = hits.slice(0, MAX_RENDER_ROWS).map((h) => {
+        const row = { _source_db: h.file, _source_table: h.table };
+        (h.columns || []).forEach((c, i) => { row[c] = h.row[i]; });
+        return row;
+      });
+      renderRawTable(data, cols);
+    }
+
+    /* ============================================================
+       8. 导出 / 复制 / 清空
+       ============================================================ */
+    function buildTimesTsv() {
+      const res = state.result;
+      if (!res) return '';
+      const st = res.stands[0];
+      return ORDER.map((c) => {
+        const v = st.times[c].map((x) => x.slice(11)).join('\n');
+        return v.indexOf('\n') !== -1 ? `"${v}"` : v;
+      }).join('\t');
+    }
+
+    function buildCsv() {
+      const res = state.result;
+      const BOM = '\uFEFF';
+      const q = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+      const st = res.stands[0];
+      let csv = BOM;
+      csv += ORDER.map((c) => q(`${DICT[c]}\n${c}`)).join(',') + '\n';
+      csv += ORDER.map((c) => q(st.times[c].map((x) => x.slice(11)).join('\n'))).join(',') + '\n';
+      return csv;
+    }
+
+    function download(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+    }
+
+    function requireResult() {
+      if (!state.result) {
+        toast('没有可用的结果，请先执行提取', 'warn');
+        return false;
+      }
+      return true;
+    }
+
+    function bindActions() {
+      $('btnSample').addEventListener('click', () => {
+        download('sample_vsap_flight_node.sql', buildSampleDump(), 'text/plain;charset=utf-8;');
+        toast('示例 .sql 已生成，可拖回页面验证', 'ok');
+      });
+    }
+
+    /* ============================================================
+       9. 示例 dump
+       ============================================================ */
+    function buildSampleDump() {
+      const stands = ['933', '935'];
+      const base = { 933: '2026-06-08 08:00:00', 935: '2026-06-08 09:10:00' };
+      const visual = { 933: 'B-30C5', 935: 'B-30D1' };  // visual_id：飞机唯一识别编码
+      // 与 ORDER 一一对应：引导车到达/离开、飞机入位、加油车到达/开走、
+      // 开客舱门、关客舱门、配餐开始/结束、飞机推出
+      const offsets = [0, 1680, 20, 60, 1860, 240, 1500, 420, 1080, 2100];
+
+      let sql = '-- 示例 MySQL dump：vsap_flight_node（vsap 航班保障节点表）\n';
+      sql += '-- 结构参照现场库：23 列全 TEXT；时间列 safeguard_time、机位列 apron_code、机号 visual_id、node_name 为空\n';
+      sql += '-- 可直接拖入页面验证解析效果\n\n';
+
+      sql += 'DROP TABLE IF EXISTS `vsap_flight_node`;\n';
+      sql += 'CREATE TABLE `vsap_flight_node` (\n';
+      const colDefs = [
+        ['id', 'TEXT'], ['create_by', 'TEXT'], ['create_time', 'TEXT'], ['update_by', 'TEXT'],
+        ['update_time', 'TEXT'], ['sys_org_code', 'TEXT'], ['flight_id', 'TEXT'], ['node_code', 'TEXT'],
+        ['node_name', 'TEXT'], ['relations_depart', 'TEXT'], ['safeguard_time', 'TEXT'],
+        ['expect_safeguard_time', 'TEXT'], ['hac_status', 'TEXT'], ['position_status', 'TEXT'],
+        ['node_no', 'TEXT'], ['visual_id', 'TEXT'], ['apron_code', 'TEXT'], ['airline_code', 'TEXT'],
+        ['airline_name', 'TEXT'], ['sonr', 'TEXT'], ['suni', 'TEXT'], ['sonr_send', 'TEXT'], ['suni_send', 'TEXT'],
+      ];
+      sql += colDefs.map(([n, t]) => `  \`${n}\` ${t}`).join(',\n') + '\n';
+      sql += ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n';
+
+      const COLS = '`id`,`create_by`,`create_time`,`update_by`,`update_time`,`sys_org_code`,`flight_id`,' +
+        '`node_code`,`node_name`,`relations_depart`,`safeguard_time`,`expect_safeguard_time`,' +
+        '`hac_status`,`position_status`,`node_no`,`visual_id`,`apron_code`,`airline_code`,' +
+        '`airline_name`,`sonr`,`suni`,`sonr_send`,`suni_send`';
+
+      const rows = [];
+      let id = 1;
+      stands.forEach((st) => {
+        const startMs = new Date((base[st] || '2026-06-08 08:00:00').replace(/-/g, '/')).getTime();
+        const flight = `CZ3101_2026${st}`;
+        ORDER.forEach((code, idx) => {
+          const ts = new Date(startMs + offsets[idx] * 1000);
+          const t = `${ts.getFullYear()}-${pad2(ts.getMonth() + 1)}-${pad2(ts.getDate())} ${pad2(ts.getHours())}:${pad2(ts.getMinutes())}:${pad2(ts.getSeconds())}`;
+          const exp = new Date(startMs + offsets[idx] * 1000 - 120000);
+          const et = `${exp.getFullYear()}-${pad2(exp.getMonth() + 1)}-${pad2(exp.getDate())} ${pad2(exp.getHours())}:${pad2(exp.getMinutes())}:${pad2(exp.getSeconds())}`;
+          rows.push([
+            id++, 'admin', t, 'admin', t, 'A01', flight,
+            code, '', '1', t, et,
+            '1', '1', String(idx + 1), visual[st], st, 'CZ',
+            '中国南方航空', '0', '0', '1', '1',
+          ].map((v) => (v === null ? 'NULL' : `'${String(v).replace(/'/g, "''")}'`)).join(','));
+        });
+      });
+
+      // 每 4 行一条 INSERT，模拟真实 dump 的多值插入
+      for (let i = 0; i < rows.length; i += 4) {
+        sql += `INSERT INTO \`vsap_flight_node\` (${COLS}) VALUES\n`;
+        sql += rows.slice(i, i + 4).map((r) => `(${r})`).join(',\n') + ';\n';
+      }
+      return sql;
+    }
+
+    /* ============================================================
+       10. 节点帮助气泡
+       ============================================================ */
+
+
+    /* ============================================================
+       11. 拖拽 / 上传 / 初始化
+       ============================================================ */
+
+    (function init() {
+      bindActions();  // 仅绑定隐藏的示例生成按钮，其余由 index 分发
+    })();
+  
+
+    /* ── 由 index 按当前数据源分发调用 ── */
+    function copyTimes() {
+      if (!requireResult()) return;
+      copyText(buildTimesTsv());
+      // 状态反馈同步给出，避免部分浏览器里 clipboard Promise 挂起时界面无响应
+      setStatus('时间行已复制到剪贴板', 'success');
+      toast('时间集已复制（可直接粘贴到 Excel）', 'ok');
+    }
+
+    function exportCsv() {
+      if (!requireResult()) return;
+      const label = `机位${state.result.stand || ''}`;
+      download(`航班保障节点提取(${label})_${Date.now()}.csv`, buildCsv(), 'text/csv;charset=utf-8;');
+      setStatus('CSV 已导出', 'purple');
+      toast('结果表已导出为 CSV', 'ok');
+    }
+
+    function copyVisual() {
+      if (!requireResult()) return;
+      const list = [], seen = new Set();
+      state.result.hits.forEach((h) => {
+        if (h.visual && !seen.has(h.visual)) { seen.add(h.visual); list.push(h.visual); }
+      });
+      if (!list.length) {
+        toast('命中数据中没有飞机唯一识别编码（visual_id）', 'warn');
+        return;
+      }
+      list.sort((a, b) => String(a).localeCompare(String(b), 'zh-CN', { numeric: true }));
+      copyText(list.join('\n'));
+      setStatus(`已复制 ${list.length} 个机号`, 'warn');
+      toast(`已复制 ${list.length} 个机号`, 'ok');
+    }
+
+    function clear() {
+      state.result = null;
+      document.querySelectorAll('.table-checkbox').forEach((cb) => { cb.checked = true; });
+      renderEmptyTable();
+      renderEcho([], []);
+      renderRaw([], []);
+      $('echoTable').classList.add('hidden');
+      setStatus('页面已清空重置（数据库仍保留在内存中）', 'muted');
+      toast('结果集已清空', 'ok');
+    }
+
+    function reset() {
+      state.databases.length = 0;
+      state.result = null;
+    }
+
+    /* #demo：载入示例 dump 并跑一次提取 */
+    function loadDemo() {
+      const text = buildSampleDump();
+      const { tables } = parseDump(text);
+      state.databases.push({ file: 'sample_vsap_flight_node.sql', hash: quickHash(text), tables });
+      renderTableList();
+      $('dropZoneLarge').classList.add('hidden');
+      $('dropZoneSmall').classList.remove('hidden');
+      $('tableSelectionSection').classList.remove('hidden');
+      showFileStatus('已载入 1 个文件（示例）', false);
+      $('startTime').value = '2026-06-08 00:00:00';
+      $('endTime').value = '2026-06-09 00:00:00';
+      $('aproCode').value = '933';
+      executeExtraction();
+    }
+
+    /* MySQL 节点说明：复用 index 的 .nh-* 气泡样式 */
+    function buildNodeHelpHtml(code) {
+      const info = NODE_HELP[code];
+      const head = `<div class="nh-head">
+          <span class="nh-name">${escapeHtml(DICT[code] || code)}</span>
+          <span class="nh-code">${escapeHtml(code)}</span>
+        </div>`;
+      if (!info) return head + '<div class="nh-body"><span class="c-muted">暂无说明</span></div>';
+      return head + `<div class="nh-body">
+          <div class="nh-sec">
+            <div class="nh-sec-title">节点说明</div>
+            <div>${escapeHtml(info.desc)}</div>
+          </div>
+          <div class="nh-sec">
+            <div class="nh-sec-title nh-sec-title--trouble">排查建议</div>
+            <ul class="nh-list">${info.tips.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
+          </div>
+        </div>`;
+    }
+
+    return {
+      handleFiles, executeExtraction, copyTimes, exportCsv, copyVisual,
+      clear, reset, loadDemo, buildNodeHelpHtml, renderEmptyTable,
+      renderTableList, showFileStatus,
+    };
+
+  })();
+  </script>
   <script>
     // 常量与正则预编译
     const TIME_REGEX = /(?:\d{4}-\d{2}-\d{2}\s)?\d{2}:\d{2}:\d{2}/;
@@ -1558,6 +2892,8 @@
     }
 
     function buildNodeHelpHtml(code) {
+      if (nodeEngine === "mysql" && window.MYSQL_ENGINE)
+        return MYSQL_ENGINE.buildNodeHelpHtml(code);
       const info = NODE_HELP[code];
       const name = (CONFIG[currentMode].dict || {})[code] || code;
       const head =
@@ -1731,6 +3067,48 @@
     // B 区回显表格数据（renderPasteTableGrid 渲染时同步保存），供「复制镜头号」按 camera 列取值
     let bAreaTableData = { headers: [], rows: [] };
 
+    // 当前数据源引擎：sqlite = 原 index；mysql = sanxia。仅由导入的文件类型决定，无手动入口
+    let nodeEngine = "sqlite";
+    function setNodeEngine(kind) {
+      if (kind === nodeEngine) return;
+      nodeEngine = kind;
+
+      // 切换数据源时清掉另一套的内存数据，避免两类数据混用
+      if (kind === "mysql") {
+        databases.forEach((d) => { try { d.db.close(); } catch (e) {} });
+        databases = [];
+      }
+      MYSQL_ENGINE.reset();
+      finalCleanedTimes = {};
+      lastExtractionFilter = null;
+      bAreaTableData = { headers: [], rows: [] };
+
+      document.getElementById("tableList").innerHTML = "";
+      document.getElementById("tableSelectionSection").classList.add("hidden");
+      document.getElementById("dropZoneLarge").classList.remove("hidden");
+      document.getElementById("dropZoneSmall").classList.add("hidden");
+      document.getElementById("fileInfo").classList.add("hidden");
+      document.getElementById("rawTableHeader").innerHTML = "";
+      document.getElementById("rawTableBody").innerHTML = "";
+      document.getElementById("rawCount").innerText = "0";
+      document.getElementById("rawTruncNote").classList.add("hidden");
+      document.getElementById("extractedDateDisplay").classList.add("hidden");
+      const dt = document.querySelector("#extractedDateDisplay .date-text");
+      if (dt) dt.textContent = "";
+
+      // 按钮组完全保持 index 原生：不改文案、不隐藏远机位、不调整跨列。
+      // 点击行为由 executeExtraction() 与各按钮的分发钩子按当前数据源决定。
+      if (kind === "mysql") {
+        MYSQL_ENGINE.renderEmptyTable();
+        renderPasteTableGrid("");
+      } else {
+        renderEmptyTable();
+      }
+      // 状态栏恢复 index 原生默认提示，不出现任何引擎 / 数据源标识文案
+      document.getElementById("queryStatus").textContent = "请配置数据并选择提取模式";
+      nodeHelp.hide(); // 结果表表头已换，收起帮助气泡
+    }
+
     async function init() {
       try {
         const config = {
@@ -1738,10 +3116,13 @@
             `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}`,
         };
         sqlEngine = await initSqlJs(config);
+        // sql.js 为异步加载：若期间已按导入文件切到 MySQL 引擎，不要重绘结果表 / 覆盖状态
+        if (nodeEngine !== "sqlite" || Object.keys(finalCleanedTimes).length) return;
         renderEmptyTable("near");
         document.getElementById("queryStatus").innerHTML =
           `<span class="c-success fw-bold">系统引擎已就绪</span>`;
       } catch (e) {
+        if (nodeEngine !== "sqlite") return; // MySQL 引擎不依赖 sql.js
         document.getElementById("queryStatus").innerHTML =
           `<span class="c-danger fw-bold">引擎加载失败，请检查网络环境</span>`;
       }
@@ -1846,10 +3227,33 @@
     }
 
     async function handleFiles(files) {
+      const incoming = Array.from(files || []);
+      // 自动判定：文件头为 "SQLite format 3\0" → SQLite 引擎；其余按 MySQL .sql dump 解析
+      const kinds = [];
+      for (const f of incoming) {
+        try {
+          const head = new Uint8Array((await f.arrayBuffer()).slice(0, 16));
+          kinds.push(isSqliteBuffer(head) ? "sqlite" : "mysql");
+        } catch (e) {
+          kinds.push("mysql");
+        }
+      }
+      const hasMysql = kinds.indexOf("mysql") !== -1;
+      const hasSqlite = kinds.indexOf("sqlite") !== -1;
+      if (hasMysql && hasSqlite) {
+        toast("一次请只导入同一种类型的数据源（SQLite 或 MySQL .sql）", "warn");
+        return;
+      }
+      if (hasMysql) {
+        setNodeEngine("mysql");
+        await MYSQL_ENGINE.handleFiles(incoming);
+        return;
+      }
       if (!sqlEngine) {
         showFileStatus("引擎尚未就绪，请稍候重试", true);
         return;
       }
+      setNodeEngine("sqlite");
 
       // 不再整体清空 databases，改为「追加 + 内容去重 + 同名替换」模型，
       // 多次导入的数据可合并参与提取，而非每次导入覆盖掉之前已载入的库
@@ -2149,7 +3553,10 @@
       const hasHeader =
         firstLineCols.includes("nodeCode") ||
         firstLineCols.includes("report_time") ||
-        firstLineCols.includes("aproCode");
+        firstLineCols.includes("aproCode") ||
+        // 整合后的 MySQL 引擎会把 dump 原始列名作为首行传入
+        firstLineCols.some((c) =>
+          /^(node_?code|report_?time|apro_?code|safeguard_?time|apron_?code|visual_?id|camera|appid|taskid|info|create_time|image_path)$/i.test(c.trim()));
 
       let headers = [];
       let startRowIdx = 0;
@@ -2275,6 +3682,7 @@
 
     // 【核心引擎】
     function executeExtraction(mode) {
+      if (nodeEngine === "mysql") { MYSQL_ENGINE.executeExtraction(); return; }
       if (!sqlEngine) return alert("引擎尚未就绪，请稍候");
 
       currentMode = mode;
@@ -2772,6 +4180,7 @@
 
     // 清空重置
     document.getElementById("btnClear").addEventListener("click", () => {
+      if (nodeEngine === "mysql") { MYSQL_ENGINE.clear(); return; }
       finalCleanedTimes = {};
       lastExtractionFilter = null;
       bAreaTableData = { headers: [], rows: [] };
@@ -2800,6 +4209,7 @@
 
     // 强力复制
     document.getElementById("btnCopy").addEventListener("click", () => {
+      if (nodeEngine === "mysql") { MYSQL_ENGINE.copyTimes(); return; }
       if (Object.keys(finalCleanedTimes).length === 0)
         return alert("没有可复制的数据，请先执行提取");
 
@@ -2842,6 +4252,7 @@
 
     // CSV导出
     document.getElementById("btnExport").addEventListener("click", () => {
+      if (nodeEngine === "mysql") { MYSQL_ENGINE.exportCsv(); return; }
       if (Object.keys(finalCleanedTimes).length === 0)
         return alert("没有可导出的数据，请先执行提取");
 
@@ -2869,6 +4280,7 @@
     document
       .getElementById("btnCopyTableNums")
       .addEventListener("click", () => {
+        if (nodeEngine === "mysql") { MYSQL_ENGINE.copyVisual(); return; }
         const { headers, rows } = bAreaTableData;
         if (!rows || rows.length === 0) {
           return alert("B 区暂无回显数据，请先执行节点提取");
@@ -2975,6 +4387,12 @@
         }
         document.body.removeChild(textArea);
       });
+
+    // #demo：自动载入 MySQL 示例 dump，便于快速验证整合后的引擎切换
+    if (location.hash.indexOf("#demo") === 0) {
+      setNodeEngine("mysql");
+      MYSQL_ENGINE.loadDemo();
+    }
 
   // 输入框双击全选（事件委托，覆盖静态与动态控件；排除 checkbox/radio/file/按钮类）
   document.addEventListener('dblclick', function (e) {
