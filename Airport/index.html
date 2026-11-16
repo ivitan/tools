@@ -44,11 +44,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    /* ────────────────────────────────────────────────────────────
-       设计系统：纯手写 CSS + CSS 变量（无 Tailwind，无运行时 CDN）
+    /* 设计系统：纯手写 CSS + CSS 变量（无 Tailwind，无运行时 CDN）
        主题切换只改 :root / [data-theme="dark"] 两组变量值，
-       组件样式里不出现任何硬编码颜色，暗色无需重写一遍规则。
-       ──────────────────────────────────────────────────────────── */
+       组件样式里不出现任何硬编码颜色，暗色无需重写一遍规则。 */
 
     /* ── 1. 变量：浅色 ── */
     :root {
@@ -767,7 +765,7 @@
       white-space: nowrap;
     }
     .nh-empty { color: var(--weak); }
-/* toast —— 卡片样式 + 左侧语义色条，弹出位置沿用各工具原样 */
+/* toast：卡片 + 左侧语义色条 */
 #toasts{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
 .toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
 .toast.ok{border-left-color:var(--success)}
@@ -777,13 +775,11 @@
   </style>
 
   <style id="mysql-extra-css">
-    /* MySQL 引擎渲染所需的补充类（index 已有同名的规则不重复定义） */
+    /* MySQL 引擎渲染所需的补充类 */
     .fs-11 { font-size: 11px; line-height: 15px; }
     .btn-act[disabled] { opacity: .55; cursor: not-allowed; }
     .btn-act[disabled]:active { transform: none; }
-    /* A 区「勾选要提取的表」面板：固定为 index 的最大高度。
-       MySQL dump 常常只有 1 张表，自适应高度会收缩成一条，明显小于
-       SQLite 多表导入时的尺寸；固定后两种数据源的 A 区布局完全一致。 */
+    /* 单表 dump 时面板不至于收缩成一条，固定最小高度 */
     .table-panel { min-height: 192px; }
   </style>
 
@@ -848,7 +844,6 @@
               </div>
               <div class="hidden" aria-hidden="true">
                 <input type="hidden" id="encodingSel" value="auto" />
-                <button id="btnSample" type="button" tabindex="-1"></button>
               </div>
               <div id="tableSelectionSection" class="table-panel custom-scrollbar hidden">
                 <p class="panel-title">勾选要提取的表:</p>
@@ -999,12 +994,10 @@
   </main>
 
   <script id="mysql-engine-js">
-  /* MySQL / sanxia 引擎：独立命名空间，DOM 容器映射到 index 的界面 */
+  /* MySQL / sanxia 引擎：独立命名空间 */
   window.MYSQL_ENGINE = (function () {
 
-    /* ============================================================
-       0. 基础工具
-       ============================================================ */
+    /* ── 0. 基础工具 ── */
     const ID_MAP = {
       nodeThead: 'exactTableHeader',
       nodeTbody: 'exactTableBody',
@@ -1020,8 +1013,6 @@
       btnCopyVisual: 'btnCopyTableNums',
     };
     const $ = (id) => document.getElementById(ID_MAP[id] || id);
-
-    /* 主题统一由 index 的全局 theme 管理 */
 
     function toast(msg, type = '', duration = 2600) {
       const cls = { ok: 'ok', success: 'ok', err: 'err', error: 'err', warn: 'warn', warning: 'warn' }[type] || '';
@@ -1069,9 +1060,7 @@
       } catch (e) { }
     }
 
-    /* ============================================================
-       1. 节点配置（node_code → 中文名）
-       ============================================================ */
+    /* ── 1. 节点配置（node_code → 中文名） ── */
     const NODES = [
       { code: 'guidecarArr', name: '引导车到达' },
       { code: 'guidecarDep', name: '引导车离开' },
@@ -1177,11 +1166,8 @@
     };
 
 
-    /* ============================================================
-       2. MySQL dump 解析器（纯函数，无 DOM 依赖）
-          —— 只做「够用且可靠」的子集：CREATE TABLE / INSERT / REPLACE
-       ============================================================ */
-    /* ==== PARSER START ==== */
+    /* ── 2. MySQL dump 解析器（纯函数，无 DOM 依赖） ── */
+    /* 只做「够用且可靠」的子集：CREATE TABLE / INSERT / REPLACE */
     /**
      * 把 SQL 脚本切成语句数组。
      * 处理：行注释(-- / #)、块注释(/* *\/)、单/双引号字符串、反引号标识符、转义与重复引号。
@@ -1600,11 +1586,7 @@
       }
       t.inserts += rows.length;
     }
-    /* ==== PARSER END ==== */
-
-    /* ============================================================
-       3. 列名识别 + 时间归一化
-       ============================================================ */
+    /* ── 3. 列名识别 + 时间归一化 ── */
     const COL_ALIAS = {
       // vsap_flight_node：safeguard_time（时间）/ node_code（节点）/ apron_code（机位）/ visual_id（飞机唯一识别编码）
       time: ['safeguardtime', 'safeguard_time', 'reporttime', 'report_time', 'nodetime', 'node_time', 'eventtime', 'event_time', 'happentime', 'happen_time', 'time', 'ts'],
@@ -1686,9 +1668,7 @@
       return true;
     }
 
-    /* ============================================================
-       4. 状态
-       ============================================================ */
+    /* ── 4. 状态 ── */
     const state = {
       databases: [],     // [{ file, hash, tables: [{name, columns, rows, inserts}] }]
       result: null,      // 最近一次提取结果
@@ -1696,9 +1676,7 @@
     const MAX_RENDER_ROWS = 3000;
     const MAX_FILE_MB = 200;
 
-    /* ============================================================
-       5. 导入流程
-       ============================================================ */
+    /* ── 5. 导入流程 ── */
     function showFileStatus(msg, isError) {
       const el = $('fileInfo');
       el.textContent = msg;
@@ -1842,9 +1820,7 @@
       $('tableList').innerHTML = html || '<p class="fs-11 c-muted">未发现数据表</p>';
     }
 
-    /* ============================================================
-       6. 提取核心
-       ============================================================ */
+    /* ── 6. 提取核心 ── */
     function selectedTables() {
       return Array.from(document.querySelectorAll('.table-checkbox:checked')).map((cb) => cb.value);
     }
@@ -1973,7 +1949,7 @@
         renderRaw(hits, []);
         showDate(date);
 
-        // 状态栏与 index 原生保持一致：单行「解析完毕，提取到 N 个节点」
+        // 解析完成提示：单行「解析完毕，提取到 N 个节点」
         let msg = `<span class="c-blue fw-bold">[机位 ${escapeHtml(standRaw)}]</span> 解析完毕，提取到 <span class="c-danger fw-bold">${nodeHitCount}</span> 个节点`;
         setStatus(msg, '');
         if (tableWarn.length) toast(`已跳过：${tableWarn.join('、')}`, 'warn');
@@ -1988,9 +1964,7 @@
         : html;
     }
 
-    /* ============================================================
-       7. 渲染
-       ============================================================ */
+    /* ── 7. 渲染 ── */
     function helpBtnHtml(code) {
       return `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="节点说明">?</button>`;
     }
@@ -2062,7 +2036,7 @@
     }
 
     function renderEcho(hits, columns) {
-      // 完全复用 index 原生渲染：表头取 dump 原始列名，跳过 image_path、高度自适应、截断提示均一致
+      // 表头取 dump 原始列名，跳过 image_path，高度自适应并带截断提示
       if (!hits.length) { renderPasteTableGrid(''); return; }
       const cols = [];
       hits.slice(0, 200).forEach((h) => {
@@ -2081,7 +2055,7 @@
     }
 
     function renderRaw(hits, hitColumns) {
-      // 完全复用 index 原生渲染：来源库 / 来源表 + 原始列，高度与截断提示一致
+      // 来源库 / 来源表 + 原始列，高度自适应并带截断提示
       const cols = [];
       hits.slice(0, 200).forEach((h) => {
         (h.columns || []).forEach((c) => { if (cols.indexOf(c) === -1) cols.push(c); });
@@ -2094,9 +2068,7 @@
       renderRawTable(data, cols);
     }
 
-    /* ============================================================
-       8. 导出 / 复制 / 清空
-       ============================================================ */
+    /* ── 8. 导出 / 复制 / 清空 ── */
     function buildTimesTsv() {
       const res = state.result;
       if (!res) return '';
@@ -2137,88 +2109,8 @@
       return true;
     }
 
-    function bindActions() {
-      $('btnSample').addEventListener('click', () => {
-        download('sample_vsap_flight_node.sql', buildSampleDump(), 'text/plain;charset=utf-8;');
-        toast('示例数据已生成，可拖回页面导入', 'ok');
-      });
-    }
+    /* ── 9. 对外操作入口 ── */
 
-    /* ============================================================
-       9. 示例 dump
-       ============================================================ */
-    function buildSampleDump() {
-      const stands = ['933', '935'];
-      const base = { 933: '2026-06-08 08:00:00', 935: '2026-06-08 09:10:00' };
-      const visual = { 933: 'B-30C5', 935: 'B-30D1' };  // visual_id：飞机唯一识别编码
-      // 与 ORDER 一一对应：引导车到达/离开、飞机入位、加油车到达/开走、
-      // 开客舱门、关客舱门、配餐开始/结束、飞机推出
-      const offsets = [0, 1680, 20, 60, 1860, 240, 1500, 420, 1080, 2100];
-
-      let sql = '-- 示例 MySQL dump：vsap_flight_node（vsap 航班保障节点表）\n';
-      sql += '-- 结构参照现场库：23 列全 TEXT；时间列 safeguard_time、机位列 apron_code、机号 visual_id、node_name 为空\n';
-      sql += '-- 可直接拖入页面验证解析效果\n\n';
-
-      sql += 'DROP TABLE IF EXISTS `vsap_flight_node`;\n';
-      sql += 'CREATE TABLE `vsap_flight_node` (\n';
-      const colDefs = [
-        ['id', 'TEXT'], ['create_by', 'TEXT'], ['create_time', 'TEXT'], ['update_by', 'TEXT'],
-        ['update_time', 'TEXT'], ['sys_org_code', 'TEXT'], ['flight_id', 'TEXT'], ['node_code', 'TEXT'],
-        ['node_name', 'TEXT'], ['relations_depart', 'TEXT'], ['safeguard_time', 'TEXT'],
-        ['expect_safeguard_time', 'TEXT'], ['hac_status', 'TEXT'], ['position_status', 'TEXT'],
-        ['node_no', 'TEXT'], ['visual_id', 'TEXT'], ['apron_code', 'TEXT'], ['airline_code', 'TEXT'],
-        ['airline_name', 'TEXT'], ['sonr', 'TEXT'], ['suni', 'TEXT'], ['sonr_send', 'TEXT'], ['suni_send', 'TEXT'],
-      ];
-      sql += colDefs.map(([n, t]) => `  \`${n}\` ${t}`).join(',\n') + '\n';
-      sql += ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n';
-
-      const COLS = '`id`,`create_by`,`create_time`,`update_by`,`update_time`,`sys_org_code`,`flight_id`,' +
-        '`node_code`,`node_name`,`relations_depart`,`safeguard_time`,`expect_safeguard_time`,' +
-        '`hac_status`,`position_status`,`node_no`,`visual_id`,`apron_code`,`airline_code`,' +
-        '`airline_name`,`sonr`,`suni`,`sonr_send`,`suni_send`';
-
-      const rows = [];
-      let id = 1;
-      stands.forEach((st) => {
-        const startMs = new Date((base[st] || '2026-06-08 08:00:00').replace(/-/g, '/')).getTime();
-        const flight = `CZ3101_2026${st}`;
-        ORDER.forEach((code, idx) => {
-          const ts = new Date(startMs + offsets[idx] * 1000);
-          const t = `${ts.getFullYear()}-${pad2(ts.getMonth() + 1)}-${pad2(ts.getDate())} ${pad2(ts.getHours())}:${pad2(ts.getMinutes())}:${pad2(ts.getSeconds())}`;
-          const exp = new Date(startMs + offsets[idx] * 1000 - 120000);
-          const et = `${exp.getFullYear()}-${pad2(exp.getMonth() + 1)}-${pad2(exp.getDate())} ${pad2(exp.getHours())}:${pad2(exp.getMinutes())}:${pad2(exp.getSeconds())}`;
-          rows.push([
-            id++, 'admin', t, 'admin', t, 'A01', flight,
-            code, '', '1', t, et,
-            '1', '1', String(idx + 1), visual[st], st, 'CZ',
-            '中国南方航空', '0', '0', '1', '1',
-          ].map((v) => (v === null ? 'NULL' : `'${String(v).replace(/'/g, "''")}'`)).join(','));
-        });
-      });
-
-      // 每 4 行一条 INSERT，模拟真实 dump 的多值插入
-      for (let i = 0; i < rows.length; i += 4) {
-        sql += `INSERT INTO \`vsap_flight_node\` (${COLS}) VALUES\n`;
-        sql += rows.slice(i, i + 4).map((r) => `(${r})`).join(',\n') + ';\n';
-      }
-      return sql;
-    }
-
-    /* ============================================================
-       10. 节点帮助气泡
-       ============================================================ */
-
-
-    /* ============================================================
-       11. 拖拽 / 上传 / 初始化
-       ============================================================ */
-
-    (function init() {
-      bindActions();  // 仅绑定隐藏的示例生成按钮，其余由 index 分发
-    })();
-  
-
-    /* ── 由 index 按当前数据源分发调用 ── */
     function copyTimes() {
       if (!requireResult()) return;
       copyText(buildTimesTsv());
@@ -2263,23 +2155,7 @@
       state.result = null;
     }
 
-    /* #demo：载入示例 dump 并跑一次提取 */
-    function loadDemo() {
-      const text = buildSampleDump();
-      const { tables } = parseDump(text);
-      state.databases.push({ file: 'sample_vsap_flight_node.sql', hash: quickHash(text), tables });
-      renderTableList();
-      $('dropZoneLarge').classList.add('hidden');
-      $('dropZoneSmall').classList.remove('hidden');
-      $('tableSelectionSection').classList.remove('hidden');
-      showFileStatus('已载入 1 个数据库文件（示例）', false);
-      $('startTime').value = '2026-06-08 00:00:00';
-      $('endTime').value = '2026-06-09 00:00:00';
-      $('aproCode').value = '933';
-      executeExtraction();
-    }
-
-    /* MySQL 节点说明：复用 index 的 .nh-* 气泡样式 */
+    /** 构建节点帮助气泡 HTML */
     function buildNodeHelpHtml(code) {
       const info = NODE_HELP[code];
       const head = `<div class="nh-head">
@@ -2301,8 +2177,7 @@
 
     return {
       handleFiles, executeExtraction, copyTimes, exportCsv, copyVisual,
-      clear, reset, loadDemo, buildNodeHelpHtml, renderEmptyTable,
-      renderTableList, showFileStatus,
+      clear, reset, buildNodeHelpHtml, renderEmptyTable,
     };
 
   })();
@@ -2342,7 +2217,7 @@
         if (mq.addEventListener) mq.addEventListener('change', sync);
         else if (mq.addListener) mq.addListener(sync); // 老浏览器兼容
         // 部分 Android WebView 在系统主题切换 / 应用切后台再回前台时不回调 change，
-        // 额外挂 visibilitychange / focus / storage 兜底（覆盖 SQLite 等仅监听 change 的不足）
+        // 额外挂 visibilitychange / focus / storage 兜底
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') sync();
         });
@@ -2358,7 +2233,7 @@
       }
     };
 
-    /* toast —— 兼容旧 type 命名与自定义停留时长 */
+    /** 兼容旧 type 命名与自定义停留时长 */
     function toast(msg, type = '', duration = 3200) {
       const t = { success:'ok', ok:'ok', error:'err', err:'err', fail:'err',
                   warning:'warn', warn:'warn', info:'' }[type] || '';
@@ -2522,18 +2397,16 @@
       remote: { dict: DICT_REMOTE, order: ORDER_REMOTE, label: "远机位" },
     };
 
-    /* ────────────────────────────────────────────────────────────
-       节点字段帮助：表头「?」悬浮展示该节点的判定参数 / 问题排查 / 视频下载
+    /* 节点字段帮助：表头「?」悬浮展示该节点的判定参数 / 问题排查 / 视频下载
        内容来源：《T3 航班保障节点视频采集算法项目关键参数配置说明（远机位）V3.0》
-       ref 为该内容在文档中的章节号
-       ──────────────────────────────────────────────────────────── */
+       ref 为该内容在文档中的章节号 */
     /* 拆分约定：文档中 3.5.4 / 3.5.7 / 3.5.8 / 3.5.10 / 3.5.11 等章节把「开始 + 结束」
        合并在同一节说明，文档原文按节点逐条列出的（如「飞机入位开始：…」「客梯车撤离：…」）
        这里一律按节点拆开——每个节点只展示与自己相关的那一条，避免被误读成「开始和结束都要下载」。
        文档本身未按节点区分的（垃圾车、清水/污水）则保持原文单条不动。
        params 为各节「参数说明」小节：数组项为 { k: 参数名, v: 说明 } 或纯字符串（示例 / 备注）*/
 
-    // —— 3.5.2 引导车入位 / 离开：排查条目同节共用，视频下载按节点拆开 ——
+    // 3.5.2 引导车入位 / 离开：排查条目同节共用，视频下载按节点拆开
     const T_FOLLOWME = [
       "有无配置引导车节点，followme_mask 绘制是否正确；",
       "有无取流失败；有无检测到引导车；",
@@ -2577,7 +2450,7 @@
       video: ["飞机开始入位 -10 秒 到 飞机入位完成 +20 秒。"],
     };
 
-    // —— 3.5.4 飞机入位开始 / 飞机离位完全：同节共用一个参数，视频下载按节点拆开 ——
+    // 3.5.4 飞机入位开始 / 飞机离位完全：同节共用一个参数，视频下载按节点拆开
     const T_AIRPLANE_IN_START = [
       "有无正确绘制 area_mask、mask；组合机位需要额外查看；",
       "线上取流是否正常；",
@@ -2613,7 +2486,7 @@
       video: ["飞机离位开始 -20 秒 到 飞机离位开始 +20 秒。"],
     };
 
-    // —— 3.5.6 轮挡作业时间阈值：上轮挡 / 撤轮挡 的排查分别指向不同节点 ——
+    // 3.5.6 轮挡作业时间阈值：上轮挡 / 撤轮挡 的排查分别指向不同节点
     const P_LUNDANG = [
       { k: "lundang_time_dis", v: "轮挡作业时间阈值，默认值 30 秒，无需修改。" },
     ];
@@ -2630,7 +2503,7 @@
       video: [],
     };
 
-    // —— 3.5.7 摆渡车：文档已按进港 / 离港分开写下载范围，分别归到对应节点 ——
+    // 3.5.7 摆渡车：文档已按进港 / 离港分开写下载范围，分别归到对应节点
     const T_SHUTTLE = [
       "有无配置摆渡车节点；shuttle_bus_mask 是否正确；",
       "该视角能否判断到飞机入位开始；",
@@ -2656,7 +2529,7 @@
       video: ["离港摆渡车：从离港摆渡车到位 到 离位；停留时间很长时，下载到位到到位后 30 秒。"],
     };
 
-    // —— 3.5.8 客梯车对接 / 撤离（IOU 相交面积判定）——
+    // 3.5.8 客梯车对接 / 撤离（IOU 相交面积判定）
     const T_PAS_CAR = [
       "有无配置客梯车节点；",
       "有无画 pas_car_mask；有无检测到客梯车；",
@@ -2699,7 +2572,7 @@
       video: ["垃圾车到位 -20 秒 到 垃圾车离位 +20 秒。"],
     };
 
-    // —— 3.5.10 配餐开始 / 结束 ——
+    // 3.5.10 配餐开始 / 结束
     const T_FOOD = [
       "有无配置配餐节点；",
       "food_car 底边中点是否在 area_mask 中；有无检测到配餐车相应标签（food_car1 / food_car2）；",
@@ -2722,7 +2595,7 @@
       video: ["配餐结束错误：配餐结束 -20 秒 到 +30 秒。"],
     };
 
-    // —— 3.5.11 加油开始 / 结束：排查与下载范围均按开始、结束分开 ——
+    // 3.5.11 加油开始 / 结束：排查与下载范围均按开始、结束分开
     const T_OIL_BASE = [
       "有无配置加油节点；",
       "oil_car 中点是否在 oil_mask 中；有无检测到加油车；",
@@ -2755,7 +2628,7 @@
       video: ["加油结束错误：加油结束 -30 秒 到 加油完成 +30 秒。"],
     };
 
-    // —— 3.5.12 / 3.5.13 客舱门、货舱门：文档只给判定逻辑（无排查 / 下载），仅登记参数说明 ——
+    // 3.5.12 / 3.5.13 客舱门、货舱门：文档只给判定逻辑（无排查 / 下载），仅登记参数说明
     const HELP_CABIN_OPEN = {
       ref: "3.5.12",
       params: [{ k: "cabin_door_para_dict", v: "连续多帧识别到舱门打开标记，判定客舱门打开。" }],
@@ -2878,7 +2751,7 @@
       );
     }
 
-    // 表头「?」按钮：Font Awesome 提示图标（far fa-lightbulb：小贴士 / 提示）
+    // 表头「?」按钮：Font Awesome 实心问号图标
     function helpBtnHtml(code) {
       return `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="查看该节点的判定参数、问题排查与视频下载"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button>`;
     }
@@ -3059,7 +2932,7 @@
     // B 区回显表格数据（renderPasteTableGrid 渲染时同步保存），供「复制镜头号」按 camera 列取值
     let bAreaTableData = { headers: [], rows: [] };
 
-    // 当前数据源引擎：sqlite = 原 index；mysql = sanxia。仅由导入的文件类型决定，无手动入口
+    // 当前数据源引擎：sqlite / mysql，仅由导入的文件类型决定，无手动入口
     let nodeEngine = "sqlite";
     function setNodeEngine(kind) {
       if (kind === nodeEngine) return;
@@ -3088,7 +2961,6 @@
       const dt = document.querySelector("#extractedDateDisplay .date-text");
       if (dt) dt.textContent = "";
 
-      // 按钮组完全保持 index 原生：不改文案、不隐藏远机位、不调整跨列。
       // 点击行为由 executeExtraction() 与各按钮的分发钩子按当前数据源决定。
       if (kind === "mysql") {
         MYSQL_ENGINE.renderEmptyTable();
@@ -3096,7 +2968,7 @@
       } else {
         renderEmptyTable();
       }
-      // 状态栏恢复 index 原生默认提示，不出现任何引擎 / 数据源标识文案
+      // 恢复默认提示，不出现引擎 / 数据源标识文案
       document.getElementById("queryStatus").textContent = "请导入数据库文件，填写条件后执行提取";
       nodeHelp.hide(); // 结果表表头已换，收起帮助气泡
     }
@@ -3520,7 +3392,7 @@
       });
 
     function renderPasteTableGrid(extraText) {
-      // B 区现仅用于「数据回显」：直接渲染传入的数据（来自数据库提取结果），不再接收手动粘贴
+      // B 区用于「数据回显」：直接渲染传入的数据（来自数据库提取结果）
       const text = extraText || "";
       const table = document.getElementById("pasteVisualTable");
       const thead = document.getElementById("pasteVisualThead");
@@ -3548,7 +3420,7 @@
         firstLineCols.includes("nodeCode") ||
         firstLineCols.includes("report_time") ||
         firstLineCols.includes("aproCode") ||
-        // 整合后的 MySQL 引擎会把 dump 原始列名作为首行传入
+        // MySQL 引擎把 dump 原始列名作为首行传入
         firstLineCols.some((c) =>
           /^(node_?code|report_?time|apro_?code|safeguard_?time|apron_?code|visual_?id|camera|appid|taskid|info|create_time|image_path)$/i.test(c.trim()));
 
@@ -3837,7 +3709,7 @@
           renderPasteTableGrid(dbTsvString);
         }
 
-        // 解析文本 = DB 命中数据（B 区粘贴功能已移除，数据仅来自数据库提取）
+        // 解析文本 = DB 命中数据（仅来自数据库提取）
         const parseText = dbTsvString;
 
         if (parseText) {
@@ -4381,12 +4253,6 @@
         }
         document.body.removeChild(textArea);
       });
-
-    // #demo：自动载入 MySQL 示例 dump，便于快速验证整合后的引擎切换
-    if (location.hash.indexOf("#demo") === 0) {
-      setNodeEngine("mysql");
-      MYSQL_ENGINE.loadDemo();
-    }
 
   // 输入框双击全选（事件委托，覆盖静态与动态控件；排除 checkbox/radio/file/按钮类）
   document.addEventListener('dblclick', function (e) {
