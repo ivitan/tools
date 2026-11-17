@@ -1714,7 +1714,7 @@
       const list = Array.from(files || []);
       if (!list.length) return;
 
-      $('queryStatus').innerHTML = '<span class="c-primary">正在读取数据库文件，请稍候…</span>';
+      toast('正在读取数据库文件，请稍候…', 'info');
       await new Promise((r) => setTimeout(r, 30)); // 让 loading 先渲染
 
       const added = [], replaced = [], skipped = [], failed = [];
@@ -1767,8 +1767,7 @@
         const msg = failed.length === 1
           ? `${failed[0].name}：${failed[0].reason}`
           : `${failed.length || 1} 个数据库文件导入失败`;
-        showFileStatus(msg, true);
-        $('queryStatus').innerHTML = '<span class="c-danger fw-bold">请导入包含数据表与数据记录的数据库文件</span>';
+        toast(`${msg}\n请导入包含数据表与数据记录的数据库文件`, 'err');
         return;
       }
 
@@ -1787,9 +1786,7 @@
       const suffix = isAppend ? `（累计 ${state.databases.length} 个数据库文件）` : '';
       const head = parts.join('，') || '已载入';
       showFileStatus(`${head}${suffix}`, failed.length > 0);
-      $('queryStatus').innerHTML =
-        `<span class="c-success fw-bold">数据库已载入</span>` +
-        `<span class="c-muted"> · 请勾选要提取的表并填写条件</span>`;
+      toast('数据库已载入 · 请勾选要提取的表并填写条件', 'info');
     }
 
     function renderTableList() {
@@ -1832,21 +1829,21 @@
       const standRaw = $('aproCode').value.trim();
 
       if (!state.databases.length) {
-        setStatus('请先导入数据库文件并勾选数据表', 'danger');
+        toast('请先导入数据库文件并勾选数据表', 'err');
         return;
       }
       if (!tables.length) {
-        setStatus('请先导入数据库文件并勾选数据表', 'danger');
+        toast('请先导入数据库文件并勾选数据表', 'err');
         renderEmptyTable();
         return;
       }
       if (!standRaw) {
-        setStatus('请完整填写查询条件（开始时间、结束时间、机位号）', 'danger');
+        toast('请完整填写查询条件（开始时间、结束时间、机位号）', 'err');
         renderEmptyTable();
         return;
       }
       if (!startRaw || !endRaw) {
-        setStatus('请完整填写查询条件（开始时间、结束时间、机位号）', 'danger');
+        toast('请完整填写查询条件（开始时间、结束时间、机位号）', 'err');
         renderEmptyTable();
         return;
       }
@@ -1854,12 +1851,12 @@
       const start = parseBound(startRaw, false);
       const end = parseBound(endRaw, true);
       if (start && end && start.hasDate && end.hasDate && start.key > end.key) {
-        setStatus('开始时间晚于结束时间，请检查', 'danger');
+        toast('开始时间晚于结束时间，请检查', 'err');
         renderEmptyTable();
         return;
       }
 
-      setStatus('正在提取节点数据，请稍候…', 'primary');
+      toast('正在提取节点数据，请稍候…', 'info');
 
       setTimeout(() => {
         const t0 = performance.now();
@@ -1918,7 +1915,7 @@
         if (!totalHits) {
           state.result = null;
           renderEmptyTable();
-          setStatus('未提取到任何节点，请检查查询条件与所选数据表', 'warn');
+          toast('未提取到任何节点，请检查查询条件与所选数据表', 'warn');
           if (tableWarn.length) toast(`已跳过：${tableWarn.join('、')}`, 'warn');
           renderEcho([], []);
           renderRaw([], []);
@@ -2115,14 +2112,14 @@
       if (!requireResult()) return;
       copyText(buildTimesTsv());
       // 状态反馈同步给出，避免部分浏览器里 clipboard Promise 挂起时界面无响应
-      setStatus('时间行已成功复制，快去粘贴吧', 'success');
+      toast('时间行已成功复制，快去粘贴吧', 'success');
     }
 
     function exportCsv() {
       if (!requireResult()) return;
       const label = `机位${state.result.stand || ''}`;
       download(`航班保障节点提取(${label})_${Date.now()}.csv`, buildCsv(), 'text/csv;charset=utf-8;');
-      setStatus('CSV数据已成功导出', 'purple');
+      toast('CSV数据已成功导出', 'success');
     }
 
     function copyVisual() {
@@ -2137,7 +2134,7 @@
       }
       list.sort((a, b) => String(a).localeCompare(String(b), 'zh-CN', { numeric: true }));
       copyText(list.join('\n'));
-      setStatus(`已复制 ${list.length} 个镜头编号`, 'warn');
+      toast(`已复制 ${list.length} 个镜头编号`, 'warn');
     }
 
     function clear() {
@@ -2147,7 +2144,7 @@
       renderEcho([], []);
       renderRaw([], []);
       $('echoTable').classList.add('hidden');
-      setStatus('页面已全部清空重置', 'muted');
+      toast('页面已全部清空重置', 'info');
     }
 
     function reset() {
@@ -2985,8 +2982,7 @@
         renderEmptyTable("near");
       } catch (e) {
         if (nodeEngine !== "sqlite") return; // MySQL 引擎不依赖 sql.js
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="c-danger fw-bold">组件加载失败，请检查网络后刷新页面</span>`;
+        toast("组件加载失败，请检查网络后刷新页面", "err");
       }
     }
     init();
@@ -3112,7 +3108,7 @@
         return;
       }
       if (!sqlEngine) {
-        showFileStatus("正在初始化，请稍候重试", true);
+        toast("正在初始化，请稍候重试", "warn");
         return;
       }
       setNodeEngine("sqlite");
@@ -3244,9 +3240,7 @@
           failed.length === 1
             ? `${failed[0].name}：${failed[0].reason}`
             : `${failed.length} 个数据库文件导入失败：${failed.map((f) => f.name).join("、")}`;
-        showFileStatus(msg, true);
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="c-danger fw-bold">请导入包含数据表与数据记录的数据库文件</span>`;
+        toast(`${msg}\n请导入包含数据表与数据记录的数据库文件`, "err");
         return;
       }
 
@@ -3275,8 +3269,7 @@
         msg = `已载入 ${databases.length} 个数据库文件`;
       }
       showFileStatus(msg, failed.length > 0 || !hasTable);
-      document.getElementById("queryStatus").innerHTML =
-        `<span class="c-success fw-bold">数据库已载入</span><span class="c-muted"> · 请勾选要提取的表并填写条件</span>`;
+      toast("数据库已载入 · 请勾选要提取的表并填写条件", "info");
     }
 
     function renderEmptyTable(mode) {
@@ -3571,16 +3564,14 @@
       const aproCode = document.getElementById("aproCode").value.trim();
       // 第一道门：未勾选任何数据表时，直接提示，不再继续
       if (selectedTables.length === 0) {
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="c-danger fw-bold">请先导入数据库文件并勾选数据表</span>`;
+        toast("请先导入数据库文件并勾选数据表", "err");
         renderEmptyTable(currentMode);
         return;
       }
 
       // 查询条件必填：开始时间 / 结束时间 / 机位号 三者都需填写，缺一不可
       if (!startTime || !endTime || !aproCode) {
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="c-danger fw-bold">请完整填写查询条件（开始时间、结束时间、机位号）</span>`;
+        toast("请完整填写查询条件（开始时间、结束时间、机位号）", "err");
         renderEmptyTable(currentMode);
         return;
       }
@@ -3588,8 +3579,7 @@
       // 记录本次提取的过滤条件快照
       lastExtractionFilter = { startTime, endTime, aproCode };
 
-      document.getElementById("queryStatus").innerHTML =
-        `<span class="c-primary">正在提取节点数据，请稍候…</span>`;
+      toast("正在提取节点数据，请稍候…", "info");
 
       // 使用 setTimeout 释放主线程以渲染 loading 状态
       setTimeout(() => {
@@ -3840,11 +3830,9 @@
         // appid 为空的行会回退字典匹配产生结果，此处一并拦下
         if (!hasDataParsed || (hasAppidCol && appidMatched === 0)) {
           if (selectedTables.length === 0) {
-            document.getElementById("queryStatus").innerHTML =
-              `<span class="c-danger fw-bold">请先导入数据库文件并勾选数据表</span>`;
+            toast("请先导入数据库文件并勾选数据表", "err");
           } else {
-            document.getElementById("queryStatus").innerHTML =
-              `<span class="c-orange fw-bold">未提取到任何节点，请检查查询条件与所选数据表</span>`;
+            toast("未提取到任何节点，请检查查询条件与所选数据表", "warn");
           }
           // 清空结果表与上次提取残留，避免“输错模式仍显示旧结果”
           finalCleanedTimes = {};
@@ -4070,7 +4058,7 @@
       const resetDateText = resetDateDisplay.querySelector(".date-text");
       if (resetDateText) resetDateText.textContent = "";
 
-      document.getElementById("queryStatus").innerText = "页面已全部清空重置";
+      toast("页面已全部清空重置", "info");
     });
 
     // 强力复制
@@ -4104,8 +4092,7 @@
       try {
         const successful = document.execCommand("copy");
         if (successful) {
-          document.getElementById("queryStatus").innerHTML =
-            `<span class="c-success fw-bold">时间行已成功复制，快去粘贴吧</span>`;
+          toast("时间行已成功复制，快去粘贴吧", "success");
         } else {
           alert("写入失败，请手动框选结果复制");
         }
@@ -4137,8 +4124,7 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      document.getElementById("queryStatus").innerHTML =
-        `<span class="c-purple fw-bold">CSV数据已成功导出</span>`;
+      toast("CSV数据已成功导出", "success");
     });
 
     // 复制镜头号：取 B 区回显表格 camera 列去重（保序）
@@ -4243,8 +4229,7 @@
         try {
           const successful = document.execCommand("copy");
           if (successful) {
-            document.getElementById("queryStatus").innerHTML =
-              `<span class="c-warn fw-bold">已复制 ${uniqNums.length} 个镜头编号</span>`;
+            toast(`已复制 ${uniqNums.length} 个镜头编号`, "warn");
           } else {
             alert("写入失败，请手动复制");
           }
