@@ -1767,6 +1767,7 @@
         const msg = failed.length === 1
           ? `${failed[0].name}：${failed[0].reason}`
           : `${failed.length || 1} 个数据库文件导入失败`;
+        $('queryStatus').textContent = '请导入数据库文件，填写条件后执行提取';
         toast(`${msg}\n请导入包含数据表与数据记录的数据库文件`, 'err');
         return;
       }
@@ -1786,6 +1787,8 @@
       const suffix = isAppend ? `（累计 ${state.databases.length} 个数据库文件）` : '';
       const head = parts.join('，') || '已载入';
       showFileStatus(`${head}${suffix}`, failed.length > 0);
+      // 已载入数据库，撤下「请导入数据库文件」初始提示；状态栏留给提取结果使用
+      $('queryStatus').textContent = '';
       toast('数据库已载入 · 请勾选要提取的表并填写条件', 'info');
     }
 
@@ -3241,6 +3244,7 @@
             ? `${failed[0].name}：${failed[0].reason}`
             : `${failed.length} 个数据库文件导入失败：${failed.map((f) => f.name).join("、")}`;
         toast(`${msg}\n请导入包含数据表与数据记录的数据库文件`, "err");
+        document.getElementById("queryStatus").textContent = "请导入数据库文件，填写条件后执行提取";
         return;
       }
 
@@ -3269,6 +3273,8 @@
         msg = `已载入 ${databases.length} 个数据库文件`;
       }
       showFileStatus(msg, failed.length > 0 || !hasTable);
+      // 已载入数据库，撤下「请导入数据库文件」初始提示；状态栏留给提取结果使用
+      document.getElementById("queryStatus").textContent = "";
       toast("数据库已载入 · 请勾选要提取的表并填写条件", "info");
     }
 
