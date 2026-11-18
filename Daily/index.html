@@ -594,17 +594,20 @@
     cursor: text;
   }
   .multi-select-dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
+    /* 挂到 body 并用 fixed 定位，脱离 .panel-body 的滚动裁剪；
+       top/left/width/max-height 由 JS 按视口余量计算 */
+    position: fixed;
+    top: 0;
     left: 0;
-    right: 0;
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: var(--r);
     box-shadow: var(--shadow-lg);
-    z-index: 100;
+    z-index: 200;
     max-height: 240px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     padding: 3px;
     display: none;
   }
@@ -1109,7 +1112,7 @@ window.onload = () => {
     if (e.target.classList.contains("custom-dropdown-input")) {
       /* 同一个输入框再次点击：先把手输内容落定为一项，再重开搜索，
          否则下拉会一直停在「无匹配项」，没法继续点选 */
-      if (activeDropdown && activeDropdown.parentNode === e.target.parentNode) {
+      if (activeDropdown && activeInput === e.target) {
         const listId = e.target.getAttribute("data-list");
         ensureTrailingSep(e.target, listId);
         refreshDropdown(e.target, activeDropdown, listId);
@@ -1126,7 +1129,7 @@ window.onload = () => {
     if (
       e.target.classList.contains("custom-dropdown-input") &&
       activeDropdown &&
-      activeDropdown.parentNode === e.target.parentNode
+      activeInput === e.target
     ) {
       const listId = e.target.getAttribute("data-list");
       const isNode = listId === "event-list-far" || listId === "event-list-near";
@@ -1195,6 +1198,77 @@ function refreshDropdown(input, dropdown, listId) {
   renderOptions(input, dropdown, listId);
 }
 
+/* ── 下拉定位：挂到 body 用 fixed，按视口剩余空间决定向上/向下展开并限高，
+      避免选项多或输入框靠近底边时，选框超出屏幕边缘还要滑动页面才能选中 ── */
+const DROP_GAP = 4;       // 与输入框的间距
+const DROP_EDGE = 8;      // 距视口边缘留白
+const DROP_MAX_H = 240;   // 与 CSS max-height 一致
+
+// 当前真正可见的视口范围；软键盘弹出时 visualViewport 会缩短
+function viewportMetrics() {
+  const vv = window.visualViewport;
+  if (vv) return { top: vv.offsetTop, bottom: vv.offsetTop + vv.height };
+  return { top: 0, bottom: window.innerHeight };
+}
+
+function positionDropdown(input, dropdown) {
+  if (!input || !dropdown || !input.isConnected || !dropdown.isConnected) return;
+
+  const r = input.getBoundingClientRect();
+  const vp = viewportMetrics();
+  const keepScroll = dropdown.scrollTop;
+
+  // 先解除限高量出内容自然高度，再按上下可用空间决定方向与最终高度
+  dropdown.style.maxHeight = "none";
+  const naturalH = dropdown.offsetHeight;
+  const spaceBelow = vp.bottom - r.bottom - DROP_GAP - DROP_EDGE;
+  const spaceAbove = r.top - vp.top - DROP_GAP - DROP_EDGE;
+  const dropUp = spaceBelow < Math.min(naturalH, DROP_MAX_H) && spaceAbove > spaceBelow;
+  const avail = dropUp ? spaceAbove : spaceBelow;
+  const maxH = Math.max(32, Math.min(naturalH, DROP_MAX_H, avail));
+
+  dropdown.style.maxHeight = maxH + "px";
+  dropdown.scrollTop = keepScroll;   // 重排后保留下拉内部的滚动位置
+
+  const h = dropdown.offsetHeight;
+  let top = dropUp ? r.top - DROP_GAP - h : r.bottom + DROP_GAP;
+  top = Math.max(vp.top + DROP_EDGE, Math.min(top, vp.bottom - DROP_EDGE - h));
+  dropdown.style.top = top + "px";
+  dropdown.style.left = r.left + "px";
+  dropdown.style.width = r.width + "px";
+}
+
+// 页面/面板滚动或尺寸变化时让下拉继续贴住输入框；输入框滚出可视区则收起
+function repositionActiveDropdown() {
+  if (!activeDropdown || !activeInput) return;
+  const r = activeInput.getBoundingClientRect();
+  const vp = viewportMetrics();
+  if (r.bottom < vp.top || r.top > vp.bottom) { closeAllDropdowns(); return; }
+  positionDropdown(activeInput, activeDropdown);
+}
+
+// 滚动高频且定位含同步布局测量，合并到每帧一次
+let repositionPending = false;
+function scheduleReposition() {
+  if (repositionPending) return;
+  repositionPending = true;
+  requestAnimationFrame(() => {
+    repositionPending = false;
+    repositionActiveDropdown();
+  });
+}
+
+// 捕获阶段可收到 .panel-body 等非冒泡的 scroll；下拉自身内部滚动不重新定位
+window.addEventListener("scroll", (e) => {
+  if (activeDropdown && (e.target === activeDropdown || activeDropdown.contains(e.target))) return;
+  scheduleReposition();
+}, true);
+window.addEventListener("resize", scheduleReposition);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", scheduleReposition);
+  window.visualViewport.addEventListener("scroll", scheduleReposition);
+}
+
 function showDropdown(input) {
   closeAllDropdowns();
   const listId = input.getAttribute("data-list");
@@ -1213,8 +1287,10 @@ function showDropdown(input) {
   const { query } = parseInput(input.value, validOptions, isNode);
   currentSearchQuery = query;
 
+  // 挂到 body 并用 fixed 定位：彻底脱离 .panel-body 的滚动裁剪。
+  // 先挂载再渲染，renderOptions 末尾才能测量并定位。
+  document.body.appendChild(dropdown);
   renderOptions(input, dropdown, listId);
-  input.parentNode.appendChild(dropdown);
 }
 
 function renderOptions(input, dropdown, listId) {
@@ -1232,7 +1308,6 @@ function renderOptions(input, dropdown, listId) {
     emptyDiv.style.cursor = "not-allowed";
     emptyDiv.innerText = isNode ? "无匹配节点 (将作为自定义内容保留)" : "无匹配项 (将作为自定义原因保留)";
     dropdown.appendChild(emptyDiv);
-    return;
   }
 
   filteredOptions.forEach((opt) => {
@@ -1241,8 +1316,17 @@ function renderOptions(input, dropdown, listId) {
     if (selected.includes(opt)) optionDiv.classList.add("selected");
 
     if (currentSearchQuery) {
+      // 用文本节点拼接高亮，避免把用户手输内容当作 HTML 解析
       const parts = opt.split(currentSearchQuery);
-      optionDiv.innerHTML = parts.join(`<span class="match-text">${currentSearchQuery}</span>`);
+      parts.forEach((part, i) => {
+        if (i > 0) {
+          const mark = document.createElement("span");
+          mark.className = "match-text";
+          mark.textContent = currentSearchQuery;
+          optionDiv.appendChild(mark);
+        }
+        if (part) optionDiv.appendChild(document.createTextNode(part));
+      });
     } else {
       optionDiv.innerText = opt;
     }
@@ -1253,6 +1337,8 @@ function renderOptions(input, dropdown, listId) {
     };
     dropdown.appendChild(optionDiv);
   });
+
+  positionDropdown(input, dropdown);
 }
 
 function toggleSelection(input, opt, dropdown, listId) {
