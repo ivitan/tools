@@ -358,6 +358,8 @@
     }
     /* 与上传框同处一行时不需要下间距 */
     .section-title--inline { margin-bottom: 0; }
+    /* A 区两栏标题行等高：导入数据库后出现 28px 小上传框时，两栏文字仍保持同一水平线 */
+    .section-title--align { min-height: 28px; }
     /* 卡片正文里的辅助说明文字 */
     .hint { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; padding-left: 4px; }
     /* C 区截断提示 */
@@ -816,7 +818,7 @@
         <div class="card-body--lg">
           <div class="grid-2">
             <div class="col col-full">
-              <div class="row g-xs section-title">
+              <div class="row g-xs section-title section-title--align">
                 <span class="badge">A</span>
                 <span class="section-title section-title--inline c-secondary nowrap">数据库导入</span>
                 <div id="dropZoneSmall" class="dropzone--sm hidden"
@@ -851,7 +853,7 @@
               </div>
             </div>
             <div class="col col-full">
-              <p class="section-title c-secondary">
+              <p class="section-title c-secondary section-title--align">
                 <svg class="ic" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
