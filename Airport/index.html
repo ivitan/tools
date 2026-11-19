@@ -1739,7 +1739,7 @@
           const cost = ((performance.now() - t0) / 1000).toFixed(1);
 
           if (!tables.length) {
-            failed.push({ name: file.name, reason: '未解析到 CREATE TABLE / INSERT 语句' });
+            failed.push({ name: file.name, reason: '不是合规的数据库文件（未识别到数据表与数据记录）' });
             continue;
           }
           const dbObj = { file: file.name, hash, tables, cost };
@@ -1770,7 +1770,7 @@
           ? `${failed[0].name}：${failed[0].reason}`
           : `${failed.length || 1} 个数据库文件导入失败`;
         $('queryStatus').textContent = '请导入数据库文件，填写条件后执行提取';
-        toast(`${msg}\n请导入包含数据表与数据记录的数据库文件`, 'err');
+        toast(`${msg}\n请导入 SQLite 数据库文件（含数据表与记录）或含 CREATE TABLE / INSERT 语句的 MySQL 导出文件（.sql）`, 'err');
         return;
       }
 
@@ -3157,7 +3157,7 @@
           continue;
         }
         if (!p.ok) {
-          failed.push({ name: p.file.name, reason: "无法识别的数据库文件，请确认格式后重试" });
+          failed.push({ name: p.file.name, reason: "不是合规的数据库文件（未识别到数据表与数据记录）" });
           continue;
         }
 
@@ -3200,7 +3200,7 @@
               db.close();
             } catch (_) {}
           }
-          failed.push({ name: p.file.name, reason: "数据库损坏或格式不支持" });
+          failed.push({ name: p.file.name, reason: "不是合规的数据库文件（数据库损坏或无法读取）" });
         }
         if (i < prepared.length - 1) await new Promise((r) => setTimeout(r, 0));
       }
@@ -3247,7 +3247,7 @@
           failed.length === 1
             ? `${failed[0].name}：${failed[0].reason}`
             : `${failed.length} 个数据库文件导入失败：${failed.map((f) => f.name).join("、")}`;
-        toast(`${msg}\n请导入包含数据表与数据记录的数据库文件`, "err");
+        toast(`${msg}\n请导入 SQLite 数据库文件（含数据表与记录）或含 CREATE TABLE / INSERT 语句的 MySQL 导出文件（.sql）`, "err");
         document.getElementById("queryStatus").textContent = "请导入数据库文件，填写条件后执行提取";
         return;
       }

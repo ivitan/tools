@@ -2098,7 +2098,7 @@ async function loadDatabaseFromBuffer(file, buf, hash, opts = {}) {
   const SQLITE_MAGIC = [0x53,0x51,0x4c,0x69,0x74,0x65,0x20,0x66,0x6f,0x72,0x6d,0x61,0x74,0x20,0x33,0x00];
   if (!buf || buf.length < SQLITE_MAGIC.length ||
       !SQLITE_MAGIC.every((b, i) => buf[i] === b)) {
-    throw new Error('不是 SQLite 数据库文件');
+    throw new Error('不是合规的数据库文件（未识别到数据表与数据记录）');
   }
 
   // ① 内容完全一致 → 已加载过，直接跳过，保证同一个数据库只显示一个
@@ -2831,7 +2831,7 @@ function parseMysqlDump(text) {
   let src = text;
   if (src.charCodeAt(0) === 0xFEFF) src = src.slice(1);
   if (!/\bCREATE\s+TABLE\b/i.test(src) && !/\bINSERT\s+INTO\b/i.test(src)) {
-    return { tables: [], dbName: '', warnings: ['文件中未找到 CREATE TABLE / INSERT 语句，请确认这是 mysqldump 导出文件'], ms: Date.now() - t0 };
+    return { tables: [], dbName: '', warnings: ['不是合规的数据库文件（未识别到数据表与数据记录）'], ms: Date.now() - t0 };
   }
   src = stripDelimiterBlocks(src);
 
@@ -2973,7 +2973,7 @@ async function loadDatabaseFromSql(file, buf, opts = {}) {
   const text = decodeDumpText(buf);
   const res = parseMysqlDump(text);
   if (!res.tables.length) {
-    throw new Error(res.warnings && res.warnings[0] ? res.warnings[0] : '未解析出任何数据表，请确认这是 mysqldump 导出文件');
+    throw new Error(res.warnings && res.warnings[0] ? res.warnings[0] : '不是合规的数据库文件（未识别到数据表与数据记录）');
   }
 
   const db = new state.SQL.Database();
@@ -4319,11 +4319,15 @@ function showDropzone(show) {
 }
 
 // 导入失败提示
-// 复用页面原有 toast：统一「文件名 不是 SQLite 数据库文件」，失败使用统一 err 语义色（左侧红条）
+// 双引擎统一口径：SQLite 数据库文件与 MySQL 导出文件均为合规输入，
+// 失败原因不单独指向某一引擎，末尾统一附上两种受支持格式的说明；失败使用 err 语义色（左侧红条）
 // 多个失败文件逐行显示。失败不影响右侧视图：视图状态由调用方决定是否刷新，这里只负责提示
 function toastImportFailed(failedList) {
   if (!failedList || !failedList.length) return;
-  toast(failedList.map(f => f.reason ? `${f.fileName}：${f.reason}` : `${f.fileName} 不是 SQLite 数据库文件`).join('\n'), 'err', 4000);
+  const hint = '请导入 SQLite 数据库文件（含数据表与记录）或含 CREATE TABLE / INSERT 语句的 MySQL 导出文件（.sql）';
+  const lines = failedList.map(f => f.reason ? `${f.fileName}：${f.reason}` : `${f.fileName} 不是合规的数据库文件`);
+  lines.push(hint);
+  toast(lines.join('\n'), 'err', 4000);
 }
 
 // 悬浮到底按钮
@@ -4667,7 +4671,7 @@ async function handleFiles(files) {
   for (let i = 0; i < prepared.length; i++) {
     const p = prepared[i];
     if (p.error) {
-      results.push({ kind: 'error', fileName: p.file.name, error: p.error });
+      results.push({ kind: 'error', fileName: p.file.name, error: p.error, reason: '文件读取失败' });
       continue;
     }
     if (p.isSql) {
@@ -4676,7 +4680,7 @@ async function handleFiles(files) {
         results.push(r);
       } catch (e) {
         console.warn(`[导入跳过] ${p.file.name}: ${e?.message || e}`);
-        results.push({ kind: 'error', fileName: p.file.name, error: e, reason: e?.message || 'MySQL SQL 解析失败' });
+        results.push({ kind: 'error', fileName: p.file.name, error: e, reason: e?.message || '不是合规的数据库文件（未识别到数据表与数据记录）' });
       }
       if (i < prepared.length - 1) await new Promise(res => setTimeout(res, 0));
       continue;
