@@ -1828,6 +1828,7 @@
     }
 
     function executeExtraction() {
+      setStatus('', ''); // 清掉上一次的结果提示，避免本次失败/无结果时残留旧文案
       const tables = selectedTables();
       const startRaw = $('startTime').value.trim();
       const endRaw = $('endTime').value.trim();
@@ -1920,6 +1921,7 @@
         if (!totalHits) {
           state.result = null;
           renderEmptyTable();
+          setStatus(`<span class="c-warn fw-bold">[机位 ${escapeHtml(standRaw)}]</span> 未提取到任何节点`, '');
           toast('未提取到任何节点，请检查查询条件与所选数据表', 'warn');
           if (tableWarn.length) toast(`已跳过：${tableWarn.join('、')}`, 'warn');
           renderEcho([], []);
@@ -3550,6 +3552,7 @@
     // 【核心引擎】
     function executeExtraction(mode) {
       if (nodeEngine === "mysql") { MYSQL_ENGINE.executeExtraction(); return; }
+      document.getElementById("queryStatus").textContent = ""; // 清掉上一次的结果提示
       if (!sqlEngine) return alert("正在初始化，请稍候再试");
 
       currentMode = mode;
@@ -3845,6 +3848,8 @@
           // 清空结果表与上次提取残留，避免“输错模式仍显示旧结果”
           finalCleanedTimes = {};
           renderEmptyTable(currentMode);
+          document.getElementById("queryStatus").innerHTML =
+            `<span class="c-warn fw-bold">[机位 ${escapeHtml(aproCode)}]</span> 未提取到任何节点`;
           return;
         }
 
