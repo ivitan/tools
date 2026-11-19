@@ -5560,7 +5560,7 @@ syncModeToggle(state.loadMode);   // 未打开表时，按钮先按全局默认�
 (async () => {
   try {
     await initSQL();
-    toast('SQLite 引擎已就绪', 'success');
+    toast('数据库引擎已就绪', 'success');
   } catch (e) {
     toast('引擎加载失败，请检查网络', 'error');
     console.error(e);

@@ -3106,7 +3106,7 @@
       const hasMysql = kinds.indexOf("mysql") !== -1;
       const hasSqlite = kinds.indexOf("sqlite") !== -1;
       if (hasMysql && hasSqlite) {
-        toast("一次请只导入同一种格式的数据库文件", "warn");
+        toast("SQLite 数据库文件与 MySQL 导出文件不能同时导入，请分开导入", "warn");
         return;
       }
       if (hasMysql) {
