@@ -2652,14 +2652,12 @@ $('fileInput').addEventListener('change', e => {
 
 $('exportBtn').addEventListener('click', exportTableCSV);
 
-/* 轻提示：鼠标 / 键盘输入时显式切换 .tip-on，触屏不触发 sticky hover（参考 SQLite） */
+/* 轻提示：仅鼠标悬停时切换 .tip-on；键盘聚焦与触屏点击都不触发，避免点击后提示粘住与 toast 同屏（参考 SQLite） */
 document.querySelectorAll('[data-tip]').forEach(el => {
   const show = () => el.classList.add('tip-on');
   const hide = () => el.classList.remove('tip-on');
   el.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') show(); });
   el.addEventListener('pointerleave', hide);
-  el.addEventListener('focus', show);
-  el.addEventListener('blur', hide);
 });
 
 /* 侧栏：点顶栏 Logo 展开/收起（桌面折叠 / 手机抽屉 + 遮罩），参考 SQLite */
