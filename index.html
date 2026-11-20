@@ -166,21 +166,26 @@
       font-weight: 600; font-size: 15px;
       color: var(--text);
     }
+    /* 「分类」tab 角标：点击展开/收起左侧分类栏，展开时呈选中态 */
     .logo-icon {
-      width: 28px; height: 28px;
-      background: var(--primary);
+      height: 28px;
+      padding: 0 12px;
+      background: var(--primary-soft);
+      border: 1px solid transparent;
       border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--primary-on);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--primary);
+      font-size: 12.5px; font-weight: 600; letter-spacing: 0.3px; line-height: 1;
       flex-shrink: 0;
       cursor: pointer;
       user-select: none;
-      transition: background-color 0.15s;
+      transition: background-color 0.15s, color 0.15s, border-color 0.15s;
     }
 @media (hover: hover) and (pointer: fine) {
-    .logo-icon:hover { background: var(--primary-hover); }
+    .logo-icon:hover { background: var(--primary-light); border-color: var(--primary); }
 }
     .logo-icon:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    body.cat-open .logo-icon { background: var(--primary); color: var(--primary-on); border-color: var(--primary); }
     .header-spacer { flex: 1; }
     .header-actions { display: flex; gap: 6px; align-items: center; }
 
@@ -465,6 +470,7 @@
     @media (max-width: 500px) {
       .header { height: 48px; padding: 0 10px; gap: 6px; }
       .logo span { font-size: 13px; }
+      .logo-icon { padding: 0 8px; font-size: 12px; }
       .tool-card i.tool-icon { width: 48px; height: 48px; font-size: 1.7rem; }
       .tool-card h3 { font-size: 0.9rem; }
       .tool-card p { font-size: 0.72rem; }
@@ -535,11 +541,7 @@
   <header class="header">
     <div class="header-inner">
       <div class="logo">
-        <div class="logo-icon" id="logoToggle" title="展开/收起分类" role="button" tabindex="0" aria-label="展开/收起分类">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </div>
+        <div class="logo-icon" id="logoToggle" title="展开/收起分类" role="button" tabindex="0" aria-label="展开/收起分类">分类</div>
         <span>工具箱</span>
       </div>
 
