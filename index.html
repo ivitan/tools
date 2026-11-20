@@ -162,13 +162,13 @@
     }
     /* Logo：仅最前的图标可点击展开/收起分类，标题保持原样 */
     .logo {
-      display: inline-flex; align-items: center; gap: 10px;
+      display: inline-flex; align-items: center; gap: 6px;
       font-weight: 600; font-size: 15px;
       color: var(--text);
     }
     /* 分类图标：无底色、无边框、无阴影，点击展开/收起左侧分类栏 */
     .logo-icon {
-      height: 32px;
+      position: relative; top: 1px;
       display: inline-flex; align-items: center; justify-content: center;
       flex-shrink: 0;
       cursor: pointer;
