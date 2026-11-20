@@ -1717,7 +1717,7 @@
       const list = Array.from(files || []);
       if (!list.length) return;
 
-      toast('正在读取数据库…', 'info');
+      $('queryStatus').textContent = '正在读取数据库…';
       await new Promise((r) => setTimeout(r, 30)); // 让 loading 先渲染
 
       const added = [], replaced = [], skipped = [], failed = [];
@@ -1863,7 +1863,7 @@
         return;
       }
 
-      toast('正在提取节点…', 'info');
+      setStatus('正在提取节点…', '');
 
       setTimeout(() => {
         const t0 = performance.now();
@@ -3591,7 +3591,7 @@
       // 记录本次提取的过滤条件快照
       lastExtractionFilter = { startTime, endTime, aproCode };
 
-      toast("正在提取节点…", "info");
+      document.getElementById("queryStatus").textContent = "正在提取节点…";
 
       // 使用 setTimeout 释放主线程以渲染 loading 状态
       setTimeout(() => {

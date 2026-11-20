@@ -1204,7 +1204,7 @@ async function handleFiles(fileList) {
     }
 
     if (!allRows.length) {
-      throw new Error('所有文件中都没有找到同时包含 camera / aproCode / visualId / info 字段的表。');
+      throw new Error('未载入任何数据：请确认文件是有效的 SQLite 数据库，且包含 camera / aproCode / visualId / info 字段。');
     }
 
     renderAll();   // 内部会按数据源范围重算 visualSummary / aproSummary / cameraSummary / latestSummary
@@ -1224,10 +1224,22 @@ async function handleFiles(fileList) {
       `分析完成：${dbNames.length} 个库 · ${tableStats.length} 张表 · ${fmt(allRows.length)} 条关系记录${stallMsg}${latestMsg}`,
       'ok'
     );
+    if (skippedTables.length) {
+      const skipped = [`已跳过 ${skippedTables.length} 项未载入：`];
+      for (const s of skippedTables) skipped.push(`· ${s.db}：${s.table}`);
+      toast(skipped.join('\n'), 'warn', 5000);
+    }
   } catch (err) {
     console.error(err);
-    setStatus('等待导入数据库', '');
-    toast('导入失败\n\n' + err.message, 'err', 4000);
+    setStatus(allRows.length ? '导入失败 · 仅载入部分数据' : '导入失败 · 未载入数据', 'err');
+    const lines = ['导入失败'];
+    if (skippedTables.length) {
+      lines.push(`以下 ${skippedTables.length} 项未载入：`);
+      for (const s of skippedTables) lines.push(`· ${s.db}：${s.table}`);
+      lines.push('');
+    }
+    lines.push(err.message);
+    toast(lines.join('\n'), 'err', 5000);
     if (!allRows.length) {
       $('content').style.display = 'none';
       $('dropzone').style.display = '';
