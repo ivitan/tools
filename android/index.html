@@ -782,7 +782,7 @@ function applyTheme(){
   if(badge) badge.textContent=systemPrefersDark()?'系统：深色':'系统：浅色';
   const btn=$('#themeBtn');
   if(btn){
-    btn.innerHTML = icon(t==='dark'?'sun':'moon',15);
+    btn.innerHTML = icon(t==='dark'?'moon':'sun',15);
     btn.title = '当前'+(t==='dark'?'深色':'浅色')+'主题'+(settings.theme==='auto'?'（跟随系统）':'')+'，点击切换';
   }
 }

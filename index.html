@@ -758,11 +758,11 @@
           return saved === "light" || saved === "dark" ? saved : "auto";
         } catch (e) { return "auto"; }
       }
-      // 图标仅两态：按当前生效主题显示（深色→太阳，浅色→月亮）
+      // 图标仅两态：按当前生效主题显示（浅色→太阳，深色→月亮）
       function updateThemeIcon() {
         const dark = root.dataset.theme === "dark";
-        iconSun.style.display = dark ? "block" : "none";
-        iconMoon.style.display = dark ? "none" : "block";
+        iconSun.style.display = dark ? "none" : "block";
+        iconMoon.style.display = dark ? "block" : "none";
         themeToggle.title = dark ? "切换到浅色模式" : "切换到深色模式";
       }
       function applyTheme(dark) {
