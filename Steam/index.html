@@ -602,7 +602,6 @@
       background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v12'/><polyline points='7 10 12 15 17 10'/><path d='M4 19h16'/></svg>");
       background-repeat:no-repeat; background-position:center; background-size:15px;
     }
-    .header-actions .btn-primary { padding:0 10px; font-size:12px; }
     .toolbar { padding:7px 10px; gap:8px; }
     .searchbox { flex:1; min-width:0; }
     .searchbox input { width:100%; }
@@ -661,6 +660,7 @@
   </div>
   <div class="header-spacer"></div>
   <div class="header-actions">
+    <button class="btn" id="exportBtn" disabled>导出 CSV</button>
     <button class="icon-btn" id="themeBtn" data-tip="切换主题" aria-label="切换主题">
       <svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -673,8 +673,6 @@
         <line x1="4.9" y1="19.1" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"/>
       </svg>
     </button>
-    <button class="btn" id="exportBtn" disabled>导出 CSV</button>
-    <button class="btn btn-primary" id="importBtn">导入数据库</button>
     <input type="file" id="fileInput" multiple accept=".db,.sqlite,.sqlite3,.db3,.sqlite2,.db2,application/x-sqlite3,application/vnd.sqlite3" hidden>
   </div>
 </header>
@@ -694,7 +692,7 @@
       <div class="sidebar-count" id="dbCount">0</div>
     </div>
     <div class="db-list" id="dbList">
-      <div class="db-empty">还未导入数据库<br>点击上方「+」或右上角「导入数据库」</div>
+      <div class="db-empty">还未导入数据库<br>点击上方「+」或拖拽文件导入</div>
     </div>
     <div class="sidebar-foot">文件仅在本地浏览器内解析<br>不会上传服务器</div>
     <select id="sourceFilter" hidden><option value="">全部数据库</option></select>
@@ -1715,7 +1713,7 @@ function renderSidebar() {
 
   if (!dbNames.length) {
     if (count) count.textContent = '0';
-    list.innerHTML = '<div class="db-empty">还未导入数据库<br>点击上方「+」或右上角「导入数据库」</div>';
+    list.innerHTML = '<div class="db-empty">还未导入数据库<br>点击上方「+」或拖拽文件导入</div>';
     return;
   }
   if (count) count.textContent = String(dbNames.length);
@@ -2643,8 +2641,6 @@ function exportTableCSV() {
    忙状态
    ========================================================================= */
 function setBusy(busy) {
-  $('importBtn').disabled = busy;
-  $('importBtn').textContent = busy ? '分析中…' : '导入数据库';
   $('btnAddDb').disabled = busy;
   $('exportBtn').disabled = busy || allRows.length === 0;
 }
@@ -2652,7 +2648,6 @@ function setBusy(busy) {
 /* =========================================================================
    事件绑定
    ========================================================================= */
-$('importBtn').addEventListener('click', () => $('fileInput').click());
 $('btnAddDb').addEventListener('click', () => $('fileInput').click());   // 侧边栏「+」导入数据库（参考 SQLite）
 $('dropzone').addEventListener('click', () => $('fileInput').click());
 
