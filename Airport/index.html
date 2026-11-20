@@ -2152,6 +2152,7 @@
       renderEcho([], []);
       renderRaw([], []);
       $('echoTable').classList.add('hidden');
+      $('queryStatus').textContent = '';   // 同步清掉上一次的解析结果提示
       toast('已清空重置', 'info');
     }
 
@@ -4070,6 +4071,9 @@
       resetDateDisplay.classList.add("hidden");
       const resetDateText = resetDateDisplay.querySelector(".date-text");
       if (resetDateText) resetDateText.textContent = "";
+
+      // 同步清掉上一次提取的结果提示，避免「解析完毕…」残留
+      document.getElementById("queryStatus").textContent = "";
 
       toast("已清空重置", "info");
     });
