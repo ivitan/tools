@@ -166,17 +166,15 @@
       font-weight: 600; font-size: 15px;
       color: var(--text);
     }
-    /* 「分类」tab 角标：点击展开/收起左侧分类栏，展开时呈选中态 */
+    /* 分类 tab 角标（仅图标）：点击展开/收起左侧分类栏，展开时呈选中态 */
     .logo-icon {
       height: 28px;
-      padding: 0 12px;
+      padding: 0 6px;
       background: var(--primary-soft);
       border: 1px solid transparent;
       border-radius: 6px;
       display: inline-flex; align-items: center; justify-content: center;
-      gap: 5px;
       color: var(--primary);
-      font-size: 12.5px; font-weight: 600; letter-spacing: 0.3px; line-height: 1;
       flex-shrink: 0;
       cursor: pointer;
       user-select: none;
@@ -472,7 +470,7 @@
     @media (max-width: 500px) {
       .header { height: 48px; padding: 0 10px; gap: 6px; }
       .logo span { font-size: 13px; }
-      .logo-icon { padding: 0 7px; gap: 4px; font-size: 12px; }
+      .logo-icon { padding: 0 6px; }
       .logo-icon img { width: 14px; height: 14px; }
       .tool-card i.tool-icon { width: 48px; height: 48px; font-size: 1.7rem; }
       .tool-card h3 { font-size: 0.9rem; }
@@ -546,7 +544,6 @@
       <div class="logo">
         <div class="logo-icon" id="logoToggle" title="展开/收起分类" role="button" tabindex="0" aria-label="展开/收起分类">
           <img src="/img/Logo.svg" alt="" width="16" height="16">
-          <span>分类</span>
         </div>
         <span>工具箱</span>
       </div>
