@@ -1,0 +1,2648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQLite 断流统计分析 · 飞机 / 机位号 / camera 关联视图</title>
+<!-- 内嵌 SVG 标签页图标：data URI 直接写进 HTML，单文件不依赖任何外部资源 -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Crect x='7' y='18' width='4.5' height='8' rx='1.5' fill='%23bfdbfe'/%3E%3Crect x='13.75' y='13' width='4.5' height='13' rx='1.5' fill='%23ffffff'/%3E%3Crect x='20.5' y='8' width='4.5' height='18' rx='1.5' fill='%23ffffff'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#2563eb">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:#f8fafc; --panel:#ffffff; --panel-hover:#f1f5f9;
+    --border:#e2e8f0; --border-hover:#cbd5e1;
+    --text:#0f172a; --text-secondary:#475569; --text-muted:#64748b;
+    --primary:#2563eb; --primary-hover:#1d4ed8; --primary-light:#eff6ff;
+    --primary-soft:rgba(37,99,235,.10); --primary-on:#ffffff;
+    --success:#059669; --success-light:#ecfdf5;
+    --danger:#dc2626; --danger-light:#fef2f2;
+    --warning:#d97706; --warning-light:#fef3c7;
+    --purple:#7c3aed;
+    --shadow:0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.03);
+    --shadow-lg:0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.04);
+    --header-row:#f8fafc; --row-hover:#f8fafc; --table-row-border:#f1f5f9;
+    --scrollbar-thumb:#cbd5e1; --scrollbar-thumb-hover:#94a3b8;
+    /* 兼容脚本内联样式引用的旧变量名 */
+    --card:var(--panel); --muted:var(--text-muted); --faint:#94a3b8;
+    --primary-d:var(--primary-hover); --primary-border:#bfdbfe;
+    --danger-soft:var(--danger-light); --danger-border:#fecaca;
+    --border-soft:var(--table-row-border);
+    --input-bg:var(--panel); --thead-bg:var(--header-row);
+    --track:var(--panel-hover);
+    --scroll:var(--scrollbar-thumb); --scroll-h:var(--scrollbar-thumb-hover);
+    --overlay:rgba(15,23,42,.45);
+    --bar-a-1:var(--danger); --bar-a-2:var(--danger);
+    --bar-b-1:var(--primary); --bar-b-2:var(--primary);
+  }
+
+  [data-theme="dark"] {
+    --bg:#0b1220; --panel:#111827; --panel-hover:#1e293b;
+    --border:#1f2937; --border-hover:#475569;
+    --text:#f1f5f9; --text-secondary:#cbd5e1; --text-muted:#94a3b8;
+    --primary:#60a5fa; --primary-hover:#93c5fd;
+    --primary-light:rgba(96,165,250,.18); --primary-soft:rgba(96,165,250,.22);
+    --primary-on:#0b1220;
+    --success:#34d399; --success-light:rgba(52,211,153,.18);
+    --danger:#f87171; --danger-light:rgba(248,113,113,.18);
+    --warning:#fbbf24; --warning-light:rgba(251,191,36,.20);
+    --purple:#a78bfa;
+    --shadow:0 1px 3px rgba(0,0,0,.5);
+    --shadow-lg:0 10px 25px rgba(0,0,0,.5);
+    --header-row:#0f172a; --row-hover:#1e293b; --table-row-border:#1e293b;
+    --scrollbar-thumb:#475569; --scrollbar-thumb-hover:#64748b;
+    --faint:#64748b; --primary-border:rgba(96,165,250,.38);
+    --danger-border:rgba(248,113,113,.38);
+    --overlay:rgba(2,6,23,.62);
+  }
+
+  html { -webkit-text-size-adjust:100%; }
+  html, body { height:100%; }
+  body {
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:var(--bg); color:var(--text);
+    font-size:14px; line-height:1.5;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    transition:background-color .15s, color .15s;
+  }
+  input, textarea, select { font-size:13px; }
+  button { font-family:inherit; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation:none !important;
+      transition-property:opacity, color, background-color, border-color, box-shadow !important;
+      transition-duration:.15s !important;
+    }
+  }
+
+  /* ── 顶栏 ─────────────────────────────────────────────── */
+  .header {
+    height:52px; flex:none;
+    background:var(--panel); border-bottom:1px solid var(--border);
+    box-shadow:var(--shadow);
+    display:flex; align-items:center; gap:10px;
+    padding:0 16px; position:relative; z-index:20;
+    transition:background-color .15s, border-color .15s;
+  }
+  .logo { display:flex; align-items:center; gap:10px; min-width:0; }
+  .logo-icon {
+    width:28px; height:28px; border-radius:6px; flex:none;
+    background:var(--primary); color:var(--primary-on);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .logo-icon svg { width:16px; height:16px; }
+  .logo-text { display:flex; flex-direction:column; min-width:0; }
+  .logo-text .t { font-size:15px; font-weight:600; line-height:1.25; white-space:nowrap; }
+  .logo-text .s { font-size:11px; color:var(--text-muted); line-height:1.25; white-space:nowrap;
+                  overflow:hidden; text-overflow:ellipsis; }
+  .header-spacer { flex:1; }
+  .header-actions { display:flex; align-items:center; gap:6px; }
+
+  .icon-btn {
+    width:32px; height:32px; border-radius:6px;
+    border:1px solid transparent; background:transparent;
+    color:var(--text-secondary); cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; flex:none;
+    transition:background-color .15s, color .15s, border-color .15s, transform .15s;
+  }
+  .icon-btn:hover { background:var(--panel-hover); color:var(--text); border-color:var(--border); }
+  .icon-btn:active { transform:scale(.97); }
+  .icon-btn svg { width:16px; height:16px; }
+  .ico-sun { display:none; }
+  .ico-moon { display:block; }
+  [data-theme="dark"] .ico-sun { display:block; }
+  [data-theme="dark"] .ico-moon { display:none; }
+  .mobile-only { display:none; }
+
+  .btn {
+    height:32px; padding:0 12px; border-radius:6px;
+    border:1px solid var(--border); background:var(--panel); color:var(--text);
+    font-size:13px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px;
+    transition:background-color .15s, color .15s, border-color .15s, opacity .15s, transform .15s;
+  }
+  .btn:hover:not(:disabled) { border-color:var(--border-hover); background:var(--panel-hover); }
+  .btn:active:not(:disabled) { transform:scale(.98); }
+  .btn-primary { background:var(--primary); border-color:var(--primary); color:var(--primary-on); font-weight:500; }
+  .btn-primary:hover:not(:disabled) { background:var(--primary-hover); border-color:var(--primary-hover); }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+
+  /* 轻提示 */
+  [data-tip] { position:relative; }
+  [data-tip]::after {
+    content:attr(data-tip);
+    position:absolute; top:calc(100% + 7px); right:0;
+    background:var(--text); color:var(--panel);
+    font-size:11.5px; font-weight:500; line-height:1.4; white-space:nowrap;
+    padding:5px 9px; border-radius:5px; pointer-events:none;
+    opacity:0; transform:translateY(-3px);
+    transition:opacity .12s, transform .12s; z-index:60;
+  }
+  [data-tip]:hover::after { opacity:1; transform:translateY(0); }
+
+  /* ── 布局 ─────────────────────────────────────────────── */
+  .layout { display:flex; height:calc(100dvh - 52px); position:relative; }
+
+  .sidebar {
+    width:248px; flex:none;
+    background:var(--panel); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; overflow:hidden;
+    transition:background-color .15s, border-color .15s;
+  }
+  .sidebar-header {
+    height:38px; flex:none; padding:0 12px;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:6px;
+  }
+  .sidebar-title {
+    flex:1; min-width:0;
+    font-size:11px; font-weight:600; letter-spacing:.5px;
+    text-transform:uppercase; color:var(--text-secondary);
+  }
+  .sidebar-count {
+    background:var(--primary-soft); color:var(--primary);
+    padding:2px 8px; border-radius:10px;
+    font-size:11px; font-weight:600; flex:none;
+  }
+  .db-list { flex:1; overflow-y:auto; padding:6px; overscroll-behavior:contain; }
+  .db-empty {
+    padding:26px 12px; text-align:center;
+    color:var(--text-muted); font-size:12px; line-height:1.7;
+  }
+  .db-item {
+    padding:6px 8px; margin-bottom:2px;
+    border-radius:4px; cursor:pointer;
+    transition:background-color .12s;
+  }
+  .db-item:hover { background:var(--panel-hover); }
+  .db-item.active {
+    background:var(--primary-light);
+    box-shadow:inset 3px 0 0 var(--primary);
+  }
+  .db-name {
+    font-size:12.5px; color:var(--text); font-weight:500;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .db-item.active .db-name { color:var(--primary); font-weight:600; }
+  .db-meta {
+    font-size:11px; color:var(--text-muted); margin-top:1px;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .db-item.active .db-meta { color:var(--primary); opacity:.8; }
+  .sidebar-foot {
+    flex:none; padding:9px 12px;
+    border-top:1px solid var(--border);
+    font-size:11px; color:var(--text-muted); line-height:1.6;
+  }
+
+  .main {
+    flex:1; min-width:0; overflow-y:auto;
+    padding:14px; display:flex; flex-direction:column; gap:12px;
+    overscroll-behavior:contain;
+  }
+
+  /* ── 状态条 ───────────────────────────────────────────── */
+  .statusbar {
+    flex:none; min-height:34px;
+    background:var(--panel); border:1px solid var(--border); border-radius:6px;
+    padding:6px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-size:12px; color:var(--text-secondary);
+    transition:background-color .15s, border-color .15s;
+  }
+  .statusbar .dot { margin-top:1px; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--text-muted); flex:none; transition:background-color .15s; }
+  .dot.ok { background:var(--success); }
+  .dot.busy { background:var(--warning); animation:pulse 1.1s infinite; }
+  .dot.err { background:var(--danger); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .fileinfo {
+    margin-left:auto; flex:none; max-width:46%;
+    color:var(--text-muted); font-size:11.5px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+
+  /* ── 拖拽区 ───────────────────────────────────────────── */
+  .dropzone {
+    flex:1; min-height:280px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border:2px dashed var(--border-hover); border-radius:12px;
+    background:var(--panel); cursor:pointer; text-align:center;
+    padding:32px 20px;
+    transition:background-color .2s, border-color .2s, transform .2s;
+  }
+  .dropzone:hover { border-color:var(--primary); background:var(--primary-light); }
+  .dropzone.dragover { border-color:var(--primary); background:var(--primary-light); transform:scale(.998); }
+  .dz-icon { width:44px; height:44px; border-radius:8px; background:var(--panel-hover);
+             display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+             transition:background-color .2s, color .2s; }
+  .dz-icon svg { width:22px; height:22px; color:var(--text-muted); }
+  .dropzone:hover .dz-icon { background:var(--panel); }
+  .dropzone:hover .dz-icon svg { color:var(--primary); }
+  .dz-title { font-size:15px; font-weight:600; margin-bottom:5px; }
+  .dz-sub { font-size:12.5px; color:var(--text-muted); }
+  .dz-tags { display:flex; gap:6px; margin-top:14px; flex-wrap:wrap; justify-content:center; }
+  .dz-tags span {
+    font-size:10.5px; font-weight:600; letter-spacing:.2px;
+    padding:2px 7px; border-radius:4px;
+    background:var(--panel-hover); color:var(--text-secondary);
+    border:1px solid var(--border);
+  }
+
+  /* ── 指标卡 ───────────────────────────────────────────── */
+  .content { display:flex; flex-direction:column; gap:12px; }
+  .stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
+  .stat {
+    position:relative; overflow:hidden;
+    background:var(--panel); border:1px solid var(--border); border-radius:8px;
+    padding:11px 13px;
+    transition:background-color .15s, border-color .15s;
+  }
+  .stat::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent,var(--primary)); opacity:.85; }
+  .stat .c-title {
+    font-size:11px; font-weight:600; letter-spacing:.3px;
+    color:var(--text-muted); display:flex; align-items:center; gap:5px;
+  }
+  .stat .c-title svg { width:11px; height:11px; }
+  .stat .c-value {
+    font-size:23px; font-weight:700; letter-spacing:-.4px; line-height:1.15;
+    margin-top:3px; color:var(--text); font-variant-numeric:tabular-nums;
+  }
+  .stat.is-danger .c-value { color:var(--danger); }
+  .stat .c-hint { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+  /* ── 面板 / 表格 ──────────────────────────────────────── */
+  .panel {
+    background:var(--panel); border:1px solid var(--border); border-radius:8px;
+    box-shadow:var(--shadow); min-width:0;
+    transition:background-color .15s, border-color .15s;
+  }
+  .tablecard { display:flex; flex-direction:column; overflow:hidden; }
+
+  .toolbar {
+    min-height:44px; flex:none;
+    padding:7px 14px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .toolbar h3 { font-size:13.5px; font-weight:600; white-space:nowrap; }
+  .badge {
+    font-size:10.5px; font-weight:600; padding:1px 6px; border-radius:4px;
+    background:var(--primary-light); color:var(--primary); white-space:nowrap;
+  }
+  .badge.danger { background:var(--danger-light); color:var(--danger); }
+
+  .view-tabs {
+    display:inline-flex; gap:2px; padding:2px;
+    background:var(--panel-hover); border-radius:6px;
+  }
+  .view-tab {
+    height:26px; padding:0 10px; border:none; border-radius:4px;
+    background:transparent; color:var(--text-secondary);
+    font-size:12px; cursor:pointer; white-space:nowrap;
+    transition:background-color .12s, color .12s;
+  }
+  .view-tab:hover { color:var(--text); }
+  .view-tab.active {
+    background:var(--panel); color:var(--primary); font-weight:600;
+    box-shadow:var(--shadow);
+  }
+  .toolbar .spacer { flex:1; }
+
+  .sel {
+    height:30px; padding:0 26px 0 9px; border-radius:6px;
+    border:1px solid var(--border); background:var(--panel); color:var(--text);
+    outline:none; cursor:pointer; appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2364748b'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat:no-repeat; background-position:right 5px center; background-size:16px;
+    transition:border-color .15s;
+  }
+  .sel:focus { border-color:var(--primary); }
+
+  .searchbox { position:relative; display:flex; align-items:center; }
+  .searchbox svg {
+    position:absolute; left:9px; width:14px; height:14px;
+    color:var(--text-muted); pointer-events:none;
+  }
+  .searchbox input {
+    height:30px; width:200px; padding:0 10px 0 29px;
+    border:1px solid var(--border); border-radius:6px;
+    background:var(--panel); color:var(--text); outline:none;
+    transition:border-color .15s;
+  }
+  .searchbox input::placeholder { color:var(--text-muted); }
+  .searchbox input:focus { border-color:var(--primary); }
+
+  .checkbox {
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12.5px; color:var(--text-secondary);
+    cursor:pointer; user-select:none; white-space:nowrap;
+  }
+  .checkbox input {
+    width:14px; height:14px; margin:0;
+    accent-color:var(--primary); cursor:pointer; flex:none;
+  }
+
+  .tablewrap { overflow:auto; min-height:220px; max-height:min(46vh,520px); }
+  table { width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; }
+  thead th {
+    position:sticky; top:0; z-index:2;
+    background:var(--header-row);
+    border-bottom:1px solid var(--border);
+    text-align:left; padding:8px 10px;
+    font-size:11.5px; font-weight:600; letter-spacing:.2px;
+    color:var(--text-secondary); cursor:pointer; user-select:none; white-space:nowrap;
+    transition:color .12s, background-color .12s;
+  }
+  thead th:hover { color:var(--primary); background:var(--panel-hover); }
+  thead th.num { text-align:right; }
+  thead th.sorted { color:var(--primary); }
+  thead th .arrow { font-size:8px; margin-left:3px; opacity:.9; }
+  tbody td {
+    padding:7px 10px; border-bottom:1px solid var(--table-row-border);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:320px;
+    color:var(--text-secondary);
+  }
+  tbody td.num { text-align:right; font-variant-numeric:tabular-nums; color:var(--text); }
+  tbody td.dbcol { color:var(--text-muted); font-size:12px; max-width:170px; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover td { background:var(--row-hover); }
+  tbody tr.has-error td.err { color:var(--danger); font-weight:700; }
+  tbody tr.has-error td.err::before {
+    content:""; display:inline-block; width:5px; height:5px; border-radius:50%;
+    background:var(--danger); margin-right:5px; vertical-align:1px;
+  }
+  .rate { font-variant-numeric:tabular-nums; }
+  .rate.high { color:var(--danger); font-weight:700; }
+  .rate.mid { color:var(--warning); font-weight:600; }
+  .rate.low { color:var(--text-muted); }
+  .mono { font-family:"SF Mono", Monaco, Consolas, "Courier New", monospace; font-size:12px; }
+
+  .pager {
+    flex:none; display:flex; align-items:center; gap:4px; justify-content:flex-end;
+    padding:8px 14px; border-top:1px solid var(--border); flex-wrap:wrap;
+  }
+  .pager .info { font-size:11.5px; color:var(--text-secondary); margin-right:auto; }
+  .pbtn {
+    height:22px; min-width:22px; padding:0 6px;
+    border:1px solid var(--border); background:var(--panel); color:var(--text);
+    border-radius:4px; font-size:11px; cursor:pointer;
+    transition:background-color .12s, color .12s, border-color .12s, opacity .12s;
+  }
+  .pbtn:hover:not(:disabled) { border-color:var(--primary); color:var(--primary); }
+  .pbtn:disabled { opacity:.35; cursor:not-allowed; }
+  .pbtn.cur { background:var(--primary); border-color:var(--primary); color:var(--primary-on); font-weight:600; }
+  .pbtn.cur:hover { background:var(--primary-hover); color:var(--primary-on); }
+
+  /* ── 图表 ─────────────────────────────────────────────── */
+  .charts { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
+  .charts .panel { padding:12px 14px 12px; }
+  .charts .span-3 { grid-column:span 3; }
+  .charts .span-6 { grid-column:span 6; }
+  .panel-head {
+    display:flex; align-items:center; justify-content:space-between;
+    gap:8px; flex-wrap:wrap;
+  }
+  .panel-head h3 {
+    font-size:12.5px; font-weight:600; color:var(--text);
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  }
+  .panel-head h3 .tag {
+    font-size:10px; font-weight:600; letter-spacing:.3px;
+    padding:1px 6px; border-radius:4px;
+    background:var(--primary-light); color:var(--primary);
+  }
+  .panel-head h3 .tag.warn { background:var(--warning-light); color:var(--warning); }
+  .panel-head-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .panel-hint { font-size:11px; color:var(--text-muted); white-space:nowrap; }
+  .panel-export {
+    height:24px; padding:0 8px; border-radius:4px;
+    border:1px solid var(--border); background:var(--panel); color:var(--text-secondary);
+    font-size:11px; cursor:pointer; white-space:nowrap;
+    display:inline-flex; align-items:center; gap:4px;
+    transition:background-color .12s, color .12s, border-color .12s;
+  }
+  .panel-export:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
+  .panel-export svg { width:10px; height:10px; fill:currentColor; flex:none; }
+  .panel-sub { font-size:11px; color:var(--text-muted); margin:3px 0 10px; }
+
+  /* 条形图 */
+  .bar-row {
+    display:grid; grid-template-columns:auto 1fr 58px; gap:9px; align-items:center;
+    padding:2px 4px; border-radius:4px;
+  }
+  .bar-row.clickable { cursor:pointer; transition:background-color .12s; }
+  .bar-row.clickable:hover { background:var(--panel-hover); }
+  .bar-label {
+    font-size:12px; color:var(--text-secondary); text-align:right;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    min-width:54px; max-width:132px; line-height:1.45;
+  }
+  .bar-track { background:var(--panel-hover); border-radius:3px; height:11px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:3px; width:0; transition:width .6s cubic-bezier(.4,0,.2,1); }
+  .bar-fill.k-error { background:var(--danger); }
+  .bar-fill.k-primary { background:var(--primary); }
+  .bar-value {
+    font-size:12px; font-weight:600; text-align:right;
+    font-variant-numeric:tabular-nums; color:var(--text);
+  }
+  .empty {
+    padding:28px 10px; text-align:center;
+    font-size:12.5px; color:var(--text-muted);
+    background:var(--panel-hover); border-radius:6px;
+  }
+  .empty.ok {
+    color:var(--success); background:var(--success-light);
+    border:1px dashed var(--success); border-color:color-mix(in srgb, var(--success) 34%, transparent);
+  }
+  .empty .ok-badge {
+    display:inline-block; margin-bottom:6px; width:30px; height:30px; line-height:30px;
+    border-radius:50%; background:var(--success-light); color:var(--success);
+    font-size:15px; font-weight:700;
+    border:1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  }
+
+  #chartLatestFlight.scrollable { max-height:400px; overflow-y:auto; padding-right:6px; }
+
+  /* 堆叠条形图 */
+  .stack-list { display:flex; flex-direction:column; gap:2px; }
+  .stack-row {
+    display:grid; grid-template-columns:minmax(64px,132px) 1fr 54px;
+    gap:9px; align-items:center; padding:3px 4px; border-radius:4px;
+    cursor:pointer; transition:background-color .12s;
+  }
+  .stack-row:hover { background:var(--panel-hover); }
+  .stack-label {
+    font-size:12px; color:var(--text-secondary); text-align:right;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    min-width:54px; max-width:132px;
+  }
+  .stack-track {
+    position:relative; height:17px; background:var(--panel-hover);
+    border-radius:3px; overflow:hidden;
+  }
+  .stack-bar { height:100%; display:flex; border-radius:3px; overflow:hidden; width:0; transition:width .6s cubic-bezier(.4,0,.2,1); }
+  .stack-seg {
+    height:100%; display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:600; color:#fff;
+    overflow:hidden; white-space:nowrap; flex:none;
+    transition:filter .12s; position:relative; cursor:pointer;
+  }
+  .stack-seg:hover { filter:brightness(1.12); }
+  .stack-total {
+    font-size:12px; font-weight:600; text-align:right;
+    font-variant-numeric:tabular-nums; color:var(--text);
+  }
+  .stack-legend {
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+    padding:9px 4px 0; margin-top:9px;
+    border-top:1px solid var(--border);
+    font-size:11px; color:var(--text-muted);
+  }
+  .legend-item { display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
+  .legend-item:hover { color:var(--text); }
+  .legend-dot { width:9px; height:9px; border-radius:2px; flex:none; }
+
+  /* ── 拖拽遮罩 ─────────────────────────────────────────── */
+  #overlay {
+    position:fixed; inset:0; z-index:90; display:none;
+    background:var(--overlay); backdrop-filter:blur(2px);
+    align-items:center; justify-content:center; pointer-events:none;
+  }
+  #overlay.active { display:flex; }
+  .ov-box {
+    background:var(--panel); border:2px dashed var(--primary); border-radius:10px;
+    padding:40px 56px; text-align:center;
+    box-shadow:var(--shadow-lg);
+  }
+  .ov-box .dz-icon { width:48px; height:48px; margin:0 auto 14px; background:var(--primary-light); }
+  .ov-box .dz-icon svg { width:24px; height:24px; color:var(--primary); }
+  .ov-box h2 { font-size:16px; font-weight:600; }
+  .ov-box p { font-size:12.5px; color:var(--text-muted); margin-top:4px; }
+
+  .fade-in { animation:fade .28s ease both; }
+  @keyframes fade { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+
+  /* ── 滚动条 ───────────────────────────────────────────── */
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb {
+    background:var(--scrollbar-thumb); border-radius:99px;
+    border:3px solid transparent; background-clip:content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background:var(--scrollbar-thumb-hover); background-clip:content-box; }
+  * { scrollbar-width:thin; scrollbar-color:var(--scrollbar-thumb) transparent; }
+
+  /* ── 响应式 ───────────────────────────────────────────── */
+  @media (max-width:1200px) {
+    .stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  }
+  @media (max-width:1100px) {
+    .charts { grid-template-columns:1fr; }
+    .charts .span-3, .charts .span-6 { grid-column:span 1; }
+  }
+  @media (max-width:900px) {
+    .mobile-only { display:inline-flex; }
+    .sidebar {
+      position:fixed; top:52px; bottom:0; left:0; z-index:30;
+      transform:translateX(-100%); box-shadow:var(--shadow-lg);
+      transition:transform .22s ease;
+    }
+    .layout.sidebar-open .sidebar { transform:none; }
+    .main { padding:10px; }
+    .logo-text .s { display:none; }
+    .searchbox input { width:150px; }
+  }
+  @media (max-width:700px) {
+    .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .toolbar h3 { font-size:13px; }
+    .view-tabs { order:5; width:100%; overflow-x:auto; }
+    .dropzone { min-height:220px; padding:24px 14px; }
+    .dz-title { font-size:14px; }
+    .dz-sub { font-size:12px; }
+    .pager { justify-content:center; }
+    .pager .info { width:100%; text-align:center; margin:0 0 4px; }
+  }
+  @media (max-width:560px) {
+    .header { padding:0 10px; gap:8px; }
+    .logo { gap:8px; }
+    .logo-text .t { font-size:14px; }
+    .header-actions { gap:4px; }
+    #exportBtn {
+      width:32px; padding:0; font-size:0;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v12'/><polyline points='7 10 12 15 17 10'/><path d='M4 19h16'/></svg>");
+      background-repeat:no-repeat; background-position:center; background-size:15px;
+    }
+    .header-actions .btn-primary { padding:0 10px; font-size:12px; }
+    .toolbar { padding:7px 10px; gap:8px; }
+    .searchbox { flex:1; min-width:0; }
+    .searchbox input { width:100%; }
+    .charts .panel { padding:10px 10px; }
+  }
+
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+        <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+        <path d="M3 12a9 3 0 0 0 18 0"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <span class="t">SQLite 断流分析</span>
+      <span class="s">visualId / aproCode / camera 三维断流视图</span>
+    </div>
+  </div>
+  <div class="header-spacer"></div>
+  <div class="header-actions">
+    <button class="icon-btn mobile-only" id="sidebarToggle" data-tip="数据源列表" aria-label="数据源列表">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
+      </svg>
+    </button>
+    <button class="icon-btn" id="themeBtn" data-tip="切换主题" aria-label="切换主题">
+      <svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+      <svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="4"/>
+        <line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/>
+        <line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/>
+        <line x1="4.9" y1="4.9" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"/>
+        <line x1="4.9" y1="19.1" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"/>
+      </svg>
+    </button>
+    <button class="btn" id="exportBtn" disabled>导出 CSV</button>
+    <button class="btn btn-primary" id="importBtn">导入数据库</button>
+    <input type="file" id="fileInput" multiple accept=".db,.sqlite,.sqlite3,.db3,.sqlite2,.db2,application/x-sqlite3,application/vnd.sqlite3" hidden>
+  </div>
+</header>
+
+<div class="layout" id="layout">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">数据源</div>
+      <div class="sidebar-count" id="dbCount">0</div>
+    </div>
+    <div class="db-list" id="dbList">
+      <div class="db-empty">还未导入数据库<br>点击右上角「导入数据库」或拖拽文件</div>
+    </div>
+    <div class="sidebar-foot">文件仅在本地浏览器内解析<br>不会上传服务器</div>
+    <select id="sourceFilter" hidden><option value="">全部数据库</option></select>
+  </aside>
+
+  <main class="main" id="main">
+
+    <div class="statusbar">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">正在加载解析引擎…</span>
+      <span class="fileinfo" id="fileInfo"></span>
+    </div>
+
+    <div class="dropzone" id="dropzone">
+      <div class="dz-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <div class="dz-title">点击选择 或 拖拽 SQLite 文件到此处</div>
+      <div class="dz-sub">支持 .db / .sqlite / .sqlite3 / .db3 · 支持多文件合并统计</div>
+      <div class="dz-tags"><span>本地解析</span><span>多库合并</span><span>断流识别</span></div>
+    </div>
+
+    <div class="content" id="content" style="display:none">
+
+      <!-- 指标 -->
+      <section class="stats fade-in">
+        <div class="stat is-danger" style="--accent:var(--danger)">
+          <div class="c-title">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="opacity:.85"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            断流总次数
+          </div>
+          <div class="c-value" id="cardStalls">0</div>
+          <div class="c-hint">info 命中断流文案的记录数</div>
+        </div>
+        <div class="stat" style="--accent:var(--warning)">
+          <div class="c-title">有断流的飞机</div>
+          <div class="c-value" id="cardVisualStall">0</div>
+          <div class="c-hint">发生断流的 visualId 数量</div>
+        </div>
+        <div class="stat" style="--accent:var(--purple)">
+          <div class="c-title">有断流的机位号</div>
+          <div class="c-value" id="cardAproStall">0</div>
+          <div class="c-hint">发生断流的机位号数量</div>
+        </div>
+        <div class="stat" style="--accent:var(--primary)">
+          <div class="c-title">有断流的 camera</div>
+          <div class="c-value" id="cardCamStall">0</div>
+          <div class="c-hint">发生断流的摄像头数量</div>
+        </div>
+        <div class="stat" style="--accent:var(--success)">
+          <div class="c-title">记录总数</div>
+          <div class="c-value" id="cardRows">0</div>
+          <div class="c-hint">所有表行数合计</div>
+        </div>
+      </section>
+
+      <!-- 表格 -->
+      <section class="panel tablecard fade-in">
+        <div class="toolbar">
+          <h3>断流明细与汇总</h3>
+          <span class="badge" id="countBadge">0 条</span>
+          <div class="view-tabs" id="viewTabs">
+            <button class="view-tab active" data-view="detail">明细视图</button>
+            <button class="view-tab" data-view="byVisual">按飞机汇总</button>
+            <button class="view-tab" data-view="byApro">按机位号汇总</button>
+            <button class="view-tab" data-view="byCamera">按 camera 汇总</button>
+          </div>
+          <div class="spacer"></div>
+          <label class="checkbox">
+            <input type="checkbox" id="onlyErr">
+            <span>仅显示有断流</span>
+          </label>
+          <div class="searchbox">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="searchInput" placeholder="搜索飞机 / 机位号 / camera / 表名">
+          </div>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <thead id="thead"></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="pager">
+          <span class="info" id="pageInfo">—</span>
+          <div id="pageBtns" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
+        </div>
+      </section>
+
+      <!-- 图表 -->
+      <section class="charts fade-in">
+
+        <div class="panel span-6">
+          <div class="panel-head">
+            <h3>机位号-camera 最新航班断流情况 <span class="tag warn">最新航班</span></h3>
+            <div class="panel-head-right">
+              <span class="panel-hint">按机位号 + camera 组合取最新航班 · 断流降序</span>
+              <button class="panel-export" data-chart="latestFlight">
+                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
+                导出全部 CSV
+              </button>
+            </div>
+          </div>
+          <div class="panel-sub">每个机位号 + camera 组合取其最新航班（visualId 时间戳最大）的断流次数，点击查看该航班明细</div>
+          <div id="chartLatestFlight"></div>
+        </div>
+
+        <div class="panel span-3">
+          <div class="panel-head">
+            <h3>断流按飞机分布 <span class="tag warn">visualId</span></h3>
+            <div class="panel-head-right">
+              <span class="panel-hint">Top 12</span>
+              <button class="panel-export" data-chart="byVisual">
+                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
+                导出
+              </button>
+            </div>
+          </div>
+          <div class="panel-sub">visualId 对应同一架飞机（架次）· 点击查看明细</div>
+          <div id="chartByVisual"></div>
+        </div>
+
+        <div class="panel span-3">
+          <div class="panel-head">
+            <h3>断流按机位号分布 <span class="tag">aproCode</span></h3>
+            <div class="panel-head-right">
+              <span class="panel-hint">Top 12</span>
+              <button class="panel-export" data-chart="byApro">
+                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
+                导出
+              </button>
+            </div>
+          </div>
+          <div class="panel-sub">aproCode 是机位号 · 点击查看该机位号断流明细</div>
+          <div id="chartByApro"></div>
+        </div>
+
+        <div class="panel span-3">
+          <div class="panel-head">
+            <h3>断流按 camera 分布 <span class="tag">设备维度</span></h3>
+            <div class="panel-head-right">
+              <span class="panel-hint">Top 12</span>
+              <button class="panel-export" data-chart="byCamera">
+                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
+                导出
+              </button>
+            </div>
+          </div>
+          <div class="panel-sub">仅列有断流的 camera · 点击查看该 camera 断流明细</div>
+          <div id="chartByCamera"></div>
+        </div>
+
+        <div class="panel span-3">
+          <div class="panel-head">
+            <h3>飞机断流率 TOP <span class="tag warn">占比</span></h3>
+            <div class="panel-head-right">
+              <span class="panel-hint">记录数 ≥ 10 · Top 12</span>
+              <button class="panel-export" data-chart="byRate">
+                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
+                导出
+              </button>
+            </div>
+          </div>
+          <div class="panel-sub">断流率 = 断流次数 / 记录数 · 点击查看明细</div>
+          <div id="chartByRate"></div>
+        </div>
+
+        <div class="panel span-6">
+          <div class="panel-head">
+            <h3>飞机 → 机位号 断流构成 <span class="tag">堆叠</span></h3>
+            <div class="panel-head-right">
+              <span class="panel-hint">Top 12 飞机 · 点击分段过滤</span>
+              <button class="panel-export" data-chart="visualApro">
+                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
+                导出
+              </button>
+            </div>
+          </div>
+          <div class="panel-sub">每行一架飞机，横向按各机位号的断流次数分段堆叠 · 点击飞机行看明细，点击分段过滤到该飞机 + 该机位号</div>
+          <div id="chartVisualApro"></div>
+        </div>
+
+        <div class="panel span-6">
+          <div class="panel-head">
+            <h3>机位号 → camera 断流构成 <span class="tag">堆叠</span></h3>
+            <div class="panel-head-right">
+              <span class="panel-hint">Top 12 机位号 · 点击分段过滤</span>
+              <button class="panel-export" data-chart="aproCamera">
+                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
+                导出
+              </button>
+            </div>
+          </div>
+          <div class="panel-sub">每行一个机位号，横向按该机位号下各 camera 的断流次数分段堆叠 · 点击机位号行看明细，点击分段过滤到该机位号 + 该 camera</div>
+          <div id="chartAproCamera"></div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="overlay">
+  <div class="ov-box">
+    <div class="dz-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
+    <h2>释放以导入数据库</h2>
+    <p>支持一次拖入多个 SQLite 文件，本地解析合并统计</p>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   常量与工具
+   ========================================================================= */
+const STALL_PATTERN = "error link more than ten times, sleep 300 s!";
+const PAGE_SIZE     = 50;
+const BATCH_TABLES  = 30;
+const SEP = '\u0001';
+
+const TIME_CANDIDATES = [
+  'time','timestamp','create_time','update_time','datetime','date','ts',
+  'start_time','end_time','flight_time','takeoff_time','landing_time',
+  'capture_time','event_time','record_time','log_time'
+];
+
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const escHtml = s => String(s).replace(/[&<>"']/g, c => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+));
+const fmt = n => Number(n).toLocaleString('en-US');
+const qi  = name => '"' + String(name).replace(/"/g, '""') + '"';
+const sqlStr = s => "'" + String(s).replace(/'/g, "''") + "'";
+const EM_DASH = '<span style="color:var(--faint)">—</span>';
+const EMPTY_KEY = '(空)';
+
+const PALETTE = [
+  '#2563eb', '#7c3aed', '#059669', '#0891b2', '#4f46e5',
+  '#db2777', '#0d9488', '#65a30d', '#d97706', '#ea580c'
+];
+const OTHER_COLOR = '#94a3b8';
+const OTHER_LABEL = '其他';
+
+function toStr(v) {
+  if (v === null || v === undefined) return '';
+  if (v instanceof Uint8Array) {
+    try { return new TextDecoder('utf-8').decode(v); } catch { return ''; }
+  }
+  return String(v);
+}
+function ratePct(errors, count) {
+  if (!count) return '—';
+  return (errors / count * 100).toFixed(2) + '%';
+}
+function rateClass(errors, count) {
+  if (!count) return 'rate low';
+  const r = errors / count;
+  if (r >= 0.1) return 'rate high';
+  if (r >= 0.01) return 'rate mid';
+  return 'rate low';
+}
+function csvCell(v) {
+  const s = String(v ?? '');
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function downloadCSV(filename, header, rows) {
+  if (!rows || !rows.length) { alert('没有可导出的数据'); return; }
+  const lines = [header.map(csvCell).join(',')];
+  for (const r of rows) lines.push(r.map(csvCell).join(','));
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function fileBase() {
+  return dbNames.length === 1
+    ? dbNames[0].replace(/\.[^.]+$/, '')
+    : `merged_${dbNames.length}db`;
+}
+
+/* ---------- 航班时间识别 ---------- */
+function pickTimeColumn(lowerMap) {
+  for (const k of TIME_CANDIDATES) {
+    if (lowerMap.has(k)) return lowerMap.get(k);
+  }
+  return null;
+}
+
+function normalizeFlightTime(v) {
+  if (v === null || v === undefined) return '';
+  let s = String(v).trim();
+  if (!s) return '';
+
+  // Unix 秒/毫秒时间戳
+  if (/^\d{10}$/.test(s)) return new Date(Number(s) * 1000).toISOString().slice(0, 19).replace('T', ' ');
+  if (/^\d{13}$/.test(s)) return new Date(Number(s)).toISOString().slice(0, 19).replace('T', ' ');
+
+  s = s.replace(/[年\/]/g, '-').replace(/月/g, '-').replace(/日/g, '');
+  const m = s.match(/(20\d{2})[-_]?(\d{1,2})[-_]?(\d{1,2})/);
+  if (m) {
+    const d = `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+    const rest = s.replace(m[0], '').replace(/^[-_ T]+/, '').trim();
+    return rest ? d + ' ' + rest : d;
+  }
+  return s;
+}
+
+function extractDateFromTable(name) {
+  const m = String(name).match(/(20\d{2})[-_]?(\d{2})[-_]?(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+}
+
+/* =========================================================================
+   主题
+   ========================================================================= */
+function applyTheme(mode) {
+  let actual = mode;
+  if (mode === 'auto') {
+    actual = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', actual);
+}
+function initTheme() {
+  const saved = localStorage.getItem('sqlite_theme') || 'auto';
+  applyTheme(saved);
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const onChange = () => {
+    if ((localStorage.getItem('sqlite_theme') || 'auto') === 'auto') applyTheme('auto');
+  };
+  if (mq.addEventListener) mq.addEventListener('change', onChange);
+  else if (mq.addListener) mq.addListener(onChange);
+}
+$('themeBtn').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('sqlite_theme', next);
+  applyTheme(next);
+});
+initTheme();
+
+/* =========================================================================
+   状态
+   ========================================================================= */
+let allRows = [];
+let scopedRows = [];      // 当前左侧数据源范围下的记录（= allRows 或其子集）
+let visualSummary = [];
+let aproSummary = [];
+let cameraSummary = [];
+let latestSummary = [];   // 机位号+camera 维度最新航班汇总
+let tableStats = [];
+let dbNames = [];
+let skippedTables = [];
+let sqlLoading = null;
+
+let viewMode = 'detail';
+let sortKey = 'errors';
+let sortDesc = true;
+let filterText = '';
+let onlyErrors = false;
+let sourceFilter = '';
+let page = 1;
+let customFilter = null;
+
+/* =========================================================================
+   状态条
+   ========================================================================= */
+function setStatus(text, type) {
+  $('statusText').textContent = text;
+  $('statusDot').className = 'dot' + (type ? ' ' + type : '');
+}
+
+/* =========================================================================
+   加载 sql.js
+   ========================================================================= */
+function loadScript(url) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = url; s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => { s.remove(); reject(new Error('脚本加载失败：' + url)); };
+    document.head.appendChild(s);
+  });
+}
+async function loadSqlJs() {
+  const bases = [
+    'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/',
+    'https://unpkg.com/sql.js@1.10.3/dist/',
+    'https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/'
+  ];
+  let lastErr = null;
+  for (const base of bases) {
+    try {
+      if (!window.initSqlJs) await loadScript(base + 'sql-wasm.js');
+      if (typeof window.initSqlJs !== 'function') throw new Error('initSqlJs 未就绪');
+      return await window.initSqlJs({ locateFile: f => base + f });
+    } catch (e) {
+      console.warn('[sql.js] 加载源失败：', base, e);
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('无法加载 SQL 解析引擎');
+}
+function ensureSql() {
+  if (!sqlLoading) sqlLoading = loadSqlJs();
+  return sqlLoading;
+}
+
+/* =========================================================================
+   多文件导入
+   ========================================================================= */
+async function handleFiles(fileList) {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+
+  const totalSize = files.reduce((s, f) => s + f.size, 0);
+  $('fileInfo').textContent = `${files.length} 个文件 · ${(totalSize / 1024 / 1024).toFixed(2)} MB`;
+  setBusy(true);
+
+  allRows = []; visualSummary = []; aproSummary = []; cameraSummary = [];
+  latestSummary = [];
+  tableStats = []; dbNames = []; skippedTables = [];
+  customFilter = null;
+  $('exportBtn').disabled = true;
+  sourceFilter = '';
+  renderSidebar();
+
+  try {
+    const SQL = await ensureSql();
+
+    setStatus(`正在读取 ${files.length} 个文件…`, 'busy');
+    await sleep(0);
+    const buffers = await Promise.all(files.map(async f => {
+      try { return { file: f, buffer: await f.arrayBuffer() }; }
+      catch (e) { return { file: f, buffer: null, err: e }; }
+    }));
+
+    for (let i = 0; i < buffers.length; i++) {
+      const { file, buffer } = buffers[i];
+      if (!buffer) {
+        skippedTables.push({ db: file.name, table: '(文件读取失败)' });
+        continue;
+      }
+      setStatus(`正在解析 (${i + 1}/${buffers.length})：${file.name}`, 'busy');
+      await sleep(0);
+
+      let db = null;
+      try {
+        db = new SQL.Database(new Uint8Array(buffer));
+        db.exec('SELECT count(*) FROM sqlite_master');
+      } catch (e) {
+        try { db && db.close(); } catch (_) {}
+        skippedTables.push({ db: file.name, table: '(非有效 SQLite 文件)' });
+        continue;
+      }
+
+      try {
+        const result = await analyzeOne(db, file.name, (msg) => {
+          setStatus(`正在分析 (${i + 1}/${buffers.length}) ${file.name} · ${msg}`, 'busy');
+        });
+        if (!dbNames.includes(file.name)) dbNames.push(file.name);
+        allRows.push(...result.rows);
+        tableStats.push(...result.tableStats);
+        for (const t of result.skipped) skippedTables.push({ db: file.name, table: t });
+      } finally {
+        try { db.close(); } catch (_) {}
+      }
+    }
+
+    if (!allRows.length) {
+      throw new Error('所有文件中都没有找到同时包含 camera / aproCode / visualId / info 字段的表。');
+    }
+
+    renderAll();   // 内部会按数据源范围重算 visualSummary / aproSummary / cameraSummary / latestSummary
+
+    const totalStalls = allRows.reduce((s, r) => s + r.errors, 0);
+    const stallVisuals = visualSummary.filter(v => v.errors > 0).length;
+    const stallApros   = aproSummary.filter(v => v.errors > 0).length;
+    const stallCams    = cameraSummary.filter(c => c.errors > 0).length;
+    const latestStalls = latestSummary.reduce((s, r) => s + r.errors, 0);
+    const stallMsg = totalStalls > 0
+      ? ` · 检测到 ${fmt(totalStalls)} 次断流，分布在 ${fmt(stallVisuals)} 架飞机 / ${fmt(stallApros)} 个机位号 / ${fmt(stallCams)} 个 camera`
+      : ' · 未检测到断流';
+    const latestMsg = latestSummary.length
+      ? ` · 最新航班（按 visualId 取最新架次）覆盖 ${fmt(latestSummary.length)} 个机位号+camera 组合，断流 ${fmt(latestStalls)} 次`
+      : ' · 未识别到航班数据（缺少 visualId）';
+    setStatus(
+      `分析完成：${dbNames.length} 个库 · ${tableStats.length} 张表 · ${fmt(allRows.length)} 条关系记录${stallMsg}${latestMsg}`,
+      'ok'
+    );
+  } catch (err) {
+    console.error(err);
+    setStatus('分析失败：' + err.message, 'err');
+    alert('导入失败\n\n' + err.message);
+    if (!allRows.length) {
+      $('content').style.display = 'none';
+      $('dropzone').style.display = '';
+    }
+  } finally {
+    setBusy(false);
+  }
+}
+
+/* =========================================================================
+   单库分析
+   ========================================================================= */
+async function analyzeOne(db, dbName, onProgress) {
+  const rows = [];
+  const tableStats = [];
+  const skipped = [];
+
+  const res = db.exec(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
+  );
+  const tables = res.length ? res[0].values.map(r => String(r[0])) : [];
+  if (!tables.length) return { rows, tableStats, skipped };
+
+  let colMap = null;
+  try {
+    const r = db.exec(`
+      SELECT m.name AS tname, p.name AS cname
+      FROM sqlite_master m JOIN pragma_table_info(m.name) p
+      WHERE m.type = 'table' AND m.name NOT LIKE 'sqlite_%'
+    `);
+    if (r.length) {
+      colMap = new Map();
+      for (const row of r[0].values) {
+        const tn = String(row[0]), cn = String(row[1]);
+        if (!colMap.has(tn)) colMap.set(tn, []);
+        colMap.get(tn).push(cn);
+      }
+    }
+  } catch (e) { colMap = null; }
+
+  const need = ['camera', 'aprocode', 'visualid', 'info'];
+  const valid = [];
+
+  for (const tname of tables) {
+    let columns = null;
+    if (colMap && colMap.has(tname)) {
+      columns = colMap.get(tname);
+    } else {
+      try {
+        const pr = db.exec(`PRAGMA table_info(${qi(tname)})`);
+        if (pr.length) columns = pr[0].values.map(r => String(r[1]));
+      } catch (_) {}
+    }
+    if (!columns) { skipped.push(tname); continue; }
+
+    const lowerMap = new Map(columns.map(c => [c.toLowerCase(), c]));
+    if (!need.every(k => lowerMap.has(k))) { skipped.push(tname); continue; }
+
+    const timeCol = pickTimeColumn(lowerMap);
+
+    valid.push({
+      tname,
+      cVid:  qi(lowerMap.get('visualid')),
+      cCam:  qi(lowerMap.get('camera')),
+      cAp:   qi(lowerMap.get('aprocode')),
+      cInfo: qi(lowerMap.get('info')),
+      cTime: timeCol ? qi(timeCol) : null,
+    });
+  }
+
+  if (!valid.length) return { rows, tableStats, skipped };
+
+  // 每张表的最新时间 / 表名日期
+  const tableTimeMap = new Map();
+  for (let i = 0; i < valid.length; i++) {
+    const t = valid[i];
+    let ts = '';
+    if (t.cTime) {
+      try {
+        const r = db.exec(`SELECT MAX(CAST(${t.cTime} AS TEXT)) AS max_time FROM ${qi(t.tname)}`);
+        ts = normalizeFlightTime(r && r[0] && r[0].values && r[0].values[0] ? r[0].values[0][0] : '');
+      } catch (_) {}
+    }
+    if (!ts) ts = extractDateFromTable(t.tname);
+    tableTimeMap.set(t.tname, ts);
+    if (i % 20 === 19) await sleep(0);
+  }
+
+  const totalBatches = Math.ceil(valid.length / BATCH_TABLES);
+
+  for (let b = 0; b < valid.length; b += BATCH_TABLES) {
+    const batch = valid.slice(b, b + BATCH_TABLES);
+    const batchNo = Math.floor(b / BATCH_TABLES) + 1;
+
+    if (onProgress) {
+      onProgress(`批次 ${batchNo}/${totalBatches}（${b + 1}-${Math.min(b + BATCH_TABLES, valid.length)} 张表）`);
+    }
+    await sleep(0);
+
+    const statMap = new Map();
+    for (const t of batch) {
+      statMap.set(t.tname, { table: t.tname, visualIds: new Set(), rows: 0, errors: 0 });
+    }
+
+    const sql = batch.map(t => `
+      SELECT ${sqlStr(t.tname)} AS tbl,
+             COALESCE(CAST(${t.cVid} AS TEXT), '') AS vid,
+             COALESCE(CAST(${t.cCam} AS TEXT), '') AS cam,
+             COALESCE(CAST(${t.cAp}  AS TEXT), '') AS ap,
+             COUNT(*) AS cnt,
+             COALESCE(SUM(
+               CASE WHEN instr(CAST(COALESCE(${t.cInfo}, '') AS TEXT), ?) > 0
+                    THEN 1 ELSE 0 END
+             ), 0) AS stall
+      FROM ${qi(t.tname)}
+      GROUP BY vid, cam, ap
+    `).join(' UNION ALL ');
+
+    try {
+      const stmt = db.prepare(sql);
+      stmt.bind(new Array(batch.length).fill(STALL_PATTERN));
+
+      while (stmt.step()) {
+        const r = stmt.get();
+        const tname = toStr(r[0]);
+        const vidRaw = toStr(r[1]).trim();
+        const camRaw = toStr(r[2]).trim();
+        const apRaw  = toStr(r[3]).trim();
+        const cnt    = Number(r[4]) || 0;
+        const stall  = Number(r[5]) || 0;
+
+        rows.push({
+          db: dbName, table: tname,
+          visualId: vidRaw || EMPTY_KEY,
+          camera: camRaw || EMPTY_KEY,
+          aproCode: apRaw || EMPTY_KEY,
+          count: cnt, errors: stall,
+          // visualId 自带时间戳时以它为准（表级时间对整表所有航班是同一个值）
+          flightTime: flightTimeFromVisualId(vidRaw) || tableTimeMap.get(tname) || ''
+        });
+
+        const s = statMap.get(tname);
+        if (s) {
+          s.visualIds.add(vidRaw || EMPTY_KEY);
+          s.rows += cnt;
+          s.errors += stall;
+        }
+      }
+      stmt.free();
+    } catch (e) {
+      console.warn(`[${dbName}] 批次 ${batchNo} UNION ALL 失败，回退逐表：`, e);
+      for (const t of batch) {
+        analyzeSingleTable(
+          db, t, dbName, rows,
+          statMap.get(t.tname),
+          tableTimeMap.get(t.tname) || ''
+        );
+      }
+    }
+
+    for (const s of statMap.values()) {
+      tableStats.push({
+        db: dbName, table: s.table,
+        visualIds: s.visualIds.size,
+        rows: s.rows, errors: s.errors
+      });
+    }
+  }
+
+  return { rows, tableStats, skipped };
+}
+
+function analyzeSingleTable(db, t, dbName, rows, stat, flightTime) {
+  const sql = `
+    SELECT COALESCE(CAST(${t.cVid} AS TEXT), '') AS vid,
+           COALESCE(CAST(${t.cCam} AS TEXT), '') AS cam,
+           COALESCE(CAST(${t.cAp}  AS TEXT), '') AS ap,
+           COUNT(*) AS cnt,
+           COALESCE(SUM(
+             CASE WHEN instr(CAST(COALESCE(${t.cInfo}, '') AS TEXT), ?) > 0
+                  THEN 1 ELSE 0 END
+           ), 0) AS stall
+    FROM ${qi(t.tname)}
+    GROUP BY vid, cam, ap
+  `;
+  try {
+    const stmt = db.prepare(sql);
+    stmt.bind([STALL_PATTERN]);
+    while (stmt.step()) {
+      const r = stmt.get();
+      const vidRaw = toStr(r[0]).trim();
+      const camRaw = toStr(r[1]).trim();
+      const apRaw  = toStr(r[2]).trim();
+      const cnt    = Number(r[3]) || 0;
+      const stall  = Number(r[4]) || 0;
+      rows.push({
+        db: dbName, table: t.tname,
+        visualId: vidRaw || EMPTY_KEY,
+        camera: camRaw || EMPTY_KEY,
+        aproCode: apRaw || EMPTY_KEY,
+        count: cnt, errors: stall,
+        flightTime: flightTimeFromVisualId(vidRaw) || flightTime || ''
+      });
+      if (stat) {
+        stat.visualIds.add(vidRaw || EMPTY_KEY);
+        stat.rows += cnt;
+        stat.errors += stall;
+      }
+    }
+    stmt.free();
+  } catch (e) {
+    console.warn('单表分析失败：', dbName, t.tname, e);
+  }
+}
+
+/* =========================================================================
+   汇总构建
+   ========================================================================= */
+function buildVisualSummary(rows) {
+  const map = new Map();
+  for (const r of rows) {
+    let s = map.get(r.visualId);
+    if (!s) {
+      s = {
+        visualId: r.visualId, count: 0, errors: 0,
+        dbs: new Set(), tables: new Set(),
+        aproCodes: new Set(), cameras: new Set(),
+      };
+      map.set(r.visualId, s);
+    }
+    s.count += r.count;
+    s.errors += r.errors;
+    if (r.db) s.dbs.add(r.db);
+    if (r.table) s.tables.add(r.table);
+    if (r.aproCode && r.aproCode !== EMPTY_KEY) s.aproCodes.add(r.aproCode);
+    if (r.camera && r.camera !== EMPTY_KEY) s.cameras.add(r.camera);
+  }
+  return [...map.values()].map(s => ({
+    visualId: s.visualId, count: s.count, errors: s.errors,
+    aproCodeCount: s.aproCodes.size, cameraCount: s.cameras.size,
+    tableCount: s.tables.size, dbCount: s.dbs.size,
+    aproCodes: [...s.aproCodes].join('、'),
+    cameras: [...s.cameras].join('、'),
+    tables: [...s.tables].join('、'),
+    dbs: [...s.dbs].join('、'),
+  }));
+}
+
+function buildAproSummary(rows) {
+  const map = new Map();
+  for (const r of rows) {
+    let s = map.get(r.aproCode);
+    if (!s) {
+      s = {
+        aproCode: r.aproCode, count: 0, errors: 0,
+        dbs: new Set(), tables: new Set(),
+        visualIds: new Set(), cameras: new Set(),
+      };
+      map.set(r.aproCode, s);
+    }
+    s.count += r.count;
+    s.errors += r.errors;
+    if (r.db) s.dbs.add(r.db);
+    if (r.table) s.tables.add(r.table);
+    if (r.visualId && r.visualId !== EMPTY_KEY) s.visualIds.add(r.visualId);
+    if (r.camera && r.camera !== EMPTY_KEY) s.cameras.add(r.camera);
+  }
+  return [...map.values()].map(s => ({
+    aproCode: s.aproCode, count: s.count, errors: s.errors,
+    visualCount: s.visualIds.size, cameraCount: s.cameras.size,
+    tableCount: s.tables.size, dbCount: s.dbs.size,
+    visualIds: [...s.visualIds].join('、'),
+    cameras: [...s.cameras].join('、'),
+    tables: [...s.tables].join('、'),
+    dbs: [...s.dbs].join('、'),
+  }));
+}
+
+function buildCameraSummary(rows) {
+  const map = new Map();
+  for (const r of rows) {
+    let s = map.get(r.camera);
+    if (!s) {
+      s = {
+        camera: r.camera, count: 0, errors: 0,
+        dbs: new Set(), tables: new Set(),
+        visualIds: new Set(), aproCodes: new Set(),
+      };
+      map.set(r.camera, s);
+    }
+    s.count += r.count;
+    s.errors += r.errors;
+    if (r.db) s.dbs.add(r.db);
+    if (r.table) s.tables.add(r.table);
+    if (r.visualId && r.visualId !== EMPTY_KEY) s.visualIds.add(r.visualId);
+    if (r.aproCode && r.aproCode !== EMPTY_KEY) s.aproCodes.add(r.aproCode);
+  }
+  return [...map.values()].map(s => ({
+    camera: s.camera, count: s.count, errors: s.errors,
+    visualCount: s.visualIds.size, aproCodeCount: s.aproCodes.size,
+    tableCount: s.tables.size, dbCount: s.dbs.size,
+    visualIds: [...s.visualIds].join('、'),
+    aproCodes: [...s.aproCodes].join('、'),
+    tables: [...s.tables].join('、'),
+    dbs: [...s.dbs].join('、'),
+  }));
+}
+
+/* 最新航班汇总：一个 visualId 即一个航班，且 visualId 形如
+   20261104151547295279 = 2026-11-04 15:15:47.295279（年月日时分秒+微秒），
+   所以「ID 最大」天然等于「航班最新」。
+   注意：这是 20 位数字，超出 Number 安全整数（9e15），必须用 BigInt 比较，
+   否则相邻 ID 会被 double 舍入成同一个值。 */
+
+/* 从时间戳型 visualId 解析航班时刻 */
+function flightTimeFromVisualId(v) {
+  const s = String(v == null ? '' : v).trim();
+  const m = s.match(/^(20\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(?:\d{1,6})?$/);
+  if (!m) return '';
+  const [, y, mo, d, h, mi, se] = m;
+  if (+mo < 1 || +mo > 12 || +d < 1 || +d > 31 || +h > 23 || +mi > 59 || +se > 59) return '';
+  return `${y}-${mo}-${d} ${h}:${mi}:${se}`;
+}
+
+/* visualId 的可排序键：纯数字走 BigInt（精确到个位），否则取串内最长数字段 */
+function visualIdSortKey(v) {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return null;
+  if (/^\d+$/.test(s)) {
+    try { return BigInt(s); } catch (_) { return null; }
+  }
+  const nums = s.match(/\d+/g);
+  if (!nums || !nums.length) return null;
+  let best = nums[0];
+  for (const n of nums) if (n.length > best.length) best = n;
+  try { return BigInt(best); } catch (_) { return null; }
+}
+
+/* 两个航班桶的新旧比较：visualId 时间戳 > 表级时间 > 字符串序 */
+function compareFlightBucket(a, b) {
+  const ka = visualIdSortKey(a.visualId);
+  const kb = visualIdSortKey(b.visualId);
+  if (ka !== null && kb !== null && ka !== kb) return ka > kb ? 1 : -1;
+  if (a.flightTime !== b.flightTime) return a.flightTime > b.flightTime ? 1 : -1;
+  return String(a.visualId).localeCompare(String(b.visualId), 'zh-CN', { numeric: true });
+}
+
+function buildLatestSummary(rows) {
+  const keyOf = r => r.aproCode + SEP + r.camera;
+  const groups = new Map();   // 机位号+camera -> Map(visualId -> 桶)
+
+  for (const r of rows) {
+    if (r.aproCode === EMPTY_KEY || r.camera === EMPTY_KEY) continue;
+    const k = keyOf(r);
+    let g = groups.get(k);
+    if (!g) { g = new Map(); groups.set(k, g); }
+
+    const vid = r.visualId || EMPTY_KEY;
+    let b = g.get(vid);
+    if (!b) {
+      b = {
+        aproCode: r.aproCode,
+        camera: r.camera,
+        visualId: vid,
+        // 优先用 visualId 里的时间戳：表级时间对同表内所有航班是同一个值，不能区分架次
+        flightTime: flightTimeFromVisualId(vid) || r.flightTime || '',
+        count: 0,
+        errors: 0,
+        tables: new Set(),
+      };
+      g.set(vid, b);
+    }
+    b.count += r.count;
+    b.errors += r.errors;
+    if (!b.flightTime && r.flightTime) b.flightTime = r.flightTime;
+    if (r.table) b.tables.add(r.table);
+  }
+
+  const out = [];
+  for (const g of groups.values()) {
+    let best = null;
+    for (const [vid, b] of g) {
+      if (vid === EMPTY_KEY) continue;
+      if (!best || compareFlightBucket(b, best) > 0) best = b;
+    }
+    // 整组都没有 visualId 时才回退到空桶（保证不丢数据）
+    if (!best) best = g.get(EMPTY_KEY);
+    if (!best) continue;
+    out.push({
+      aproCode: best.aproCode,
+      camera: best.camera,
+      visualId: best.visualId === EMPTY_KEY ? '' : best.visualId,
+      flightTime: best.flightTime,
+      count: best.count,
+      errors: best.errors,
+      tableCount: best.tables.size,
+      tables: [...best.tables].join('、'),
+    });
+  }
+  return out;
+}
+
+/* =========================================================================
+   堆叠构成数据
+   ========================================================================= */
+function buildStack(rows, parentKey, childKey, parentLabel, childLabel) {
+  const parentMap = new Map();
+  const childTotalErr = new Map();
+
+  for (const r of rows) {
+    if (!r.errors) continue;
+    const pv = r[parentKey];
+    const cv = r[childKey];
+    if (pv === EMPTY_KEY || cv === EMPTY_KEY) continue;
+
+    let p = parentMap.get(pv);
+    if (!p) {
+      p = { id: pv, total: 0, children: new Map() };
+      parentMap.set(pv, p);
+    }
+    p.total += r.errors;
+    p.children.set(cv, (p.children.get(cv) || 0) + r.errors);
+    childTotalErr.set(cv, (childTotalErr.get(cv) || 0) + r.errors);
+  }
+
+  const topChildren = [...childTotalErr.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(e => e[0]);
+  const childColor = new Map();
+  topChildren.forEach((c, i) => childColor.set(c, PALETTE[i % PALETTE.length]));
+
+  const parents = [...parentMap.values()]
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 12);
+
+  const resultRows = parents.map(p => {
+    const segMap = new Map();
+    let other = 0;
+    for (const [c, err] of p.children) {
+      if (childColor.has(c)) segMap.set(c, (segMap.get(c) || 0) + err);
+      else other += err;
+    }
+    const segments = [...segMap.entries()]
+      .map(([c, err]) => ({ label: c, value: err, color: childColor.get(c) }))
+      .sort((a, b) => b.value - a.value);
+    if (other > 0) segments.push({ label: OTHER_LABEL, value: other, color: OTHER_COLOR });
+    return { id: p.id, total: p.total, segments };
+  });
+
+  const legend = topChildren.map(c => ({ label: c, color: childColor.get(c) }));
+  if (resultRows.some(r => r.segments.some(s => s.label === OTHER_LABEL))) {
+    legend.push({ label: OTHER_LABEL, color: OTHER_COLOR });
+  }
+
+  return {
+    rows: resultRows,
+    legend,
+    totalParents: parentMap.size,
+    parentLabel,
+    childLabel,
+  };
+}
+
+
+/* =========================================================================
+   侧边栏：数据源列表
+   ========================================================================= */
+function renderSidebar() {
+  const list = $('dbList');
+  const count = $('dbCount');
+  if (!list) return;
+
+  if (!dbNames.length) {
+    if (count) count.textContent = '0';
+    list.innerHTML = '<div class="db-empty">还未导入数据库<br>点击右上角「导入数据库」或拖拽文件</div>';
+    return;
+  }
+  if (count) count.textContent = String(dbNames.length);
+
+  const statMap = new Map();
+  for (const r of allRows) {
+    let s = statMap.get(r.db);
+    if (!s) { s = { rows: 0, errors: 0 }; statMap.set(r.db, s); }
+    s.rows += r.count;
+    s.errors += r.errors;
+  }
+  let totalRows = 0, totalErr = 0;
+  for (const s of statMap.values()) { totalRows += s.rows; totalErr += s.errors; }
+
+  const items = [{
+    db: '',
+    name: dbNames.length > 1 ? '全部数据库' : dbNames[0],
+    meta: `${dbNames.length} 个库 · ${fmt(totalRows)} 行 · 断流 ${fmt(totalErr)}`
+  }];
+  if (dbNames.length > 1) {
+    for (const name of dbNames) {
+      const s = statMap.get(name) || { rows: 0, errors: 0 };
+      items.push({ db: name, name, meta: `${fmt(s.rows)} 行 · 断流 ${fmt(s.errors)}` });
+    }
+  }
+
+  const cur = sourceFilter || '';
+  list.innerHTML = items.map(it => `
+    <div class="db-item${cur === it.db ? ' active' : ''}" data-db="${escHtml(it.db)}" title="${escHtml(it.name)}">
+      <div class="db-name">${escHtml(it.name)}</div>
+      <div class="db-meta">${escHtml(it.meta)}</div>
+    </div>`).join('');
+
+  list.querySelectorAll('.db-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const next = el.dataset.db || '';
+      if (next === sourceFilter) return;   // 已在当前范围，避免无意义重算
+      applyScope(next);
+    });
+  });
+}
+
+/* =========================================================================
+   渲染入口
+   ========================================================================= */
+/* 按左侧数据源范围重算全部汇总（KPI / 图表 / 表格共用同一份 scopedRows） */
+function rebuildForScope() {
+  scopedRows = sourceFilter ? allRows.filter(r => r.db === sourceFilter) : allRows;
+  visualSummary = buildVisualSummary(scopedRows);
+  aproSummary = buildAproSummary(scopedRows);
+  cameraSummary = buildCameraSummary(scopedRows);
+  latestSummary = buildLatestSummary(scopedRows);
+  return scopedRows;
+}
+
+/* 切换数据源范围：重算 + 全量重绘（卡片、图表、表格、状态条） */
+function applyScope(next) {
+  sourceFilter = next || '';
+  const sel = $('sourceFilter');
+  if (sel) sel.value = sourceFilter;
+
+  page = 1;
+  customFilter = null;
+  rebuildForScope();
+  renderSidebar();
+  renderCards();
+  renderTable();
+  renderCharts();
+
+  let rows = 0, stalls = 0;
+  for (const r of scopedRows) { rows += r.count; stalls += r.errors; }
+  setStatus(
+    (sourceFilter ? `当前数据源：${sourceFilter}` : `当前数据源：全部数据库（${dbNames.length} 个库）`)
+      + ` · ${fmt(rows)} 条记录 · 断流 ${fmt(stalls)} 次`,
+    'ok'
+  );
+
+  const layout = document.querySelector('.layout');
+  if (layout) layout.classList.remove('sidebar-open');
+}
+
+function renderAll() {
+  $('dropzone').style.display = 'none';
+  $('content').style.display = 'flex';
+
+  const sel = $('sourceFilter');
+  sel.innerHTML = '<option value="">全部数据库</option>' +
+    dbNames.map(d => `<option value="${escHtml(d)}">${escHtml(d)}</option>`).join('');
+  sel.value = sourceFilter || '';
+  if (dbNames.length <= 1) sourceFilter = '';
+
+  viewMode = 'detail';
+  document.querySelectorAll('.view-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.view === 'detail'));
+
+  sortKey = 'errors';
+  sortDesc = true;
+  filterText = '';
+  onlyErrors = false;
+  customFilter = null;
+  $('searchInput').value = '';
+  $('onlyErr').checked = false;
+  page = 1;
+
+  // 重置最新航班图的展开状态（默认展开全部）
+  delete $('chartLatestFlight').dataset.expanded;
+
+  rebuildForScope();
+  renderCards();
+  renderTable();
+  renderCharts();
+
+  $('exportBtn').disabled = allRows.length === 0;
+
+  renderSidebar();
+}
+
+function renderCards() {
+  let rows = 0, stalls = 0;
+  for (const r of scopedRows) { rows += r.count; stalls += r.errors; }
+  $('cardStalls').textContent = fmt(stalls);
+  $('cardVisualStall').textContent = fmt(visualSummary.filter(v => v.errors > 0).length);
+  $('cardAproStall').textContent = fmt(aproSummary.filter(a => a.errors > 0).length);
+  $('cardCamStall').textContent = fmt(cameraSummary.filter(c => c.errors > 0).length);
+  $('cardRows').textContent = fmt(rows);
+}
+
+/* ---------- 条形图通用 ---------- */
+function renderBarChart(container, items, kind, onClickItem, emptyText) {
+  if (!items.length) {
+    container.innerHTML = `<div class="empty ok">
+      <div class="ok-badge">✓</div><div>${emptyText || '未检测到断流'}</div>
+    </div>`;
+    return;
+  }
+  const max = Math.max(...items.map(i => i.value), 1);
+  container.innerHTML = items.map((it, idx) => `
+    <div class="bar-row${onClickItem ? ' clickable' : ''}" data-idx="${idx}" title="${escHtml(it.title || it.label)}">
+      <div class="bar-label">${escHtml(it.label)}</div>
+      <div class="bar-track">
+        <div class="bar-fill k-${kind}" data-w="${(it.value / max * 100).toFixed(2)}"></div>
+      </div>
+      <div class="bar-value">${it.display || fmt(it.value)}</div>
+    </div>
+  `).join('');
+
+  requestAnimationFrame(() => {
+    container.querySelectorAll('.bar-fill').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  });
+
+  if (onClickItem) {
+    container.querySelectorAll('.bar-row').forEach(el => {
+      el.addEventListener('click', () => onClickItem(items[+el.dataset.idx]));
+    });
+  }
+}
+
+/* ---------- 最新航班图：全量展示 + 可折叠 ---------- */
+function renderLatestFlightChart(container, items, onClickItem, emptyText) {
+  const COLLAPSED = 12;
+  const total = items.length;
+
+  // 默认展开全部；dataset.expanded === '0' 表示用户已收起
+  const expanded = container.dataset.expanded !== '0';
+  const visible = expanded ? items : items.slice(0, COLLAPSED);
+  const max = Math.max(...visible.map(i => i.value), 1);
+
+  let html = visible.map((it, idx) => `
+    <div class="bar-row clickable" data-idx="${idx}" title="${escHtml(it.title)}">
+      <div class="bar-label" title="${escHtml(it.title || it.label)}">${escHtml(it.label)}</div>
+      <div class="bar-track">
+        <div class="bar-fill k-error" data-w="${(it.value / max * 100).toFixed(2)}"></div>
+      </div>
+      <div class="bar-value">${fmt(it.value)}</div>
+    </div>
+  `).join('');
+
+  if (total > COLLAPSED) {
+    html += `<div style="text-align:center;padding:12px 0 2px">
+      <button class="pbtn" id="latestToggle">${expanded ? `收起为 Top ${COLLAPSED}` : `展开全部 ${total} 条`}</button>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+  container.classList.toggle('scrollable', expanded && total > COLLAPSED);
+
+  requestAnimationFrame(() => {
+    container.querySelectorAll('.bar-fill').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  });
+
+  container.querySelectorAll('.bar-row').forEach(el => {
+    el.addEventListener('click', () => onClickItem(items[+el.dataset.idx]));
+  });
+
+  const toggle = container.querySelector('#latestToggle');
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      container.dataset.expanded = expanded ? '0' : '1';
+      renderLatestFlightChart(container, items, onClickItem, emptyText);
+    });
+  }
+}
+
+/* ---------- 堆叠构成图 ---------- */
+function renderStackChart(container, data, onParentClick, onChildClick, emptyText) {
+  const { rows, legend, totalParents, parentLabel, childLabel } = data;
+
+  if (!rows.length) {
+    container.innerHTML = `<div class="empty ok">
+      <div class="ok-badge">✓</div><div>${emptyText || '未检测到断流'}</div>
+    </div>`;
+    return;
+  }
+
+  const maxTotal = Math.max(...rows.map(r => r.total), 1);
+
+  let html = '<div class="stack-list">';
+  for (const row of rows) {
+    const barW = (row.total / maxTotal) * 100;
+    const segsHtml = row.segments.map(seg => {
+      const segW = (seg.value / row.total) * 100;
+      const showText = segW >= 8;
+      return `<div class="stack-seg" data-parent="${escHtml(row.id)}" data-child="${escHtml(seg.label)}"
+                   style="width:${segW}%;background:${seg.color}"
+                   title="${escHtml(row.id)} · ${escHtml(seg.label)} · 断流 ${seg.value} 次">${showText ? fmt(seg.value) : ''}</div>`;
+    }).join('');
+
+    html += `
+      <div class="stack-row" data-parent="${escHtml(row.id)}" title="${escHtml(parentLabel)} ${escHtml(row.id)} · 断流 ${fmt(row.total)} 次">
+        <div class="stack-label">${escHtml(row.id)}</div>
+        <div class="stack-track">
+          <div class="stack-bar" data-w="${barW.toFixed(2)}">${segsHtml}</div>
+        </div>
+        <div class="stack-total">${fmt(row.total)}</div>
+      </div>
+    `;
+  }
+  html += '</div>';
+
+  html += '<div class="stack-legend">';
+  html += `<span style="margin-right:4px">${escHtml(childLabel)}：</span>`;
+  for (const item of legend) {
+    html += `<span class="legend-item" data-child="${escHtml(item.label)}">
+      <span class="legend-dot" style="background:${item.color}"></span>
+      <span>${escHtml(item.label)}</span>
+    </span>`;
+  }
+  if (totalParents > rows.length) {
+    html += `<span style="margin-left:auto;color:var(--faint)">共 ${totalParents} 个${escHtml(parentLabel)}，仅展示断流 Top ${rows.length}</span>`;
+  }
+  html += '</div>';
+
+  container.innerHTML = html;
+
+  requestAnimationFrame(() => {
+    container.querySelectorAll('.stack-bar').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  });
+
+  container.querySelectorAll('.stack-seg').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      if (onChildClick) onChildClick(el.dataset.parent, el.dataset.child);
+    });
+  });
+
+  container.querySelectorAll('.stack-row').forEach(el => {
+    el.addEventListener('click', () => {
+      if (onParentClick) onParentClick(el.dataset.parent);
+    });
+  });
+
+  container.querySelectorAll('.legend-item').forEach(el => {
+    el.addEventListener('click', () => {
+      if (onChildClick) onChildClick(null, el.dataset.child);
+    });
+  });
+}
+
+/* ---------- 图表渲染入口 ---------- */
+function renderCharts() {
+  /* 0. 机位号-camera 最新航班断流情况：全量展示，可折叠 */
+  const latestItems = [...latestSummary]
+    .filter(v => v.errors > 0)
+    .sort((a, b) => b.errors - a.errors)
+    .map(v => ({
+      label: `${v.aproCode} / ${v.camera}`,
+      aproCode: v.aproCode,
+      camera: v.camera,
+      visualId: v.visualId,
+      flightTime: v.flightTime,
+      title: `机位号 ${v.aproCode} · camera ${v.camera}`
+             + ` · 最新航班 ${v.flightTime || '—'}`
+             + ` · visualId ${v.visualId || '—'}`
+             + ` · 断流 ${v.errors} 次 · 记录 ${v.count} 条`,
+      value: v.errors,
+    }));
+
+  if (!latestSummary.length) {
+    $('chartLatestFlight').innerHTML = `<div class="empty">
+      未识别到航班：请确保表中 visualId、aproCode、camera 字段都有值
+    </div>`;
+    $('chartLatestFlight').classList.remove('scrollable');
+  } else if (!latestItems.length) {
+    $('chartLatestFlight').innerHTML = `<div class="empty ok">
+      <div class="ok-badge">✓</div><div>各机位号 + camera 的最新航班均未检测到断流</div>
+    </div>`;
+    $('chartLatestFlight').classList.remove('scrollable');
+  } else {
+    renderLatestFlightChart(
+      $('chartLatestFlight'),
+      latestItems,
+      item => filterByLatestFlight(item.aproCode, item.camera, item.visualId),
+      '各机位号 + camera 的最新航班均未检测到断流'
+    );
+  }
+
+  /* 1. 飞机 */
+  const visualItems = [...visualSummary]
+    .filter(v => v.errors > 0)
+    .sort((a, b) => b.errors - a.errors)
+    .slice(0, 12)
+    .map(v => ({
+      label: v.visualId,
+      title: `飞机 ${v.visualId} · 断流 ${v.errors} 次 · 记录 ${v.count} 条`,
+      value: v.errors,
+    }));
+  renderBarChart($('chartByVisual'), visualItems, 'error',
+    item => filterByVisual(item.label),
+    '未检测到断流 —— 所有飞机都没有断流记录');
+
+  /* 2. 机位号 */
+  const aproItems = [...aproSummary]
+    .filter(a => a.errors > 0)
+    .sort((a, b) => b.errors - a.errors)
+    .slice(0, 12)
+    .map(a => ({
+      label: a.aproCode,
+      title: `机位号 ${a.aproCode} · 断流 ${a.errors} 次 · 记录 ${a.count} 条`,
+      value: a.errors,
+    }));
+  renderBarChart($('chartByApro'), aproItems, 'primary',
+    item => filterByApro(item.label),
+    '未检测到断流 —— 所有机位号都没有断流记录');
+
+  /* 3. camera */
+  const camItems = [...cameraSummary]
+    .filter(c => c.errors > 0)
+    .sort((a, b) => b.errors - a.errors)
+    .slice(0, 12)
+    .map(c => ({
+      label: c.camera,
+      title: `camera ${c.camera} · 断流 ${c.errors} 次 · 记录 ${c.count} 条`,
+      value: c.errors,
+    }));
+  renderBarChart($('chartByCamera'), camItems, 'primary',
+    item => filterByCamera(item.label),
+    '未检测到断流 —— 所有 camera 都没有断流记录');
+
+  /* 4. 飞机断流率 */
+  const rateItems = [...visualSummary]
+    .filter(v => v.errors > 0 && v.count >= 10)
+    .map(v => ({ ...v, rate: v.errors / v.count }))
+    .sort((a, b) => b.rate - a.rate)
+    .slice(0, 12)
+    .map(v => ({
+      label: v.visualId,
+      title: `飞机 ${v.visualId} · 断流率 ${(v.rate * 100).toFixed(2)}% · 断流 ${v.errors} / 记录 ${v.count}`,
+      value: v.rate * 100,
+      display: (v.rate * 100).toFixed(1) + '%',
+    }));
+
+  if (!rateItems.length) {
+    $('chartByRate').innerHTML = `<div class="empty ok">
+      <div class="ok-badge">✓</div><div>未检测到满足阈值的断流飞机（记录数需 ≥ 10）</div>
+    </div>`;
+  } else {
+    const maxRate = Math.max(...rateItems.map(i => i.value), 0.01);
+    $('chartByRate').innerHTML = rateItems.map((it, idx) => `
+      <div class="bar-row clickable" data-idx="${idx}" title="${escHtml(it.title)}">
+        <div class="bar-label">${escHtml(it.label)}</div>
+        <div class="bar-track">
+          <div class="bar-fill k-error" data-w="${(it.value / maxRate * 100).toFixed(2)}"></div>
+        </div>
+        <div class="bar-value">${it.display}</div>
+      </div>
+    `).join('');
+    requestAnimationFrame(() => {
+      $('chartByRate').querySelectorAll('.bar-fill').forEach(el => {
+        el.style.width = el.dataset.w + '%';
+      });
+    });
+    $('chartByRate').querySelectorAll('.bar-row').forEach(el => {
+      el.addEventListener('click', () => filterByVisual(rateItems[+el.dataset.idx].label));
+    });
+  }
+
+  /* 5. 飞机 → 机位号 */
+  const visualAproData = buildStack(scopedRows, 'visualId', 'aproCode', '飞机', '机位号');
+  renderStackChart(
+    $('chartVisualApro'), visualAproData,
+    parentId => filterByVisual(parentId),
+    (parentId, childId) => {
+      if (parentId) filterByPair(parentId, 'visualId', childId, 'aproCode');
+      else filterByApro(childId);
+    },
+    '未检测到断流 —— 没有可展示的飞机 → 机位号 构成'
+  );
+
+  /* 6. 机位号 → camera */
+  const aproCamData = buildStack(scopedRows, 'aproCode', 'camera', '机位号', 'camera');
+  renderStackChart(
+    $('chartAproCamera'), aproCamData,
+    parentId => filterByApro(parentId),
+    (parentId, childId) => {
+      if (parentId) filterByPair(parentId, 'aproCode', childId, 'camera');
+      else filterByCamera(childId);
+    },
+    '未检测到断流 —— 没有可展示的机位号 → camera 构成'
+  );
+}
+
+/* =========================================================================
+   各图表独立导出
+   ========================================================================= */
+function exportChartCSV(kind) {
+  if (!allRows.length) { alert('请先导入数据库'); return; }
+  const base = fileBase();
+  let header, rows, name;
+
+  if (kind === 'latestFlight') {
+    name = '机位号camera最新航班断流情况_全量';
+    header = ['机位号(aproCode)', 'camera', '最新航班visualId', '航班时间', '记录数', '断流次数', '断流率', '涉及表数'];
+    rows = [...latestSummary]
+      .filter(v => v.errors > 0)
+      .sort((a, b) => b.errors - a.errors)
+      .map(v => [
+        v.aproCode,
+        v.camera,
+        v.visualId,
+        v.flightTime,
+        v.count,
+        v.errors,
+        ratePct(v.errors, v.count),
+        v.tableCount
+      ]);
+  }
+  else if (kind === 'byVisual') {
+    name = '断流按飞机分布';
+    header = ['飞机(visualId)', '记录数', '断流次数', '断流率'];
+    rows = [...visualSummary]
+      .filter(v => v.errors > 0)
+      .sort((a, b) => b.errors - a.errors)
+      .slice(0, 12)
+      .map(v => [v.visualId, v.count, v.errors, ratePct(v.errors, v.count)]);
+  }
+  else if (kind === 'byApro') {
+    name = '断流按机位号分布';
+    header = ['机位号(aproCode)', '记录数', '断流次数', '断流率'];
+    rows = [...aproSummary]
+      .filter(a => a.errors > 0)
+      .sort((a, b) => b.errors - a.errors)
+      .slice(0, 12)
+      .map(a => [a.aproCode, a.count, a.errors, ratePct(a.errors, a.count)]);
+  }
+  else if (kind === 'byCamera') {
+    name = '断流按camera分布';
+    header = ['camera', '记录数', '断流次数', '断流率'];
+    rows = [...cameraSummary]
+      .filter(c => c.errors > 0)
+      .sort((a, b) => b.errors - a.errors)
+      .slice(0, 12)
+      .map(c => [c.camera, c.count, c.errors, ratePct(c.errors, c.count)]);
+  }
+  else if (kind === 'byRate') {
+    name = '飞机断流率TOP';
+    header = ['飞机(visualId)', '记录数', '断流次数', '断流率'];
+    rows = [...visualSummary]
+      .filter(v => v.errors > 0 && v.count >= 10)
+      .map(v => ({ ...v, rate: v.errors / v.count }))
+      .sort((a, b) => b.rate - a.rate)
+      .slice(0, 12)
+      .map(v => [v.visualId, v.count, v.errors, (v.rate * 100).toFixed(2) + '%']);
+  }
+  else if (kind === 'visualApro') {
+    name = '飞机到机位号断流构成';
+    header = ['飞机(visualId)', '机位号(aproCode)', '断流次数'];
+    const stackData = buildStack(scopedRows, 'visualId', 'aproCode', '飞机', '机位号');
+    const topVisuals = new Set(stackData.rows.map(r => r.id));
+    const map = new Map();
+    for (const r of scopedRows) {
+      if (!r.errors) continue;
+      if (!topVisuals.has(r.visualId)) continue;
+      if (r.aproCode === EMPTY_KEY) continue;
+      const key = r.visualId + SEP + r.aproCode;
+      map.set(key, (map.get(key) || 0) + r.errors);
+    }
+    const visualOrder = stackData.rows.map(r => r.id);
+    const visualRank = new Map(visualOrder.map((id, i) => [id, i]));
+    rows = [...map.entries()]
+      .map(([k, err]) => {
+        const [v, a] = k.split(SEP);
+        return { v, a, err };
+      })
+      .sort((x, y) => {
+        const rx = visualRank.get(x.v) ?? 999;
+        const ry = visualRank.get(y.v) ?? 999;
+        if (rx !== ry) return rx - ry;
+        return y.err - x.err;
+      })
+      .map(o => [o.v, o.a, o.err]);
+  }
+  else if (kind === 'aproCamera') {
+    name = '机位号到camera断流构成';
+    header = ['机位号(aproCode)', 'camera', '断流次数'];
+    const stackData = buildStack(scopedRows, 'aproCode', 'camera', '机位号', 'camera');
+    const topApros = new Set(stackData.rows.map(r => r.id));
+    const map = new Map();
+    for (const r of scopedRows) {
+      if (!r.errors) continue;
+      if (!topApros.has(r.aproCode)) continue;
+      if (r.camera === EMPTY_KEY) continue;
+      const key = r.aproCode + SEP + r.camera;
+      map.set(key, (map.get(key) || 0) + r.errors);
+    }
+    const aproOrder = stackData.rows.map(r => r.id);
+    const aproRank = new Map(aproOrder.map((id, i) => [id, i]));
+    rows = [...map.entries()]
+      .map(([k, err]) => {
+        const [a, c] = k.split(SEP);
+        return { a, c, err };
+      })
+      .sort((x, y) => {
+        const rx = aproRank.get(x.a) ?? 999;
+        const ry = aproRank.get(y.a) ?? 999;
+        if (rx !== ry) return rx - ry;
+        return y.err - x.err;
+      })
+      .map(o => [o.a, o.c, o.err]);
+  }
+
+  downloadCSV(`${base}_${name}.csv`, header, rows);
+}
+
+document.querySelectorAll('.panel-export').forEach(btn => {
+  btn.addEventListener('click', () => exportChartCSV(btn.dataset.chart));
+});
+
+/* =========================================================================
+   主表格过滤
+   ========================================================================= */
+function switchView(mode) {
+  if (viewMode === mode) return;
+  viewMode = mode;
+  document.querySelectorAll('.view-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.view === mode));
+  sortKey = 'errors';
+  sortDesc = true;
+  page = 1;
+}
+
+function filterByVisual(vid) {
+  switchView('detail');
+  customFilter = null;
+  filterText = vid;
+  $('searchInput').value = vid;
+  sortKey = 'errors'; sortDesc = true;
+  onlyErrors = true; $('onlyErr').checked = true;
+  page = 1; renderTable();
+}
+
+function filterByApro(ap) {
+  switchView('detail');
+  customFilter = null;
+  filterText = ap;
+  $('searchInput').value = ap;
+  sortKey = 'errors'; sortDesc = true;
+  onlyErrors = true; $('onlyErr').checked = true;
+  page = 1; renderTable();
+}
+
+function filterByCamera(cam) {
+  switchView('detail');
+  customFilter = null;
+  filterText = cam;
+  $('searchInput').value = cam;
+  sortKey = 'errors'; sortDesc = true;
+  onlyErrors = true; $('onlyErr').checked = true;
+  page = 1; renderTable();
+}
+
+function filterByPair(parentValue, parentField, childValue, childField) {
+  switchView('detail');
+  filterText = '';
+  $('searchInput').value = '';
+  sortKey = 'errors'; sortDesc = true;
+  onlyErrors = true; $('onlyErr').checked = true;
+  customFilter = row => row[parentField] === parentValue && row[childField] === childValue;
+  page = 1;
+  renderTable();
+}
+
+function filterByLatestFlight(aproCode, camera, visualId) {
+  switchView('detail');
+  filterText = '';
+  $('searchInput').value = '';
+  sortKey = 'errors';
+  sortDesc = true;
+  onlyErrors = true;
+  $('onlyErr').checked = true;
+  customFilter = row =>
+    row.aproCode === aproCode &&
+    row.camera === camera &&
+    (row.visualId || '') === (visualId || '');
+  page = 1;
+  renderTable();
+}
+
+/* =========================================================================
+   列定义
+   ========================================================================= */
+function getColumns(mode) {
+  const multi = dbNames.length > 1;
+  if (mode === 'detail') {
+    const cols = [];
+    if (multi) cols.push({ key: 'db', label: '数据库', cls: 'dbcol' });
+    cols.push(
+      { key: 'visualId', label: '飞机(visualId)', cls: 'mono' },
+      { key: 'aproCode', label: '机位号(aproCode)', cls: 'mono' },
+      { key: 'camera',   label: 'camera',   cls: '' },
+      { key: 'flightTime', label: '航班时间', cls: 'mono' },
+      { key: 'table',    label: '表名',     cls: '' },
+      { key: 'count',    label: '记录数',   cls: 'num' },
+      { key: 'errors',   label: '断流次数', cls: 'num' },
+      { key: 'rate',     label: '断流率',   cls: 'num' },
+    );
+    return cols;
+  }
+  if (mode === 'byVisual') {
+    const cols = [
+      { key: 'visualId', label: '飞机(visualId)', cls: 'mono' },
+      { key: 'count',    label: '记录数',      cls: 'num' },
+      { key: 'errors',   label: '断流次数',    cls: 'num' },
+      { key: 'rate',     label: '断流率',      cls: 'num' },
+      { key: 'aproCodeCount', label: '机位号数', cls: 'num' },
+      { key: 'cameraCount',   label: 'camera 数', cls: 'num' },
+      { key: 'tableCount',    label: '涉及表数',  cls: 'num' },
+    ];
+    if (multi) cols.push({ key: 'dbCount', label: '涉及库数', cls: 'num' });
+    return cols;
+  }
+  if (mode === 'byApro') {
+    const cols = [
+      { key: 'aproCode', label: '机位号(aproCode)', cls: 'mono' },
+      { key: 'count',    label: '记录数',      cls: 'num' },
+      { key: 'errors',   label: '断流次数',    cls: 'num' },
+      { key: 'rate',     label: '断流率',      cls: 'num' },
+      { key: 'cameraCount', label: 'camera 数', cls: 'num' },
+      { key: 'visualCount', label: '飞机数',    cls: 'num' },
+      { key: 'tableCount',  label: '涉及表数',  cls: 'num' },
+    ];
+    if (multi) cols.push({ key: 'dbCount', label: '涉及库数', cls: 'num' });
+    return cols;
+  }
+  const cols = [
+    { key: 'camera', label: 'camera', cls: '' },
+    { key: 'count',  label: '记录数',   cls: 'num' },
+    { key: 'errors', label: '断流次数', cls: 'num' },
+    { key: 'rate',   label: '断流率',   cls: 'num' },
+    { key: 'visualCount',   label: '飞机数',   cls: 'num' },
+    { key: 'aproCodeCount', label: '机位号数', cls: 'num' },
+    { key: 'tableCount',    label: '涉及表数', cls: 'num' },
+  ];
+  if (multi) cols.push({ key: 'dbCount', label: '涉及库数', cls: 'num' });
+  return cols;
+}
+
+function getSourceRows() {
+  if (viewMode === 'detail') return scopedRows;
+  if (viewMode === 'byVisual') return visualSummary;
+  if (viewMode === 'byApro') return aproSummary;
+  return cameraSummary;
+}
+
+function getFilteredRows() {
+  let rows = getSourceRows();
+
+  if (onlyErrors) rows = rows.filter(r => r.errors > 0);
+
+  if (sourceFilter) {
+    if (viewMode === 'detail') rows = rows.filter(r => r.db === sourceFilter);
+    else rows = rows.filter(r => r.dbs && r.dbs.includes(sourceFilter));
+  }
+
+  const q = filterText.trim().toLowerCase();
+  if (q) {
+    if (viewMode === 'detail') {
+      rows = rows.filter(r =>
+        r.db.toLowerCase().includes(q) ||
+        r.table.toLowerCase().includes(q) ||
+        r.visualId.toLowerCase().includes(q) ||
+        r.aproCode.toLowerCase().includes(q) ||
+        r.camera.toLowerCase().includes(q) ||
+        (r.flightTime || '').toLowerCase().includes(q)
+      );
+    } else if (viewMode === 'byVisual') {
+      rows = rows.filter(r =>
+        r.visualId.toLowerCase().includes(q) ||
+        r.aproCodes.toLowerCase().includes(q) ||
+        r.cameras.toLowerCase().includes(q) ||
+        r.tables.toLowerCase().includes(q) ||
+        r.dbs.toLowerCase().includes(q)
+      );
+    } else if (viewMode === 'byApro') {
+      rows = rows.filter(r =>
+        r.aproCode.toLowerCase().includes(q) ||
+        r.visualIds.toLowerCase().includes(q) ||
+        r.cameras.toLowerCase().includes(q) ||
+        r.tables.toLowerCase().includes(q) ||
+        r.dbs.toLowerCase().includes(q)
+      );
+    } else {
+      rows = rows.filter(r =>
+        r.camera.toLowerCase().includes(q) ||
+        r.visualIds.toLowerCase().includes(q) ||
+        r.aproCodes.toLowerCase().includes(q) ||
+        r.tables.toLowerCase().includes(q) ||
+        r.dbs.toLowerCase().includes(q)
+      );
+    }
+  }
+
+  if (customFilter) rows = rows.filter(customFilter);
+
+  if (sortKey) {
+    const numeric = ['count','errors','cameraCount','aproCodeCount','tableCount','dbCount','visualCount','rate'].includes(sortKey);
+    rows = [...rows].sort((a, b) => {
+      let av, bv;
+      if (sortKey === 'rate') {
+        av = a.count ? a.errors / a.count : 0;
+        bv = b.count ? b.errors / b.count : 0;
+      } else if (sortKey === 'flightTime') {
+        av = String(a.flightTime || '');
+        bv = String(b.flightTime || '');
+        return sortDesc ? bv.localeCompare(av) : av.localeCompare(bv);
+      } else if (numeric) {
+        av = a[sortKey] || 0; bv = b[sortKey] || 0;
+      } else {
+        av = String(a[sortKey] || '').toLowerCase();
+        bv = String(b[sortKey] || '').toLowerCase();
+        return sortDesc ? bv.localeCompare(av, 'zh-CN') : av.localeCompare(bv, 'zh-CN');
+      }
+      return sortDesc ? bv - av : av - bv;
+    });
+  }
+  return rows;
+}
+
+function renderThead(cols) {
+  const tr = document.createElement('tr');
+  for (const c of cols) {
+    const th = document.createElement('th');
+    th.dataset.key = c.key;
+    th.className = c.cls;
+    th.textContent = c.label;
+    if (c.key === sortKey) {
+      th.classList.add('sorted');
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = sortDesc ? '▼' : '▲';
+      th.appendChild(arrow);
+    }
+    th.addEventListener('click', () => onSortClick(c.key));
+    tr.appendChild(th);
+  }
+  const thead = $('thead');
+  thead.innerHTML = '';
+  thead.appendChild(tr);
+}
+
+function onSortClick(key) {
+  if (sortKey === key) sortDesc = !sortDesc;
+  else { sortKey = key; sortDesc = true; }
+  page = 1;
+  renderTable();
+}
+
+function renderRowHtml(r, cols) {
+  const cells = cols.map(c => {
+    switch (c.key) {
+      case 'db':       return `<td class="dbcol" title="${escHtml(r.db)}">${escHtml(r.db)}</td>`;
+      case 'table':    return `<td title="${escHtml(r.table)}">${escHtml(r.table)}</td>`;
+      case 'visualId': return `<td class="mono" title="${escHtml(r.visualId)}">${escHtml(r.visualId)}</td>`;
+      case 'aproCode': return `<td class="mono" title="${escHtml(r.aproCode)}">${escHtml(r.aproCode)}</td>`;
+      case 'camera':   return `<td title="${escHtml(r.camera)}">${escHtml(r.camera) || EM_DASH}</td>`;
+      case 'flightTime':
+        return `<td class="mono" title="${escHtml(r.flightTime || '')}">${escHtml(r.flightTime || '') || EM_DASH}</td>`;
+      case 'count':    return `<td class="num">${fmt(r.count)}</td>`;
+      case 'errors':   return `<td class="num err">${fmt(r.errors)}</td>`;
+      case 'rate': {
+        const cls = rateClass(r.errors, r.count);
+        return `<td class="num ${cls}">${ratePct(r.errors, r.count)}</td>`;
+      }
+      case 'cameraCount':   return `<td class="num" title="${escHtml(r.cameras) || '—'}">${fmt(r.cameraCount)}</td>`;
+      case 'aproCodeCount': return `<td class="num" title="机位号: ${escHtml(r.aproCodes) || '—'}">${fmt(r.aproCodeCount)}</td>`;
+      case 'tableCount':    return `<td class="num" title="${escHtml(r.tables) || '—'}">${fmt(r.tableCount)}</td>`;
+      case 'dbCount':       return `<td class="num" title="${escHtml(r.dbs) || '—'}">${fmt(r.dbCount)}</td>`;
+      case 'visualCount':   return `<td class="num" title="飞机: ${escHtml(r.visualIds) || '—'}">${fmt(r.visualCount)}</td>`;
+      default: return '<td></td>';
+    }
+  }).join('');
+  return `<tr class="${r.errors > 0 ? 'has-error' : ''}">${cells}</tr>`;
+}
+
+function renderTable() {
+  const cols = getColumns(viewMode);
+  renderThead(cols);
+
+  const rows = getFilteredRows();
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  if (page > totalPages) page = totalPages;
+  if (page < 1) page = 1;
+
+  const start = (page - 1) * PAGE_SIZE;
+  const slice = rows.slice(start, start + PAGE_SIZE);
+  const tbody = $('tbody');
+
+  tbody.innerHTML = slice.length
+    ? slice.map(r => renderRowHtml(r, cols)).join('')
+    : `<tr><td colspan="${cols.length}"><div class="empty" style="margin:8px 0">没有符合条件的记录</div></td></tr>`;
+
+  const badge = $('countBadge');
+  badge.textContent = fmt(rows.length) + ' 条';
+  badge.className = 'badge' + (onlyErrors ? ' danger' : '');
+
+  $('pageInfo').textContent = rows.length
+    ? `第 ${start + 1} - ${Math.min(start + PAGE_SIZE, rows.length)} 条，共 ${fmt(rows.length)} 条 · 第 ${page} / ${totalPages} 页`
+    : '没有匹配的数据';
+
+  renderPager(totalPages);
+}
+
+function renderPager(totalPages) {
+  const box = $('pageBtns');
+  box.innerHTML = '';
+  if (totalPages <= 1) return;
+
+  const mk = (label, target, disabled, cur) => {
+    const b = document.createElement('button');
+    b.className = 'pbtn' + (cur ? ' cur' : '');
+    b.textContent = label;
+    b.disabled = !!disabled;
+    if (!disabled && !cur) {
+      b.onclick = () => { page = target; renderTable(); scrollTableTop(); };
+    }
+    return b;
+  };
+
+  box.appendChild(mk('‹ 上一页', page - 1, page <= 1, false));
+
+  const pages = new Set([1, totalPages, page, page - 1, page + 1, page - 2, page + 2]);
+  const list = [...pages].filter(p => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+
+  let prev = 0;
+  for (const p of list) {
+    if (prev && p - prev > 1) {
+      const sp = document.createElement('span');
+      sp.textContent = '…';
+      sp.style.cssText = 'align-self:center;color:var(--faint);padding:0 2px;font-size:12px';
+      box.appendChild(sp);
+    }
+    box.appendChild(mk(String(p), p, false, p === page));
+    prev = p;
+  }
+
+  box.appendChild(mk('下一页 ›', page + 1, page >= totalPages, false));
+}
+
+function scrollTableTop() {
+  const wrap = document.querySelector('.tablewrap');
+  if (wrap) wrap.scrollTop = 0;
+}
+
+/* =========================================================================
+   主表格导出
+   ========================================================================= */
+function exportTableCSV() {
+  const rows = getFilteredRows();
+  if (!rows.length) { alert('当前没有可导出的数据'); return; }
+
+  let header, lineFn;
+  if (viewMode === 'detail') {
+    header = ['数据库','飞机(visualId)','机位号(aproCode)','camera','航班时间','表名','记录数','断流次数','断流率'];
+    lineFn = r => [r.db, r.visualId, r.aproCode, r.camera, r.flightTime || '', r.table, r.count, r.errors, ratePct(r.errors, r.count)];
+  } else if (viewMode === 'byVisual') {
+    header = ['飞机(visualId)','记录数','断流次数','断流率','机位号数','camera数','涉及表数','涉及库数',
+              '机位号列表','camera列表','表列表','库列表'];
+    lineFn = r => [r.visualId, r.count, r.errors, ratePct(r.errors, r.count),
+                   r.aproCodeCount, r.cameraCount, r.tableCount, r.dbCount,
+                   r.aproCodes, r.cameras, r.tables, r.dbs];
+  } else if (viewMode === 'byApro') {
+    header = ['机位号(aproCode)','记录数','断流次数','断流率','camera数','飞机数','涉及表数','涉及库数',
+              'camera列表','飞机列表','表列表','库列表'];
+    lineFn = r => [r.aproCode, r.count, r.errors, ratePct(r.errors, r.count),
+                   r.cameraCount, r.visualCount, r.tableCount, r.dbCount,
+                   r.cameras, r.visualIds, r.tables, r.dbs];
+  } else {
+    header = ['camera','记录数','断流次数','断流率','飞机数','机位号数','涉及表数','涉及库数',
+              '飞机列表','机位号列表','表列表','库列表'];
+    lineFn = r => [r.camera, r.count, r.errors, ratePct(r.errors, r.count),
+                   r.visualCount, r.aproCodeCount, r.tableCount, r.dbCount,
+                   r.visualIds, r.aproCodes, r.tables, r.dbs];
+  }
+
+  const suffix = { detail: '明细', byVisual: '按飞机', byApro: '按机位号', byCamera: '按camera' }[viewMode];
+  downloadCSV(`${fileBase()}_${suffix}_断流统计.csv`, header, rows.map(lineFn));
+}
+
+/* =========================================================================
+   忙状态
+   ========================================================================= */
+function setBusy(busy) {
+  $('importBtn').disabled = busy;
+  $('importBtn').textContent = busy ? '分析中…' : '导入数据库';
+  $('exportBtn').disabled = busy || allRows.length === 0;
+}
+
+/* =========================================================================
+   事件绑定
+   ========================================================================= */
+$('importBtn').addEventListener('click', () => $('fileInput').click());
+$('dropzone').addEventListener('click', () => $('fileInput').click());
+
+$('fileInput').addEventListener('change', e => {
+  const files = Array.from(e.target.files || []);
+  e.target.value = '';
+  if (files.length) handleFiles(files);
+});
+
+$('exportBtn').addEventListener('click', exportTableCSV);
+
+const sidebarToggle = $('sidebarToggle');
+if (sidebarToggle) {
+  sidebarToggle.addEventListener('click', () => {
+    document.querySelector('.layout').classList.toggle('sidebar-open');
+  });
+}
+
+$('searchInput').addEventListener('input', e => {
+  filterText = e.target.value;
+  customFilter = null;
+  page = 1;
+  renderTable();
+});
+
+$('onlyErr').addEventListener('change', e => {
+  onlyErrors = e.target.checked;
+  page = 1;
+  renderTable();
+});
+
+$('sourceFilter').addEventListener('change', e => {
+  applyScope(e.target.value);
+});
+
+document.querySelectorAll('.view-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    if (viewMode === tab.dataset.view) return;
+    switchView(tab.dataset.view);
+    customFilter = null;
+    renderTable();
+  });
+});
+
+/* 全局拖拽 */
+let dragDepth = 0;
+const overlay = $('overlay');
+
+document.addEventListener('dragenter', e => {
+  if (!e.dataTransfer || ![...e.dataTransfer.types].includes('Files')) return;
+  e.preventDefault();
+  dragDepth++;
+  overlay.classList.add('active');
+});
+
+document.addEventListener('dragover', e => {
+  if (!e.dataTransfer || ![...e.dataTransfer.types].includes('Files')) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+});
+
+document.addEventListener('dragleave', e => {
+  e.preventDefault();
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (dragDepth === 0) overlay.classList.remove('active');
+});
+
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  dragDepth = 0;
+  overlay.classList.remove('active');
+  const files = e.dataTransfer && e.dataTransfer.files;
+  if (files && files.length) handleFiles(files);
+});
+
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
+/* 启动 */
+(function boot() {
+  setStatus('正在加载 SQL 解析引擎…', 'busy');
+  ensureSql()
+    .then(() => setStatus('解析引擎就绪 —— 点击「导入数据库」或直接拖入文件开始', 'ok'))
+    .catch(err => {
+      console.error(err);
+      setStatus('解析引擎加载失败，请检查网络后刷新页面', 'err');
+    });
+})();
+</script>
+</body>
+</html>
