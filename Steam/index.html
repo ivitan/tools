@@ -91,7 +91,11 @@
     width:28px; height:28px; border-radius:6px; flex:none;
     background:var(--primary); color:var(--primary-on);
     display:flex; align-items:center; justify-content:center;
+    cursor:pointer; user-select:none;
+    transition:transform .15s, filter .15s;
   }
+  .logo-icon:hover { filter:brightness(1.08); transform:translateY(-1px); }
+  .logo-icon:focus-visible { outline:2px solid var(--primary-hover); outline-offset:2px; }
   .logo-icon svg { width:16px; height:16px; }
   .logo-text { display:flex; flex-direction:column; min-width:0; }
   .logo-text .t { font-size:15px; font-weight:600; line-height:1.25; white-space:nowrap; }
@@ -124,7 +128,6 @@
   .ico-moon { display:block; }
   [data-theme="dark"] .ico-sun { display:block; }
   [data-theme="dark"] .ico-moon { display:none; }
-  .mobile-only { display:none; }
 
   .btn {
     height:32px; padding:0 12px; border-radius:6px;
@@ -159,7 +162,7 @@
     width:248px; flex:none;
     background:var(--panel); border-right:1px solid var(--border);
     display:flex; flex-direction:column; overflow:hidden;
-    transition:background-color .15s, border-color .15s;
+    transition:background-color .15s, border-color .15s, width .2s ease;
   }
   .sidebar-header {
     height:38px; flex:none; padding:0 12px;
@@ -213,6 +216,17 @@
     padding:14px; display:flex; flex-direction:column; gap:12px;
     overscroll-behavior:contain;
   }
+
+  /* 桌面：点顶栏 Logo 折叠侧栏（参考 SQLite） */
+  @media (min-width:901px) {
+    .layout.sidebar-collapsed .sidebar { width:0; border-right:0; }
+  }
+  /* 手机抽屉遮罩：点遮罩关闭（参考 SQLite） */
+  .sidebar-overlay {
+    display:none; position:fixed; top:52px; left:0; right:0; bottom:0;
+    background:var(--overlay); z-index:25; opacity:0; transition:opacity .2s;
+  }
+  .layout.sidebar-open .sidebar-overlay { display:block; opacity:1; }
 
   /* ── 状态条 ───────────────────────────────────────────── */
   .statusbar {
@@ -553,7 +567,6 @@
     .charts .span-3, .charts .span-6 { grid-column:span 1; }
   }
   @media (max-width:900px) {
-    .mobile-only { display:inline-flex; }
     .sidebar {
       position:fixed; top:52px; bottom:0; left:0; z-index:30;
       transform:translateX(-100%); box-shadow:var(--shadow-lg);
@@ -590,12 +603,21 @@
     .charts .panel { padding:10px 10px; }
   }
 
+  /* ── Toast 提示（参考 SQLite）：多条纵向堆叠、右侧弹出 ── */
+  #toasts{position:fixed;top:calc(16px + env(safe-area-inset-top, 0px));right:calc(16px + env(safe-area-inset-right, 0px));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
+  .toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg);padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
+  .toast.ok{border-left-color:var(--success)}
+  .toast.warn{border-left-color:var(--warning)}
+  .toast.err{border-left-color:var(--danger);color:var(--danger)}
+  @keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+  @media(max-width:768px){#toasts{top:60px;right:10px;left:10px;align-items:stretch}.toast{min-width:0;max-width:none}}
+
 </style>
 </head>
 <body>
 <header class="header">
   <div class="logo">
-    <div class="logo-icon">
+    <div class="logo-icon" id="logoToggle" data-tip="展开/收起数据源列表" aria-label="展开或收起数据源列表" role="button" tabindex="0">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <ellipse cx="12" cy="5" rx="9" ry="3"/>
         <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
@@ -614,11 +636,6 @@
   </div>
   <div class="header-spacer"></div>
   <div class="header-actions">
-    <button class="icon-btn mobile-only" id="sidebarToggle" data-tip="数据源列表" aria-label="数据源列表">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
-      </svg>
-    </button>
     <button class="icon-btn" id="themeBtn" data-tip="切换主题" aria-label="切换主题">
       <svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -637,8 +654,12 @@
   </div>
 </header>
 
+<!-- Toast 容器：多条提示纵向堆叠、右对齐 -->
+<div id="toasts"></div>
+
 <div class="layout" id="layout">
 
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title">数据源</div>
@@ -887,6 +908,20 @@ const TIME_CANDIDATES = [
 
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* toast —— 卡片式提示（参考 SQLite）：兼容旧 type 命名与自定义停留时长 */
+function toast(msg, type = '', duration = 3200) {
+  const t = { success:'ok', ok:'ok', error:'err', err:'err', fail:'err',
+              warning:'warn', warn:'warn', info:'' }[type] || '';
+  const d = document.createElement('div');
+  d.className = 'toast ' + t;
+  d.textContent = msg;
+  ($('toasts') || document.body).appendChild(d);
+  setTimeout(() => {
+    d.style.opacity = '0'; d.style.transform = 'translateX(16px)'; d.style.transition = '.25s';
+    setTimeout(() => d.remove(), 260);
+  }, duration);
+}
 const escHtml = s => String(s).replace(/[&<>"']/g, c => (
   {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
 ));
@@ -926,7 +961,7 @@ function csvCell(v) {
   return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 function downloadCSV(filename, header, rows) {
-  if (!rows || !rows.length) { alert('没有可导出的数据'); return; }
+  if (!rows || !rows.length) { toast('没有可导出的数据', 'warn'); return; }
   const lines = [header.map(csvCell).join(',')];
   for (const r of rows) lines.push(r.map(csvCell).join(','));
   const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
@@ -1002,6 +1037,8 @@ $('themeBtn').addEventListener('click', () => {
   const next = cur === 'dark' ? 'light' : 'dark';
   localStorage.setItem('sqlite_theme', next);
   applyTheme(next);
+  // 点击后的状态反馈走 toast（参考 SQLite）
+  toast(`已切换为${next === 'dark' ? '深色' : '浅色'}模式`, 'success');
 });
 initTheme();
 
@@ -1157,7 +1194,7 @@ async function handleFiles(fileList) {
   } catch (err) {
     console.error(err);
     setStatus('分析失败：' + err.message, 'err');
-    alert('导入失败\n\n' + err.message);
+    toast('导入失败\n\n' + err.message, 'err', 4000);
     if (!allRows.length) {
       $('content').style.display = 'none';
       $('dropzone').style.display = '';
@@ -2065,7 +2102,7 @@ function renderCharts() {
    各图表独立导出
    ========================================================================= */
 function exportChartCSV(kind) {
-  if (!allRows.length) { alert('请先导入数据库'); return; }
+  if (!allRows.length) { toast('请先导入数据库', 'warn'); return; }
   const base = fileBase();
   let header, rows, name;
 
@@ -2527,7 +2564,7 @@ function scrollTableTop() {
    ========================================================================= */
 function exportTableCSV() {
   const rows = getFilteredRows();
-  if (!rows.length) { alert('当前没有可导出的数据'); return; }
+  if (!rows.length) { toast('当前没有可导出的数据', 'warn'); return; }
 
   let header, lineFn;
   if (viewMode === 'detail') {
@@ -2580,11 +2617,29 @@ $('fileInput').addEventListener('change', e => {
 
 $('exportBtn').addEventListener('click', exportTableCSV);
 
-const sidebarToggle = $('sidebarToggle');
-if (sidebarToggle) {
-  sidebarToggle.addEventListener('click', () => {
-    document.querySelector('.layout').classList.toggle('sidebar-open');
-  });
+/* 侧栏：点顶栏 Logo 展开/收起（桌面折叠 / 手机抽屉 + 遮罩），参考 SQLite */
+const layoutEl = $('layout');
+const isMobile = () => window.matchMedia('(max-width:900px)').matches;
+function closeDrawer() { layoutEl.classList.remove('sidebar-open'); }
+function toggleDrawer() { layoutEl.classList.toggle('sidebar-open'); }
+function toggleSidebarByLogo() {
+  if (isMobile()) {
+    toggleDrawer();
+  } else {
+    layoutEl.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('steam-sidebar-collapsed',
+      layoutEl.classList.contains('sidebar-collapsed') ? '1' : '0');
+  }
+}
+const logoToggle = $('logoToggle');
+logoToggle.onclick = toggleSidebarByLogo;
+logoToggle.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSidebarByLogo(); }
+});
+$('sidebarOverlay').onclick = closeDrawer;
+// 桌面端恢复上次的折叠状态
+if (localStorage.getItem('steam-sidebar-collapsed') === '1' && !isMobile()) {
+  layoutEl.classList.add('sidebar-collapsed');
 }
 
 $('searchInput').addEventListener('input', e => {
