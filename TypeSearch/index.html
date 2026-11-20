@@ -676,12 +676,13 @@
     .copy-option { width: 100%; }
   }
 /* toast —— 卡片样式 + 左侧语义色条，弹出位置沿用各工具原样 */
-#toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
+#toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100;pointer-events:none}
 .toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
 .toast.ok{border-left-color:var(--success)}
 .toast.warn{border-left-color:var(--warn,var(--warning,#d97706))}
 .toast.err{border-left-color:var(--danger);color:var(--danger)}
 @keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+/* 双层顶栏（header + tabs），移动端 toast 保留 100px 下移避免遮挡 */
 @media(max-width:768px){#toasts{top:100px;right:10px;left:10px;align-items:stretch}.toast{min-width:0;max-width:none}}
     /* 超大屏：内容区随视口流式放宽且有上限 */
     @media (min-width: 1400px) {
@@ -903,7 +904,7 @@ type: 1000 - 有效（空格不影响）
         const next = this.effective === 'dark' ? 'light' : 'dark';
         localStorage.setItem(this.KEY, next);
         this.apply();
-        toast(`已切换为${this.effective === 'dark' ? '深色' : '浅色'}模式（双击按钮恢复跟随系统）`, 'success');
+        toast(`已切换为${this.effective === 'dark' ? '深色' : '浅色'}模式`, 'success');
       },
       init() {
         this.apply();
@@ -1174,7 +1175,7 @@ type: 1000 - 有效（空格不影响）
 
     function copyTypeColumn() {
       if (lastQueryResults.length === 0) {
-        showNotification("没有可复制的查询结果", "error");
+        showNotification("暂无可复制结果", "error");
         return;
       }
 
@@ -1183,7 +1184,7 @@ type: 1000 - 有效（空格不影响）
       navigator.clipboard
         .writeText(content)
         .then(() => {
-          showNotification(`已复制 ${lastQueryResults.length} 个Type值`);
+          showNotification(`已复制 ${lastQueryResults.length} 个 Type 值`);
 
           copyTypeOption.classList.add("active");
           setTimeout(() => {
@@ -1198,7 +1199,7 @@ type: 1000 - 有效（空格不影响）
 
     function copyNameColumn() {
       if (lastQueryResults.length === 0) {
-        showNotification("没有可复制的查询结果", "error");
+        showNotification("暂无可复制结果", "error");
         return;
       }
 
@@ -1207,7 +1208,7 @@ type: 1000 - 有效（空格不影响）
       navigator.clipboard
         .writeText(content)
         .then(() => {
-          showNotification(`已复制 ${lastQueryResults.length} 个名称值`);
+          showNotification(`已复制 ${lastQueryResults.length} 个名称`);
 
           copyNameOption.classList.add("active");
           setTimeout(() => {
@@ -1222,7 +1223,7 @@ type: 1000 - 有效（空格不影响）
 
     function copyAllResults() {
       if (lastQueryResults.length === 0) {
-        showNotification("没有可复制的查询结果", "error");
+        showNotification("暂无可复制结果", "error");
         return;
       }
 
@@ -1486,13 +1487,13 @@ type: 1000 - 有效（空格不影响）
 
       setTimeout(() => {
         document.getElementById("queryBtn").click();
-        showNotification(`正在查询数字: ${digits}`);
+        showNotification(`正在查询 ${digits}`);
       }, 300);
     }
 
     function queryAllDigits() {
       if (extractionResults.length === 0) {
-        showNotification("没有可查询的数字", "error");
+        showNotification("暂无可查询数字", "error");
         return;
       }
 
@@ -1506,7 +1507,7 @@ type: 1000 - 有效（空格不影响）
 
       setTimeout(() => {
         document.getElementById("queryBtn").click();
-        showNotification(`正在查询 ${extractionResults.length} 个提取的数字`);
+        showNotification(`正在查询 ${extractionResults.length} 个数字`);
       }, 300);
     }
 
@@ -1514,7 +1515,7 @@ type: 1000 - 有效（空格不影响）
       navigator.clipboard
         .writeText(digits)
         .then(() => {
-          showNotification(`已复制数字: ${digits}`);
+          showNotification(`已复制：${digits}`);
         })
         .catch((err) => {
           console.error("复制失败:", err);
@@ -1524,7 +1525,7 @@ type: 1000 - 有效（空格不影响）
 
     function copyDigits() {
       if (extractionResults.length === 0) {
-        showNotification("没有可复制的内容", "error");
+        showNotification("暂无可复制内容", "error");
         return;
       }
 
@@ -1535,7 +1536,7 @@ type: 1000 - 有效（空格不影响）
         .writeText(digitsToCopy)
         .then(() => {
           showNotification(
-            `已复制 ${extractionResults.length} 个数字到剪贴板`,
+            `已复制 ${extractionResults.length} 个数字`,
           );
         })
         .catch((err) => {
@@ -1546,7 +1547,7 @@ type: 1000 - 有效（空格不影响）
 
     function exportCSV() {
       if (extractionResults.length === 0) {
-        showNotification("没有可导出的内容", "error");
+        showNotification("暂无可导出内容", "error");
         return;
       }
 

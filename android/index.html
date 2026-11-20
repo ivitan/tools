@@ -325,8 +325,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .notice{background:transparent;border:0;border-left:2px solid var(--border);border-radius:0;padding:2px 0 2px 10px;font-size:12px;line-height:1.7;color:var(--muted)}
 
 /* toast & dialog */
-#toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
-.toast{min-width:220px;max-width:380px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--brand);border-radius:6px;box-shadow:var(--shadow-lg);padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text)}
+#toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100;pointer-events:none}
+.toast{min-width:220px;max-width:380px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--brand);border-radius:6px;box-shadow:var(--shadow-lg);padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
 .toast.ok{border-left-color:var(--ok)}
 .toast.warn{border-left-color:var(--warn)}
 .toast.err{border-left-color:var(--danger);color:var(--danger)}
@@ -408,7 +408,7 @@ input[type=range]{width:clamp(120px,16vw,190px)}
   .metric-grid{grid-template-columns:1fr 1fr}
   .terminal{height:330px;font-size:12.2px}
   .ring{width:112px;height:112px}
-  #toasts{top:56px;right:12px;left:12px;align-items:stretch}
+  #toasts{top:calc(56px + env(safe-area-inset-top, 0px));right:12px;left:12px;align-items:stretch}
   .toast{min-width:0;max-width:none}
   .dialog{padding:20px 18px}
   .dlg-actions .btn{flex:1 1 auto}
@@ -739,7 +739,7 @@ const REBOOT = [
 /* ---------------- Toast / Dialog ---------------- */
 function toast(msg, type){
   const d=document.createElement('div'); d.className='toast '+(type||'');
-  d.innerHTML=msg; $('#toasts').appendChild(d);
+  d.textContent=msg; $('#toasts').appendChild(d);
   setTimeout(()=>{ d.style.opacity='0'; d.style.transform='translateX(16px)'; d.style.transition='.25s'; setTimeout(()=>d.remove(),260); }, 3200);
 }
 let dlgResolve=null;
@@ -788,7 +788,7 @@ function applyTheme(){
 }
 /* 跟随系统主题时，系统深浅色变化实时同步 */
 if(systemDark){
-  const onSysChange=()=>{ if(settings.theme==='auto'){ applyTheme(); toast('系统主题已变化，界面已自动同步',''); } };
+  const onSysChange=()=>{ if(settings.theme==='auto'){ applyTheme(); toast('已跟随系统主题',''); } };
   try{ systemDark.addEventListener('change',onSysChange); }
   catch(e){ if(systemDark.addListener) systemDark.addListener(onSysChange); }
 }
@@ -905,15 +905,15 @@ async function shell(cmd){
   return await realShell(cmd);
 }
 async function runCmd(cmd, silent){
-  if(state.mode!=='real'){ toast('请先连接真机后再执行操作','warn'); return ''; }
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return ''; }
   try{
     const out=await shell(cmd);
     log(cmd, out||'执行成功');
-    if(!silent && out) toast('命令已执行：<code>'+esc(cmd)+'</code>','ok');
-    else if(!silent) toast('命令已下发：<code>'+esc(cmd)+'</code>','ok');
+    if(!silent && out) toast('命令已执行：'+cmd,'ok');
+    else if(!silent) toast('命令已下发：'+cmd,'ok');
     return out;
   }catch(e){
-    if(!silent) toast('执行失败：'+esc(e.message||e),'err');
+    if(!silent) toast('执行失败：'+(e.message||e),'err');
     return 'ERROR: '+(e.message||e);
   }
 }
@@ -1052,7 +1052,7 @@ async function showDiagnostics(){
   try{ await _showDiagnostics(); } finally{ diagBusy=false; }
 }
 async function _showDiagnostics(){
-  toast('正在检测 WebUSB 状态','');
+  toast('正在检测 WebUSB…','');
   let text;
   try{ text=await runDiagnostics(); }
   catch(e){ text='诊断过程异常：'+errText(e); }
@@ -1068,7 +1068,7 @@ async function _showDiagnostics(){
       let done=false;
       try{ done=document.execCommand('copy'); }catch(_){}
       ta.remove();
-      toast(done?'诊断结果已复制':'复制失败，请手动选中文本','ok');
+      toast(done?'诊断结果已复制':'复制失败，请手动复制','ok');
     }
   }
 }
@@ -1151,13 +1151,13 @@ function stage(promise, ms, label, optional){
   return Promise.race(parts).finally(()=>{ if(timer!=null) clearTimeout(timer); });
 }
 async function connectReal(preferPaired, targetSerial, noPrompt){
-  if(state.connecting) throw new Error('正在连接中，请稍候');
+  if(state.connecting) throw new Error('正在连接…');
   if(!navigator.usb) throw new Error('当前浏览器或页面环境不支持 WebUSB。请使用 Chrome / Edge，并通过 HTTPS 打开本页');
   state.connecting=true; setConnecting(true); beginConnect();
   let dev=null, connection=null;
   try{
     setStage('加载 ADB 组件','加载组件');
-    toast(preferPaired?'正在重连已授权设备（不会弹出系统选择器）':'正在连接真机，请在系统弹窗中选择设备','');
+    toast(preferPaired?'正在重连已授权设备':'正在连接，请在弹窗中选择设备','');
     const libs=await stage(loadLibs(),15000,'ADB 组件加载超时，请刷新页面重试');
     const Manager=libs.b.AdbDaemonWebUsbDeviceManager.BROWSER;
     if(!Manager) throw new Error('WebUSB 不可用（请通过 HTTPS 访问本页）');
@@ -1175,7 +1175,7 @@ async function connectReal(preferPaired, targetSerial, noPrompt){
       setStage('等待选择设备（系统弹窗）','等待系统弹窗');
       let slowTip=null;
       try{
-        slowTip=setTimeout(()=>{ if(state.connecting) toast('还没弹出系统选择器？检查手机 USB 调试已开启、且本站点 USB 权限未被禁用','warn'); },15000);
+        slowTip=setTimeout(()=>{ if(state.connecting) toast('未弹出选择器？请检查 USB 调试与站点权限','warn'); },15000);
         dev=await stage(Manager.requestDevice(),0,'等待设备选择超时：若没弹出系统弹窗，多为电脑端 adb 占用或站点 USB 权限被禁用',true);
       }finally{ if(slowTip!=null) clearTimeout(slowTip); }
       if(!dev) throw new Error('CANCELLED');
@@ -1208,7 +1208,7 @@ async function connectReal(preferPaired, targetSerial, noPrompt){
     // 读取设备信息失败不应判定为连接失败，否则残留接口会导致下次连接报「被占用」
     try{ await stage(loadRealInfo(),8000,'读取设备信息超时'); }catch(e){ console.warn('设备信息读取部分失败',e); }
     setStage('已连接','已连接');
-    toast('真机已连接，设备信息已读取','ok');
+    toast('真机已连接','ok');
   }catch(e){
     state.lastError={name:(e&&e.name)||'Error',message:(e&&e.message)||String(e),cause:e&&e.cause,stage:state.connectStage};
     // 任何失败都释放刚打开的 USB 接口，避免污染后续连接
@@ -1243,7 +1243,7 @@ async function disconnect(){
     state.mode='none'; state.devices=[]; state.showBoard=false; state.connectStage='';
     state.device=freshDevice(); state.cpu=EMPTY_CPU.slice(); state.lastError=null;
     const n=await releaseUsb(dev);
-    toast(n?'设备已断开，USB 接口已释放（可重新连接）':'设备已断开','');
+    toast(n?'设备已断开，接口已释放':'设备已断开','');
     renderHome();
     if(state.active!=='home' && RENDER[state.active]) RENDER[state.active]();
   }finally{
@@ -1265,7 +1265,7 @@ async function attemptConnect(preferPaired, targetSerial){
     renderHome(); showPage('home');
   }catch(e){
     const msg=String((e&&e.message)||e||'');
-    if(msg==='CANCELLED'){ toast('已取消连接，可重新点击「连接设备」重试',''); return; }
+    if(msg==='CANCELLED'){ toast('已取消连接，可重试',''); return; }
     if(isBusyError(e)){
       const i=await dialog('设备被占用，无法连接',busyHelp(),
         [{label:'释放接口并重试',primary:true},{label:'运行连接诊断'},{label:'关闭'}]);
@@ -1275,20 +1275,20 @@ async function attemptConnect(preferPaired, targetSerial){
     }
     let hint;
     if(/ADB 组件加载超时|凭证组件|WebUSB|安全上下文|HTTPS|不支持/.test(msg))
-      hint='<br>请刷新页面重试；确认使用 Chrome / Edge 并通过 HTTPS 打开';
+      hint='\n请刷新重试，并确认使用 Chrome/Edge + HTTPS';
     else if(/ADB 授权握手超时/.test(msg))
-      hint='<br>解锁手机并点「允许 USB 调试」；若无弹窗，撤销授权后重插数据线';
+      hint='\n请解锁手机并允许 USB 调试；无弹窗则撤销授权后重插';
     else if(/超时/.test(msg))
-      hint='<br>已释放浏览器占用的 USB 接口，请重插数据线后重试';
+      hint='\n已释放 USB 接口，请重插重试';
     else
-      hint='<br>可重插数据线后重试，或运行连接诊断';
-    toast('真机连接失败：'+esc(msg)+hint,'warn');
+      hint='\n请重插数据线或运行连接诊断';
+    toast('连接失败：'+msg+hint,'warn');
   }
 }
 async function connectFlow(){
   if(state.connecting){ cancelConnect(); return; }   // 提示统一由 attemptConnect 给出，避免重复
   warmLibs();   // 用户阅读弹窗时预取组件，点击后 requestDevice 仍在手势有效期内
-  if(state.mode!=='none'){ toast('设备已连接，如需切换请先断开',''); return; }
+  if(state.mode!=='none'){ toast('设备已连接，请先断开再切换',''); return; }
   let paired=0;
   try{ paired=navigator.usb?(await navigator.usb.getDevices()).length:0; }catch(_){}
   const body='连接真机需要 Chrome / Edge，并通过 HTTPS 打开本页。<br><br>'+
@@ -1310,10 +1310,10 @@ async function refreshDevices(){
       toast('已刷新，找到 '+state.devices.length+' 台设备','ok');
     }else{
       state.devices=[];
-      toast('尚未连接设备，请先点击「连接设备」','warn');
+      toast('请先连接设备','warn');
     }
     renderHome();
-  }catch(e){ toast('刷新失败：'+esc(e.message||e),'err'); }
+  }catch(e){ toast('刷新失败：'+(e.message||e),'err'); }
   finally{ setTimeout(()=>el.classList.remove('spin'),600); }
 }
 /* 闪存类型识别：先看 UFS / eMMC 关键字（含型号串里的版本号），
@@ -1672,7 +1672,7 @@ function renderApps(){
   bindSearchClear($('#appSearch'), $('#appSearchClear'));
 }
 async function appRefresh(auto){
-  if(state.mode!=='real'){ if(!auto){ toast('请先连接真机后再刷新应用列表','warn'); renderApps(); } return; }
+  if(state.mode!=='real'){ if(!auto){ toast('请先连接真机','warn'); renderApps(); } return; }
   if(!auto) toast('正在读取应用列表','');
   // 单条命令失败不影响其它数据；版本从一次全量 package dump 里解析，失败则降级为 —
   const safe=async c=>{ try{ return String(await shell(c)||''); }catch(e){ return ''; } };
@@ -1765,8 +1765,8 @@ function appExportName(pkg,ver,ext){
   return base+v+ext;
 }
 async function appExport(pkg,btn){
-  if(state.mode!=='real'||!state.adb){ toast('请先连接真机后再导出安装包','warn'); return; }
-  if(state.exporting){ toast('正在导出'+(state.exporting===pkg?'该应用':'另一个应用')+'，请等它完成','warn'); return; }
+  if(state.mode!=='real'||!state.adb){ toast('请先连接真机','warn'); return; }
+  if(state.exporting){ toast('正在导出'+(state.exporting===pkg?'该应用':'另一个应用')+'，请稍候','warn'); return; }
   state.exporting=pkg;
   const label=btn?btn.textContent:'导出';
   const labelTitle=btn?btn.title:'';
@@ -1776,7 +1776,7 @@ async function appExport(pkg,btn){
     setBtn('查询');
     const out=String(await shell('pm path '+pkg)||'');
     let paths=[...out.matchAll(/package:(\S+)/g)].map(m=>m[1]);
-    if(!paths.length){ toast('未找到安装包：该应用可能已卸载，或系统不提供可读的 APK','warn'); return; }
+    if(!paths.length){ toast('未找到安装包，应用可能已卸载','warn'); return; }
     /* base.apk 排第一：SAI 靠它识别主包 */
     paths=paths.sort((a,b)=>(/(^|\/)base\.apk$/.test(b)?1:0)-(/(^|\/)base\.apk$/.test(a)?1:0));
     sync=await state.adb.sync();
@@ -1812,11 +1812,11 @@ async function appExport(pkg,btn){
     a.href=url; a.download=fname;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){} },120000);
-    toast('已导出 '+esc(fname)+'（'+(total/1048576).toFixed(1)+' MB'+(split?'，含 '+files.length+' 个拆分包':'')+'）','ok');
+    toast('已导出 '+fname+'（'+(total/1048576).toFixed(1)+' MB'+(split?'，含 '+files.length+' 个拆分包':'')+'）','ok');
   }catch(e){
     const msg=String((e&&e.message)||e);
     const hint=/permission|denied|EACCES/i.test(msg)?'（该机型限制读取 /data/app，需 root 或用系统自带的备份功能）':'';
-    toast('导出失败：'+esc(msg)+hint,'err');
+    toast('导出失败：'+msg+hint,'err');
   }finally{
     state.exporting=null;
     if(btn){ btn.textContent=label; btn.title=labelTitle; btn.disabled=false; }
@@ -2228,7 +2228,7 @@ window.addEventListener('orientationchange',mirrorFitSoon);
 if(window.visualViewport) window.visualViewport.addEventListener('resize',mirrorFitSoon);
 document.addEventListener('fullscreenchange',()=>{ if(state.active==='mirror') setTimeout(mirrorFit,60); });
 function startMirror(){
-  if(state.mode!=='real' || !state.adb){ toast('请先连接真机后再开始投屏','warn'); return; }
+  if(state.mode!=='real' || !state.adb){ toast('请先连接真机','warn'); return; }
   const m=state.mirror;
   if(m.running) return;
   m.running=true; m.err=''; m.frames=0; m.dropped=0;
@@ -2267,7 +2267,7 @@ function mirrorRecToggle(){
   const m=state.mirror, cv=$('#mirrorCanvas');
   if(m.recOn){ try{ m.rec.stop(); }catch(_){} return; }
   if(!cv || !cv.width || !cv.classList.contains('on')){
-    toast('请先开始投屏并等到画面出现再录制','warn'); return;
+    toast('请先开始投屏','warn'); return;
   }
   if(typeof MediaRecorder!=='function' || !cv.captureStream){ toast('当前浏览器不支持录制','warn'); return; }
   const stream=cv.captureStream(30);
@@ -2296,7 +2296,7 @@ function mirrorRecToggle(){
   m.rec=rec; m.recOn=true; m.recAt=Date.now();
   const b=$('[data-act="mirror-rec"]'); if(b) b.innerHTML=icon('stop',15)+'停止录制';
   const st=$('#mirrorStage'); if(st) st.classList.add('recording');
-  toast('开始录制画面','ok');
+  toast('开始录制','ok');
 }
 async function mirrorRotate(kind){
   if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
@@ -2329,8 +2329,8 @@ async function mirrorWheel(e){
 
 function mirrorSave(){
   const cv=$('#mirrorCanvas');
-  if(!cv || !cv.width || !cv.classList.contains('on')){ toast('还没有可保存的画面','warn'); return; }
-  if(!cv.toBlob){ toast('当前浏览器不支持导出截图','warn'); return; }
+  if(!cv || !cv.width || !cv.classList.contains('on')){ toast('暂无画面可保存','warn'); return; }
+  if(!cv.toBlob){ toast('浏览器不支持截图导出','warn'); return; }
   cv.toBlob(blob=>{
     if(!blob){ toast('截图导出失败','err'); return; }
     const url=URL.createObjectURL(blob);
@@ -2344,8 +2344,8 @@ function mirrorSave(){
 function mirrorFull(){
   const el=$('#mirrorStage'); if(!el) return;
   if(document.fullscreenElement){ const p=document.exitFullscreen(); if(p&&p.catch) p.catch(()=>{}); }
-  else if(el.requestFullscreen){ const p=el.requestFullscreen(); if(p&&p.catch) p.catch(()=>toast('当前浏览器不支持全屏','warn')); }
-  else toast('当前浏览器不支持全屏','warn');
+  else if(el.requestFullscreen){ const p=el.requestFullscreen(); if(p&&p.catch) p.catch(()=>toast('浏览器不支持全屏','warn')); }
+  else toast('浏览器不支持全屏','warn');
 }
 async function mirrorKey(k){
   if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
@@ -2358,7 +2358,7 @@ function mirrorTextArg(s){
 async function mirrorSend(){
   if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
   const el=$('#mirrorText'), arg=mirrorTextArg(el?el.value:'');
-  if(!arg){ toast('请输入英文 / 数字或常见符号','warn'); return; }
+  if(!arg){ toast('请输入英文、数字或符号','warn'); return; }
   await runCmd('input text '+arg,true);
   if(el) el.value='';
   toast('文字已发送','ok');
@@ -2531,7 +2531,7 @@ function shotRender(){
 }
 async function shotTake(){
   if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
-  if(SHOTS.busy){ toast('正在截图，请稍候','warn'); return; }
+  if(SHOTS.busy){ toast('正在截图…','warn'); return; }
   SHOTS.busy=true; shotBusy(true);
   const name=shotName();
   let remote='/sdcard/'+name;
@@ -2558,8 +2558,8 @@ async function shotTake(){
     saveBlobAs(blob,name);
     if(!SHOTS.keep){
       try{ await realShell('rm -f '+remote); }catch(_){}
-      toast('截图已下载，手机内临时文件已删除','ok');
-    }else toast('截图已保存并下载到电脑','ok');
+      toast('截图已下载，临时文件已删除','ok');
+    }else toast('截图已保存并下载','ok');
   }catch(e){
     toast('截图失败：'+String((e&&e.message)||e),'err');
   }finally{
@@ -2662,7 +2662,7 @@ async function loadSystemUI(silent){
     state.sysui.at=Date.now();
     applySystemUIState();
   }catch(e){
-    if(!silent) toast('读取状态栏设置失败：'+esc(e.message||e),'err');
+    if(!silent) toast('读取状态栏设置失败：'+(e.message||e),'err');
   }finally{ state.sysui.reading=false; }
 }
 function applySystemUIState(){
@@ -2689,25 +2689,25 @@ async function applyStatusbarSettings(){
   if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
   const q=$('#suiQqs'), p=$('#suiPad');
   const qv=q?q.value:'', pv=p?p.value:'';
-  if(!qv&&!pv){ toast('请先选择要修改的项目','warn'); return; }
+  if(!qv&&!pv){ toast('请先选择要修改的项','warn'); return; }
   let n=0;
   if(qv){ await runCmd('settings put secure sysui_qqs_count '+qv,true); state.sysui.qqs=qv; n++; }
   if(pv){ await runCmd('settings put secure sysui_rounded_content_padding '+pv,true); state.sysui.pad=pv; n++; }
-  toast('已应用 '+n+' 项状态栏设置','ok');
+  toast('已应用 '+n+' 项设置','ok');
 }
 async function fixWifiPortal(){
   if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
   await runCmd('settings put global captive_portal_http_url http://connect.rom.miui.com/generate_204',true);
   await runCmd('settings put global captive_portal_https_url https://connect.rom.miui.com/generate_204',true);
   await runCmd('settings put global ntp_server ntp1.aliyun.com',true);
-  toast('已写入探针与 NTP，Wi-Fi 图标上的 × / ! 会在下次联网检测后消失','ok');
+  toast('已写入探针与 NTP','ok');
 }
 async function applyImmersive(kind){
   if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
   if(kind==='reset'){ await runCmd('settings put global policy_control null',true); toast('已取消所有沉浸设置','ok'); return; }
   const el=$('#suiScope');
   let target=(el?el.value:'').trim();
-  if(target && !/^[\w.*,-]+$/.test(target)){ toast('软件范围只允许包名、逗号、* 和 -','warn'); return; }
+  if(target && !/^[\w.*,-]+$/.test(target)){ toast('仅支持包名、逗号、* 和 -','warn'); return; }
   target=target||'*';
   await runCmd('settings put global policy_control immersive.'+kind+'='+target,true);
   toast('已开启沉浸：'+kind+' → '+target,'ok');
@@ -2777,7 +2777,7 @@ async function batRefresh(quiet){
   if(BAT.reading) return;
   BAT.reading=true;
   try{ await batRead(); batPaint(); }
-  catch(e){ if(!quiet) toast('读取失败：'+esc((e&&e.message)||e),'err'); }
+  catch(e){ if(!quiet) toast('读取失败：'+((e&&e.message)||e),'err'); }
   finally{ BAT.reading=false; }
 }
 function batPaint(){
@@ -2845,11 +2845,11 @@ async function batSample(){
     const power=st.power?await readPower():null;
     const sec=Math.floor((Date.now()-st.start)/1000);
     st.rows.push({time:hms(sec), level:info.level, temp:info.temp, power});
-    if(st.rows.length>=50000){ batStop(); toast('已记录 50000 条，请导出后重新开始','warn'); }
+    if(st.rows.length>=50000){ batStop(); toast('已达 50000 条，请导出后重新开始','warn'); }
     batPaint();
   }catch(e){
     batStop();
-    toast('统计已停止：'+esc((e&&e.message)||e),'err');
+    toast('统计已停止：'+((e&&e.message)||e),'err');
   }finally{ st.busy=false; }
 }
 function batLoop(){
@@ -2878,7 +2878,7 @@ async function batToggle(){
       st.power=false;
       const t=$('[data-act="bat-power"]');
       if(t){ t.classList.remove('on'); t.setAttribute('aria-pressed','false'); }
-      toast('功率节点不可读，本次只记电量与温度','warn');
+      toast('功率不可读，仅记录电量与温度','warn');
     }
   }
   st.running=true;
@@ -2901,7 +2901,7 @@ async function batSet(key){
     cmd='dumpsys battery set temp '+Math.round(v*10);
   }
   try{ await batRun(cmd); await batRead(); batPaint(); toast('已写入模拟值','ok'); }
-  catch(e){ toast('写入失败：'+esc((e&&e.message)||e),'err'); }
+  catch(e){ toast('写入失败：'+((e&&e.message)||e),'err'); }
 }
 async function batSource(kind){
   if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
@@ -2914,12 +2914,12 @@ async function batSource(kind){
   };
   const cmd=cmds[kind]; if(!cmd) return;
   try{ await batRun(cmd); await batRead(); batPaint(); toast('已模拟：'+({unplugged:'非充电',usb:'USB 充电',wireless:'无线充电',ac:'直流充电'}[kind]),'ok'); }
-  catch(e){ toast('模拟失败：'+esc((e&&e.message)||e),'err'); }
+  catch(e){ toast('模拟失败：'+((e&&e.message)||e),'err'); }
 }
 async function batReset(){
   if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
-  try{ await batRun('dumpsys battery reset'); await batRead(); batPaint(); toast('已恢复真实电池参数','ok'); }
-  catch(e){ toast('恢复失败：'+esc((e&&e.message)||e),'err'); }
+  try{ await batRun('dumpsys battery reset'); await batRead(); batPaint(); toast('已恢复真实参数','ok'); }
+  catch(e){ toast('恢复失败：'+((e&&e.message)||e),'err'); }
 }
 function batFileName(){
   const d=new Date(), p=n=>String(n).padStart(2,'0');
@@ -3078,7 +3078,7 @@ async function loadTuning(silent){
     state.tuning.at=Date.now();
     applyTuningState();
   }catch(e){
-    if(!silent) toast('读取调节参数失败：'+esc(e.message||e),'err');
+    if(!silent) toast('读取调节参数失败：'+(e.message||e),'err');
   }finally{ state.tuning.reading=false; }
 }
 function applyTuningState(){
@@ -3097,7 +3097,7 @@ async function applySleepTimeout(){
   if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
   const el=$('#sleepSec');
   const sec=parseInt(el?el.value:'',10);
-  if(!Number.isFinite(sec)||sec<1||sec>2147483){ toast('请输入 1 - 2147483 之间的秒数','warn'); return; }
+  if(!Number.isFinite(sec)||sec<1||sec>2147483){ toast('请输入 1–2147483 秒','warn'); return; }
   await runCmd('settings put system screen_off_timeout '+(sec*1000),true);
   state.tuner.timeoutSec=sec;
   const now=$('#sleepNow'); if(now) now.textContent='当前：'+sec+' 秒';
@@ -3131,7 +3131,7 @@ function renderScripts(){
     '</div></div>';
 }
 async function runScript(){
-  if(state.mode!=='real'){ toast('请先连接真机后再运行脚本','warn'); return; }
+  if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
   state.scriptText=$('#scriptEditor').value;
   const lines=state.scriptText.split('\n').map(x=>x.trim()).filter(x=>x&&!x.startsWith('#'));
   let out='';
@@ -3144,7 +3144,7 @@ async function runScript(){
   }
   state.scriptOutput=out+'\n✔ 执行完成，共 '+lines.length+' 条命令';
   $('#scriptOutput').textContent=state.scriptOutput;
-  toast('脚本执行完成，共 '+lines.length+' 条命令','ok');
+  toast('脚本完成，共 '+lines.length+' 条命令','ok');
 }
 
 /* ---------------- 页面：ADB 终端 ---------------- */
@@ -3261,7 +3261,7 @@ document.addEventListener('click', async e=>{
     case 'reboot': {
       if(state.mode==='none'){ toast('请先连接真机','warn'); return; }
       const label=el.dataset.label;
-      const go=async()=>{ await runCmd(cmd,true); toast('已下发「'+label+'」指令：'+esc(cmd),'ok'); };
+      const go=async()=>{ await runCmd(cmd,true); toast('已下发「'+label+'」：'+cmd,'ok'); };
       if(settings.confirm){
         const i=await dialog('确认执行「'+label+'」','将向设备下发命令：<br><code class="code-inline">'+esc(cmd)+'</code><br><br>设备会立即重启或关机，此操作不可撤销',[{label:'取消'},{label:'确认执行',primary:true,danger:true}]);
         if(i===1) go();
@@ -3284,7 +3284,7 @@ document.addEventListener('click', async e=>{
       await runCmd('settings put global window_animation_scale '+v,true);
       await runCmd('settings put global transition_animation_scale '+v,true);
       await runCmd('settings put global animator_duration_scale '+v,true);
-      toast('动画速度已设置为 '+v+'×','ok'); break;
+      toast('动画速度已设为 '+v+'×','ok'); break;
     }
     case 'app-refresh': appRefresh(); break;
     case 'app-kind': {
@@ -3329,7 +3329,7 @@ document.addEventListener('click', async e=>{
       el.classList.toggle('on',BAT.stats.power);
       el.setAttribute('aria-pressed',BAT.stats.power?'true':'false');
       batPaintLog();
-      if(BAT.stats.power) toast('采样时将记录电池功率','ok'); else toast('已关闭功率记录','');
+      if(BAT.stats.power) toast('将记录电池功率','ok'); else toast('已关闭功率记录','');
       break;
     }
     case 'mirror-toggle': state.mirror.running?stopMirror():startMirror(); break;
@@ -3341,7 +3341,7 @@ document.addEventListener('click', async e=>{
       SHOTS.keep=cb?!!cb.checked:!SHOTS.keep;
       break;
     }
-    case 'shot-clear': SHOTS.list.length=0; renderDisplay(); toast('已清空截图列表（手机内文件不受影响）','ok'); break;
+    case 'shot-clear': SHOTS.list.length=0; renderDisplay(); toast('已清空截图列表','ok'); break;
     case 'mirror-full': mirrorFull(); break;
     case 'mirror-key': await mirrorKey(el.dataset.key); break;
     case 'mirror-send': await mirrorSend(); break;
@@ -3363,7 +3363,7 @@ document.addEventListener('click', async e=>{
     case 'app-export': await appExport(el.dataset.pkg, el); break;
     case 'app-uninstall': {
       const i=await dialog('卸载应用','将执行 <code class="code-inline">pm uninstall -k --user 0 '+esc(el.dataset.pkg)+'</code>',[{label:'取消'},{label:'确认卸载',primary:true,danger:true}]);
-      if(i===1){ await runCmd('pm uninstall -k --user 0 '+el.dataset.pkg,true); state.apps=state.apps.filter(x=>x.pkg!==el.dataset.pkg); renderApps(); toast('应用卸载指令已下发','ok'); }
+      if(i===1){ await runCmd('pm uninstall -k --user 0 '+el.dataset.pkg,true); state.apps=state.apps.filter(x=>x.pkg!==el.dataset.pkg); renderApps(); toast('卸载指令已下发','ok'); }
       break;
     }
     case 'preset': {
@@ -3399,7 +3399,7 @@ document.addEventListener('click', async e=>{
     case 'term-quick': { const i=$('#termInput'); i.value=cmd; await termExec(cmd); i.value=''; i.focus(); break; }
     case 'clear-local': {
       const i=await dialog('清空本地数据','将删除保存的脚本与所有偏好设置，页面将恢复默认值',[{label:'取消'},{label:'确认清空',primary:true,danger:true}]);
-      if(i===1){ localStorage.removeItem('gjbox.scripts'); localStorage.removeItem('gjbox.settings'); toast('已清空，即将刷新页面','ok'); setTimeout(()=>location.reload(),900); }
+      if(i===1){ localStorage.removeItem('gjbox.scripts'); localStorage.removeItem('gjbox.settings'); toast('已清空，即将刷新','ok'); setTimeout(()=>location.reload(),900); }
       break;
     }
   }
@@ -3485,13 +3485,13 @@ document.addEventListener('change', async e=>{
   if(t.dataset.change==='mirror-bitrate'){
     const v=parseInt(t.value,10);
     settings.mirrorBitrate=String(Number.isFinite(v)&&v>=500?v:8000); saveSettings();
-    if(state.mirror.running){ toast('码率已改为 '+(settings.mirrorBitrate/1000)+' Mbps，正在重连视频流',''); stopMirror(); startMirror(); }
+    if(state.mirror.running){ toast('码率已改为 '+(settings.mirrorBitrate/1000)+' Mbps，正在重连',''); stopMirror(); startMirror(); }
     return;
   }
   if(t.dataset.change==='apk'){
     const f=t.files&&t.files[0]; if(!f) return;
-    toast('已选择 '+esc(f.name)+'（'+(f.size/1048576).toFixed(1)+' MB）','');
-    if(state.mode!=='real'){ toast('请先连接真机后再安装 APK','warn'); return; }
+    toast('已选择 '+f.name+'（'+(f.size/1048576).toFixed(1)+' MB）','');
+    if(state.mode!=='real'){ toast('请先连接真机','warn'); return; }
     // 直接用 File.stream() 分块推送，避免整个 APK 进内存导致大文件 OOM
     let sync=null;
     try{
@@ -3499,8 +3499,8 @@ document.addEventListener('change', async e=>{
       sync=await state.adb.sync();
       await sync.write({filename:'/data/local/tmp/base.apk',file:stream});
       await runCmd('pm install -r /data/local/tmp/base.apk',true);
-      toast('APK 安装流程已下发','ok');
-    }catch(err){ toast('APK 安装失败：'+esc(err.message||err),'err'); }
+      toast('安装指令已下发','ok');
+    }catch(err){ toast('安装失败：'+(err.message||err),'err'); }
     finally{ if(sync){ try{ await sync.dispose(); }catch(_){} } }
     return;
   }
@@ -3578,8 +3578,8 @@ $('#deviceSelect').addEventListener('change', async e=>{
   if(!id || state.mode!=='real'){ toast('请先连接真机','warn'); return; }
   const cur=(state.realDevice&&state.realDevice.serial)||'adb';
   if(id===cur){ toast('当前已连接该设备',''); return; }
-  if(state.connecting){ toast('正在连接中，请稍候',''); return; }
-  toast('正在切换到设备 '+esc(id),'');
+  if(state.connecting){ toast('正在连接…',''); return; }
+  toast('正在切换设备：'+id,'');
   await disconnect();
   await attemptConnect(true,id);
 });

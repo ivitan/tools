@@ -638,12 +638,20 @@
     .stage-item { padding: 3px 7px; font-size: 11px; }
   }
 /* toast —— 卡片样式 + 左侧语义色条，弹出位置沿用各工具原样 */
-#toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100}
+#toasts{position:fixed;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;flex-direction:column;align-items:flex-end;gap:9px;z-index:100;pointer-events:none}
 .toast{min-width:220px;max-width:380px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04));padding:11px 15px;font-size:13px;line-height:1.6;animation:slidein .2s ease;color:var(--text);white-space:pre-line}
 .toast.ok{border-left-color:var(--success)}
 .toast.warn{border-left-color:var(--warn,var(--warning,#d97706))}
 .toast.err{border-left-color:var(--danger);color:var(--danger)}
 @keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@media(max-width:768px){#toasts{top:calc(56px + env(safe-area-inset-top, 0px));right:10px;left:10px;align-items:stretch}.toast{min-width:0;max-width:none}}
+/* 确认弹窗：替代原生 confirm，深色友好（参考 SQLite） */
+.dialog-mask{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+[data-theme="dark"] .dialog-mask{background:rgba(0,0,0,.7)}
+.dialog{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg,0 10px 15px -3px rgba(0,0,0,.08));padding:20px 22px;width:min(420px,calc(100vw - 32px))}
+.dialog-title{font-size:15px;font-weight:600;margin-bottom:8px}
+.dialog-message{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:18px;white-space:pre-line}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px}
     /* 超大屏：内容区随视口流式放宽且有上限 */
     @media (min-width: 1400px) {
       .header-inner, .page, .container { max-width: clamp(1180px, 84vw, 1760px); }
@@ -887,7 +895,7 @@
             const next = this.effective === 'dark' ? 'light' : 'dark';
             localStorage.setItem(this.KEY, next);
             this.apply();
-            toast(`已切换为${this.effective === 'dark' ? '深色' : '浅色'}模式（双击按钮恢复跟随系统）`, 'success');
+            toast(`已切换为${this.effective === 'dark' ? '深色' : '浅色'}模式`, 'success');
           },
           init() {
             this.apply();
@@ -916,6 +924,37 @@
             d.style.opacity = '0'; d.style.transform = 'translateX(16px)'; d.style.transition = '.25s';
             setTimeout(() => d.remove(), 260);
           }, duration);
+        }
+
+        /* 自定义确认弹窗（替代原生 confirm，深色友好；参考 SQLite） */
+        function confirmDialog({ title = '确认', message = '', okText = '确定', cancelText = '取消', danger = false } = {}) {
+          return new Promise(resolve => {
+            const mask = document.createElement('div');
+            mask.className = 'dialog-mask';
+            mask.innerHTML = '<div class="dialog" role="dialog" aria-modal="true">'
+              + '<div class="dialog-title"></div><div class="dialog-message"></div>'
+              + '<div class="dialog-actions"><button class="btn" data-act="cancel"></button>'
+              + '<button class="btn" data-act="ok"></button></div></div>';
+            mask.querySelector('.dialog-title').textContent = title;
+            mask.querySelector('.dialog-message').textContent = message;
+            const cancel = mask.querySelector('[data-act="cancel"]');
+            const ok = mask.querySelector('[data-act="ok"]');
+            cancel.textContent = cancelText;
+            ok.textContent = okText;
+            ok.classList.add(danger ? 'btn-danger' : 'btn-primary');
+            document.body.appendChild(mask);
+            const close = v => { mask.remove(); resolve(v); };
+            ok.onclick = () => close(true);
+            cancel.onclick = () => close(false);
+            mask.addEventListener('click', e => { if (e.target === mask) close(false); });
+            document.addEventListener('keydown', function onKey(e) {
+              if (e.key === 'Escape' || e.key === 'Enter') {
+                document.removeEventListener('keydown', onKey);
+                close(e.key === 'Enter');
+              }
+            });
+            setTimeout(() => ok.focus(), 0);
+          });
         }
 
         (function bindTheme() {
@@ -1334,12 +1373,13 @@
 
         async function startWrite() {
           if (!usbDevice || !selectedFile || isWriting) return;
-          if (
-            !confirm(
-              `确定将 ${selectedFile.name} 写入 ${usbDevice.productName || "设备"}？此操作不可逆${chkVerifyWrite.checked ? "\n\n将执行写入后验证，确保数据完整" : ""}`,
-            )
-          )
-            return;
+          const confirmed = await confirmDialog({
+            title: "确认写入",
+            message: `确定将 ${selectedFile.name} 写入 ${usbDevice.productName || "设备"}？此操作不可逆${chkVerifyWrite.checked ? "\n\n将执行写入后验证，确保数据完整" : ""}`,
+            okText: "开始写入",
+            danger: true,
+          });
+          if (!confirmed) return;
           isWriting = true;
           abortController = new AbortController();
           bytesWritten = 0;
