@@ -166,26 +166,20 @@
       font-weight: 600; font-size: 15px;
       color: var(--text);
     }
-    /* 分类 tab 角标（仅图标）：点击展开/收起左侧分类栏，展开时呈选中态 */
+    /* 分类图标：无底色、无边框、无阴影，点击展开/收起左侧分类栏 */
     .logo-icon {
-      height: 28px;
-      padding: 0 6px;
-      background: var(--primary-soft);
-      border: 1px solid transparent;
-      border-radius: 6px;
+      height: 32px;
       display: inline-flex; align-items: center; justify-content: center;
-      color: var(--primary);
       flex-shrink: 0;
       cursor: pointer;
       user-select: none;
-      transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+      transition: opacity 0.15s;
     }
 @media (hover: hover) and (pointer: fine) {
-    .logo-icon:hover { background: var(--primary-light); border-color: var(--primary); }
+    .logo-icon:hover { opacity: 0.75; }
 }
-    .logo-icon img { flex-shrink: 0; display: block; }
+    .logo-icon img { display: block; }
     .logo-icon:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    body.cat-open .logo-icon { background: var(--primary); color: var(--primary-on); border-color: var(--primary); }
     .header-spacer { flex: 1; }
     .header-actions { display: flex; gap: 6px; align-items: center; }
 
@@ -470,8 +464,7 @@
     @media (max-width: 500px) {
       .header { height: 48px; padding: 0 10px; gap: 6px; }
       .logo span { font-size: 13px; }
-      .logo-icon { padding: 0 6px; }
-      .logo-icon img { width: 14px; height: 14px; }
+      .logo-icon img { width: 20px; height: 20px; }
       .tool-card i.tool-icon { width: 48px; height: 48px; font-size: 1.7rem; }
       .tool-card h3 { font-size: 0.9rem; }
       .tool-card p { font-size: 0.72rem; }
@@ -543,7 +536,7 @@
     <div class="header-inner">
       <div class="logo">
         <div class="logo-icon" id="logoToggle" title="展开/收起分类" role="button" tabindex="0" aria-label="展开/收起分类">
-          <img src="/img/Logo.svg" alt="" width="16" height="16">
+          <img src="/img/Logo.svg" alt="" width="24" height="24">
         </div>
         <span>工具箱</span>
       </div>
