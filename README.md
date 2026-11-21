@@ -23,16 +23,17 @@
 
 ### 📱 工具集合
 
-与主页菜单一致，共 8 个工具：
+与主页菜单一致，共 9 个工具：
 
-1. **Type Search**（数据处理）— 智能类型检索 & 快速定位
-2. **Exchange**（计算工具）— 百分数 · 小数 · 单位互换
-3. **Markdown Editor**（编辑工具）— 即时编写与预览
-4. **WebUSB Imager**（烧录工具）— 制作启动盘
-5. **WebADB**（烧录工具）— android 玩机
-6. **Daily Report**（编辑工具）— 日报生成
-7. **Airport Information**（数据处理）— 航班节点时间提取
-8. **SQLite**（数据库工具）— 数据库读取工具
+1. **Type 工具套件**（数据处理）— Type 编号提取与查询
+2. **数值与进制**（计算工具）— 百分数 · 小数 · 进制互转
+3. **Markdown 编辑器**（编辑工具）— 即时编写与预览
+4. **USB 启动盘制作**（烧录工具）— 制作启动盘
+5. **搞机工具箱**（烧录工具）— ADB 玩机
+6. **日报生成**（编辑工具）— 日报生成
+7. **航班节点提取**（数据处理）— 航班节点信息提取
+8. **SQLite 读取**（数据库工具）— 数据库读取
+9. **断流分析**（数据分析）— 断流统计分析
 
 ## 🚀 快速开始
 
@@ -75,21 +76,23 @@ tools/
 ├── LICENSE                 # Apache 2.0 许可证
 ├── img/                    # 工具图标（SVG）
 │
-├── TypeSearch/             # Type Search
+├── TypeSearch/             # Type 工具套件
 │   └── index.html
-├── Exchange/               # Exchange
+├── Exchange/               # 数值与进制
 │   └── index.html
-├── Markdown/               # Markdown Editor
+├── Markdown/               # Markdown 编辑器
 │   └── index.html
-├── WebUSB/                 # WebUSB Imager
+├── WebUSB/                 # USB 启动盘制作
 │   └── index.html
-├── android/                # WebADB
+├── android/                # 搞机工具箱
 │   └── index.html
-├── Daily/                  # Daily Report
+├── Daily/                  # 日报生成
 │   └── index.html
-├── Airport/                # Airport Information
+├── Airport/                # 航班节点提取
 │   └── index.html
-└── SQLite/                 # SQLite
+├── SQLite/                 # SQLite 读取
+│   └── index.html
+└── Steam/                  # 断流分析
     └── index.html
 ```
 
