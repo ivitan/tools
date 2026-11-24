@@ -604,10 +604,11 @@
       white-space: nowrap;
       cursor: help;
     }
-    /* 表头弱提示：该列在当前机位未配置，列头下加一条虚线，扫一眼就知道哪几列是空配置 */
-    .tbl--nodes th.th-unconfig { box-shadow: inset 0 -2px 0 var(--uc-head-line); }
+    /* 表头弱提示：该列在当前机位未配置。
+       只保留「副标题染色 + 底线」做横向定位，不再补「· 未配置」文字——
+       单元格里已经有「未配置」胶囊，文字重复两遍反而干扰读数。 */
+    .tbl--nodes th.th-unconfig { box-shadow: inset 0 -3px 0 var(--uc-head-line); }
     .tbl--nodes th.th-unconfig .th-sub { color: var(--uc-ink); }
-    .tbl--nodes th.th-unconfig .th-sub::after { content: " · 未配置"; }
 
     /* 粘贴展示表：表头左对齐 */
     .tbl--paste { font-size: 12px; line-height: 1.5; }
