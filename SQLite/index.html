@@ -1469,7 +1469,9 @@
     left: 0;
     z-index: 1;
   }
-  .data-table thead th.row-num { z-index: 3; }
+  /* 行号列表头：.data-table th 的 text-align:left 特异性高于 .row-num 的 center，
+     这里用更高特异性把它改回居中，与下方居中的行号数字对齐 */
+  .data-table thead th.row-num { text-align: center; z-index: 3; }
 
   /* 无限滚动 Sentinel */
   .infinite-sentinel {
@@ -4115,22 +4117,30 @@ function autoFitColumns(table, opts) {
   let trs = Array.from(table.querySelectorAll('tbody tr'));
   if (incremental) trs = trs.slice((opts && opts.fromRow) || 0);
   if (trs.length > COL_FIT_ROWS) trs = trs.slice(0, COL_FIT_ROWS);
+  // 行号列是粗体 + tabular-nums，字体与普通单元格不同，单独取一次供 canvas 测量
+  const rowNumFont = trs.length ? cellFont(trs[0].children[0]) : baseFont;
+
   // ① canvas 粗估：快，但有偏差（tabular-nums / italic / 中文字体回退 / letter-spacing）
+  //    行号列（i=0）也要测：行号到 6 位（如 208226）时会超出原先固定的 50px，
+  //    居中的文本首尾会被裁掉，所以必须按最大行号把这一列撑开
   for (const tr of trs) {
     const tds = tr.children;
-    for (let i = 1; i < tds.length && i < widths.length; i++) { // i=0 是行号列，跳过
+    for (let i = 0; i < tds.length && i < widths.length; i++) {
       const td = tds[i];
       const text = td.textContent;
       if (!text) continue;
-      const w = fitTextWidth(text, td.classList.contains('json') ? jsonFont : baseFont) + 22; // td padding 6px 10px + 边框
+      const font = i === 0 ? rowNumFont : (td.classList.contains('json') ? jsonFont : baseFont);
+      const w = fitTextWidth(text, font) + 22; // td padding 6px 10px + 边框
       if (w > widths[i]) widths[i] = w;
     }
   }
 
-  for (let i = 1; i < widths.length; i++) {
-    widths[i] = Math.min(Math.max(Math.ceil(widths[i]), COL_FIT_MIN), COL_FIT_MAX);
+  // 行号列下限 50px（够放 4 位行号），数据列下限 COL_FIT_MIN；
+  // 不再把 widths[0] 强制锁回 50，否则大行号列宽会被重新压窄
+  for (let i = 0; i < widths.length; i++) {
+    const min = i === 0 ? 50 : COL_FIT_MIN;
+    widths[i] = Math.min(Math.max(Math.ceil(widths[i]), min), COL_FIT_MAX);
   }
-  widths[0] = 50;
 
   // 跨渲染持久化：写回 tab，使翻页/切换模式时复用已测宽度（不必每页从头全量测量）
   if (opts && opts.tab) opts.tab._colWidths = widths;
@@ -4140,7 +4150,7 @@ function autoFitColumns(table, opts) {
   // ② 全量实测校准（不再做任何视口压缩）：用户明确要求「不压缩、不省略」
   //    无论桌面还是手机端，列宽一律等于该列文字一行显示的完整长度；
   //    总宽超出视口时由外层 .grid-container 的 overflow-x:auto 提供横向滚动，绝不截断
-  const refined = refineByRealWidth(table, widths, ths, trs);
+  const refined = refineByRealWidth(table, widths, ths, trs, rowNumFont);
   if (refined) {
     if (opts && opts.tab) opts.tab._colWidths = widths;
     table._colWidths = widths;
@@ -4190,9 +4200,10 @@ function writeCellWidths(table, widths) {
 }
 
 // 写入列宽后，用浏览器真实布局复检，宽度不够就补到刚好容纳内容。返回是否调整过
-function refineByRealWidth(table, widths, ths, trs) {
+function refineByRealWidth(table, widths, ths, trs, rowNumFont) {
   let changed = false;
   // ① 表头：字段名 + 类型必须完整显示（col-name 有 overflow:hidden，宽度不够会被 ellipsis 裁掉）
+  //    行号表头只有一个「#」，远窄于数字列，跳过不影响
   for (let i = 0; i < ths.length && i < widths.length; i++) {
     if (ths[i].classList.contains('row-num')) continue;
     const th = ths[i];
@@ -4208,16 +4219,19 @@ function refineByRealWidth(table, widths, ths, trs) {
     need += 20 + thBorder;
     if (need > widths[i]) { widths[i] = Math.min(need, COL_FIT_MAX); changed = true; }
   }
-  // ② 数据单元格：全量实测。canvas 对超长文本估算偏差更大，只查「估算最宽」那一格
+  // ② 数据单元格（含行号列）：全量实测。canvas 对超长文本估算偏差更大，只查「估算最宽」那一格
   //    很可能选错对象，导致真正最长的单元格被漏掉、显示不全，所以逐格读 scrollWidth
   for (const tr of trs) {
     const tds = tr.children;
-    for (let i = 1; i < tds.length && i < widths.length; i++) {
+    for (let i = 0; i < tds.length && i < widths.length; i++) {
       const td = tds[i];
       if (!td.textContent) continue;
       // scrollWidth 不含边框，补上真实边框宽(offsetWidth-clientWidth)才是刚好容纳的 border-box 宽度；
       // 这样内容恰好放得下时 need === 当前宽度，测量幂等、不会每轮 +1px 累加
-      const need = td.scrollWidth + (td.offsetWidth - td.clientWidth);
+      let need = td.scrollWidth + (td.offsetWidth - td.clientWidth);
+      // 行号文本居中：超出列宽时左侧被裁掉的部分不计入 scrollWidth（会低估），
+      // 再用 canvas 按行号真实字体测一次取大值，确保 6 位行号完整显示
+      if (i === 0 && rowNumFont) need = Math.max(need, fitTextWidth(td.textContent, rowNumFont) + 22);
       if (need > widths[i]) { widths[i] = Math.min(need, COL_FIT_MAX); changed = true; }
     }
   }
