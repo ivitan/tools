@@ -74,6 +74,11 @@
       --danger: #dc2626;
       --warn: #d97706;
       --orange: #ea580c;
+      /* 「未配置」徽标：底/边/字三件套，浅深两套主题各配一份 */
+      --uc-bg: rgba(217, 119, 6, .10);
+      --uc-border: rgba(217, 119, 6, .38);
+      --uc-ink: #b45309;
+      --uc-head-line: rgba(217, 119, 6, .30);
 
       --header-row: #f1f5f9;
       --row-hover: #eff6ff;
@@ -122,6 +127,10 @@
       --danger: #f87171;
       --warn: #fbbf24;
       --orange: #fb923c;
+      --uc-bg: rgba(251, 191, 36, .13);
+      --uc-border: rgba(251, 191, 36, .40);
+      --uc-ink: #fcd34d;
+      --uc-head-line: rgba(251, 191, 36, .30);
 
       --header-row: #1f2937;
       --row-hover: #1e293b;
@@ -578,6 +587,27 @@
     @media (min-width: 640px) { .th-sub { font-size: 11px; } }
     .tbl--nodes td { padding: 8px 12px; vertical-align: middle; }
     .cell-time { color: var(--text); font-weight: 500; line-height: 1; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    /* 「未配置」：该机位在这套摄像头事件矩阵里没有配置该节点，提取必然为空。
+       必须与「-」（已配置、但时间窗内没触发）在视觉上区分开，否则排查时会误判成算法漏检。 */
+    .cell-unconfig { vertical-align: middle; }
+    .uc-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border: 1px dashed var(--uc-border);
+      border-radius: 6px;
+      background: var(--uc-bg);
+      color: var(--uc-ink);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.4;
+      white-space: nowrap;
+      cursor: help;
+    }
+    /* 表头弱提示：该列在当前机位未配置，列头下加一条虚线，扫一眼就知道哪几列是空配置 */
+    .tbl--nodes th.th-unconfig { box-shadow: inset 0 -2px 0 var(--uc-head-line); }
+    .tbl--nodes th.th-unconfig .th-sub { color: var(--uc-ink); }
+    .tbl--nodes th.th-unconfig .th-sub::after { content: " · 未配置"; }
 
     /* 粘贴展示表：表头左对齐 */
     .tbl--paste { font-size: 12px; line-height: 1.5; }
@@ -2403,6 +2433,116 @@
       remote: { dict: DICT_REMOTE, order: ORDER_REMOTE, label: "远机位" },
     };
 
+    /* ══ 近机位节点配置矩阵 ══
+       数据来源：《近机位摄像头事件矩阵_完整版》。近机位部分节点在某些机位上根本没接入
+       摄像头 / 没配置对应算法，这类节点提取必然为空，不能与「已配置但窗口内没触发」混为
+       一谈，所以单列一张表做标注。
+
+       结构：机位号 → 该机位「未配置」的节点 code 数组（code 与 ORDER_NEAR 一致）。
+       判定约定：
+         · 机位在 NEAR_UNCONFIGURED 里、且 code 在数组中 → 未配置，空结果显示「未配置」；
+         · 机位在表里但 code 不在数组中 → 已配置，空结果仍显示「-」；
+         · 机位号不在表里 → 该机位未被矩阵覆盖，不做标注，全部按原样显示「-」；
+         · 仅 near 模式生效，远机位节点体系不同，不参与判定。 */
+    /* 矩阵 30 个事件字段 → 工具节点 code 的对应关系（同名直通的不再列出）：
+         followme_start → 03       lundang_start → 04     lundang_end   → 32
+         push_car_end   → 33       airplane_push_out → 79 cargo_open    → 09
+         cargo_close    → 28       cabin_open     → 06    cabin_close   → 29
+         food_start     → 14       food_end       → 15    oil_start     → 16
+         oil_end        → 17       water_start    → 121   water_end     → 13
+         sewage_start   → 112      sewage_end     → 12
+       同机位多路摄像头取并集：只要有一路配了，就算该机位「已配置」——
+       提取时按 aproCode 聚合全部摄像头，并集语义才和提取结果一致。
+       生成结果：45 个机位 / 193 个「机位×节点」未配置格；
+       其中 06/29（客舱门）88 格按下方 NEAR_MATRIX_SKIP 排除后，实际生效 105 格、覆盖 21 个机位。 */
+    const NEAR_UNCONFIGURED = {
+      "815": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "816": ["06", "29"],
+      "818": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29", "79"],
+      "819": ["06", "29", "121", "13", "112", "12"],
+      "821": ["06", "29"],
+      "822": ["06", "29"],
+      "824": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "825": ["06", "29"],
+      "826": ["06", "29"],
+      "827": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "828": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "829": ["06", "29"],
+      "830": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29", "09", "28", "baggage_start", "baggage_end"],
+      "831": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "16", "17", "06", "29", "09", "28", "baggage_start", "baggage_end"],
+      "832": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29", "09", "28", "baggage_start", "baggage_end"],
+      "833": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "834": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "835": [],
+      "836": ["06", "29"],
+      "837": ["06", "29"],
+      "838": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "910": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "911": ["06", "29"],
+      "912": ["16", "17", "06", "29", "09", "28", "baggage_start", "baggage_end"],
+      "913": ["06", "29"],
+      "914": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "916": ["06", "29"],
+      "917": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "919": ["06", "29"],
+      "920": ["06", "29"],
+      "922": ["06", "29"],
+      "923": ["06", "29"],
+      "924": ["06", "29"],
+      "925": ["06", "29"],
+      "926": ["06", "29"],
+      "927": ["06", "29"],
+      "928": ["06", "29"],
+      "929": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29", "09", "28", "baggage_start", "baggage_end"],
+      "931": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "932": ["06", "29"],
+      "934": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "935": ["06", "29"],
+      "937": ["06", "29"],
+      "938": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+      "939": ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end", "06", "29"],
+    };
+
+    /* 各机位在矩阵里登记了几路摄像头，只用于「未配置」气泡文案 */
+    const NEAR_MATRIX_CAMS = {
+      815: 2, 816: 6, 818: 2, 819: 6, 821: 2, 822: 6, 824: 2, 825: 2, 826: 2, 827: 2,
+      828: 2, 829: 2, 830: 1, 831: 1, 832: 1, 833: 2, 834: 2, 835: 2, 836: 2, 837: 2,
+      838: 2, 910: 2, 911: 2, 912: 1, 913: 2, 914: 2, 916: 5, 917: 2, 919: 5, 920: 2,
+      922: 5, 923: 2, 924: 2, 925: 2, 926: 2, 927: 2, 928: 2, 929: 1, 931: 2, 932: 2,
+      934: 2, 935: 2, 937: 2, 938: 2, 939: 2,
+    };
+
+    const NEAR_MATRIX_STANDS = Object.keys(NEAR_UNCONFIGURED);
+
+    /* 不参与「未配置」判定的节点：客舱门（06/29）。
+       矩阵里 06/29 几乎全空，但这两个节点的数据来自 appid="cabin" 的独立数据源
+       （cabin_node_*.db，与摄像头无关），提取时走的是 near+cabin 合并口径。
+       若按矩阵把它们标成「未配置」，一旦 cabin 表当天没有记录就会误报，
+       所以默认排除。要严格按矩阵标注，把这里清成 [] 即可。 */
+    const NEAR_MATRIX_SKIP = ["06", "29"];
+
+    /** 该机位是否被配置矩阵覆盖（未覆盖的机位不做「未配置」标注） */
+    function nearMatrixCovered(stand) {
+      return NEAR_MATRIX_STANDS.indexOf(String(stand == null ? "" : stand).trim()) !== -1;
+    }
+
+    /** 该机位下某节点是否未配置 */
+    function isNodeUnconfigured(stand, code, mode) {
+      if ((mode || currentMode) !== "near") return false;
+      if (NEAR_MATRIX_SKIP.indexOf(code) !== -1) return false;
+      const key = String(stand == null ? "" : stand).trim();
+      if (!key || !nearMatrixCovered(key)) return false;
+      const list = NEAR_UNCONFIGURED[key];
+      return Array.isArray(list) && list.indexOf(code) !== -1;
+    }
+
+    /** 该机位下未配置的节点数量（只统计当前模式的节点集合） */
+    function nearUnconfiguredCount(stand, order, mode) {
+      if ((mode || currentMode) !== "near" || !nearMatrixCovered(stand)) return 0;
+      const list = NEAR_UNCONFIGURED[String(stand == null ? "" : stand).trim()] || [];
+      return order.filter((c) => list.indexOf(c) !== -1 && NEAR_MATRIX_SKIP.indexOf(c) === -1).length;
+    }
+
     /* 节点字段帮助：表头「?」悬浮展示该节点的判定参数 / 问题排查 / 视频下载
        内容来源：《T3 航班保障节点视频采集算法项目关键参数配置说明（远机位）V3.0》
        ref 为该内容在文档中的章节号 */
@@ -3856,6 +3996,8 @@
 
         finalCleanedTimes = {};
         let hitCount = 0;
+        // 当前机位在这套矩阵里未配置的节点数（只做提示，不计入 hitCount）
+        const unconfigTotal = nearUnconfiguredCount(aproCode, order, currentMode);
         let theadRows = ["<tr>"];
         let tbodyRows = ["<tr>"];
 
@@ -3868,6 +4010,8 @@
             : [];
           let finalSelectedTime = "";
           let displayHtml = "-";
+          // 近机位配置矩阵：该机位是否压根没配这个节点（配置缺失 ≠ 算法漏检）
+          const unconfigured = isNodeUnconfigured(aproCode, code, currentMode);
 
           // 提取 03 节点首条记录的日期部分
           if (code === "03" && sortedTimes.length > 0) {
@@ -3912,17 +4056,27 @@
               </details>
             `;
             }
+          } else if (unconfigured) {
+            // 未配置：该机位没有接入/配置这个节点，提取为空是预期结果。
+            // 同时写进 finalCleanedTimes，让「复制时间集」「导出结果表」里也带上这句，
+            // 否则导出后是一格空白，看表的人又会以为是漏提取。
+            finalCleanedTimes[code] = "未配置";
+            const camN = NEAR_MATRIX_CAMS[String(aproCode).trim()] || 0;
+            displayHtml =
+              `<span class="uc-badge" title="机位 ${escapeHtml(aproCode)} 的 ${camN} 路摄像头均未配置该节点（依据《近机位摄像头事件矩阵_完整版》），提取为空属预期结果，不是算法漏检">未配置</span>`;
           } else {
             finalCleanedTimes[code] = "";
           }
 
           theadRows.push(`
-          <th>
+          <th${unconfigured ? ' class="th-unconfig"' : ""}>
             <div class="th-main">${dict[code]}${helpBtnHtml(code)}</div>
             <div class="th-sub">${code}</div>
           </th>`);
           tbodyRows.push(
-            `<td class="cell-time">${displayHtml}</td>`,
+            unconfigured && sortedTimes.length === 0
+              ? `<td class="cell-unconfig">${displayHtml}</td>`
+              : `<td class="cell-time">${displayHtml}</td>`,
           );
         });
 
@@ -3955,7 +4109,10 @@
         }
 
         document.getElementById("queryStatus").innerHTML =
-          `<span class="c-blue fw-bold">[机位 ${escapeHtml(aproCode)}]</span> 解析完毕，提取到 <span class="c-danger fw-bold">${hitCount}</span> 个节点`;
+          `<span class="c-blue fw-bold">[机位 ${escapeHtml(aproCode)}]</span> 解析完毕，提取到 <span class="c-danger fw-bold">${hitCount}</span> 个节点` +
+          (unconfigTotal
+            ? `，另有 <span class="c-warn fw-bold">${unconfigTotal}</span> 个节点该机位未配置`
+            : "");
       }, 50); // 让出主线程完毕
     }
 
