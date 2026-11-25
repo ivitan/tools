@@ -79,6 +79,8 @@
       --uc-border: rgba(217, 119, 6, .38);
       --uc-ink: #b45309;
       --uc-head-line: rgba(217, 119, 6, .30);
+      /* 配置矩阵滞后：矩阵写「未配置」但数据库查到记录，按数据库优先展示 */
+      --stale-line: rgba(29, 78, 216, .34);
 
       --header-row: #f1f5f9;
       --row-hover: #eff6ff;
@@ -131,6 +133,7 @@
       --uc-border: rgba(251, 191, 36, .40);
       --uc-ink: #fcd34d;
       --uc-head-line: rgba(251, 191, 36, .30);
+      --stale-line: rgba(147, 197, 253, .38);
 
       --header-row: #1f2937;
       --row-hover: #1e293b;
@@ -623,6 +626,10 @@
        单元格里已经有「未配置」胶囊，文字重复两遍反而干扰读数。 */
     .tbl--nodes th.th-unconfig { box-shadow: inset 0 -3px 0 var(--uc-head-line); }
     .tbl--nodes th.th-unconfig .th-sub { color: var(--uc-ink); }
+    /* 配置表滞后：矩阵标了「未配置」，但数据库本次确实查到记录。
+       按「数据库优先」展示时间，表头只留一条蓝色底线提示配置表需要更新，
+       不染琥珀色——否则跟真正的「未配置」在视觉上分不开。 */
+    .tbl--nodes th.th-matrix-stale { box-shadow: inset 0 -3px 0 var(--stale-line); }
 
     /* 粘贴展示表：表头左对齐 */
     .tbl--paste { font-size: 12px; line-height: 1.5; }
@@ -2496,11 +2503,13 @@
        摄像头 / 没配置对应算法，这类节点提取必然为空，不能与「已配置但窗口内没触发」混为
        一谈，所以单列一张表做标注。
 
-       结构：机位号 → 该机位「未配置」的节点 code 数组（code 与 ORDER_NEAR 一致）。
-       判定约定：
-         · 机位在 NEAR_UNCONFIGURED 里、且 code 在数组中 → 未配置，空结果显示「未配置」；
-         · 机位在表里但 code 不在数组中 → 已配置，空结果仍显示「-」；
-         · 机位号不在表里 → 该机位未被矩阵覆盖，不做标注，全部按原样显示「-」；
+      结构：机位号 → 该机位「未配置」的节点 code 数组（code 与 ORDER_NEAR 一致）。
+      判定约定（数据库优先、成组兜底，本表只做最后一层兜底）：
+         · 数据库查到该机位该节点记录 → 显示时间；本表即使标了未配置也不影响（表头改蓝线提示矩阵滞后）；
+         · 该节点与同组节点（同一路摄像头的同一套配置，如桥载的靠/撤四个节点）都没记录 + 本表标未配置 → 显示「未配置」（预期为空，不是漏检）；
+         · 该节点没记录但同组节点有结果 → 显示「-」，说明这组配置是有的，按漏提取核查；
+         · 数据库没记录 + 本表标已配置 → 显示「-」（已配置但窗口内未触发）；
+         · 机位号不在表里 → 该机位未被矩阵覆盖，不做标注；
          · 仅 near 模式生效，远机位节点体系不同，不参与判定。 */
     /* 矩阵 30 个事件字段 → 工具节点 code 的对应关系（同名直通的不再列出）：
          followme_start → 03       lundang_start → 04     lundang_end   → 32
@@ -2578,6 +2587,36 @@
        若按矩阵把它们标成「未配置」，一旦 cabin 表当天没有记录就会误报，
        所以默认排除。要严格按矩阵标注，把这里清成 [] 即可。 */
     const NEAR_MATRIX_SKIP = ["06", "29"];
+
+    /* 成组节点：同一路摄像头的同一套配置，有其一必有其余。
+       判定「未配置」时按组聚合——组内任一节点本次查到记录，就说明这组配置是有的，
+       同组其他节点即使库中没记录，也只能算「本次未提取到」，不能标「未配置」。
+       （例：827 的 bridge_close_end 有 06:42:17，桥载这一整组的四个节点都不能判未配置。）
+       桥载是「靠 + 撤」一组：靠桥（bridge_close_*）与撤桥（bridge_far_*）由同一路镜头
+       连续拍完，配了这路镜头靠和撤都能配，所以四个节点并成一组，不拆成两个对。
+       33 牵引车对接 / 79 飞机推出暂不并入，避免掩盖真实的未配置。 */
+    const NEAR_NODE_GROUPS = [
+      ["03", "followme_end"],
+      ["airplane_in_start", "airplane_in_end"],
+      ["airplane_out_start", "airplane_out_end"],
+      ["04", "32"],
+      ["bridge_close_start", "bridge_close_end", "bridge_far_start", "bridge_far_end"],
+      ["garbage_start", "garbage_end"],
+      ["14", "15"],
+      ["16", "17"],
+      ["06", "29"],
+      ["09", "28"],
+      ["121", "13"],
+      ["112", "12"],
+      ["baggage_start", "baggage_end"],
+    ];
+    /* code → 所在组（整组，含自身；判同组其他节点时自行排除 code） */
+    const NEAR_NODE_GROUP_MAP = {};
+    NEAR_NODE_GROUPS.forEach((group) => {
+      group.forEach((c) => {
+        NEAR_NODE_GROUP_MAP[c] = group;
+      });
+    });
 
     /** 该机位是否被配置矩阵覆盖（未覆盖的机位不做「未配置」标注） */
     function nearMatrixCovered(stand) {
@@ -4126,12 +4165,20 @@
 
         finalCleanedTimes = {};
         let hitCount = 0;
-        // 当前机位在这套矩阵里未配置的节点数（只做提示，不计入 hitCount）
-        const unconfigTotal = nearUnconfiguredCount(aproCode, order, currentMode);
+        // 实际显示为「未配置」的列数（= 库里没有 且 矩阵也没配），用于状态栏提示；
+        // 不再用矩阵口径的 nearUnconfiguredCount，避免「矩阵说未配置但库里有数据」时数字对不上表
+        let unconfigShown = 0;
         let theadRows = ["<tr>"];
         let tbodyRows = ["<tr>"];
 
         let extractedDate = "";
+
+        // 每个节点本次是否有结果：成组判定要用到同组其他节点的状态，
+        // 所以先整体算一遍，避免依赖 order 的遍历顺序。
+        const codeHasResult = {};
+        order.forEach((code) => {
+          codeHasResult[code] = !!(temporaryMap[code] && temporaryMap[code].size);
+        });
 
         order.forEach((code) => {
           const timesSet = temporaryMap[code];
@@ -4140,18 +4187,37 @@
             : [];
           let finalSelectedTime = "";
           let displayHtml = "-";
-          // 近机位配置矩阵：该机位是否压根没配这个节点（配置缺失 ≠ 算法漏检）
-          const unconfigured = isNodeUnconfigured(aproCode, code, currentMode);
+          /* 「未配置」的判定顺序 —— 数据库查询优先，配置表只作兜底：
+             ① 库里查到该机位该节点记录 → 显示时间（矩阵标的是否未配置都不影响）
+             ② 库与该节点同组的节点都没有记录 + 矩阵也标未配置 → 「未配置」
+             ③ 其余无记录的情况 → 「-」（已配置但窗口内未触发，或同组已配置而本节点漏提取）
+             成组规则：同一路摄像头的同一套配置，有其一必有其余（如桥载的靠/撤四个节点），
+             组内任一节点有结果就说明这组是配了的，不能把同组其他节点标成「未配置」。
+             注：sortedTimes 已由 appid / 机位 / 时间窗过滤后的数据库行聚合而来。 */
+          const hasResult = sortedTimes.length > 0;
+          // 成组规则只在近机位启用（配置矩阵本身也只覆盖近机位），远机位保持原行为
+          const group = currentMode === "near" ? NEAR_NODE_GROUP_MAP[code] : null;
+          // 同组中「已有结果」的第一个节点（不含自己），用于提示文案
+          const mateCode = group
+            ? group.find((c) => c !== code && codeHasResult[c])
+            : null;
+          const groupHasResult = hasResult || !!mateCode;
+          const matrixUnconfig = isNodeUnconfigured(aproCode, code, currentMode);
+          const unconfigured = !groupHasResult && matrixUnconfig;
+          // 矩阵滞后：本列确实查到记录，但配置表写着没配 —— 以数据库为准，表头标蓝线提示更新配置表。
+          // 只用自身是否有结果来标，不让「同组有数据、本列没有」也染蓝（那列该看的是漏提取，不是配置表）。
+          const matrixStale = hasResult && matrixUnconfig;
+          if (unconfigured) unconfigShown++;
 
           // 提取 03 节点首条记录的日期部分
-          if (code === "03" && sortedTimes.length > 0) {
+          if (code === "03" && hasResult) {
             const firstTimeStr = sortedTimes[0];
             if (firstTimeStr.includes(" ")) {
               extractedDate = firstTimeStr.split(" ")[0];
             }
           }
 
-          if (sortedTimes.length > 0) {
+          if (hasResult) {
             hitCount++;
             const allTimes = sortedTimes.map((ts) =>
               ts.includes(" ") ? ts.split(" ")[1] : ts,
@@ -4187,7 +4253,8 @@
             `;
             }
           } else if (unconfigured) {
-            // 未配置：该机位没有接入/配置这个节点，提取为空是预期结果。
+            // 未配置 = 数据库该机位该节点 0 条记录，且配置矩阵也标了未配置。
+            // 两者一致才下这个结论：库里只要有记录，上面 hasResult 分支已经先展示了。
             // 同时写进 finalCleanedTimes，让「复制时间集」「导出结果表」里也带上这句，
             // 否则导出后是一格空白，看表的人又会以为是漏提取。
             finalCleanedTimes[code] = "未配置";
@@ -4195,9 +4262,18 @@
             // camN 只用于气泡文案；矩阵新增机位而漏更 NEAR_MATRIX_CAMS 时不要编出「0 路」
             const camPhrase = camN > 0 ? `${camN} 路摄像头均未配置该节点` : `未配置该节点`;
             displayHtml =
-              `<span class="uc-badge" title="机位 ${escapeHtml(aproCode)} 的${camPhrase}（依据《近机位摄像头事件矩阵_完整版》），提取为空属预期结果，不是算法漏检">未配置</span>`;
+              `<span class="uc-badge" title="机位 ${escapeHtml(aproCode)} 的${camPhrase}（依据《近机位摄像头事件矩阵_完整版》）；已查数据库，该机位该节点在本次时间窗内 0 条记录。提取为空属预期结果，不是算法漏检">未配置</span>`;
           } else {
             finalCleanedTimes[code] = "";
+            // 没结果但有三种情形，用悬浮说明区分，单元格视觉统一是「-」：
+            // a) 同组节点本次有结果 → 这组配置是有的，本节点属于漏提取
+            // b) 单纯时间窗内没触发
+            if (mateCode) {
+              const mateName = dict[mateCode] || mateCode;
+              displayHtml = `<span title="「${dict[code] || code}」与「${mateName}」同属一组配置（同一路摄像头），同组本次已有结果，本节点未取到，建议按漏提取核查">-</span>`;
+            } else {
+              displayHtml = `<span title="该节点已配置，但本次时间窗内数据库无记录（未触发）">-</span>`;
+            }
           }
 
           // 表头第三行：该节点这次结果来自哪路镜头（有结果才显示编号）。
@@ -4206,18 +4282,31 @@
           const camList = (temporaryCamMap[code] || [])
             .slice()
             .sort((a, b) => String(a).localeCompare(String(b)));
+          const camNoneTip = unconfigured
+            ? "该机位未配置此节点，无来源镜头"
+            : hasResult
+              ? "数据库有记录，但记录的 camera 为空（表缺该列或该行未填），无法回溯来源镜头"
+              : mateCode
+                ? "同组节点本次有结果，本节点无记录，故无来源镜头"
+                : "该节点本次未提取到结果，无来源镜头";
           const camLine = camList.length
             ? `<div class="th-cam" title="结果来源镜头：${escapeHtml(camList.join("、"))}"><span class="th-cam-k">CAM</span>${escapeHtml(camList.join("/"))}</div>`
-            : `<div class="th-cam is-none" title="${unconfigured ? "该机位未配置此节点，无来源镜头" : "该节点本次未提取到结果，无来源镜头"}">—</div>`;
+            : `<div class="th-cam is-none" title="${camNoneTip}">—</div>`;
 
+          // 表头底边：琥珀 = 真·未配置（整组都没数据 + 矩阵未配）；蓝 = 矩阵滞后（本列有数据，已按库展示）
+          const thClass = unconfigured
+            ? ' class="th-unconfig"'
+            : matrixStale
+              ? ' class="th-matrix-stale" title="配置矩阵记录该节点未配置，但数据库本次查到记录，已按数据库结果展示；建议更新配置表"'
+              : "";
           theadRows.push(`
-          <th${unconfigured ? ' class="th-unconfig"' : ""}>
+          <th${thClass}>
             <div class="th-main">${dict[code]}${helpBtnHtml(code)}</div>
             <div class="th-sub">${code}</div>
             ${camLine}
           </th>`);
           tbodyRows.push(
-            unconfigured && sortedTimes.length === 0
+            unconfigured
               ? `<td class="cell-unconfig">${displayHtml}</td>`
               : `<td class="cell-time">${displayHtml}</td>`,
           );
@@ -4245,8 +4334,8 @@
 
         const summaryHtml =
           `<span class="c-blue fw-bold">[机位 ${escapeHtml(aproCode)}]</span> 解析完毕，提取到 <span class="c-danger fw-bold">${hitCount}</span> 个节点` +
-          (unconfigTotal
-            ? `，另有 <span class="c-warn fw-bold">${unconfigTotal}</span> 个节点该机位未配置`
+          (unconfigShown
+            ? `，另有 <span class="c-warn fw-bold">${unconfigShown}</span> 个节点库中无记录且该机位未配置`
             : "");
 
         // 结果表 30 格已就位：先连同状态栏一次性画出来，结果立刻可见。
