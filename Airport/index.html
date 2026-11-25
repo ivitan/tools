@@ -579,12 +579,26 @@
     .tbl td.is-empty { color: var(--weak); }
     @media (min-width: 640px) { .tbl { font-size: 13px; } }
 
-    /* 节点提取表：窄列 + 上下双行表头 */
+    /* 节点提取表：窄列 + 上下三行表头（中文名 / 节点编码 / 来源镜头） */
     .tbl--nodes th { min-width: 100px; padding: 8px 12px; font-weight: 400; }
     @media (min-width: 640px) { .tbl--nodes th { min-width: 120px; } }
     .th-main { font-weight: 700; color: var(--text-strong); }
     .th-sub  { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
     @media (min-width: 640px) { .th-sub { font-size: 11px; } }
+    /* 第三行：该节点这次结果来自哪路镜头（多路用 / 分隔）。
+       有结果才显示镜头号；无结果（含未配置）给一个弱化的「—」占位，
+       保持 30 列表头底边齐平，不做常驻前缀。 */
+    .th-cam {
+      margin-top: 1px;
+      font-size: 9px;
+      line-height: 1.3;
+      color: var(--text-dim);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      word-break: break-all;
+    }
+    @media (min-width: 640px) { .th-cam { font-size: 10px; } }
+    .th-cam .th-cam-k { opacity: .62; margin-right: 3px; letter-spacing: .3px; }
+    .th-cam.is-none { opacity: .5; }
     .tbl--nodes td { padding: 8px 12px; vertical-align: middle; }
     .cell-time { color: var(--text); font-weight: 500; line-height: 1; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
@@ -623,6 +637,48 @@
     .tbl--raw tbody tr + tr td { border-top-width: 1px; }
 
     .table-scroll { overflow: auto; overscroll-behavior-x: contain; overscroll-behavior-y: auto; }
+
+    /* 提取进度条：只用 transform 动画，跑在合成线程上。
+       sql.js 是同步 WASM，查询期间主线程会被占住，但这条进度条仍在动——
+       用户看到的是「正在跑」而不是「页面死住然后结果突然砸出来」。
+       条高固定 2px、常态只降透明度不 display:none，出结果时不会把表格顶上顶下。 */
+    .extract-progress {
+      position: relative;
+      height: 2px;
+      overflow: hidden;
+      background: var(--primary-soft);
+      opacity: 1;
+      transition: opacity .18s linear;
+    }
+    .extract-progress.is-idle { opacity: 0; }
+    .extract-progress.is-idle > span { animation-play-state: paused; }
+    .extract-progress > span {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 34%;
+      background: var(--primary);
+      will-change: transform;
+      animation: ep-slide 1.05s cubic-bezier(.4, 0, .6, 1) infinite;
+    }
+    @keyframes ep-slide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(300%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .extract-progress > span { animation-duration: 2.4s; }
+    }
+
+    /* 结果落表时轻微淡入，避免整排数字「砸」出来 */
+    .tbl-appear { animation: tbl-fade .18s ease-out; }
+    @keyframes tbl-fade {
+      from { opacity: .25; }
+      to   { opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tbl-appear { animation: none; }
+    }
 
     /* 展开「余下 N 条」按钮 */
     .more-btn {
@@ -974,6 +1030,7 @@
               </span>
             </div>
           </div>
+          <div id="extractProgress" class="extract-progress is-idle" aria-hidden="true"><span></span></div>
           <div class="table-scroll custom-scrollbar card-body">
             <table class="tbl tbl--nodes" id="nodeTable">
               <thead id="exactTableHeader"></thead>
@@ -3075,6 +3132,9 @@
     let sqlEngine;
     let databases = [];
     let finalCleanedTimes = {};
+    // 提取轮次令牌：分片执行会多次让出主线程，期间若用户又点了一次提取，
+    // 旧轮次必须在中途自行退出，避免两轮结果交替写进同一张表。
+    let extractionToken = 0;
     let lastExtractionFilter = null; // 记录本次提取时的过滤条件快照（startTime/endTime/aproCode）
     // B 区回显表格数据（renderPasteTableGrid 渲染时同步保存），供「复制镜头号」按 camera 列取值
     let bAreaTableData = { headers: [], rows: [] };
@@ -3453,6 +3513,7 @@
       document.getElementById("rawTableBody").innerHTML = "";
       document.getElementById("rawCount").innerText = "0";
       document.getElementById("rawTruncNote").classList.add("hidden");
+      setExtractProgress(false);
       // 同步清空 B 区「数据回显」中上次的数据库回显：本次无命中时若只清主表与 C 区、
       // 残留 B 区旧回显，会造成三区不一致。这里复位 B 区为无数据占位状态
       renderPasteTableGrid("");
@@ -3692,6 +3753,32 @@
         document.body.removeChild(textArea);
       });
 
+    /**
+     * 让出主线程，并保证浏览器真的把当前 DOM 画完一帧。
+     * 只写 DOM 不 await 的话，浏览器会把「改 DOM」和后面的重活合并在同一次绘制里，
+     * 用户看到的就是「卡一下 → 结果突然出现」。rAF 后再挂一个宏任务，才能确保先上屏。
+     */
+    function yieldToPaint() {
+      return new Promise((resolve) =>
+        requestAnimationFrame(() => setTimeout(resolve, 0)),
+      );
+    }
+
+    /** 提取进度条的显隐（条本身是合成线程动画，主线程卡住也照常动） */
+    function setExtractProgress(on) {
+      const el = document.getElementById("extractProgress");
+      if (el) el.classList.toggle("is-idle", !on);
+    }
+
+    /** 结果落表时轻微淡入，避免整排数字「砸」出来 */
+    function playTableAppear() {
+      const tbl = document.getElementById("nodeTable");
+      if (!tbl) return;
+      tbl.classList.remove("tbl-appear");
+      void tbl.offsetWidth; // 强制回流，让同一个动画能重复触发
+      tbl.classList.add("tbl-appear");
+    }
+
     // 【核心引擎】
     function executeExtraction(mode) {
       if (nodeEngine === "mysql") { MYSQL_ENGINE.executeExtraction(); return; }
@@ -3734,10 +3821,17 @@
       lastExtractionFilter = { startTime, endTime, aproCode };
 
       document.getElementById("queryStatus").textContent = "正在提取节点…";
+      setExtractProgress(true);
+      const myToken = ++extractionToken;
 
-      // 使用 setTimeout 释放主线程以渲染 loading 状态
-      setTimeout(() => {
+      // 释放主线程把「正在提取节点…」先画出来；回调改成 async，
+      // 查询阶段会按实际耗时主动让帧，避免几十张表连续跑完才一次性出结果。
+      setTimeout(async () => {
+        await yieldToPaint();
+        if (myToken !== extractionToken) return; // 期间又发起了新一轮提取
         let temporaryMap = {};
+        // 节点 → 命中结果的来源镜头（保序去重），只用于表头第三行展示
+        let temporaryCamMap = {};
         let allRawResults = [];
         let allColumns = new Set();
         let hasDataParsed = false;
@@ -3747,8 +3841,14 @@
         let dbFilteredColumns = new Set();
 
         if (selectedTables.length > 0) {
-          databases.forEach(({ name, db }) => {
-            selectedTables.forEach((tableName) => {
+          // 表数量可能几十张，逐张查询期间主动让出主线程并刷新进度：
+          // 界面保持可响应，用户看到的是「正在提取…（12/47）」而不是整页僵住。
+          const totalTables = databases.length * selectedTables.length;
+          let doneTables = 0;
+          let lastYieldAt = performance.now();
+          for (const { name, db } of databases) {
+            for (const tableName of selectedTables) {
+              doneTables++;
               try {
                 // 先探测该表是否含 appid 列：含则按当前模式接受的 appid 集合精确过滤
                 // （near 接受 near/cabin，remote 接受 remote），
@@ -3787,7 +3887,7 @@
                 const result = db.exec(
                   `SELECT * FROM "${tableName}" ${whereClause}`,
                 );
-                if (result.length === 0) return;
+                if (result.length === 0) continue;
 
                 const cols = result[0].columns;
                 const colCount = cols.length;
@@ -3811,8 +3911,16 @@
               } catch (e) {
                 console.warn("DB Read Error:", e.message);
               }
-            });
-          });
+              // 超过一帧（约 16ms）就让一次帧：既刷新进度，也不让单次阻塞过久
+              if (performance.now() - lastYieldAt > 16 && doneTables < totalTables) {
+                document.getElementById("queryStatus").textContent =
+                  `正在提取节点…（已查 ${doneTables}/${totalTables} 张表）`;
+                await yieldToPaint();
+                if (myToken !== extractionToken) return; // 已开始新一轮，本轮作废
+                lastYieldAt = performance.now();
+              }
+            }
+          }
         }
 
         // 把 DB 命中数据拼成 TSV：仅用于本次解析
@@ -3849,8 +3957,8 @@
           }
 
           dbTsvString = dbTsvLines.join("\n") + "\n";
-          // 把 DB 命中数据一并回显到“数据回显”区（仅展示，不写回任何输入区）
-          renderPasteTableGrid(dbTsvString);
+          // B 区「数据回显」的 DOM 渲染挪到结果表上屏之后（见下方），
+          // 这里只准备文本，避免解析前就先占住一次主线程。
         }
 
         // 解析文本 = DB 命中数据（仅来自数据库提取）
@@ -3868,6 +3976,11 @@
           // 空值时回退原字典匹配，避免提取不到
           let globalAppidIdx = headers.indexOf("appid");
           hasAppidCol = globalAppidIdx !== -1;
+          // camera 列：记录该条结果由哪路镜头产生，表头第三行展示用。
+          // 列名大小写不统一（camera / Camera），按小写比对定位；无该列时为 -1。
+          let globalCameraIdx = headers.findIndex(
+            (h) => h.toLowerCase() === "camera",
+          );
 
           let inferredCodeIdx = -1;
           let inferredTimeIdx = -1;
@@ -3906,6 +4019,7 @@
 
             let matchedCode = null;
             let matchedTime = null;
+            let matchedCam = "";
 
             if (globalCodeIdx !== -1 && globalTimeIdx !== -1 && i > 0) {
               const cols = line.split("\t");
@@ -3937,7 +4051,13 @@
                 if (dict[code] && rTime) {
                   matchedCode = code;
                   let tMatch = rTime.match(TIME_REGEX);
-                  if (tMatch) matchedTime = tMatch[0];
+                  if (tMatch) {
+                    matchedTime = tMatch[0];
+                    // 同一行的 camera 即这条结果的来源镜头（无该列时留空）
+                    if (globalCameraIdx !== -1 && globalCameraIdx < cols.length) {
+                      matchedCam = String(cols[globalCameraIdx] ?? "").trim();
+                    }
+                  }
                 }
               }
             } else if (inferredCodeIdx !== -1 && inferredTimeIdx !== -1) {
@@ -3975,6 +4095,15 @@
                 temporaryMap[matchedCode] = new Set();
               }
               temporaryMap[matchedCode].add(matchedTime);
+              // 记录来源镜头（保序去重）：同一节点可能由多路镜头先后命中
+              if (matchedCam) {
+                if (!temporaryCamMap[matchedCode]) {
+                  temporaryCamMap[matchedCode] = [];
+                }
+                if (temporaryCamMap[matchedCode].indexOf(matchedCam) === -1) {
+                  temporaryCamMap[matchedCode].push(matchedCam);
+                }
+              }
               hasDataParsed = true;
             }
           }
@@ -4063,16 +4192,29 @@
             // 否则导出后是一格空白，看表的人又会以为是漏提取。
             finalCleanedTimes[code] = "未配置";
             const camN = NEAR_MATRIX_CAMS[String(aproCode).trim()] || 0;
+            // camN 只用于气泡文案；矩阵新增机位而漏更 NEAR_MATRIX_CAMS 时不要编出「0 路」
+            const camPhrase = camN > 0 ? `${camN} 路摄像头均未配置该节点` : `未配置该节点`;
             displayHtml =
-              `<span class="uc-badge" title="机位 ${escapeHtml(aproCode)} 的 ${camN} 路摄像头均未配置该节点（依据《近机位摄像头事件矩阵_完整版》），提取为空属预期结果，不是算法漏检">未配置</span>`;
+              `<span class="uc-badge" title="机位 ${escapeHtml(aproCode)} 的${camPhrase}（依据《近机位摄像头事件矩阵_完整版》），提取为空属预期结果，不是算法漏检">未配置</span>`;
           } else {
             finalCleanedTimes[code] = "";
           }
+
+          // 表头第三行：该节点这次结果来自哪路镜头（有结果才显示编号）。
+          // 无数据（含未配置）给弱化的「—」，让 30 列底边齐平。
+          // 多路镜头按号码升序展示，避免同一节点在不同时间窗下顺序跳变。
+          const camList = (temporaryCamMap[code] || [])
+            .slice()
+            .sort((a, b) => String(a).localeCompare(String(b)));
+          const camLine = camList.length
+            ? `<div class="th-cam" title="结果来源镜头：${escapeHtml(camList.join("、"))}"><span class="th-cam-k">CAM</span>${escapeHtml(camList.join("/"))}</div>`
+            : `<div class="th-cam is-none" title="${unconfigured ? "该机位未配置此节点，无来源镜头" : "该节点本次未提取到结果，无来源镜头"}">—</div>`;
 
           theadRows.push(`
           <th${unconfigured ? ' class="th-unconfig"' : ""}>
             <div class="th-main">${dict[code]}${helpBtnHtml(code)}</div>
             <div class="th-sub">${code}</div>
+            ${camLine}
           </th>`);
           tbodyRows.push(
             unconfigured && sortedTimes.length === 0
@@ -4099,6 +4241,21 @@
           theadRows.join("");
         document.getElementById("exactTableBody").innerHTML =
           tbodyRows.join("");
+        playTableAppear();
+
+        const summaryHtml =
+          `<span class="c-blue fw-bold">[机位 ${escapeHtml(aproCode)}]</span> 解析完毕，提取到 <span class="c-danger fw-bold">${hitCount}</span> 个节点` +
+          (unconfigTotal
+            ? `，另有 <span class="c-warn fw-bold">${unconfigTotal}</span> 个节点该机位未配置`
+            : "");
+
+        // 结果表 30 格已就位：先连同状态栏一次性画出来，结果立刻可见。
+        // B 区回显与 C 区原始明细各自最多渲染数千行，留到结果表上屏之后再跑；
+        // 三张表挤在同一个同步块里，就是「卡一下 → 结果突然出现」的根因。
+        document.getElementById("queryStatus").innerHTML =
+          summaryHtml + ' <span class="c-muted">· 正在渲染明细…</span>';
+        await yieldToPaint();
+        if (myToken !== extractionToken) return; // 明细交给新一轮去画
 
         if (selectedTables.length > 0) {
           renderRawTable(allRawResults, Array.from(allColumns));
@@ -4109,12 +4266,15 @@
           document.getElementById("rawTruncNote").classList.add("hidden");
         }
 
-        document.getElementById("queryStatus").innerHTML =
-          `<span class="c-blue fw-bold">[机位 ${escapeHtml(aproCode)}]</span> 解析完毕，提取到 <span class="c-danger fw-bold">${hitCount}</span> 个节点` +
-          (unconfigTotal
-            ? `，另有 <span class="c-warn fw-bold">${unconfigTotal}</span> 个节点该机位未配置`
-            : "");
-      }, 50); // 让出主线程完毕
+        // B 区「数据回显」再错开一帧：两个大表不在同一次绘制里排队
+        if (dbTsvString) {
+          await yieldToPaint();
+          renderPasteTableGrid(dbTsvString);
+        }
+
+        document.getElementById("queryStatus").innerHTML = summaryHtml;
+        setExtractProgress(false);
+      }, 0); // 让出主线程，先画出「正在提取节点…」
     }
 
     function renderRawTable(data, columns) {
