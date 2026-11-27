@@ -208,7 +208,7 @@
     .col-between { display: flex; flex-direction: column; justify-content: space-between; }
     .hidden { display: none !important; }
 
-    /* 两栏：≥1024px 分栏，与 1180px 容器配套 */
+    /* 两栏：≥1024px 分栏，与铺满式容器（仅保留左右呼吸边距）配套 */
     .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
     @media (min-width: 1024px) { .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
     /* 三栏输入 / 按钮组：≥640px 三列，否则两列或一列 */
@@ -246,7 +246,7 @@
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      padding: env(safe-area-inset-top) 16px 0;
+      padding: env(safe-area-inset-top) clamp(16px, 1.4vw, 28px) 0;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -256,7 +256,7 @@
     }
     .header-inner {
       width: 100%;
-      max-width: 1180px;
+      max-width: 100%;
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -326,23 +326,17 @@
     #iconMoon { display: none; }
 
     .page {
-      max-width: 1180px;
+      max-width: 100%;
       width: 100%;
       min-width: 0;
       margin: 0 auto;
-      padding: 16px;
+      /* 左右铺满，只留呼吸感边距；宽屏时按视口比例微增，避免贴边 */
+      padding: 16px clamp(16px, 1.4vw, 28px);
       box-sizing: border-box;
     }
     @media (max-width: 768px) {
       .header { height: 48px; padding: 0 12px; }
       .page { padding: 12px 10px; }
-    }
-    /* 大屏：内容区随视口流式放宽且有上限 */
-    @media (min-width: 1400px) {
-      .header-inner, .page { max-width: clamp(1180px, 84vw, 1760px); }
-    }
-    @media (min-width: 2200px) {
-      .header-inner, .page { max-width: clamp(1760px, 80vw, 2080px); }
     }
 
     /* ── 8. 卡片 ── */
