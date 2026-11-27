@@ -799,9 +799,13 @@
             <h3>机位号-camera 最新航班断流情况 <span class="tag warn">最新航班</span></h3>
             <div class="panel-head-right">
               <span class="panel-hint">按机位号 + camera 组合取最新航班 · 断流降序</span>
-              <button class="panel-export" data-chart="latestFlight">
+              <button class="panel-export" data-chart="latestFlight" data-fmt="png" data-tip="导出全量 PNG 图片（数据不截断）">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                图片
+              </button>
+              <button class="panel-export" data-chart="latestFlight" data-tip="导出全量 CSV（数据不截断）">
                 <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
-                导出全部 CSV
+                全部 CSV
               </button>
             </div>
           </div>
@@ -814,9 +818,13 @@
             <h3>断流按飞机分布 <span class="tag warn">visualId</span></h3>
             <div class="panel-head-right">
               <span class="panel-hint">Top 12</span>
-              <button class="panel-export" data-chart="byVisual">
+              <button class="panel-export" data-chart="byVisual" data-fmt="png" data-tip="导出全量 PNG 图片（数据不截断）">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                图片
+              </button>
+              <button class="panel-export" data-chart="byVisual" data-tip="导出全量 CSV（数据不截断）">
                 <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
-                导出
+                CSV
               </button>
             </div>
           </div>
@@ -829,9 +837,13 @@
             <h3>断流按机位号分布 <span class="tag">aproCode</span></h3>
             <div class="panel-head-right">
               <span class="panel-hint">Top 12</span>
-              <button class="panel-export" data-chart="byApro">
+              <button class="panel-export" data-chart="byApro" data-fmt="png" data-tip="导出全量 PNG 图片（数据不截断）">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                图片
+              </button>
+              <button class="panel-export" data-chart="byApro" data-tip="导出全量 CSV（数据不截断）">
                 <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
-                导出
+                CSV
               </button>
             </div>
           </div>
@@ -844,9 +856,13 @@
             <h3>断流按 camera 分布 <span class="tag">设备维度</span></h3>
             <div class="panel-head-right">
               <span class="panel-hint">Top 12</span>
-              <button class="panel-export" data-chart="byCamera">
+              <button class="panel-export" data-chart="byCamera" data-fmt="png" data-tip="导出全量 PNG 图片（数据不截断）">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                图片
+              </button>
+              <button class="panel-export" data-chart="byCamera" data-tip="导出全量 CSV（数据不截断）">
                 <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
-                导出
+                CSV
               </button>
             </div>
           </div>
@@ -859,9 +875,13 @@
             <h3>飞机断流率 TOP <span class="tag warn">占比</span></h3>
             <div class="panel-head-right">
               <span class="panel-hint">记录数 ≥ 10 · Top 12</span>
-              <button class="panel-export" data-chart="byRate">
+              <button class="panel-export" data-chart="byRate" data-fmt="png" data-tip="导出全量 PNG 图片（数据不截断）">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                图片
+              </button>
+              <button class="panel-export" data-chart="byRate" data-tip="导出全量 CSV（数据不截断）">
                 <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
-                导出
+                CSV
               </button>
             </div>
           </div>
@@ -874,9 +894,13 @@
             <h3>飞机 → 机位号 断流构成 <span class="tag">堆叠</span></h3>
             <div class="panel-head-right">
               <span class="panel-hint">Top 12 飞机 · 点击分段过滤</span>
-              <button class="panel-export" data-chart="visualApro">
+              <button class="panel-export" data-chart="visualApro" data-fmt="png" data-tip="导出全量 PNG 图片（数据不截断）">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                图片
+              </button>
+              <button class="panel-export" data-chart="visualApro" data-tip="导出全量 CSV（数据不截断）">
                 <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
-                导出
+                CSV
               </button>
             </div>
           </div>
@@ -889,9 +913,13 @@
             <h3>机位号 → camera 断流构成 <span class="tag">堆叠</span></h3>
             <div class="panel-head-right">
               <span class="panel-hint">Top 12 机位号 · 点击分段过滤</span>
-              <button class="panel-export" data-chart="aproCamera">
+              <button class="panel-export" data-chart="aproCamera" data-fmt="png" data-tip="导出全量 PNG 图片（数据不截断）">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                图片
+              </button>
+              <button class="panel-export" data-chart="aproCamera" data-tip="导出全量 CSV（数据不截断）">
                 <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18v10.17l-3.59-3.58L7 10l5 5 5-5-1.41-1.41L12 12.17V2h-2z"/></svg>
-                导出
+                CSV
               </button>
             </div>
           </div>
@@ -1644,7 +1672,10 @@ function buildLatestSummary(rows) {
 /* =========================================================================
    堆叠构成数据
    ========================================================================= */
-function buildStack(rows, parentKey, childKey, parentLabel, childLabel) {
+function buildStack(rows, parentKey, childKey, parentLabel, childLabel, opts) {
+  const parentLimit = (opts && opts.parentLimit != null) ? opts.parentLimit : 12;
+  const childLimit  = (opts && opts.childLimit  != null) ? opts.childLimit  : 8;
+
   const parentMap = new Map();
   const childTotalErr = new Map();
 
@@ -1666,14 +1697,14 @@ function buildStack(rows, parentKey, childKey, parentLabel, childLabel) {
 
   const topChildren = [...childTotalErr.entries()]
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
+    .slice(0, childLimit)
     .map(e => e[0]);
   const childColor = new Map();
   topChildren.forEach((c, i) => childColor.set(c, PALETTE[i % PALETTE.length]));
 
   const parents = [...parentMap.values()]
     .sort((a, b) => b.total - a.total)
-    .slice(0, 12);
+    .slice(0, parentLimit);
 
   const resultRows = parents.map(p => {
     const segMap = new Map();
@@ -1698,6 +1729,7 @@ function buildStack(rows, parentKey, childKey, parentLabel, childLabel) {
     rows: resultRows,
     legend,
     totalParents: parentMap.size,
+    totalChildren: childTotalErr.size,
     parentLabel,
     childLabel,
   };
@@ -1999,10 +2031,11 @@ function renderStackChart(container, data, onParentClick, onChildClick, emptyTex
   });
 }
 
-/* ---------- 图表渲染入口 ---------- */
-function renderCharts() {
-  /* 0. 机位号-camera 最新航班断流情况：全量展示，可折叠 */
-  const latestItems = [...latestSummary]
+/* =========================================================================
+   图表数据构建（页面渲染与图片导出共用，避免两处逻辑漂移）
+   ========================================================================= */
+function chartItemsLatest() {
+  return [...latestSummary]
     .filter(v => v.errors > 0)
     .sort((a, b) => b.errors - a.errors)
     .map(v => ({
@@ -2017,6 +2050,58 @@ function renderCharts() {
              + ` · 断流 ${v.errors} 次 · 记录 ${v.count} 条`,
       value: v.errors,
     }));
+}
+
+function chartItemsByVisual() {
+  return [...visualSummary]
+    .filter(v => v.errors > 0)
+    .sort((a, b) => b.errors - a.errors)
+    .map(v => ({
+      label: v.visualId,
+      title: `飞机 ${v.visualId} · 断流 ${v.errors} 次 · 记录 ${v.count} 条`,
+      value: v.errors,
+    }));
+}
+
+function chartItemsByApro() {
+  return [...aproSummary]
+    .filter(a => a.errors > 0)
+    .sort((a, b) => b.errors - a.errors)
+    .map(a => ({
+      label: a.aproCode,
+      title: `机位号 ${a.aproCode} · 断流 ${a.errors} 次 · 记录 ${a.count} 条`,
+      value: a.errors,
+    }));
+}
+
+function chartItemsByCamera() {
+  return [...cameraSummary]
+    .filter(c => c.errors > 0)
+    .sort((a, b) => b.errors - a.errors)
+    .map(c => ({
+      label: c.camera,
+      title: `camera ${c.camera} · 断流 ${c.errors} 次 · 记录 ${c.count} 条`,
+      value: c.errors,
+    }));
+}
+
+function chartItemsByRate() {
+  return [...visualSummary]
+    .filter(v => v.errors > 0 && v.count >= 10)
+    .map(v => ({ ...v, rate: v.errors / v.count }))
+    .sort((a, b) => b.rate - a.rate)
+    .map(v => ({
+      label: v.visualId,
+      title: `飞机 ${v.visualId} · 断流率 ${(v.rate * 100).toFixed(2)}% · 断流 ${v.errors} / 记录 ${v.count}`,
+      value: v.rate * 100,
+      display: (v.rate * 100).toFixed(1) + '%',
+    }));
+}
+
+/* ---------- 图表渲染入口 ---------- */
+function renderCharts() {
+  /* 0. 机位号-camera 最新航班断流情况：全量展示，可折叠 */
+  const latestItems = chartItemsLatest();
 
   if (!latestSummary.length) {
     $('chartLatestFlight').innerHTML = `<div class="empty">
@@ -2038,59 +2123,25 @@ function renderCharts() {
   }
 
   /* 1. 飞机 */
-  const visualItems = [...visualSummary]
-    .filter(v => v.errors > 0)
-    .sort((a, b) => b.errors - a.errors)
-    .slice(0, 12)
-    .map(v => ({
-      label: v.visualId,
-      title: `飞机 ${v.visualId} · 断流 ${v.errors} 次 · 记录 ${v.count} 条`,
-      value: v.errors,
-    }));
+  const visualItems = chartItemsByVisual().slice(0, 12);
   renderBarChart($('chartByVisual'), visualItems, 'error',
     item => filterByVisual(item.label),
     '未检测到断流 —— 所有飞机都没有断流记录');
 
   /* 2. 机位号 */
-  const aproItems = [...aproSummary]
-    .filter(a => a.errors > 0)
-    .sort((a, b) => b.errors - a.errors)
-    .slice(0, 12)
-    .map(a => ({
-      label: a.aproCode,
-      title: `机位号 ${a.aproCode} · 断流 ${a.errors} 次 · 记录 ${a.count} 条`,
-      value: a.errors,
-    }));
+  const aproItems = chartItemsByApro().slice(0, 12);
   renderBarChart($('chartByApro'), aproItems, 'primary',
     item => filterByApro(item.label),
     '未检测到断流 —— 所有机位号都没有断流记录');
 
   /* 3. camera */
-  const camItems = [...cameraSummary]
-    .filter(c => c.errors > 0)
-    .sort((a, b) => b.errors - a.errors)
-    .slice(0, 12)
-    .map(c => ({
-      label: c.camera,
-      title: `camera ${c.camera} · 断流 ${c.errors} 次 · 记录 ${c.count} 条`,
-      value: c.errors,
-    }));
+  const camItems = chartItemsByCamera().slice(0, 12);
   renderBarChart($('chartByCamera'), camItems, 'primary',
     item => filterByCamera(item.label),
     '未检测到断流 —— 所有 camera 都没有断流记录');
 
   /* 4. 飞机断流率 */
-  const rateItems = [...visualSummary]
-    .filter(v => v.errors > 0 && v.count >= 10)
-    .map(v => ({ ...v, rate: v.errors / v.count }))
-    .sort((a, b) => b.rate - a.rate)
-    .slice(0, 12)
-    .map(v => ({
-      label: v.visualId,
-      title: `飞机 ${v.visualId} · 断流率 ${(v.rate * 100).toFixed(2)}% · 断流 ${v.errors} / 记录 ${v.count}`,
-      value: v.rate * 100,
-      display: (v.rate * 100).toFixed(1) + '%',
-    }));
+  const rateItems = chartItemsByRate().slice(0, 12);
 
   if (!rateItems.length) {
     $('chartByRate').innerHTML = `<div class="empty ok">
@@ -2145,6 +2196,31 @@ function renderCharts() {
 /* =========================================================================
    各图表独立导出
    ========================================================================= */
+/* 父 → 子 的断流次数全量明细（不限 Top N），父按总断流降序、子按次数降序 */
+function pairRows(sourceRows, parentKey, childKey) {
+  const parentTotal = new Map();
+  const pair = new Map();
+  for (const r of sourceRows) {
+    if (!r.errors) continue;
+    const p = r[parentKey], ch = r[childKey];
+    if (p === EMPTY_KEY || ch === EMPTY_KEY) continue;
+    parentTotal.set(p, (parentTotal.get(p) || 0) + r.errors);
+    const k = p + SEP + ch;
+    pair.set(k, (pair.get(k) || 0) + r.errors);
+  }
+  const rank = new Map([...parentTotal.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map((e, i) => [e[0], i]));
+  return [...pair.entries()]
+    .map(([k, err]) => {
+      const i = k.indexOf(SEP);
+      return { p: k.slice(0, i), ch: k.slice(i + 1), err };
+    })
+    .sort((x, y) => (rank.get(x.p) - rank.get(y.p)) || (y.err - x.err))
+    .map(o => [o.p, o.ch, o.err]);
+}
+
+/* 图表 CSV 一律导出全量（不做 Top 12 截断），与页面上的「图片」保持同源 */
 function exportChartCSV(kind) {
   if (!allRows.length) { toast('请先导入数据库', 'warn'); return; }
   const base = fileBase();
@@ -2168,105 +2244,543 @@ function exportChartCSV(kind) {
       ]);
   }
   else if (kind === 'byVisual') {
-    name = '断流按飞机分布';
+    name = '断流按飞机分布_全量';
     header = ['飞机(visualId)', '记录数', '断流次数', '断流率'];
     rows = [...visualSummary]
       .filter(v => v.errors > 0)
       .sort((a, b) => b.errors - a.errors)
-      .slice(0, 12)
       .map(v => [v.visualId, v.count, v.errors, ratePct(v.errors, v.count)]);
   }
   else if (kind === 'byApro') {
-    name = '断流按机位号分布';
+    name = '断流按机位号分布_全量';
     header = ['机位号(aproCode)', '记录数', '断流次数', '断流率'];
     rows = [...aproSummary]
       .filter(a => a.errors > 0)
       .sort((a, b) => b.errors - a.errors)
-      .slice(0, 12)
       .map(a => [a.aproCode, a.count, a.errors, ratePct(a.errors, a.count)]);
   }
   else if (kind === 'byCamera') {
-    name = '断流按camera分布';
+    name = '断流按camera分布_全量';
     header = ['camera', '记录数', '断流次数', '断流率'];
     rows = [...cameraSummary]
       .filter(c => c.errors > 0)
       .sort((a, b) => b.errors - a.errors)
-      .slice(0, 12)
       .map(c => [c.camera, c.count, c.errors, ratePct(c.errors, c.count)]);
   }
   else if (kind === 'byRate') {
-    name = '飞机断流率TOP';
+    name = '飞机断流率_全量';
     header = ['飞机(visualId)', '记录数', '断流次数', '断流率'];
     rows = [...visualSummary]
       .filter(v => v.errors > 0 && v.count >= 10)
       .map(v => ({ ...v, rate: v.errors / v.count }))
       .sort((a, b) => b.rate - a.rate)
-      .slice(0, 12)
       .map(v => [v.visualId, v.count, v.errors, (v.rate * 100).toFixed(2) + '%']);
   }
   else if (kind === 'visualApro') {
-    name = '飞机到机位号断流构成';
+    name = '飞机到机位号断流构成_全量';
     header = ['飞机(visualId)', '机位号(aproCode)', '断流次数'];
-    const stackData = buildStack(scopedRows, 'visualId', 'aproCode', '飞机', '机位号');
-    const topVisuals = new Set(stackData.rows.map(r => r.id));
-    const map = new Map();
-    for (const r of scopedRows) {
-      if (!r.errors) continue;
-      if (!topVisuals.has(r.visualId)) continue;
-      if (r.aproCode === EMPTY_KEY) continue;
-      const key = r.visualId + SEP + r.aproCode;
-      map.set(key, (map.get(key) || 0) + r.errors);
-    }
-    const visualOrder = stackData.rows.map(r => r.id);
-    const visualRank = new Map(visualOrder.map((id, i) => [id, i]));
-    rows = [...map.entries()]
-      .map(([k, err]) => {
-        const [v, a] = k.split(SEP);
-        return { v, a, err };
-      })
-      .sort((x, y) => {
-        const rx = visualRank.get(x.v) ?? 999;
-        const ry = visualRank.get(y.v) ?? 999;
-        if (rx !== ry) return rx - ry;
-        return y.err - x.err;
-      })
-      .map(o => [o.v, o.a, o.err]);
+    rows = pairRows(scopedRows, 'visualId', 'aproCode');
   }
   else if (kind === 'aproCamera') {
-    name = '机位号到camera断流构成';
+    name = '机位号到camera断流构成_全量';
     header = ['机位号(aproCode)', 'camera', '断流次数'];
-    const stackData = buildStack(scopedRows, 'aproCode', 'camera', '机位号', 'camera');
-    const topApros = new Set(stackData.rows.map(r => r.id));
-    const map = new Map();
-    for (const r of scopedRows) {
-      if (!r.errors) continue;
-      if (!topApros.has(r.aproCode)) continue;
-      if (r.camera === EMPTY_KEY) continue;
-      const key = r.aproCode + SEP + r.camera;
-      map.set(key, (map.get(key) || 0) + r.errors);
-    }
-    const aproOrder = stackData.rows.map(r => r.id);
-    const aproRank = new Map(aproOrder.map((id, i) => [id, i]));
-    rows = [...map.entries()]
-      .map(([k, err]) => {
-        const [a, c] = k.split(SEP);
-        return { a, c, err };
-      })
-      .sort((x, y) => {
-        const rx = aproRank.get(x.a) ?? 999;
-        const ry = aproRank.get(y.a) ?? 999;
-        if (rx !== ry) return rx - ry;
-        return y.err - x.err;
-      })
-      .map(o => [o.a, o.c, o.err]);
+    rows = pairRows(scopedRows, 'aproCode', 'camera');
   }
 
   downloadCSV(`${base}_${name}.csv`, header, rows);
 }
 
 document.querySelectorAll('.panel-export').forEach(btn => {
-  btn.addEventListener('click', () => exportChartCSV(btn.dataset.chart));
+  btn.addEventListener('click', () => {
+    if (btn.dataset.fmt === 'png') exportChartPNG(btn.dataset.chart);
+    else exportChartCSV(btn.dataset.chart);
+  });
 });
+
+/* =========================================================================
+   图表导出为图片（PNG）
+   —— 页面图表是纯 DOM 条形，这里直接按同一份数据在 canvas 上重绘，
+      不引入 html2canvas 之类的外部库；2 倍像素输出，配色跟随当前主题。
+   ========================================================================= */
+const PNG_W = 1240;          // 逻辑宽度（输出实际 2480px）
+const PNG_PAD = 30;
+const PNG_SCALE = 2;
+const PNG_MAX_H = 8000;      // 单图逻辑高度上限（≈16000px 输出），超出自动拆多张，绝不截断数据
+const PNG_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif';
+const pngF = (size, weight) => `${weight || 400} ${size}px ${PNG_FONT}`;
+const pngProbe = document.createElement('canvas').getContext('2d');
+
+const CHART_META = {
+  latestFlight: {
+    title: '机位号-camera 最新航班断流情况',
+    sub: '按机位号 + camera 组合取最新航班 · 断流次数降序',
+    file: '机位号camera最新航班断流情况',
+    type: 'bar', tone: 'danger',
+  },
+  byVisual: {
+    title: '断流按飞机分布',
+    sub: 'visualId 对应同一架飞机（架次）· 断流次数降序',
+    file: '断流按飞机分布',
+    type: 'bar', tone: 'danger',
+  },
+  byApro: {
+    title: '断流按机位号分布',
+    sub: 'aproCode 是机位号 · 断流次数降序',
+    file: '断流按机位号分布',
+    type: 'bar', tone: 'primary',
+  },
+  byCamera: {
+    title: '断流按 camera 分布',
+    sub: '仅列有断流的 camera · 断流次数降序',
+    file: '断流按camera分布',
+    type: 'bar', tone: 'primary',
+  },
+  byRate: {
+    title: '飞机断流率',
+    sub: '断流率 = 断流次数 / 记录数 · 记录数 ≥ 10 · 断流率降序',
+    file: '飞机断流率',
+    type: 'bar', tone: 'danger',
+  },
+  visualApro: {
+    title: '飞机 → 机位号 断流构成',
+    sub: '每行一架飞机，横向按各机位号的断流次数分段堆叠 · 全量',
+    file: '飞机到机位号断流构成',
+    type: 'stack', parentLabel: '飞机', childLabel: '机位号',
+  },
+  aproCamera: {
+    title: '机位号 → camera 断流构成',
+    sub: '每行一个机位号，横向按各 camera 的断流次数分段堆叠 · 全量',
+    file: '机位号到camera断流构成',
+    type: 'stack', parentLabel: '机位号', childLabel: 'camera',
+  },
+};
+
+/* 画布用的主题色：直接从当前生效的 CSS 变量取，深/浅色自动跟随 */
+function pngColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const pick = (name, fb) => (cs.getPropertyValue(name) || '').trim() || fb;
+  return {
+    bg:      pick('--panel', '#ffffff'),
+    text:    pick('--text', '#0f172a'),
+    sub:     pick('--text-secondary', '#475569'),
+    muted:   pick('--text-muted', '#64748b'),
+    border:  pick('--border', '#e2e8f0'),
+    track:   pick('--panel-hover', '#f1f5f9'),
+    danger:  pick('--danger', '#dc2626'),
+    primary: pick('--primary', '#2563eb'),
+  };
+}
+
+function pngStamp() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
+function pngCanvas(width, height, bg) {
+  const cv = document.createElement('canvas');
+  cv.width  = Math.round(width * PNG_SCALE);
+  cv.height = Math.round(height * PNG_SCALE);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(PNG_SCALE, 0, 0, PNG_SCALE, 0, 0);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+  ctx.textBaseline = 'middle';
+  return { cv, ctx };
+}
+
+function pngRRect(ctx, x, y, w, h, r) {
+  const rr = Math.max(0, Math.min(r, h / 2, w / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
+/* 超长文本截断加省略号（调用前需先设好 ctx.font） */
+function pngFit(ctx, text, maxW) {
+  const s = String(text == null ? '' : text);
+  if (ctx.measureText(s).width <= maxW) return s;
+  let out = s;
+  while (out.length && ctx.measureText(out + '…').width > maxW) out = out.slice(0, -1);
+  return out + '…';
+}
+
+/* 行数越多行高越紧凑，保证大列表也能一屏看完 */
+function pngRowMetrics(n) {
+  const rowH = n <= 14 ? 34 : n <= 32 ? 30 : n <= 70 ? 26 : n <= 150 ? 22 : 18;
+  const fs = rowH >= 30 ? 12.5 : rowH >= 26 ? 12 : rowH >= 22 ? 11.5 : 10.5;
+  return { rowH, fs, trackH: Math.max(8, Math.round(rowH * 0.4)) };
+}
+
+/* 按可用高度切分，返回 [start, end) 区间数组 */
+function pngChunks(total, perPart) {
+  const out = [];
+  for (let i = 0; i < total; i += perPart) out.push([i, Math.min(total, i + perPart)]);
+  return out;
+}
+
+/* 图头：标题 + 副标题 + 分隔线，返回各基线 y */
+function pngHeaderLayout(meta) {
+  const titleY = PNG_PAD + 9;
+  let y = titleY + 22;
+  const subY = meta.sub ? y : null;
+  if (meta.sub) y += 20;
+  const dividerY = y + 6;
+  return { titleY, subY, dividerY, contentY: dividerY + 15 };
+}
+
+function pngDrawHeader(ctx, meta, c, titleOverride) {
+  const L = pngHeaderLayout(meta);
+  const maxW = PNG_W - PNG_PAD * 2;
+  ctx.textAlign = 'left';
+
+  ctx.fillStyle = c.text;
+  ctx.font = pngF(19, 700);
+  ctx.fillText(pngFit(ctx, titleOverride || meta.title, maxW), PNG_PAD, L.titleY);
+
+  if (meta.sub) {
+    ctx.fillStyle = c.muted;
+    ctx.font = pngF(12);
+    ctx.fillText(pngFit(ctx, meta.sub, maxW), PNG_PAD, L.subY);
+  }
+
+  ctx.strokeStyle = c.border;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PNG_PAD, L.dividerY + 0.5);
+  ctx.lineTo(PNG_W - PNG_PAD, L.dividerY + 0.5);
+  ctx.stroke();
+
+  return L;
+}
+
+/* 图脚：数据源范围 / 记录量 / 断流总量 /（图内行数、分页）/ 生成时间 */
+function pngDrawFooter(ctx, c, dividerY, textY, extraLeft, extraRight) {
+  ctx.strokeStyle = c.border;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PNG_PAD, dividerY + 0.5);
+  ctx.lineTo(PNG_W - PNG_PAD, dividerY + 0.5);
+  ctx.stroke();
+
+  let rows = 0, stalls = 0;
+  for (const r of scopedRows) { rows += r.count; stalls += r.errors; }
+  const scope = sourceFilter || `全部数据库（${dbNames.length} 个库）`;
+  const stamp = new Date().toLocaleString('zh-CN', { hour12: false });
+
+  let left = `数据源：${scope} · ${fmt(rows)} 条记录 · 断流 ${fmt(stalls)} 次`;
+  if (extraLeft) left += ` · ${extraLeft}`;
+  const right = (extraRight ? extraRight + ' · ' : '') + `生成时间 ${stamp}`;
+
+  ctx.font = pngF(11);
+  // 先量右侧（分页信息会让它变长），再把左侧截到剩余宽度，避免两段文字压在一起
+  const rightW = ctx.measureText(right).width;
+  ctx.fillStyle = c.muted;
+  ctx.textAlign = 'left';
+  ctx.fillText(pngFit(ctx, left, PNG_W - PNG_PAD * 2 - rightW - 24), PNG_PAD, textY);
+  ctx.textAlign = 'right';
+  ctx.fillText(right, PNG_W - PNG_PAD, textY);
+}
+
+function pngBarItems(kind) {
+  if (kind === 'latestFlight') return chartItemsLatest();
+  if (kind === 'byVisual')     return chartItemsByVisual();
+  if (kind === 'byApro')       return chartItemsByApro();
+  if (kind === 'byCamera')     return chartItemsByCamera();
+  if (kind === 'byRate')       return chartItemsByRate();
+  return [];
+}
+
+/* ---- 条形图：全量绘制，超高自动分页 ---- */
+function pngCanvasesBar(kind, meta, c) {
+  const all = pngBarItems(kind);
+  if (!all.length) { toast('暂无可导出的断流数据', 'warn'); return null; }
+
+  const color = meta.tone === 'primary' ? c.primary : c.danger;
+  const m = pngRowMetrics(all.length);
+  const L = pngHeaderLayout(meta);
+
+  // 标签列宽度按全量数据测量，限制在 90～280
+  pngProbe.font = pngF(m.fs);
+  let labelW = 90;
+  for (const it of all) labelW = Math.max(labelW, pngProbe.measureText(it.label).width);
+  labelW = Math.min(280, Math.ceil(labelW)) + 6;
+
+  const valueW = Math.max(76, m.fs * 6), gap = 14;
+  const trackX = PNG_PAD + labelW + gap;
+  const trackW = PNG_W - PNG_PAD * 2 - labelW - gap - valueW - gap;
+
+  const FOOT_BLOCK = 14 + 15 + (PNG_PAD - 6);           // 分隔线 + 文案 + 下留白
+  const perPart = Math.max(1, Math.floor((PNG_MAX_H - L.contentY - FOOT_BLOCK) / m.rowH));
+  const chunks = pngChunks(all.length, perPart);
+  const max = Math.max(...all.map(i => i.value), 1e-6);
+  const canvases = [];
+
+  chunks.forEach(([s, e], pi) => {
+    const rows = all.slice(s, e);
+    const rowsBottom = L.contentY + rows.length * m.rowH;
+    const footDividerY = rowsBottom + 14;
+    const footY = footDividerY + 15;
+    const H = Math.round(footY + PNG_PAD - 6);
+
+    const { cv, ctx } = pngCanvas(PNG_W, H, c.bg);
+    const title = chunks.length > 1
+      ? `${meta.title}（第 ${pi + 1}/${chunks.length} 部分）`
+      : meta.title;
+    pngDrawHeader(ctx, meta, c, title);
+
+    rows.forEach((it, i) => {
+      const cy = L.contentY + i * m.rowH + m.rowH / 2;
+
+      ctx.font = pngF(m.fs);
+      ctx.fillStyle = c.sub;
+      ctx.textAlign = 'right';
+      ctx.fillText(pngFit(ctx, it.label, labelW - 6), PNG_PAD + labelW, cy);
+
+      pngRRect(ctx, trackX, cy - m.trackH / 2, trackW, m.trackH, 3);
+      ctx.fillStyle = c.track;
+      ctx.fill();
+
+      const w = Math.min(trackW, Math.max(2, it.value / max * trackW));
+      pngRRect(ctx, trackX, cy - m.trackH / 2, w, m.trackH, 3);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      ctx.font = pngF(m.fs, 600);
+      ctx.fillStyle = c.text;
+      ctx.textAlign = 'right';
+      ctx.fillText(it.display || fmt(it.value), PNG_W - PNG_PAD, cy);
+    });
+
+    pngDrawFooter(
+      ctx, c, footDividerY, footY,
+      `${rows.length} / ${fmt(all.length)} 行`,
+      chunks.length > 1 ? `第 ${pi + 1}/${chunks.length} 部分` : ''
+    );
+    canvases.push(cv);
+  });
+
+  return canvases;
+}
+
+/* 图例换行排布：先算行数用于定高，再按同样坐标绘制 */
+function pngLegendLayout(items, prefix) {
+  pngProbe.font = pngF(11);
+  const maxW = PNG_W - PNG_PAD * 2;
+  const prefixW = prefix ? pngProbe.measureText(prefix).width : 0;
+  const lines = [];
+  let cur = { items: [], width: prefixW };
+  lines.push(cur);
+
+  for (const it of items) {
+    const w = 9 + 6 + pngProbe.measureText(it.label).width;
+    const add = (cur.items.length ? 16 : 0) + w;
+    if (cur.items.length && cur.width + add > maxW) {
+      cur = { items: [], width: 0 };
+      lines.push(cur);
+    }
+    cur.width += (cur.items.length ? 16 : 0) + w;
+    cur.items.push({ label: it.label, color: it.color, w });
+  }
+  return { lines, prefixW };
+}
+
+function pngDrawLegend(ctx, layout, prefix, top, lineH, c) {
+  layout.lines.forEach((line, li) => {
+    const cy = top + li * lineH + lineH / 2 - 2;
+    let x = PNG_PAD;
+    ctx.font = pngF(11);
+    ctx.fillStyle = c.muted;
+    ctx.textAlign = 'left';
+    if (li === 0 && prefix) {
+      ctx.fillText(prefix, x, cy);
+      x += layout.prefixW;
+    }
+    line.items.forEach((it, i) => {
+      if (i > 0) x += 16;
+      pngRRect(ctx, x, cy - 4.5, 9, 9, 2);
+      ctx.fillStyle = it.color;
+      ctx.fill();
+      x += 9 + 6;
+      ctx.fillStyle = c.muted;
+      ctx.fillText(it.label, x, cy);
+      x += ctx.measureText(it.label).width;
+    });
+  });
+}
+
+/* ---- 堆叠构成图：全量父行（子项仍按 Top 8 着色，其余并入「其他」，总量不失真） ---- */
+function pngCanvasesStack(kind, meta, c) {
+  const data = kind === 'visualApro'
+    ? buildStack(scopedRows, 'visualId', 'aproCode', '飞机', '机位号', { parentLimit: Infinity })
+    : buildStack(scopedRows, 'aproCode', 'camera', '机位号', 'camera', { parentLimit: Infinity });
+  if (!data.rows.length) { toast('暂无可导出的断流数据', 'warn'); return null; }
+
+  const m = pngRowMetrics(data.rows.length);
+  const valueW = 76, gap = 12, LEGEND_LINE_H = 20;
+  const maxTotal = Math.max(...data.rows.map(r => r.total), 1);
+
+  pngProbe.font = pngF(m.fs);
+  let labelW = 90;
+  for (const r of data.rows) labelW = Math.max(labelW, pngProbe.measureText(r.id).width);
+  labelW = Math.min(240, Math.ceil(labelW)) + 4;
+
+  const trackX = PNG_PAD + labelW + gap;
+  const trackW = PNG_W - PNG_PAD * 2 - labelW - gap - valueW - gap;
+
+  const legend = data.legend || [];
+  const legendLayout = pngLegendLayout(legend, data.childLabel + '：');
+  const legendH = legendLayout.lines.length * LEGEND_LINE_H;
+  const L = pngHeaderLayout(meta);
+
+  // 「其他」段是若干子项的合计，行尾注明覆盖了多少个，避免看成数据缺失
+  const hasOther = legend.some(l => l.label === OTHER_LABEL);
+  const coloredN = legend.length - (hasOther ? 1 : 0);
+  const otherN = Math.max(0, (data.totalChildren || 0) - coloredN);
+  const note = (hasOther && otherN > 0)
+    ? `「其他」为其余 ${otherN} 个${data.childLabel}的合计 · 逐项明细见 CSV`
+    : '';
+  const noteH = note ? 18 : 0;
+
+  // 每页都重复图例，预留：图例上间距 + 图例 + 说明 + 图脚
+  const RESERVED = 14 + legendH + noteH + 14 + 15 + (PNG_PAD - 6);
+  const perPart = Math.max(1, Math.floor((PNG_MAX_H - L.contentY - RESERVED) / m.rowH));
+  const chunks = pngChunks(data.rows.length, perPart);
+  const canvases = [];
+
+  chunks.forEach(([s, e], pi) => {
+    const rows = data.rows.slice(s, e);
+    const rowsBottom = L.contentY + rows.length * m.rowH;
+    const legendTop = rowsBottom + 14;
+    const noteY = legendTop + legendH + 2;
+    const footDividerY = noteY + noteH + 12;
+    const footY = footDividerY + 15;
+    const H = Math.round(footY + PNG_PAD - 6);
+
+    const { cv, ctx } = pngCanvas(PNG_W, H, c.bg);
+    const title = chunks.length > 1
+      ? `${meta.title}（第 ${pi + 1}/${chunks.length} 部分）`
+      : meta.title;
+    pngDrawHeader(ctx, meta, c, title);
+
+    rows.forEach((row, i) => {
+      const cy = L.contentY + i * m.rowH + m.rowH / 2;
+
+      ctx.font = pngF(m.fs);
+      ctx.fillStyle = c.sub;
+      ctx.textAlign = 'right';
+      ctx.fillText(pngFit(ctx, row.id, labelW - 4), PNG_PAD + labelW, cy);
+
+      pngRRect(ctx, trackX, cy - m.trackH / 2, trackW, m.trackH, 3);
+      ctx.fillStyle = c.track;
+      ctx.fill();
+
+      const barW = Math.max(2, row.total / maxTotal * trackW);
+      ctx.save();
+      pngRRect(ctx, trackX, cy - m.trackH / 2, Math.min(barW, trackW), m.trackH, 3);
+      ctx.clip();
+      let x = trackX;
+      for (const seg of row.segments) {
+        const w = row.total ? seg.value / row.total * barW : 0;
+        ctx.fillStyle = seg.color;
+        ctx.fillRect(x, cy - m.trackH / 2, w, m.trackH);
+        if (w >= 26) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = pngF(Math.max(9, Math.min(10.5, m.fs - 2)), 600);
+          ctx.textAlign = 'center';
+          ctx.fillText(fmt(seg.value), x + w / 2, cy);
+        }
+        x += w;
+      }
+      ctx.restore();
+
+      ctx.font = pngF(m.fs, 600);
+      ctx.fillStyle = c.text;
+      ctx.textAlign = 'right';
+      ctx.fillText(fmt(row.total), PNG_W - PNG_PAD, cy);
+    });
+
+    // 图例上方的分隔线
+    ctx.strokeStyle = c.border;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PNG_PAD, rowsBottom + 8 + 0.5);
+    ctx.lineTo(PNG_W - PNG_PAD, rowsBottom + 8 + 0.5);
+    ctx.stroke();
+
+    pngDrawLegend(ctx, legendLayout, data.childLabel + '：', legendTop, LEGEND_LINE_H, c);
+
+    if (note) {
+      ctx.font = pngF(11);
+      ctx.fillStyle = c.muted;
+      ctx.textAlign = 'left';
+      ctx.fillText(note, PNG_PAD, noteY + 8);
+    }
+
+    pngDrawFooter(
+      ctx, c, footDividerY, footY,
+      `${rows.length} / ${fmt(data.rows.length)} 个${data.parentLabel}`,
+      chunks.length > 1 ? `第 ${pi + 1}/${chunks.length} 部分` : ''
+    );
+    canvases.push(cv);
+  });
+
+  return canvases;
+}
+
+function downloadCanvasPNG(cv, filename, silent) {
+  cv.toBlob(blob => {
+    if (!blob) { toast('图片生成失败，请重试', 'err'); return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    if (!silent) toast('已导出图片：' + filename, 'success');
+  }, 'image/png');
+}
+
+function exportChartPNG(kind) {
+  if (!allRows.length) { toast('请先导入数据库', 'warn'); return; }
+  const meta = CHART_META[kind];
+  if (!meta) return;
+
+  try {
+    const c = pngColors();
+    const canvases = meta.type === 'stack' ? pngCanvasesStack(kind, meta, c) : pngCanvasesBar(kind, meta, c);
+    if (!canvases || !canvases.length) return;
+
+    const stamp = pngStamp();
+    if (canvases.length === 1) {
+      downloadCanvasPNG(canvases[0], `${fileBase()}_${meta.file}_${stamp}.png`);
+      return;
+    }
+
+    // 数据量大：拆成多张，依次下载（浏览器若询问「下载多个文件」请选允许）
+    canvases.forEach((cv, i) => {
+      setTimeout(() => {
+        downloadCanvasPNG(
+          cv,
+          `${fileBase()}_${meta.file}_${stamp}_${i + 1}of${canvases.length}.png`,
+          true
+        );
+        if (i === canvases.length - 1) {
+          toast(`数据较多，已拆成 ${canvases.length} 张图片下载`, 'success');
+        }
+      }, i * 500);
+    });
+  } catch (e) {
+    console.error('[PNG 导出]', e);
+    toast('图片导出失败：' + ((e && e.message) || e), 'err');
+  }
+}
 
 /* =========================================================================
    主表格过滤
