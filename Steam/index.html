@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SQLite 断流统计分析 · 飞机 / 机位号 / camera 关联视图</title>
+<title>流统计分析</title>
 <!-- 内嵌 SVG 标签页图标：data URI 直接写进 HTML，单文件不依赖任何外部资源 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Crect x='7' y='18' width='4.5' height='8' rx='1.5' fill='%23bfdbfe'/%3E%3Crect x='13.75' y='13' width='4.5' height='13' rx='1.5' fill='%23ffffff'/%3E%3Crect x='20.5' y='8' width='4.5' height='18' rx='1.5' fill='%23ffffff'/%3E%3C/svg%3E">
 <meta name="theme-color" content="#2563eb">
@@ -620,7 +620,7 @@
 
 </style>
 
-<!-- 首屏防闪白：首次绘制前同步应用已保存的主题（参考 SQLite）。
+<!-- 首屏防闪白：首次绘制前同步应用已保存的主题
      原先主题只在 body 末尾脚本里初始化，浏览器已按默认日间样式画过一帧才切成深色，
      深色模式下启动会闪一下白。这里提前到 </head> 前执行，首绘即为正确主题 -->
 <script>
@@ -650,7 +650,7 @@
       </svg>
     </div>
     <div class="logo-text">
-      <span class="t">SQLite 断流分析</span>
+      <span class="t">断流分析</span>
     </div>
     <a href="../" class="home-btn" title="返回主页" aria-label="返回主页">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
