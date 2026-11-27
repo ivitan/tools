@@ -460,7 +460,7 @@
 
   /* 条形图 */
   .bar-row {
-    display:grid; grid-template-columns:auto 1fr 58px; gap:9px; align-items:center;
+    display:grid; grid-template-columns:var(--bar-label-w, auto) 1fr 58px; gap:9px; align-items:center;
     padding:2px 4px; border-radius:4px;
   }
   .bar-row.clickable { cursor:pointer; transition:background-color .12s; }
@@ -468,7 +468,7 @@
   .bar-label {
     font-size:12px; color:var(--text-secondary); text-align:right;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    min-width:54px; max-width:132px; line-height:1.45;
+    min-width:0; line-height:1.45;
   }
   .bar-track { background:var(--panel-hover); border-radius:3px; height:11px; overflow:hidden; }
   .bar-fill { height:100%; border-radius:3px; width:0; transition:width .6s cubic-bezier(.4,0,.2,1); }
@@ -499,7 +499,7 @@
   /* 堆叠条形图 */
   .stack-list { display:flex; flex-direction:column; gap:2px; }
   .stack-row {
-    display:grid; grid-template-columns:minmax(64px,132px) 1fr 54px;
+    display:grid; grid-template-columns:var(--stack-label-w, 132px) 1fr 54px;
     gap:9px; align-items:center; padding:3px 4px; border-radius:4px;
     cursor:pointer; transition:background-color .12s;
   }
@@ -507,7 +507,7 @@
   .stack-label {
     font-size:12px; color:var(--text-secondary); text-align:right;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    min-width:54px; max-width:132px;
+    min-width:0;
   }
   .stack-track {
     position:relative; height:17px; background:var(--panel-hover);
@@ -1874,6 +1874,25 @@ function renderCards() {
 }
 
 /* ---------- 条形图通用 ---------- */
+/* 标签列宽度：按本图最长标签实测一次，所有行共用——
+   既保证各行条形左端对齐，又不会因为短标签在左侧留一大片空白 */
+const labelMeasureCtx = document.createElement('canvas').getContext('2d');
+function fitLabelColumn(container, labels, cssVar, min, max) {
+  if (!container) return;
+  // 用行内标签元素的实际字体去量，避免字体栈不一致导致宽度算偏
+  const probeEl = container.querySelector('.bar-label, .stack-label');
+  const cs = probeEl ? getComputedStyle(probeEl) : null;
+  labelMeasureCtx.font = cs
+    ? `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`
+    : '12px sans-serif';
+  let w = 0;
+  for (const t of labels) {
+    w = Math.max(w, labelMeasureCtx.measureText(String(t == null ? '' : t)).width);
+  }
+  const width = Math.max(min, Math.min(max, Math.ceil(w) + 2));
+  container.style.setProperty(cssVar, width + 'px');
+}
+
 function renderBarChart(container, items, kind, onClickItem, emptyText) {
   if (!items.length) {
     container.innerHTML = `<div class="empty ok">
@@ -1891,6 +1910,8 @@ function renderBarChart(container, items, kind, onClickItem, emptyText) {
       <div class="bar-value">${it.display || fmt(it.value)}</div>
     </div>
   `).join('');
+
+  fitLabelColumn(container, items.map(i => i.label), '--bar-label-w', 40, 132);
 
   requestAnimationFrame(() => {
     container.querySelectorAll('.bar-fill').forEach(el => {
@@ -1933,6 +1954,8 @@ function renderLatestFlightChart(container, items, onClickItem, emptyText) {
 
   container.innerHTML = html;
   container.classList.toggle('scrollable', expanded && total > COLLAPSED);
+
+  fitLabelColumn(container, visible.map(i => i.label), '--bar-label-w', 40, 132);
 
   requestAnimationFrame(() => {
     container.querySelectorAll('.bar-fill').forEach(el => {
@@ -2003,6 +2026,8 @@ function renderStackChart(container, data, onParentClick, onChildClick, emptyTex
   html += '</div>';
 
   container.innerHTML = html;
+
+  fitLabelColumn(container, rows.map(r => r.id), '--stack-label-w', 40, 132);
 
   requestAnimationFrame(() => {
     container.querySelectorAll('.stack-bar').forEach(el => {
@@ -2157,6 +2182,7 @@ function renderCharts() {
         <div class="bar-value">${it.display}</div>
       </div>
     `).join('');
+    fitLabelColumn($('chartByRate'), rateItems.map(i => i.label), '--bar-label-w', 40, 132);
     requestAnimationFrame(() => {
       $('chartByRate').querySelectorAll('.bar-fill').forEach(el => {
         el.style.width = el.dataset.w + '%';
@@ -2505,7 +2531,7 @@ function pngCanvasesBar(kind, meta, c) {
 
   // 标签列宽度按全量数据测量，限制在 90～280
   pngProbe.font = pngF(m.fs);
-  let labelW = 90;
+  let labelW = 40;
   for (const it of all) labelW = Math.max(labelW, pngProbe.measureText(it.label).width);
   labelW = Math.min(280, Math.ceil(labelW)) + 6;
 
@@ -2624,7 +2650,7 @@ function pngCanvasesStack(kind, meta, c) {
   const maxTotal = Math.max(...data.rows.map(r => r.total), 1);
 
   pngProbe.font = pngF(m.fs);
-  let labelW = 90;
+  let labelW = 40;
   for (const r of data.rows) labelW = Math.max(labelW, pngProbe.measureText(r.id).width);
   labelW = Math.min(240, Math.ceil(labelW)) + 4;
 
