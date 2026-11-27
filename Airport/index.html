@@ -181,6 +181,27 @@
     .row   { display: flex; align-items: center; }
     .grow  { flex: 1; min-height: 0; }
     .spacer { margin-left: auto; }
+    /* 已载入数据库数量：圆形徽标只显示数字（完整文案挂 title），
+       替代「已载入 1 个数据库文件」这类长句，标题行不再被撑长 */
+    .db-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      margin-left: auto;
+      border-radius: 999px;
+      background: var(--badge-bg);
+      color: var(--badge-ink);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      user-select: none;
+    }
+    /* 三位数时圆会撑不下，横向放宽成胶囊 */
+    .db-count[data-wide="1"] { width: auto; min-width: 22px; padding: 0 6px; }
     /* 间距：语义档位，不沿用原子类命名 */
     .g-xs { gap: 4px; } .g-md { gap: 12px; } .g-lg { gap: 10px; }
     /* 纵向撑满并两端对齐（A 区右侧：输入框组在上、状态提示在下） */
@@ -1775,13 +1796,30 @@
     const MAX_FILE_MB = 200;
 
     /* ── 5. 导入流程 ── */
-    function showFileStatus(msg, isError) {
+    /* 数据库数量徽标：正常只显示数字圆标，完整文案（新增/更新/跳过/累计）挂 title；
+       失败或未找到数据表时退回文字形式（红色），否则只留一个数字看不出问题。 */
+    function showFileStatus(msg, isError, count) {
       const el = $('fileInfo');
-      el.textContent = msg;
-      el.title = msg;
-      el.className = isError
-        ? 'spacer truncate fs-12 fw-bold c-danger'
-        : 'spacer truncate fs-12 fw-bold c-primary';
+      if (isError) {
+        el.title = msg || '';
+        el.textContent = msg || '';
+        el.className = 'spacer truncate fs-12 fw-bold c-danger';
+        return;
+      }
+      const n = Number.isFinite(count) ? count : 0;
+      if (!n) {
+        el.title = '';
+        el.textContent = '';
+        el.className = 'db-count hidden';
+        return;
+      }
+      // 圆里只有数字，悬浮要能看出数字的含义：统一以「已载入 N 个数据库文件」开头，
+      // 本次的新增 / 跳过 / 失败等细节接在后面
+      const base = `已载入 ${n} 个数据库文件`;
+      el.title = msg && msg.indexOf(base) === -1 ? `${base}｜${msg}` : base;
+      el.textContent = String(n);
+      el.dataset.wide = n > 99 ? '1' : '0';
+      el.className = 'db-count';
     }
 
     async function decodeFile(file) {
@@ -1884,7 +1922,7 @@
 
       const suffix = isAppend ? `（累计 ${state.databases.length} 个数据库文件）` : '';
       const head = parts.join('，') || '已载入';
-      showFileStatus(`${head}${suffix}`, failed.length > 0);
+      showFileStatus(`${head}${suffix}`, failed.length > 0, state.databases.length);
       // 已载入数据库，撤下「请导入数据库文件」初始提示；状态栏留给提取结果使用
       $('queryStatus').textContent = '';
       toast('数据库已载入，请勾选表并填写条件', 'info');
@@ -3321,16 +3359,30 @@
       return `fb-${buf.length.toString(16)}-${(h >>> 0).toString(16)}`;
     }
 
-    // 用 textContent 而非 innerHTML，避免文件名中的 HTML 被解析
-    function showFileStatus(msg, isError) {
+    // 用 textContent 而非 innerHTML，避免文件名中的 HTML 被解析。
+    // 正常状态只显示数字圆标（完整文案在 title 上），失败/无表时退回文字提示。
+    function showFileStatus(msg, isError, count) {
       const el = document.getElementById("fileInfo");
-      el.textContent = msg;
-      // 完整文案挂到 title：长文件名时行内以省略号截断，鼠标悬浮查看完整内容，
-      // 避免长文本把左侧标题挤扁
-      el.title = msg;
-      el.className = isError
-        ? "spacer truncate fs-12 fw-bold c-danger"
-        : "spacer truncate fs-12 fw-bold c-primary";
+      if (isError) {
+        el.title = msg || "";
+        el.textContent = msg || "";
+        el.className = "spacer truncate fs-12 fw-bold c-danger";
+        return;
+      }
+      const n = Number.isFinite(count) ? count : 0;
+      if (!n) {
+        el.title = "";
+        el.textContent = "";
+        el.className = "db-count hidden";
+        return;
+      }
+      // 圆里只有数字，悬浮要能看出数字的含义：统一以「已载入 N 个数据库文件」开头，
+      // 本次的新增 / 跳过 / 失败等细节接在后面
+      const base = `已载入 ${n} 个数据库文件`;
+      el.title = msg && msg.indexOf(base) === -1 ? `${base}｜${msg}` : base;
+      el.textContent = String(n);
+      el.dataset.wide = n > 99 ? "1" : "0";
+      el.className = "db-count";
     }
 
     async function handleFiles(files) {
@@ -3518,7 +3570,7 @@
       } else {
         msg = `已载入 ${databases.length} 个数据库文件`;
       }
-      showFileStatus(msg, failed.length > 0 || !hasTable);
+      showFileStatus(msg, failed.length > 0 || !hasTable, databases.length);
       // 已载入数据库，撤下「请导入数据库文件」初始提示；状态栏留给提取结果使用
       document.getElementById("queryStatus").textContent = "";
       toast("数据库已载入，请勾选表并填写条件", "info");
