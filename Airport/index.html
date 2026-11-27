@@ -2103,7 +2103,11 @@
     }
 
     /* ── 7. 渲染 ── */
+    /* 表头「?」按钮：统一走全局实现（Font Awesome 圆形问号），与 SQLite 引擎完全一致。
+       全局函数在后面的 script 块里，理论上这里的渲染都发生在页面初始化之后；
+       仍留一个文字问号兜底，避免极端时序下按钮变成空白。 */
     function helpBtnHtml(code) {
+      if (typeof window.helpBtnHtml === 'function') return window.helpBtnHtml(code);
       return `<button class="th-help" type="button" data-code="${escapeHtml(code)}" aria-label="节点说明">?</button>`;
     }
 
