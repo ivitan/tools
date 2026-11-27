@@ -470,13 +470,46 @@
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     min-width:0; line-height:1.45;
   }
-  .bar-track { background:var(--panel-hover); border-radius:3px; height:11px; overflow:hidden; }
+  .bar-track { position:relative; background:var(--panel-hover); border-radius:3px; height:17px; }
   .bar-fill { height:100%; border-radius:3px; width:0; transition:width .6s cubic-bezier(.4,0,.2,1); }
   .bar-fill.k-error { background:var(--danger); }
   .bar-fill.k-primary { background:var(--primary); }
   .bar-value {
     font-size:12px; font-weight:600; text-align:right;
     font-variant-numeric:tabular-nums; color:var(--text);
+  }
+  /* 条内数值：水平居中在条形中段；条太短放不下时贴到条尾外侧，数据永远可见 */
+  .bar-inbar {
+    position:absolute; top:50%; left:0;
+    transform:translate(-50%,-50%);
+    font-size:10.5px; font-weight:600; line-height:1;
+    font-variant-numeric:tabular-nums; white-space:nowrap;
+    color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.3);
+    pointer-events:none;
+    transition:left .6s cubic-bezier(.4,0,.2,1), color .2s;
+  }
+  .bar-inbar.on-light {
+    color:#0b1220; text-shadow:none;
+  }
+  /* 条尾外侧：条形太短时的兜底，压在轨道空白上，用次要文字色 */
+  .bar-inbar.out {
+    transform:translate(0,-50%);
+    color:var(--text-secondary); text-shadow:none;
+  }
+  /* 机位号分组明细：组头（机位号 + 合计）+ 组内各 camera 一行 */
+  .pg-list { display:flex; flex-direction:column; }
+  .pg + .pg { margin-top:4px; padding-top:4px; border-top:1px dashed var(--border); }
+  .pg-head {
+    display:flex; align-items:baseline; gap:8px;
+    padding:5px 4px 3px; border-radius:4px; cursor:pointer;
+    transition:background-color .12s;
+  }
+  .pg-head:hover { background:var(--panel-hover); }
+  .pg-id { font-size:12.5px; font-weight:700; color:var(--text); }
+  .pg-count { font-size:10.5px; color:var(--faint); }
+  .pg-total {
+    margin-left:auto; font-size:11.5px; color:var(--text-secondary);
+    font-variant-numeric:tabular-nums;
   }
   .empty {
     padding:28px 10px; text-align:center;
@@ -495,6 +528,8 @@
   }
 
   #chartLatestFlight.scrollable { max-height:400px; overflow-y:auto; padding-right:6px; }
+  /* 机位号 / camera 明细：组合数可能很多，超出后区内滚动 */
+  #chartAproCamera { max-height:460px; overflow-y:auto; padding-right:6px; }
 
   /* 堆叠条形图 */
   .stack-list { display:flex; flex-direction:column; gap:2px; }
@@ -509,6 +544,12 @@
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     min-width:0;
   }
+  /* 行标签里的子项名（该行断流最多的 camera / 机位号） */
+  .stack-label-sub { color:var(--faint); font-size:11px; }
+  .stack-footnote {
+    padding:8px 4px 0; font-size:11px; line-height:1.65;
+    color:var(--text-muted); text-align:left;
+  }
   .stack-track {
     position:relative; height:17px; background:var(--panel-hover);
     border-radius:3px; overflow:hidden;
@@ -521,19 +562,41 @@
     transition:filter .12s; position:relative; cursor:pointer;
   }
   .stack-seg:hover { filter:brightness(1.12); }
+  .stack-seg.on-light { color:#0b1220; }
+  /* 分段数字独立成层：可以越过段边界居中，末段放不下时贴到条形外侧 */
+  .stack-nums { position:absolute; inset:0; pointer-events:none; }
+  .seg-num {
+    position:absolute; top:50%; left:0;
+    transform:translate(-50%,-50%);
+    font-size:10px; font-weight:600; line-height:1;
+    font-variant-numeric:tabular-nums; white-space:nowrap;
+    color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+  .seg-num.on-light { color:#0b1220; text-shadow:none; }
+  .seg-num.out {
+    transform:translate(0,-50%);
+    color:var(--text-secondary); text-shadow:none;
+  }
   .stack-total {
     font-size:12px; font-weight:600; text-align:right;
     font-variant-numeric:tabular-nums; color:var(--text);
   }
-  .stack-legend {
-    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
-    padding:9px 4px 0; margin-top:9px;
-    border-top:1px solid var(--border);
-    font-size:11px; color:var(--text-muted);
+  /* 小段明细：条形下方一行极小字，保证每个分段数值都能被看到 */
+  .stack-sub {
+    display:none;
+    margin:-1px 0 6px calc(var(--stack-label-w, 132px) + 13px);
+    padding:0;
+    flex-wrap:wrap; gap:0 9px;
+    font-size:9.5px; line-height:1.45; color:var(--text-muted);
+    font-variant-numeric:tabular-nums;
   }
-  .legend-item { display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
-  .legend-item:hover { color:var(--text); }
-  .legend-dot { width:9px; height:9px; border-radius:2px; flex:none; }
+  .stack-sub.show { display:flex; }
+  .stack-sub > span { display:inline-flex; align-items:center; gap:4px; }
+  .stack-sub i {
+    display:inline-block; width:5px; height:5px; border-radius:1.5px; flex:none;
+  }
+  .stack-sub .sub-cam { color:var(--text-secondary); }
+  .stack-sub .sub-val { color:var(--text); font-weight:600; }
 
   /* ── 拖拽遮罩 ─────────────────────────────────────────── */
   #overlay {
@@ -909,9 +972,9 @@
 
         <div class="panel span-6">
           <div class="panel-head">
-            <h3>机位号 → camera 断流构成 <span class="tag">堆叠</span></h3>
+            <h3>机位号 / camera 断流明细 <span class="tag">明细</span></h3>
             <div class="panel-head-right">
-              <span class="panel-hint">Top 12 机位号 · 点击分段过滤</span>
+              <span class="panel-hint">全量组合 · 按机位号分组</span>
               <button class="panel-export" data-chart="aproCamera" data-fmt="png" data-tip="导出全量 PNG 图片（数据不截断）">
                 <svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
                 图片
@@ -922,7 +985,7 @@
               </button>
             </div>
           </div>
-          <div class="panel-sub">每行一个机位号，横向按该机位号下各 camera 的断流次数分段堆叠 · 点击机位号行看明细，点击分段过滤到该机位号 + 该 camera</div>
+          <div class="panel-sub">每个机位号一组，组内按 camera 断流次数降序；组头右端为该机位号合计 · 点击组头看机位号明细，点击条形过滤到该组合</div>
           <div id="chartAproCamera"></div>
         </div>
 
@@ -1080,6 +1143,8 @@ function applyTheme(mode) {
   document.documentElement.style.background = 'var(--bg)';
   const mc = document.querySelector('meta[name="theme-color"]');
   if (mc) mc.content = actual === 'dark' ? '#111827' : '#2563eb';
+  // 换主题后条内数字的明暗规则要跟着变：暗色统一白字，浅色按填充亮度判断
+  if (document.body) layoutBarValues(document);
 }
 function initTheme() {
   const saved = localStorage.getItem('sqlite_theme') || 'auto';
@@ -1677,6 +1742,8 @@ function buildStack(rows, parentKey, childKey, parentLabel, childLabel, opts) {
 
   const parentMap = new Map();
   const childTotalErr = new Map();
+  // 每个子项出现在哪些父下、各多少次（图例要显示成「父 / 子」，多父时标注数量）
+  const childParents = new Map();
 
   for (const r of rows) {
     if (!r.errors) continue;
@@ -1692,6 +1759,9 @@ function buildStack(rows, parentKey, childKey, parentLabel, childLabel, opts) {
     p.total += r.errors;
     p.children.set(cv, (p.children.get(cv) || 0) + r.errors);
     childTotalErr.set(cv, (childTotalErr.get(cv) || 0) + r.errors);
+    let pm = childParents.get(cv);
+    if (!pm) { pm = new Map(); childParents.set(cv, pm); }
+    pm.set(pv, (pm.get(pv) || 0) + r.errors);
   }
 
   const topChildren = [...childTotalErr.entries()]
@@ -1719,9 +1789,23 @@ function buildStack(rows, parentKey, childKey, parentLabel, childLabel, opts) {
     return { id: p.id, total: p.total, segments };
   });
 
-  const legend = topChildren.map(c => ({ label: c, color: childColor.get(c) }));
+  // 图例以「父 / 子」呈现：父取该子项断流最多的那个，跨多个父时只显示 +N，完整归属见 title
+  const legend = topChildren.map(c => {
+    const pm = childParents.get(c);
+    const sorted = pm ? [...pm.entries()].sort((a, b) => b[1] - a[1]) : [];
+    const parent = sorted.length ? sorted[0][0] : '';
+    const more = sorted.slice(1).map(e => e[0]);
+    return {
+      label: c,
+      color: childColor.get(c),
+      parent,
+      more,
+      title: [parent, ...more].filter(Boolean).join('、'),
+      text: parent ? `${parent} / ${c}${more.length ? ' +' + more.length : ''}` : c,
+    };
+  });
   if (resultRows.some(r => r.segments.some(s => s.label === OTHER_LABEL))) {
-    legend.push({ label: OTHER_LABEL, color: OTHER_COLOR });
+    legend.push({ label: OTHER_LABEL, color: OTHER_COLOR, parent: '', more: [], title: OTHER_LABEL, text: OTHER_LABEL });
   }
 
   return {
@@ -1893,6 +1977,130 @@ function fitLabelColumn(container, labels, cssVar, min, max) {
   container.style.setProperty(cssVar, width + 'px');
 }
 
+/* 浅色条上白字会糊，按亮度切深色字（暗色模式统一白字，不做切换） */
+function isDarkTheme() {
+  return document.documentElement.dataset.theme === 'dark';
+}
+
+function colorIsLight(css) {
+  const m = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(css || '');
+  if (!m) return false;
+  const r = +m[1], g = +m[2], b = +m[3];
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 150;
+}
+
+/* 条内数值落位：条够宽就居中压在条上；条太短则贴到条尾外侧；两者都不行才留空（右侧列兜底） */
+function layoutBarValues(root) {
+  if (!root) return;
+  const dark = document.documentElement.dataset.theme === 'dark';
+  root.querySelectorAll('.bar-track').forEach(track => {
+    const fill = track.querySelector('.bar-fill');
+    const lab = track.querySelector('.bar-inbar');
+    if (!fill || !lab) return;
+
+    const pct = Math.max(0, Math.min(100, parseFloat(fill.dataset.w) || 0));
+    const tw = track.clientWidth;
+    const cs = getComputedStyle(lab);
+    labelMeasureCtx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const textW = labelMeasureCtx.measureText(lab.textContent || '').width;
+    const fillPx = pct / 100 * tw;
+
+    if (!tw) { lab.style.display = 'none'; return; }
+
+    // 条内居中需要两端各留 6px；条尾外侧需要条后还有 7px 间距 + 文字宽度
+    const inside = fillPx >= textW + 12;
+    const outside = fillPx + 7 + textW <= tw;
+
+    if (!inside && !outside) { lab.style.display = 'none'; return; }
+    lab.style.display = '';
+
+    if (inside) {
+      lab.classList.remove('out');
+      lab.classList.toggle('on-light', !dark && colorIsLight(getComputedStyle(fill).backgroundColor));
+      lab.style.left = (pct / 2) + '%';
+    } else {
+      lab.classList.remove('on-light');
+      lab.classList.add('out');
+      lab.style.left = `calc(${pct}% + 7px)`;
+    }
+  });
+}
+
+/* 堆叠图分段数字落位：段够宽居中；不够宽允许小幅溢出到相邻段；末段放不下就贴到条形外侧 */
+function layoutStackLabels(root) {
+  if (!root) return;
+  const dark = document.documentElement.dataset.theme === 'dark';
+  root.querySelectorAll('.stack-track').forEach(track => {
+    const trackPx = track.clientWidth;
+    if (!trackPx) return;
+    const bar = track.querySelector('.stack-bar');
+    if (!bar) return;
+    const barPx = (parseFloat(bar.dataset.w) || 0) / 100 * trackPx;
+    const segs = [...track.querySelectorAll('.stack-seg')];
+    const nums = [...track.querySelectorAll('.seg-num')];
+    const rowEl = track.closest('.stack-row');
+    const sub = rowEl && rowEl.nextElementSibling && rowEl.nextElementSibling.classList.contains('stack-sub')
+      ? rowEl.nextElementSibling : null;
+    const hidden = [];
+    let cursor = 0;          // 段左端在轨道内的像素位置
+    let lastRight = -Infinity; // 已显示数字的右边界，避免相互压住
+
+    segs.forEach((seg, i) => {
+      const num = nums[i];
+      const segPx = (parseFloat(seg.dataset.w) || 0) / 100 * trackPx;
+      const center = cursor + segPx / 2;
+      const isLast = i === segs.length - 1;
+      cursor += segPx;
+      if (!num) return;
+
+      const cs = getComputedStyle(num);
+      labelMeasureCtx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      const tw = labelMeasureCtx.measureText((num.textContent || '').trim()).width;
+
+      const inside = segPx >= tw + 8;                                       // 段内宽松
+      const spill = center - tw / 2 >= 0 && center + tw / 2 <= barPx        // 允许溢出，但不出条形
+                 && center - tw / 2 >= lastRight + 4;
+      const outside = isLast && barPx + 8 + tw <= trackPx;                  // 末段贴条尾外
+
+      if (inside || spill) {
+        num.style.display = '';
+        num.classList.remove('out');
+        num.classList.toggle('on-light', !dark && colorIsLight(getComputedStyle(seg).backgroundColor));
+        num.style.left = center + 'px';
+        lastRight = center + tw / 2;
+      } else if (outside) {
+        num.style.display = '';
+        num.classList.remove('on-light');
+        num.classList.add('out');
+        num.style.left = (barPx + 8) + 'px';
+        lastRight = barPx + 8 + tw;
+      } else {
+        num.style.display = 'none';
+        hidden.push({
+          value: (num.textContent || '').trim(),
+          label: seg.dataset.child || '',
+          color: getComputedStyle(seg).backgroundColor
+        });
+      }
+    });
+
+    // 放不下的分段数字，在该行条形下方以「色点 + camera + 数值」列出来
+    if (sub) {
+      if (hidden.length) {
+        sub.innerHTML = hidden
+          .map(h => `<span><i style="background:${h.color}"></i>${
+            h.label ? `<span class="sub-cam">${escHtml(h.label)}</span>` : ''
+          }<span class="sub-val">${escHtml(h.value)}</span></span>`)
+          .join('');
+        sub.classList.add('show');
+      } else {
+        sub.innerHTML = '';
+        sub.classList.remove('show');
+      }
+    }
+  });
+}
+
 function renderBarChart(container, items, kind, onClickItem, emptyText) {
   if (!items.length) {
     container.innerHTML = `<div class="empty ok">
@@ -1906,6 +2114,7 @@ function renderBarChart(container, items, kind, onClickItem, emptyText) {
       <div class="bar-label">${escHtml(it.label)}</div>
       <div class="bar-track">
         <div class="bar-fill k-${kind}" data-w="${(it.value / max * 100).toFixed(2)}"></div>
+        <span class="bar-inbar">${it.display || fmt(it.value)}</span>
       </div>
       <div class="bar-value">${it.display || fmt(it.value)}</div>
     </div>
@@ -1917,6 +2126,7 @@ function renderBarChart(container, items, kind, onClickItem, emptyText) {
     container.querySelectorAll('.bar-fill').forEach(el => {
       el.style.width = el.dataset.w + '%';
     });
+    layoutBarValues(container);
   });
 
   if (onClickItem) {
@@ -1924,6 +2134,63 @@ function renderBarChart(container, items, kind, onClickItem, emptyText) {
       el.addEventListener('click', () => onClickItem(items[+el.dataset.idx]));
     });
   }
+}
+
+/* ---------- 机位号分组明细：组头 + 组内 camera 条形 ---------- */
+function renderPairGroups(container, groups, onPickPair, onPickGroup, emptyText) {
+  if (!groups.length) {
+    container.innerHTML = `<div class="empty ok">
+      <div class="ok-badge">✓</div><div>${emptyText || '未检测到断流'}</div>
+    </div>`;
+    return;
+  }
+
+  // 条长统一按全量最大组合值归一化，跨组可直接比长短
+  let max = 1;
+  for (const g of groups) for (const it of g.items) max = Math.max(max, it.value);
+
+  container.innerHTML = `<div class="pg-list">${groups.map(g => `
+    <div class="pg">
+      <div class="pg-head" data-apro="${escHtml(g.id)}"
+           title="机位号 ${escHtml(g.id)} · 合计断流 ${fmt(g.total)} 次 · 点击查看该机位号明细">
+        <span class="pg-id">${escHtml(g.id)}</span>
+        <span class="pg-count">${g.items.length} 个 camera</span>
+        <span class="pg-total">合计 ${fmt(g.total)}</span>
+      </div>
+      ${g.items.map(it => {
+        const pct = it.value / max * 100;
+        // 极短条先按「贴条尾外侧」渲染，layoutBarValues 之后还会再校正一次
+        const lab = pct < 2.5
+          ? `<span class="bar-inbar out" style="left:calc(${pct.toFixed(2)}% + 7px)">${fmt(it.value)}</span>`
+          : `<span class="bar-inbar" style="left:${(pct / 2).toFixed(2)}%">${fmt(it.value)}</span>`;
+        return `
+        <div class="bar-row clickable" data-apro="${escHtml(g.id)}" data-cam="${escHtml(it.label)}"
+             title="${escHtml(g.id)} · ${escHtml(it.label)} · 断流 ${fmt(it.value)} 次">
+          <div class="bar-label">${escHtml(it.label)}</div>
+          <div class="bar-track">
+            <div class="bar-fill k-primary" data-w="${pct.toFixed(2)}"></div>
+            ${lab}
+          </div>
+          <div class="bar-value">${fmt(it.value)}</div>
+        </div>`;
+      }).join('')}
+    </div>`).join('')}</div>`;
+
+  const labels = [];
+  for (const g of groups) for (const it of g.items) labels.push(it.label);
+  fitLabelColumn(container, labels, '--bar-label-w', 36, 110);
+
+  requestAnimationFrame(() => {
+    container.querySelectorAll('.bar-fill').forEach(el => { el.style.width = el.dataset.w + '%'; });
+    layoutBarValues(container);
+  });
+
+  container.querySelectorAll('.pg-head').forEach(el => {
+    el.addEventListener('click', () => { if (onPickGroup) onPickGroup(el.dataset.apro); });
+  });
+  container.querySelectorAll('.bar-row').forEach(el => {
+    el.addEventListener('click', () => { if (onPickPair) onPickPair(el.dataset.apro, el.dataset.cam); });
+  });
 }
 
 /* ---------- 最新航班图：全量展示 + 可折叠 ---------- */
@@ -1941,6 +2208,7 @@ function renderLatestFlightChart(container, items, onClickItem, emptyText) {
       <div class="bar-label" title="${escHtml(it.title || it.label)}">${escHtml(it.label)}</div>
       <div class="bar-track">
         <div class="bar-fill k-error" data-w="${(it.value / max * 100).toFixed(2)}"></div>
+        <span class="bar-inbar">${fmt(it.value)}</span>
       </div>
       <div class="bar-value">${fmt(it.value)}</div>
     </div>
@@ -1961,6 +2229,7 @@ function renderLatestFlightChart(container, items, onClickItem, emptyText) {
     container.querySelectorAll('.bar-fill').forEach(el => {
       el.style.width = el.dataset.w + '%';
     });
+    layoutBarValues(container);
   });
 
   container.querySelectorAll('.bar-row').forEach(el => {
@@ -1977,8 +2246,21 @@ function renderLatestFlightChart(container, items, onClickItem, emptyText) {
 }
 
 /* ---------- 堆叠构成图 ---------- */
+/* 行标签：父 + 该行断流最多的子项，直接标在图左边，如「971L / 97102」 */
+function stackRowName(row) {
+  if (!row) return '';
+  const segs = row.segments || [];
+  if (!segs.length) return row.id;
+  const main = segs.reduce((a, b) => (b.value > a.value ? b : a));
+  return main && main.label ? `${row.id} / ${main.label}` : row.id;
+}
+
 function renderStackChart(container, data, onParentClick, onChildClick, emptyText) {
-  const { rows, legend, totalParents, parentLabel, childLabel } = data;
+  const { rows, legend: lg, totalParents, parentLabel, childLabel } = data;
+
+  // 「其他」= 断流排名靠后的子项合计：除 Top N 着色项之外，其余全部并入这一段
+  const hasOther = (lg || []).some(l => l.label === OTHER_LABEL);
+  const otherN = Math.max(0, (data.totalChildren || 0) - ((lg || []).length - (hasOther ? 1 : 0)));
 
   if (!rows.length) {
     container.innerHTML = `<div class="empty ok">
@@ -1992,42 +2274,53 @@ function renderStackChart(container, data, onParentClick, onChildClick, emptyTex
   let html = '<div class="stack-list">';
   for (const row of rows) {
     const barW = (row.total / maxTotal) * 100;
+    const mainSeg = row.segments.length
+      ? row.segments.reduce((a, b) => (b.value > a.value ? b : a))
+      : null;
     const segsHtml = row.segments.map(seg => {
       const segW = (seg.value / row.total) * 100;
-      const showText = segW >= 8;
       return `<div class="stack-seg" data-parent="${escHtml(row.id)}" data-child="${escHtml(seg.label)}"
+                   data-w="${(barW * segW / 100).toFixed(3)}"
                    style="width:${segW}%;background:${seg.color}"
-                   title="${escHtml(row.id)} · ${escHtml(seg.label)} · 断流 ${seg.value} 次">${showText ? fmt(seg.value) : ''}</div>`;
+                   title="${escHtml(row.id)} · ${escHtml(seg.label)} · 断流 ${seg.value} 次"></div>`;
     }).join('');
+    // 数字单独一层，位置由 layoutStackLabels 按像素算，窄段也能显示
+    const numsHtml = row.segments.map(seg =>
+      `<span class="seg-num" data-child="${escHtml(seg.label)}">${fmt(seg.value)}</span>`
+    ).join('');
 
     html += `
       <div class="stack-row" data-parent="${escHtml(row.id)}" title="${escHtml(parentLabel)} ${escHtml(row.id)} · 断流 ${fmt(row.total)} 次">
-        <div class="stack-label">${escHtml(row.id)}</div>
+        <div class="stack-label">${escHtml(row.id)}${mainSeg && mainSeg.label
+          ? `<span class="stack-label-sub"> / ${escHtml(mainSeg.label)}</span>`
+          : ''}</div>
         <div class="stack-track">
           <div class="stack-bar" data-w="${barW.toFixed(2)}">${segsHtml}</div>
+          <div class="stack-nums">${numsHtml}</div>
         </div>
         <div class="stack-total">${fmt(row.total)}</div>
       </div>
+      <div class="stack-sub" data-sub="${escHtml(row.id)}"></div>
     `;
   }
   html += '</div>';
 
-  html += '<div class="stack-legend">';
-  html += `<span style="margin-right:4px">${escHtml(childLabel)}：</span>`;
-  for (const item of legend) {
-    html += `<span class="legend-item" data-child="${escHtml(item.label)}">
-      <span class="legend-dot" style="background:${item.color}"></span>
-      <span>${escHtml(item.label)}</span>
-    </span>`;
+  // 不再用颜色图例：子项名字已直接标在每行左侧；图例删掉后这里补一行灰字解释「其他」与截断
+  const footLines = [];
+  if (hasOther && otherN > 0) {
+    footLines.push(`「其他」= 断流排名第 ${lg.length} 位起的 ${otherN} 个${escHtml(childLabel)}合计，逐项数值见「全部 CSV」`);
   }
   if (totalParents > rows.length) {
-    html += `<span style="margin-left:auto;color:var(--faint)">共 ${totalParents} 个${escHtml(parentLabel)}，仅展示断流 Top ${rows.length}</span>`;
+    footLines.push(`共 ${totalParents} 个${escHtml(parentLabel)}，仅展示断流 Top ${rows.length}`);
   }
-  html += '</div>';
+  if (footLines.length) {
+    html += `<div class="stack-footnote">${footLines.join('<br>')}</div>`;
+  }
 
   container.innerHTML = html;
 
-  fitLabelColumn(container, rows.map(r => r.id), '--stack-label-w', 40, 132);
+  fitLabelColumn(container, rows.map(stackRowName), '--stack-label-w', 40, 168);
+  layoutStackLabels(container);
 
   requestAnimationFrame(() => {
     container.querySelectorAll('.stack-bar').forEach(el => {
@@ -2038,6 +2331,12 @@ function renderStackChart(container, data, onParentClick, onChildClick, emptyTex
   container.querySelectorAll('.stack-seg').forEach(el => {
     el.addEventListener('click', e => {
       e.stopPropagation();
+      // 「其他」是多个子项的合计，没有对应的单条记录：退化为按父级过滤，并说明原因
+      if (el.dataset.child === OTHER_LABEL) {
+        if (onParentClick) onParentClick(el.dataset.parent);
+        toast('「其他」为多个子项的合计，已展示该行的全部断流；逐项数值见「全部 CSV」', 'warn');
+        return;
+      }
       if (onChildClick) onChildClick(el.dataset.parent, el.dataset.child);
     });
   });
@@ -2045,12 +2344,6 @@ function renderStackChart(container, data, onParentClick, onChildClick, emptyTex
   container.querySelectorAll('.stack-row').forEach(el => {
     el.addEventListener('click', () => {
       if (onParentClick) onParentClick(el.dataset.parent);
-    });
-  });
-
-  container.querySelectorAll('.legend-item').forEach(el => {
-    el.addEventListener('click', () => {
-      if (onChildClick) onChildClick(null, el.dataset.child);
     });
   });
 }
@@ -2107,6 +2400,18 @@ function chartItemsByCamera() {
       title: `camera ${c.camera} · 断流 ${c.errors} 次 · 记录 ${c.count} 条`,
       value: c.errors,
     }));
+}
+
+/* 机位号分组：机位号按总断流降序，组内按 camera 断流次数降序 */
+function aproCameraGroups() {
+  const groups = new Map();
+  for (const [apro, cam, err] of pairRows(scopedRows, 'aproCode', 'camera')) {
+    let g = groups.get(apro);
+    if (!g) { g = { id: apro, total: 0, items: [] }; groups.set(apro, g); }
+    g.total += err;
+    g.items.push({ label: cam, value: err });
+  }
+  return [...groups.values()];
 }
 
 function chartItemsByRate() {
@@ -2178,6 +2483,7 @@ function renderCharts() {
         <div class="bar-label">${escHtml(it.label)}</div>
         <div class="bar-track">
           <div class="bar-fill k-error" data-w="${(it.value / maxRate * 100).toFixed(2)}"></div>
+          <span class="bar-inbar">${it.display}</span>
         </div>
         <div class="bar-value">${it.display}</div>
       </div>
@@ -2187,6 +2493,7 @@ function renderCharts() {
       $('chartByRate').querySelectorAll('.bar-fill').forEach(el => {
         el.style.width = el.dataset.w + '%';
       });
+      layoutBarValues($('chartByRate'));
     });
     $('chartByRate').querySelectorAll('.bar-row').forEach(el => {
       el.addEventListener('click', () => filterByVisual(rateItems[+el.dataset.idx].label));
@@ -2206,15 +2513,12 @@ function renderCharts() {
   );
 
   /* 6. 机位号 → camera */
-  const aproCamData = buildStack(scopedRows, 'aproCode', 'camera', '机位号', 'camera');
-  renderStackChart(
-    $('chartAproCamera'), aproCamData,
-    parentId => filterByApro(parentId),
-    (parentId, childId) => {
-      if (parentId) filterByPair(parentId, 'aproCode', childId, 'camera');
-      else filterByCamera(childId);
-    },
-    '未检测到断流 —— 没有可展示的机位号 → camera 构成'
+  // 机位号 / camera 明细：一个机位号一组，组内每个 camera 一条，组头带合计
+  renderPairGroups(
+    $('chartAproCamera'), aproCameraGroups(),
+    (apro, cam) => filterByPair(apro, 'aproCode', cam, 'camera'),
+    apro => filterByApro(apro),
+    '未检测到断流 —— 没有可展示的机位号 / camera 组合'
   );
 }
 
@@ -2307,7 +2611,7 @@ function exportChartCSV(kind) {
     rows = pairRows(scopedRows, 'visualId', 'aproCode');
   }
   else if (kind === 'aproCamera') {
-    name = '机位号到camera断流构成_全量';
+    name = '机位号camera断流明细_全量';
     header = ['机位号(aproCode)', 'camera', '断流次数'];
     rows = pairRows(scopedRows, 'aproCode', 'camera');
   }
@@ -2320,6 +2624,16 @@ document.querySelectorAll('.panel-export').forEach(btn => {
     if (btn.dataset.fmt === 'png') exportChartPNG(btn.dataset.chart);
     else exportChartCSV(btn.dataset.chart);
   });
+});
+
+/* 窗口宽度变化后，条形长度百分比没变，但"放条内还是放条外"的判定要重算 */
+let barValueResizeTimer = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(barValueResizeTimer);
+  barValueResizeTimer = setTimeout(() => {
+    layoutBarValues(document);
+    layoutStackLabels(document);
+  }, 120);
 });
 
 /* =========================================================================
@@ -2373,10 +2687,10 @@ const CHART_META = {
     type: 'stack', parentLabel: '飞机', childLabel: '机位号',
   },
   aproCamera: {
-    title: '机位号 → camera 断流构成',
-    sub: '每行一个机位号，横向按各 camera 的断流次数分段堆叠 · 全量',
-    file: '机位号到camera断流构成',
-    type: 'stack', parentLabel: '机位号', childLabel: 'camera',
+    title: '机位号 / camera 断流明细',
+    sub: '按机位号分组，组内按 camera 断流次数降序 · 全量',
+    file: '机位号camera断流明细',
+    type: 'groups', tone: 'primary',
   },
 };
 
@@ -2394,6 +2708,16 @@ function pngColors() {
     danger:  pick('--danger', '#dc2626'),
     primary: pick('--primary', '#2563eb'),
   };
+}
+
+/* 条内文字颜色：暗色模式统一白字；浅色模式按填充亮度取深/白 */
+function pngInk(hex) {
+  if (isDarkTheme()) return '#ffffff';
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if (!m) return '#ffffff';
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#0b1220' : '#ffffff';
 }
 
 function pngStamp() {
@@ -2575,10 +2899,32 @@ function pngCanvasesBar(kind, meta, c) {
       ctx.fillStyle = color;
       ctx.fill();
 
+      const txt = it.display || fmt(it.value);
       ctx.font = pngF(m.fs, 600);
       ctx.fillStyle = c.text;
       ctx.textAlign = 'right';
-      ctx.fillText(it.display || fmt(it.value), PNG_W - PNG_PAD, cy);
+      ctx.fillText(txt, PNG_W - PNG_PAD, cy);
+
+      // 条内数值：条够宽居中压在条上，太短则贴到条尾外侧，右侧数值列始终保留
+      ctx.font = pngF(Math.max(9, m.fs - 1.5), 600);
+      const txtW = ctx.measureText(txt).width;
+      const inside = w >= txtW + 12;
+      const outside = w + 7 + txtW <= trackW;
+      if (inside || outside) {
+        if (inside) {
+          ctx.fillStyle = pngInk(color);
+          ctx.textAlign = 'center';
+          ctx.shadowColor = 'rgba(0,0,0,.45)';
+          ctx.shadowBlur = 3;
+          ctx.fillText(txt, trackX + w / 2, cy);
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+        } else {
+          ctx.fillStyle = c.sub;
+          ctx.textAlign = 'left';
+          ctx.fillText(txt, trackX + w + 7, cy);
+        }
+      }
     });
 
     pngDrawFooter(
@@ -2592,50 +2938,145 @@ function pngCanvasesBar(kind, meta, c) {
   return canvases;
 }
 
-/* 图例换行排布：先算行数用于定高，再按同样坐标绘制 */
-function pngLegendLayout(items, prefix) {
-  pngProbe.font = pngF(11);
-  const maxW = PNG_W - PNG_PAD * 2;
-  const prefixW = prefix ? pngProbe.measureText(prefix).width : 0;
-  const lines = [];
-  let cur = { items: [], width: prefixW };
-  lines.push(cur);
+/* ---- 机位号 / camera 分组明细：组头（机位号 + 合计）+ 组内条形，超高自动分页 ---- */
+function pngCanvasesPairGroups(meta, c) {
+  const groups = aproCameraGroups();
+  if (!groups.length) { toast('暂无可导出的断流数据', 'warn'); return null; }
 
-  for (const it of items) {
-    const w = 9 + 6 + pngProbe.measureText(it.label).width;
-    const add = (cur.items.length ? 16 : 0) + w;
-    if (cur.items.length && cur.width + add > maxW) {
-      cur = { items: [], width: 0 };
-      lines.push(cur);
-    }
-    cur.width += (cur.items.length ? 16 : 0) + w;
-    cur.items.push({ label: it.label, color: it.color, w });
+  let totalRows = 0, max = 1;
+  for (const g of groups) {
+    totalRows += g.items.length;
+    for (const it of g.items) max = Math.max(max, it.value);
   }
-  return { lines, prefixW };
-}
 
-function pngDrawLegend(ctx, layout, prefix, top, lineH, c) {
-  layout.lines.forEach((line, li) => {
-    const cy = top + li * lineH + lineH / 2 - 2;
-    let x = PNG_PAD;
-    ctx.font = pngF(11);
-    ctx.fillStyle = c.muted;
-    ctx.textAlign = 'left';
-    if (li === 0 && prefix) {
-      ctx.fillText(prefix, x, cy);
-      x += layout.prefixW;
-    }
-    line.items.forEach((it, i) => {
-      if (i > 0) x += 16;
-      pngRRect(ctx, x, cy - 4.5, 9, 9, 2);
-      ctx.fillStyle = it.color;
-      ctx.fill();
-      x += 9 + 6;
-      ctx.fillStyle = c.muted;
-      ctx.fillText(it.label, x, cy);
-      x += ctx.measureText(it.label).width;
-    });
+  const m = pngRowMetrics(totalRows);
+  const headH = Math.max(22, Math.round(m.rowH * 0.85));
+  const groupGap = 10;
+  const valueW = Math.max(76, m.fs * 6), gap = 14;
+
+  pngProbe.font = pngF(m.fs);
+  let labelW = 36;
+  for (const g of groups) for (const it of g.items) {
+    labelW = Math.max(labelW, pngProbe.measureText(it.label).width);
+  }
+  labelW = Math.min(160, Math.ceil(labelW)) + 6;
+
+  const trackX = PNG_PAD + labelW + gap;
+  const trackW = PNG_W - PNG_PAD * 2 - labelW - gap - valueW - gap;
+
+  const L = pngHeaderLayout(meta);
+  const FOOT_BLOCK = 14 + 15 + (PNG_PAD - 6);
+  const availH = PNG_MAX_H - L.contentY - FOOT_BLOCK;
+
+  // 整组一起装页，避免组头落在页尾与组员分离
+  const groupH = g => headH + g.items.length * m.rowH;
+  const pages = [];
+  let cur = [], curH = 0;
+  groups.forEach((g, gi) => {
+    const add = groupH(g) + (cur.length ? groupGap : 0);
+    if (cur.length && curH + add > availH) { pages.push(cur); cur = []; curH = 0; }
+    cur.push(gi);
+    curH += (cur.length > 1 ? groupGap : 0) + groupH(g);
   });
+  if (cur.length) pages.push(cur);
+
+  const canvases = [];
+  pages.forEach((idxs, pi) => {
+    let pageH = 0;
+    idxs.forEach((gi, k) => { pageH += (k ? groupGap : 0) + groupH(groups[gi]); });
+
+    const rowsBottom = L.contentY + pageH;
+    const footDividerY = rowsBottom + 14;
+    const footY = footDividerY + 15;
+    const H = Math.round(footY + PNG_PAD - 6);
+
+    const { cv, ctx } = pngCanvas(PNG_W, H, c.bg);
+    const title = pages.length > 1
+      ? `${meta.title}（第 ${pi + 1}/${pages.length} 部分）`
+      : meta.title;
+    pngDrawHeader(ctx, meta, c, title);
+
+    let y = L.contentY;
+    let rowCount = 0;
+
+    idxs.forEach((gi, k) => {
+      const g = groups[gi];
+      if (k) y += groupGap;
+
+      // 组头：机位号 + 合计
+      const hy = y + headH / 2 + 2;
+      ctx.font = pngF(m.fs + 0.5, 700);
+      ctx.fillStyle = c.text;
+      ctx.textAlign = 'left';
+      ctx.fillText(g.id, PNG_PAD, hy);
+
+      ctx.font = pngF(Math.max(9, m.fs - 1.5));
+      ctx.fillStyle = c.muted;
+      ctx.textAlign = 'right';
+      ctx.fillText(`合计 ${fmt(g.total)}`, PNG_W - PNG_PAD, hy);
+
+      ctx.strokeStyle = c.border;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(PNG_PAD, y + headH - 2.5);
+      ctx.lineTo(PNG_W - PNG_PAD, y + headH - 2.5);
+      ctx.stroke();
+      y += headH;
+
+      for (const it of g.items) {
+        const cy = y + m.rowH / 2;
+
+        ctx.font = pngF(m.fs);
+        ctx.fillStyle = c.sub;
+        ctx.textAlign = 'right';
+        ctx.fillText(pngFit(ctx, it.label, labelW - 6), PNG_PAD + labelW, cy);
+
+        pngRRect(ctx, trackX, cy - m.trackH / 2, trackW, m.trackH, 3);
+        ctx.fillStyle = c.track;
+        ctx.fill();
+
+        const w = Math.min(trackW, Math.max(2, it.value / max * trackW));
+        pngRRect(ctx, trackX, cy - m.trackH / 2, w, m.trackH, 3);
+        ctx.fillStyle = c.primary;
+        ctx.fill();
+
+        const txt = fmt(it.value);
+        ctx.font = pngF(m.fs, 600);
+        ctx.fillStyle = c.text;
+        ctx.textAlign = 'right';
+        ctx.fillText(txt, PNG_W - PNG_PAD, cy);
+
+        // 条内数值：放得下就压条上，否则贴条尾外侧，右侧数值列始终保留
+        ctx.font = pngF(Math.max(9, m.fs - 1.5), 600);
+        const txtW = ctx.measureText(txt).width;
+        if (w >= txtW + 12) {
+          ctx.fillStyle = pngInk(c.primary);
+          ctx.textAlign = 'center';
+          ctx.shadowColor = 'rgba(0,0,0,.45)';
+          ctx.shadowBlur = 3;
+          ctx.fillText(txt, trackX + w / 2, cy);
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+        } else if (w + 7 + txtW <= trackW) {
+          ctx.fillStyle = c.sub;
+          ctx.textAlign = 'left';
+          ctx.fillText(txt, trackX + w + 7, cy);
+        }
+
+        y += m.rowH;
+        rowCount++;
+      }
+    });
+
+    pngDrawFooter(
+      ctx, c, footDividerY, footY,
+      `${idxs.length} 个机位号 · ${rowCount} 个组合`,
+      pages.length > 1 ? `第 ${pi + 1}/${pages.length} 部分` : ''
+    );
+    canvases.push(cv);
+  });
+
+  return canvases;
 }
 
 /* ---- 堆叠构成图：全量父行（子项仍按 Top 8 着色，其余并入「其他」，总量不失真） ---- */
@@ -2646,20 +3087,19 @@ function pngCanvasesStack(kind, meta, c) {
   if (!data.rows.length) { toast('暂无可导出的断流数据', 'warn'); return null; }
 
   const m = pngRowMetrics(data.rows.length);
-  const valueW = 76, gap = 12, LEGEND_LINE_H = 20;
+  const valueW = 76, gap = 12;
   const maxTotal = Math.max(...data.rows.map(r => r.total), 1);
 
   pngProbe.font = pngF(m.fs);
   let labelW = 40;
-  for (const r of data.rows) labelW = Math.max(labelW, pngProbe.measureText(r.id).width);
+  for (const r of data.rows) labelW = Math.max(labelW, pngProbe.measureText(stackRowName(r)).width);
   labelW = Math.min(240, Math.ceil(labelW)) + 4;
 
   const trackX = PNG_PAD + labelW + gap;
   const trackW = PNG_W - PNG_PAD * 2 - labelW - gap - valueW - gap;
 
+  // 图例已取消：子项名直接画在每行左侧（父 / 子）
   const legend = data.legend || [];
-  const legendLayout = pngLegendLayout(legend, data.childLabel + '：');
-  const legendH = legendLayout.lines.length * LEGEND_LINE_H;
   const L = pngHeaderLayout(meta);
 
   // 「其他」段是若干子项的合计，行尾注明覆盖了多少个，避免看成数据缺失
@@ -2671,62 +3111,134 @@ function pngCanvasesStack(kind, meta, c) {
     : '';
   const noteH = note ? 18 : 0;
 
-  // 每页都重复图例，预留：图例上间距 + 图例 + 说明 + 图脚
-  const RESERVED = 14 + legendH + noteH + 14 + 15 + (PNG_PAD - 6);
-  const perPart = Math.max(1, Math.floor((PNG_MAX_H - L.contentY - RESERVED) / m.rowH));
-  const chunks = pngChunks(data.rows.length, perPart);
+  // 预留：行区下间距 + 说明 + 图脚
+  const RESERVED = 14 + noteH + 14 + 15 + (PNG_PAD - 6);
+  const NOTE_H = 15;                 // 小段明细行高
+  const availH = PNG_MAX_H - L.contentY - RESERVED;
+
+  // 预排每段位置，同时得到「放不下的分段」用于明细行与分页高度
+  const segFont = pngF(Math.max(9, Math.min(10.5, m.fs - 2)), 600);
+  const layouts = data.rows.map(row => {
+    const barW = Math.max(2, row.total / maxTotal * trackW);
+    pngProbe.font = segFont;
+    const items = [];
+    const hidden = [];
+    let x = trackX, lastRight = -Infinity;
+    row.segments.forEach((seg, si) => {
+      const w = row.total ? seg.value / row.total * barW : 0;
+      const center = x + w / 2;
+      const txt = fmt(seg.value);
+      const tw = pngProbe.measureText(txt).width;
+      const inside = w >= tw + 8;
+      const spill = center - tw / 2 >= trackX && center + tw / 2 <= trackX + barW
+                 && center - tw / 2 >= lastRight + 4;
+      const outside = si === row.segments.length - 1 && trackX + barW + 8 + tw <= trackX + trackW;
+      let mode = 'none';
+      if (inside || spill) { mode = 'in'; lastRight = center + tw / 2; }
+      else if (outside)     { mode = 'out'; lastRight = trackX + barW + 8 + tw; }
+      else hidden.push({ txt, label: seg.label || '', color: seg.color });
+      items.push({ seg, x, w, center, txt, mode });
+      x += w;
+    });
+    return { barW, items, hidden };
+  });
+
+  // 按「行高 + 明细行高」累计分页，避免明细被切到页尾
+  const pages = [];
+  let curPage = [], curH = 0;
+  layouts.forEach((lo, i) => {
+    const h = m.rowH + (lo.hidden.length ? NOTE_H : 0);
+    if (curPage.length && curH + h > availH) { pages.push(curPage); curPage = []; curH = 0; }
+    curPage.push(i); curH += h;
+  });
+  if (curPage.length) pages.push(curPage);
   const canvases = [];
 
-  chunks.forEach(([s, e], pi) => {
-    const rows = data.rows.slice(s, e);
-    const rowsBottom = L.contentY + rows.length * m.rowH;
-    const legendTop = rowsBottom + 14;
-    const noteY = legendTop + legendH + 2;
+  pages.forEach((idxs, pi) => {
+    const pageH = idxs.reduce((a, i) => a + m.rowH + (layouts[i].hidden.length ? NOTE_H : 0), 0);
+    const rowsBottom = L.contentY + pageH;
+    const noteY = rowsBottom + 16;
     const footDividerY = noteY + noteH + 12;
     const footY = footDividerY + 15;
     const H = Math.round(footY + PNG_PAD - 6);
 
     const { cv, ctx } = pngCanvas(PNG_W, H, c.bg);
-    const title = chunks.length > 1
-      ? `${meta.title}（第 ${pi + 1}/${chunks.length} 部分）`
+    const title = pages.length > 1
+      ? `${meta.title}（第 ${pi + 1}/${pages.length} 部分）`
       : meta.title;
     pngDrawHeader(ctx, meta, c, title);
 
-    rows.forEach((row, i) => {
-      const cy = L.contentY + i * m.rowH + m.rowH / 2;
+    let y = L.contentY;
+    idxs.forEach(idx => {
+      const row = data.rows[idx];
+      const lo = layouts[idx];
+      const cy = y + m.rowH / 2;
 
       ctx.font = pngF(m.fs);
       ctx.fillStyle = c.sub;
       ctx.textAlign = 'right';
-      ctx.fillText(pngFit(ctx, row.id, labelW - 4), PNG_PAD + labelW, cy);
+      ctx.fillText(pngFit(ctx, stackRowName(row), labelW - 4), PNG_PAD + labelW, cy);
 
       pngRRect(ctx, trackX, cy - m.trackH / 2, trackW, m.trackH, 3);
       ctx.fillStyle = c.track;
       ctx.fill();
 
-      const barW = Math.max(2, row.total / maxTotal * trackW);
       ctx.save();
-      pngRRect(ctx, trackX, cy - m.trackH / 2, Math.min(barW, trackW), m.trackH, 3);
+      pngRRect(ctx, trackX, cy - m.trackH / 2, Math.min(lo.barW, trackW), m.trackH, 3);
       ctx.clip();
-      let x = trackX;
-      for (const seg of row.segments) {
-        const w = row.total ? seg.value / row.total * barW : 0;
-        ctx.fillStyle = seg.color;
-        ctx.fillRect(x, cy - m.trackH / 2, w, m.trackH);
-        if (w >= 26) {
-          ctx.fillStyle = '#ffffff';
-          ctx.font = pngF(Math.max(9, Math.min(10.5, m.fs - 2)), 600);
-          ctx.textAlign = 'center';
-          ctx.fillText(fmt(seg.value), x + w / 2, cy);
-        }
-        x += w;
+      for (const it of lo.items) {
+        ctx.fillStyle = it.seg.color;
+        ctx.fillRect(it.x, cy - m.trackH / 2, it.w, m.trackH);
       }
       ctx.restore();
+
+      // 分段数字：段内 → 溢出到相邻段 → 末段贴条尾外
+      ctx.font = segFont;
+      for (const it of lo.items) {
+        if (it.mode === 'in') {
+          ctx.fillStyle = pngInk(it.seg.color);
+          ctx.textAlign = 'center';
+          ctx.shadowColor = 'rgba(0,0,0,.45)';
+          ctx.shadowBlur = 3;
+          ctx.fillText(it.txt, it.center, cy);
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+        } else if (it.mode === 'out') {
+          ctx.fillStyle = c.sub;
+          ctx.textAlign = 'left';
+          ctx.fillText(it.txt, trackX + lo.barW + 8, cy);
+        }
+      }
 
       ctx.font = pngF(m.fs, 600);
       ctx.fillStyle = c.text;
       ctx.textAlign = 'right';
       ctx.fillText(fmt(row.total), PNG_W - PNG_PAD, cy);
+
+      y += m.rowH;
+
+      // 条上放不下的分段数字，在条形下方以「色块 + camera + 数值」列出
+      if (lo.hidden.length) {
+        let mx = trackX;
+        for (const h of lo.hidden) {
+          pngRRect(ctx, mx, y + 4, 5, 5, 1.5);
+          ctx.fillStyle = h.color;
+          ctx.fill();
+          let tx = mx + 8;
+          ctx.textAlign = 'left';
+          if (h.label) {
+            ctx.font = pngF(9);
+            ctx.fillStyle = c.sub;
+            ctx.fillText(h.label, tx, y + 9.5);
+            tx += ctx.measureText(h.label).width + 5;
+          }
+          ctx.font = pngF(9, 600);
+          ctx.fillStyle = c.text;
+          ctx.fillText(h.txt, tx, y + 9.5);
+          mx = tx + ctx.measureText(h.txt).width + 12;
+        }
+        y += NOTE_H;
+      }
     });
 
     // 图例上方的分隔线
@@ -2737,8 +3249,6 @@ function pngCanvasesStack(kind, meta, c) {
     ctx.lineTo(PNG_W - PNG_PAD, rowsBottom + 8 + 0.5);
     ctx.stroke();
 
-    pngDrawLegend(ctx, legendLayout, data.childLabel + '：', legendTop, LEGEND_LINE_H, c);
-
     if (note) {
       ctx.font = pngF(11);
       ctx.fillStyle = c.muted;
@@ -2748,8 +3258,8 @@ function pngCanvasesStack(kind, meta, c) {
 
     pngDrawFooter(
       ctx, c, footDividerY, footY,
-      `${rows.length} / ${fmt(data.rows.length)} 个${data.parentLabel}`,
-      chunks.length > 1 ? `第 ${pi + 1}/${chunks.length} 部分` : ''
+      `${idxs.length} / ${fmt(data.rows.length)} 个${data.parentLabel}`,
+      pages.length > 1 ? `第 ${pi + 1}/${pages.length} 部分` : ''
     );
     canvases.push(cv);
   });
@@ -2779,7 +3289,9 @@ function exportChartPNG(kind) {
 
   try {
     const c = pngColors();
-    const canvases = meta.type === 'stack' ? pngCanvasesStack(kind, meta, c) : pngCanvasesBar(kind, meta, c);
+    const canvases = meta.type === 'stack' ? pngCanvasesStack(kind, meta, c)
+      : meta.type === 'groups' ? pngCanvasesPairGroups(meta, c)
+      : pngCanvasesBar(kind, meta, c);
     if (!canvases || !canvases.length) return;
 
     const stamp = pngStamp();
